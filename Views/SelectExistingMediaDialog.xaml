@@ -1,0 +1,103 @@
+<Window x:Class="MovieManagerDesktop.Views.SelectExistingMediaDialog"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             Width="500" Height="400"
+             WindowStyle="None"
+             AllowsTransparency="True"
+             Background="Transparent"
+             WindowStartupLocation="CenterOwner">
+    
+    <Window.Resources>
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource LightBorder}"/>
+        </Style>
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Border Background="{DynamicResource MainBackground}" CornerRadius="8" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="{DynamicResource CardBackground}" Padding="15"
+                MouseLeftButtonDown="Header_MouseLeftButtonDown"
+                MouseMove="Header_MouseMove"
+                MouseLeftButtonUp="Header_MouseLeftButtonUp">
+            <StackPanel Orientation="Horizontal">
+                <materialDesign:PackIcon Kind="MovieEditOutline" Foreground="{DynamicResource PrimaryColor}" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="انتخاب فیلم" Foreground="{DynamicResource PrimaryText}" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Search Bar -->
+        <Border Grid.Row="1" Padding="15,10,15,0">
+            <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" 
+                     materialDesign:HintAssist.Hint="نام فیلم:" 
+                     Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                     Foreground="{DynamicResource PrimaryText}"/>
+        </Border>
+
+        <!-- DataGrid -->
+        <DataGrid Grid.Row="2" Margin="15"
+                  ItemsSource="{Binding ExistingMedia}"
+                  AutoGenerateColumns="False" 
+                  CanUserAddRows="False" 
+                  HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal"
+                  HorizontalGridLinesBrush="{DynamicResource LightBorder}"
+                  Background="Transparent"
+                  RowBackground="Transparent"
+                  BorderThickness="1"
+                  BorderBrush="{DynamicResource LightBorder}"
+                  SelectionMode="Single">
+                  
+            <DataGrid.Columns>
+                <!-- Year -->
+                <DataGridTextColumn Header="سال" Binding="{Binding Year}" Width="60" IsReadOnly="True" />
+                
+                <!-- Name -->
+                <DataGridTextColumn Header="نام" Binding="{Binding FormattedTitle}" Width="*" IsReadOnly="True" />
+                
+                <!-- Select Button -->
+                <DataGridTemplateColumn Width="70">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Content="انتخاب" 
+                                    Command="{Binding DataContext.SelectMediaCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                    CommandParameter="{Binding}"
+                                    Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                    Height="24" Padding="5,0" FontSize="11" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Close Button -->
+        <Button Grid.Row="0" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0"
+                Click="Close_Click"
+                Style="{StaticResource MaterialDesignIconForegroundButton}"
+                Foreground="{DynamicResource PrimaryText}" Width="30" Height="30">
+            <materialDesign:PackIcon Kind="Close"/>
+        </Button>
+    </Grid>
+    </Border>
+</Window>

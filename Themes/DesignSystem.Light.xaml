@@ -1,0 +1,28 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Background Colors -->
+    <SolidColorBrush x:Key="MainBackground" Color="#F5F7FA"/>
+    <SolidColorBrush x:Key="CardBackground" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SidebarBackground" Color="#E4E7EB"/>
+    <SolidColorBrush x:Key="HoverBackground" Color="#D1D5DB"/>
+    
+    <!-- Text Colors -->
+    <SolidColorBrush x:Key="PrimaryText" Color="#1A202C"/>
+    <SolidColorBrush x:Key="SecondaryText" Color="#4A5568"/>
+    <SolidColorBrush x:Key="DisabledText" Color="#A0AEC0"/>
+    
+    <!-- Border Colors -->
+    <SolidColorBrush x:Key="NormalBorder" Color="#E2E8F0"/>
+    <SolidColorBrush x:Key="LightBorder" Color="#EDF2F7"/>
+
+    <!-- Legacy aliases -->
+    <SolidColorBrush x:Key="ColorBackground" Color="#F5F7FA"/>
+    <SolidColorBrush x:Key="ColorSurface" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="ColorSurfaceLight" Color="#E4E7EB"/>
+    <SolidColorBrush x:Key="ColorSurfaceGlass" Color="#25000000"/>
+    <SolidColorBrush x:Key="TextPrimary" Color="#1A202C"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#4A5568"/>
+    <SolidColorBrush x:Key="TextDisabled" Color="#A0AEC0"/>
+
+</ResourceDictionary>

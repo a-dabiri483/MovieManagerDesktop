@@ -1,0 +1,109 @@
+<UserControl x:Class="MovieManagerDesktop.Controls.ToastControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:services="clr-namespace:MovieManagerDesktop.Services"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="400"
+             FlowDirection="RightToLeft">
+
+    <!-- Bind to Singleton Service -->
+    <ItemsControl ItemsSource="{Binding Source={x:Static services:ToastService.Instance}, Path=Toasts}">
+        <!-- Container Panel to stack toasts -->
+        <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+                <StackPanel Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0"/>
+            </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+
+        <!-- Template for each ToastMessage -->
+        <ItemsControl.ItemTemplate>
+            <DataTemplate>
+                <Border Background="#202020" 
+                        BorderBrush="{Binding BorderColor}" 
+                        BorderThickness="1,1,1,3"
+                        CornerRadius="8"
+                        Margin="0,5"
+                        Padding="15,10"
+                        MinWidth="300"
+                        MaxWidth="450">
+                    <Border.Effect>
+                        <DropShadowEffect Color="Black" BlurRadius="15" Opacity="0.5" ShadowDepth="4"/>
+                    </Border.Effect>
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Icon -->
+                        <Border Width="40" Height="40" CornerRadius="20" Background="{Binding BackgroundColor}">
+                            <materialDesign:PackIcon Kind="{Binding IconKind}" Foreground="{Binding BorderColor}" Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        
+                        <!-- Content -->
+                        <StackPanel Grid.Column="1" Margin="15,0">
+                            <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="14" Foreground="White" Margin="0,0,0,4"/>
+                            <TextBlock Text="{Binding Message}" FontSize="13" Foreground="#B0B0B0" TextWrapping="Wrap"/>
+                        </StackPanel>
+                        
+                        <!-- Close Button -->
+                        <Button Grid.Column="2" 
+                                Style="{StaticResource MaterialDesignIconForegroundButton}" 
+                                Width="30" Height="30" 
+                                Padding="0" 
+                                Opacity="0.6"
+                                Click="CloseButton_Click"
+                                Tag="{Binding}">
+                            <materialDesign:PackIcon Kind="Close" Width="16" Height="16" Foreground="White"/>
+                        </Button>
+                    </Grid>
+                </Border>
+            </DataTemplate>
+        </ItemsControl.ItemTemplate>
+        
+        <!-- Entrance Animation -->
+        <ItemsControl.ItemContainerStyle>
+            <Style TargetType="ContentPresenter">
+                <Setter Property="RenderTransform">
+                    <Setter.Value>
+                        <TranslateTransform Y="-100"/>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="Opacity" Value="0"/>
+                <Style.Triggers>
+                    <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.3"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="0" Duration="0:0:0.4">
+                                    <DoubleAnimation.EasingFunction>
+                                        <QuadraticEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                    <DataTrigger Binding="{Binding IsClosing}" Value="True">
+                        <DataTrigger.EnterActions>
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.3"/>
+                                    <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)" To="-100" Duration="0:0:0.4">
+                                        <DoubleAnimation.EasingFunction>
+                                            <QuadraticEase EasingMode="EaseIn"/>
+                                        </DoubleAnimation.EasingFunction>
+                                    </DoubleAnimation>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </DataTrigger.EnterActions>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </ItemsControl.ItemContainerStyle>
+    </ItemsControl>
+</UserControl>

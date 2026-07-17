@@ -1,0 +1,191 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+
+    <!-- ========================================== -->
+    <!-- NEW DESIGN SYSTEM COLORS (CineTrack 2.0)   -->
+    <!-- ========================================== -->
+    
+    <!-- Primary Colors -->
+    <SolidColorBrush x:Key="PrimaryColor" Color="#00B4D8"/>
+    <SolidColorBrush x:Key="SecondaryColor" Color="#7B2CBF"/>
+    <SolidColorBrush x:Key="AccentColor" Color="#FF6B6B"/>
+    
+    <!-- Status Colors -->
+    <SolidColorBrush x:Key="SuccessColor" Color="#06D6A0"/>
+    <SolidColorBrush x:Key="WarningColor" Color="#FFD166"/>
+    <SolidColorBrush x:Key="ErrorColor" Color="#EF476F"/>
+    <SolidColorBrush x:Key="InfoColor" Color="#118AB2"/>
+    
+    <!-- Background Colors -->
+    <SolidColorBrush x:Key="MainBackground" Color="#1A1A2E"/>
+    <SolidColorBrush x:Key="CardBackground" Color="#16213E"/>
+    <SolidColorBrush x:Key="SidebarBackground" Color="#0F3460"/>
+    <SolidColorBrush x:Key="HoverBackground" Color="#533483"/>
+    
+    <!-- Text Colors -->
+    <SolidColorBrush x:Key="PrimaryText" Color="#EAEAEA"/>
+    <SolidColorBrush x:Key="SecondaryText" Color="#A0A0A0"/>
+    <SolidColorBrush x:Key="DisabledText" Color="#6C757D"/>
+    
+    <!-- Border Colors -->
+    <SolidColorBrush x:Key="PrimaryBorder" Color="#00B4D8"/>
+    <SolidColorBrush x:Key="NormalBorder" Color="#2D3748"/>
+    <SolidColorBrush x:Key="LightBorder" Color="#4A5568"/>
+
+    <!-- ========================================== -->
+    <!-- LEGACY ALIASES (Prevents existing UI from breaking) -->
+    <!-- ========================================== -->
+    <SolidColorBrush x:Key="ColorPrimary" Color="#00B4D8"/>
+    <SolidColorBrush x:Key="ColorPrimaryDark" Color="#0092B0"/>
+    <SolidColorBrush x:Key="ColorSecondary" Color="#7B2CBF"/>
+    <SolidColorBrush x:Key="ColorAccent" Color="#FF6B6B"/>
+    <SolidColorBrush x:Key="ColorSuccess" Color="#06D6A0"/>
+    <SolidColorBrush x:Key="ColorWarning" Color="#FFD166"/>
+    <SolidColorBrush x:Key="ColorError" Color="#EF476F"/>
+    <SolidColorBrush x:Key="ColorInfo" Color="#118AB2"/>
+    <SolidColorBrush x:Key="ColorBackground" Color="#1A1A2E"/>
+    <SolidColorBrush x:Key="ColorSurface" Color="#16213E"/>
+    <SolidColorBrush x:Key="ColorSurfaceLight" Color="#0F3460"/>
+    <SolidColorBrush x:Key="ColorSurfaceGlass" Color="#2516213E"/>
+    <SolidColorBrush x:Key="TextPrimary" Color="#EAEAEA"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#A0A0A0"/>
+    <SolidColorBrush x:Key="TextDisabled" Color="#6C757D"/>
+
+    <!-- ========================================== -->
+    <!-- TYPOGRAPHY -->
+    <!-- ========================================== -->
+    <FontFamily x:Key="AppFontFamily">Segoe UI, Vazirmatn, IRANSans</FontFamily>
+    
+    <!-- H1 (32px, Bold) -->
+    <Style x:Key="TextH1" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
+        <Setter Property="FontSize" Value="32"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+    </Style>
+    
+    <!-- H2 (24px, SemiBold) -->
+    <Style x:Key="TextH2" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
+        <Setter Property="FontSize" Value="24"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+    </Style>
+    
+    <!-- H3 (18px, SemiBold) -->
+    <Style x:Key="TextH3" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+    </Style>
+    
+    <!-- Body (14px, Regular) -->
+    <Style x:Key="TextBody" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+    </Style>
+
+    <!-- Small (12px, Regular) -->
+    <Style x:Key="TextSmall" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+    </Style>
+
+    <!-- Caption (10px, Regular) -->
+    <Style x:Key="TextCaption" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}"/>
+        <Setter Property="FontSize" Value="10"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+    </Style>
+
+    <!-- TitleTextStyle (from user specs) -->
+    <Style x:Key="TitleTextStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+        <Setter Property="FontSize" Value="24"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Margin" Value="0,0,0,16"/>
+    </Style>
+
+    <!-- ========================================== -->
+    <!-- SHADOWS -->
+    <!-- ========================================== -->
+    <DropShadowEffect x:Key="ShadowSm" BlurRadius="4" ShadowDepth="1" Opacity="0.1" Color="Black"/>
+    <DropShadowEffect x:Key="ShadowMd" BlurRadius="8" ShadowDepth="2" Opacity="0.15" Color="Black"/>
+    <DropShadowEffect x:Key="ShadowLg" BlurRadius="16" ShadowDepth="4" Opacity="0.2" Color="Black"/>
+    
+    <!-- Legacy shadows just in case -->
+    <DropShadowEffect x:Key="ShadowXl" BlurRadius="32" ShadowDepth="8" Opacity="0.3" Color="Black"/>
+    <DropShadowEffect x:Key="GlowPrimary" BlurRadius="20" ShadowDepth="0" Opacity="0.6" Color="#00B4D8"/>
+
+    <!-- ========================================== -->
+    <!-- CORNER RADII -->
+    <!-- ========================================== -->
+    <CornerRadius x:Key="RadiusSm">4</CornerRadius>
+    <CornerRadius x:Key="RadiusMd">8</CornerRadius>
+    <CornerRadius x:Key="RadiusLg">12</CornerRadius>
+    <CornerRadius x:Key="RadiusXl">16</CornerRadius>
+    <CornerRadius x:Key="RadiusFull">9999</CornerRadius>
+
+    <!-- ========================================== -->
+    <!-- STYLES (from User Specs) -->
+    <!-- ========================================== -->
+    
+    <Style x:Key="CardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource NormalBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="16"/>
+        <Setter Property="Margin" Value="8"/>
+    </Style>
+
+    <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="{DynamicResource PrimaryColor}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+        <Setter Property="Height" Value="40"/>
+        <Setter Property="Padding" Value="16,0"/>
+        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="BorderThickness" Value="0"/>
+    </Style>
+
+    <!-- Custom ScrollBar Style -->
+    <Style TargetType="ScrollBar">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="#3300B4D8"/>
+        <Setter Property="Width" Value="6"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ScrollBar">
+                    <Grid Background="{TemplateBinding Background}">
+                        <Border x:Name="Bg" Background="Transparent"/>
+                        <Track x:Name="PART_Track" IsDirectionReversed="true">
+                            <Track.Thumb>
+                                <Thumb>
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Border CornerRadius="3" Background="{TemplateBinding Foreground}" Margin="0,2"/>
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Foreground" Value="{StaticResource PrimaryColor}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>

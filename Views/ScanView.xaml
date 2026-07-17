@@ -1,0 +1,487 @@
+<UserControl x:Class="MovieManagerDesktop.Views.ScanView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=viewmodels:ScanViewModel}"
+             d:DesignHeight="800" d:DesignWidth="1200"
+             Background="{DynamicResource MainBackground}">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        
+        <!-- Compact DataGrid Style -->
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource NormalBorder}"/>
+            <Setter Property="RowBackground" Value="Transparent"/>
+            <Setter Property="AlternatingRowBackground" Value="Transparent"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource LightBorder}"/>
+            <Setter Property="VerticalGridLinesBrush" Value="Transparent"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="SelectionMode" Value="Extended"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
+            <Setter Property="RowHeight" Value="32"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+        
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource LightBorder}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+        
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        
+        <Style TargetType="DataGridCell">
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderBrush" Value="Transparent"/>
+                    <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Custom Chip RadioButton Style -->
+        <Style x:Key="ChipRadioButton" TargetType="RadioButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource NormalBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Margin" Value="0,0,5,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="16">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+    
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- 0: Header -->
+            <RowDefinition Height="Auto"/> <!-- 1: Scan Controls -->
+            <RowDefinition Height="Auto"/> <!-- 2: Bulk Toolbar -->
+            <RowDefinition Height="Auto"/> <!-- 3: Progress Bar -->
+            <RowDefinition Height="*"/>    <!-- 4: DataGrid -->
+            <RowDefinition Height="Auto"/> <!-- 5: Status Bar -->
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <Button Grid.Column="0" Command="{Binding GoBackCommand}" 
+                    Background="Transparent" BorderThickness="0" 
+                    Foreground="{DynamicResource SecondaryText}" 
+                    Padding="10,5">
+                <StackPanel Orientation="Horizontal"/>
+            </Button>
+            
+            <TextBlock Grid.Column="1" Text="اسکن و شناسایی فیلم‌ها" 
+                       Style="{StaticResource TextH3}" 
+                       HorizontalAlignment="Center"/>
+        </Grid>
+        
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,10">
+            <Grid MinWidth="800">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/> <!-- Right: Scan Controls -->
+                    <ColumnDefinition Width="*"/>    <!-- Center: Filters -->
+                    <ColumnDefinition Width="Auto"/> <!-- Left: Search -->
+                </Grid.ColumnDefinitions>
+                
+                <!-- Scan Controls -->
+                <Border Grid.Column="0" 
+                        Background="{DynamicResource CardBackground}" 
+                        CornerRadius="16" 
+                        Padding="10,5" 
+                        BorderBrush="{DynamicResource NormalBorder}" 
+                        BorderThickness="1">
+                <StackPanel Orientation="Horizontal">
+                    <TextBox Text="{Binding SelectedDirectory, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="مسیر (D:\Movies)"
+                             Foreground="{DynamicResource PrimaryText}" 
+                             FontSize="12" 
+                             Width="150"
+                             VerticalAlignment="Center"
+                             Margin="0,0,10,0"/>
+                    <Button Command="{Binding BrowseFolderCommand}"
+                            Style="{StaticResource MaterialDesignIconForegroundButton}"
+                            Foreground="{DynamicResource SecondaryText}"
+                            ToolTip="انتخاب پوشه"
+                            Width="30" Height="30" Padding="0" Margin="0,0,5,0">
+                        <materialDesign:PackIcon Kind="FolderOpen"/>
+                    </Button>
+                    <Button Command="{Binding StartScanCommand}"
+                            Content="اسکن" 
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Background="{DynamicResource PrimaryColor}"
+                            Foreground="#050510"
+                            Height="28" Padding="15,0"
+                            Visibility="{Binding StartButtonVisibility}"/>
+                    <Button Command="{Binding StopScanCommand}"
+                            Content="توقف" 
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Foreground="{DynamicResource ErrorColor}"
+                            BorderBrush="{DynamicResource ErrorColor}"
+                            Height="28" Padding="15,0"
+                            Visibility="{Binding StopButtonVisibility}"/>
+                </StackPanel>
+            </Border>
+            
+            <!-- Filter Chips -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <RadioButton Content="همه" Style="{StaticResource ChipRadioButton}" IsChecked="{Binding IsFilterAll}" GroupName="Filters"/>
+                <RadioButton Content="ثبت شد" Style="{StaticResource ChipRadioButton}" IsChecked="{Binding IsFilterRegistered}" GroupName="Filters"/>
+                <RadioButton Content="خطا در ثبت" Style="{StaticResource ChipRadioButton}" IsChecked="{Binding IsFilterError}" GroupName="Filters"/>
+                <RadioButton Content="آماده بررسی" Style="{StaticResource ChipRadioButton}" IsChecked="{Binding IsFilterPending}" GroupName="Filters"/>
+            </StackPanel>
+            
+            <!-- Search -->
+            <Border Grid.Column="2" 
+                    Background="{DynamicResource CardBackground}" 
+                    CornerRadius="16" 
+                    Padding="10,5" 
+                    BorderBrush="{DynamicResource NormalBorder}" 
+                    BorderThickness="1"
+                    Width="200">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Grid.Column="0" 
+                             Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="جستجو..."
+                             Foreground="{DynamicResource PrimaryText}" 
+                             FontSize="12" 
+                             BorderThickness="0"
+                             VerticalAlignment="Center"/>
+                    <materialDesign:PackIcon Grid.Column="1" 
+                                             Kind="Magnify" 
+                                             Width="16" Height="16" 
+                                             Foreground="{DynamicResource SecondaryText}" 
+                                             VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            </Grid>
+        </ScrollViewer>
+        
+        <!-- Bulk Actions Toolbar -->
+        <Border Grid.Row="2" 
+                Background="#0AFFFFFF" 
+                BorderBrush="{DynamicResource NormalBorder}" 
+                BorderThickness="1" 
+                CornerRadius="8"
+                Padding="10,5" 
+                Margin="0,0,0,10"
+                Panel.ZIndex="10"
+                VerticalAlignment="Top"
+                IsEnabled="{Binding HasSelection}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Grid.Column="0" 
+                           Text="{Binding SelectedCountText}" 
+                           Foreground="{DynamicResource SecondaryText}" 
+                           VerticalAlignment="Center"
+                           Margin="0,0,15,0"
+                           FontSize="12"/>
+                
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <Button Command="{Binding RegisterSelectedCommand}"
+                            Content="ثبت انتخاب شده‌ها" 
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Background="{DynamicResource SuccessColor}"
+                            BorderBrush="{DynamicResource SuccessColor}"
+                            Foreground="White"
+                            Height="28" Padding="15,0"
+                            Margin="0,0,5,0"/>
+                    <Button Command="{Binding DeleteSelectedCommand}"
+                            Content="حذف از لیست" 
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Foreground="{DynamicResource ErrorColor}"
+                            BorderBrush="{DynamicResource ErrorColor}"
+                            Height="28" Padding="15,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+        
+        <!-- Progress Bar -->
+        <Border Grid.Row="3" 
+                Margin="0,0,0,10" 
+                VerticalAlignment="Bottom"
+                Visibility="{Binding StopButtonVisibility}">
+            <StackPanel>
+                <Grid Margin="0,0,0,5">
+                    <TextBlock Text="{Binding ScanProgressText}" 
+                               Foreground="{DynamicResource PrimaryColor}" 
+                               FontSize="12" 
+                               HorizontalAlignment="Center"/>
+                </Grid>
+                <ProgressBar IsIndeterminate="{Binding IsScanningIndeterminate}" 
+                             Value="{Binding ScanProgressValue}" 
+                             Maximum="100" 
+                             Height="6" 
+                             Background="#20FFFFFF" 
+                             Foreground="{DynamicResource PrimaryColor}"/>
+            </StackPanel>
+        </Border>
+        
+        <!-- DataGrid Results -->
+        <DataGrid Grid.Row="4" 
+                  ItemsSource="{Binding ScannedFilesView}"
+                  SelectedItem="{Binding SelectedItem}"
+                  x:Name="ResultsDataGrid"
+                  SelectionChanged="ResultsDataGrid_SelectionChanged"
+                  PreviewKeyDown="ResultsDataGrid_PreviewKeyDown">
+            <DataGrid.Columns>
+                <!-- CheckBox -->
+                <DataGridTemplateColumn Width="40">
+                    <DataGridTemplateColumn.Header>
+                        <CheckBox IsChecked="{Binding DataContext.IsAllSelected, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                  Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center"/>
+                    </DataGridTemplateColumn.Header>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding IsChecked, UpdateSourceTrigger=PropertyChanged}" 
+                                      HorizontalAlignment="Center"
+                                      Click="CheckBox_Click"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                
+                <!-- Title -->
+                <DataGridTextColumn Header="نام" 
+                                    Binding="{Binding DisplayTitle}" 
+                                    Width="2*" 
+                                    IsReadOnly="True"/>
+                
+                <!-- Year -->
+                <DataGridTextColumn Header="سال" 
+                                    Binding="{Binding YearOverride}" 
+                                    Width="60" 
+                                    IsReadOnly="True"/>
+                
+                <!-- Type -->
+                <DataGridTextColumn Header="نوع" 
+                                    Binding="{Binding MediaType}" 
+                                    Width="70" 
+                                    IsReadOnly="True"/>
+                
+                <!-- Count -->
+                <DataGridTextColumn Header="تعداد" 
+                                    Binding="{Binding FileCountText}" 
+                                    Width="70" 
+                                    IsReadOnly="True"/>
+                
+                <!-- Status -->
+                <DataGridTemplateColumn Header="وضعیت" Width="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Border CornerRadius="12" Padding="8,4">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="#1A00E5FF"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Status}" Value="ثبت شد">
+                                                <Setter Property="Background" Value="#1A4CAF50"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status}" Value="خطا در ثبت">
+                                                <Setter Property="Background" Value="#1AFF5252"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Status}" Value="خطا در پیدا کردن">
+                                                <Setter Property="Background" Value="#1AFF5252"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <TextBlock Text="{Binding Status}" 
+                                           FontSize="12" 
+                                           FontWeight="SemiBold" 
+                                           TextAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Status}" Value="ثبت شد">
+                                                    <Setter Property="Foreground" Value="{DynamicResource SuccessColor}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="خطا در ثبت">
+                                                    <Setter Property="Foreground" Value="{DynamicResource ErrorColor}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="خطا در پیدا کردن">
+                                                    <Setter Property="Foreground" Value="{DynamicResource ErrorColor}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                
+                <!-- Actions -->
+                <DataGridTemplateColumn Header="عملیات" Width="100">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Command="{Binding DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"
+                                        Style="{StaticResource MaterialDesignIconForegroundButton}"
+                                        Foreground="{DynamicResource SecondaryText}"
+                                        Width="30" Height="30"
+                                        ToolTip="جستجوی دستی">
+                                    <materialDesign:PackIcon Kind="Pencil" Width="16" Height="16"/>
+                                </Button>
+                                <Button Command="{Binding DataContext.RetryGroupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                        CommandParameter="{Binding}"
+                                        Style="{StaticResource MaterialDesignIconForegroundButton}"
+                                        Foreground="{DynamicResource SecondaryText}"
+                                        Width="30" Height="30"
+                                        ToolTip="جستجوی مجدد">
+                                    <materialDesign:PackIcon Kind="Refresh" Width="16" Height="16"/>
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+            
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                    <!-- Removed IsSelected setter to prevent row selection from toggling checkbox -->
+                    <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                    <Setter Property="ContextMenu">
+                        <Setter.Value>
+                            <ContextMenu Background="{DynamicResource MainBackground}" 
+                                         Foreground="{DynamicResource PrimaryText}">
+                                <MenuItem Header="جستجوی دستی" 
+                                          Command="{Binding PlacementTarget.Tag.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                          CommandParameter="{Binding}">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon Kind="Pencil"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="جستجوی مجدد" 
+                                          Command="{Binding PlacementTarget.Tag.RetryGroupCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                          CommandParameter="{Binding}">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon Kind="Refresh"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="اضافه کردن به سریال‌های موجود" 
+                                          Command="{Binding PlacementTarget.Tag.OpenSelectExistingDialogCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                          CommandParameter="{Binding}">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon Kind="PlaylistPlus"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <Separator/>
+                                <MenuItem Header="حذف از لیست" 
+                                          Command="{Binding PlacementTarget.Tag.DeleteSelectedCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon Kind="Delete" Foreground="{DynamicResource ErrorColor}"/>
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                            </ContextMenu>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </DataGrid.RowStyle>
+        </DataGrid>
+        
+        <!-- Status Bar -->
+        <Border Grid.Row="5" 
+                BorderThickness="0,1,0,0" 
+                BorderBrush="{DynamicResource NormalBorder}" 
+                Padding="10,5"
+                Margin="0,5,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <TextBlock Grid.Column="0" 
+                           Text="{Binding StatusMessage}" 
+                           Foreground="{DynamicResource PrimaryColor}" 
+                           FontSize="12" 
+                           VerticalAlignment="Center"/>
+                
+                <TextBlock Grid.Column="1" 
+                           Text="راهنما: برای جستجوی دستی روی آیکون مداد کلیک کنید یا راست‌کلیک کنید" 
+                           Foreground="{DynamicResource SecondaryText}" 
+                           FontSize="11" 
+                           VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

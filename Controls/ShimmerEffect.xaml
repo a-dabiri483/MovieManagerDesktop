@@ -1,0 +1,33 @@
+<UserControl x:Class="MovieManagerDesktop.Controls.ShimmerEffect"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="200" d:DesignWidth="150">
+    <Border Background="#1AFFFFFF" CornerRadius="{Binding CornerRadius, RelativeSource={RelativeSource AncestorType=UserControl}}" ClipToBounds="True">
+        <Border.OpacityMask>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                <LinearGradientBrush.Transform>
+                    <TranslateTransform x:Name="GradientTranslateTransform" X="-1"/>
+                </LinearGradientBrush.Transform>
+                <GradientStop Color="#40000000" Offset="0"/>
+                <GradientStop Color="#FFFFFFFF" Offset="0.5"/>
+                <GradientStop Color="#40000000" Offset="1"/>
+            </LinearGradientBrush>
+        </Border.OpacityMask>
+        <Border Background="#33FFFFFF"/>
+    </Border>
+
+    <UserControl.Triggers>
+        <EventTrigger RoutedEvent="Loaded">
+            <BeginStoryboard>
+                <Storyboard RepeatBehavior="Forever">
+                    <DoubleAnimation Storyboard.TargetName="GradientTranslateTransform"
+                                     Storyboard.TargetProperty="X"
+                                     From="-1" To="2" Duration="0:0:1.5"/>
+                </Storyboard>
+            </BeginStoryboard>
+        </EventTrigger>
+    </UserControl.Triggers>
+</UserControl>
