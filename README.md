@@ -1,55 +1,55 @@
-# MovieManagerDesktop
+# مدیریت فیلم و سریال دسکتاپ (MovieManagerDesktop)
 
-A modern, high-performance Movie and TV Series Collection Management application for Windows, built with **WPF (.NET 10)**.
+یک اپلیکیشن مدرن و با کارایی بالا برای مدیریت کالکشن فیلم‌ها و سریال‌های تلویزیونی در ویندوز، ساخته شده با **WPF (.NET 10)**.
 
-## 🌟 Features
+## 🌟 ویژگی‌ها
 
-- **Modern Dashboard**: A sleek, fluid UI with glassmorphism, gradient accents, and smooth animations inspired by modern mobile apps.
-- **Library Management**: Add, edit, and organize your movies and series.
-- **Smart Search**: Quickly find titles with advanced search integration.
-- **Responsive Navigation**: Sidebar navigation with dynamic states and fluid transitions.
-- **MVVM Architecture**: Built with the `CommunityToolkit.Mvvm` for clean, maintainable, and testable code.
+- **پیشخوان (داشبورد) مدرن**: رابط کاربری (UI) جذاب و روان با افکت‌های شیشه‌ای (Glassmorphism)، رنگ‌های گرادیانت و انیمیشن‌های نرم که از برنامه‌های مدرن موبایل الهام گرفته شده است.
+- **مدیریت کتابخانه**: امکان افزودن، ویرایش و سازمان‌دهی فیلم‌ها و سریال‌ها به صورت کاملاً حرفه‌ای.
+- **جستجوی هوشمند**: پیدا کردن سریع عناوین با استفاده از موتور جستجوی یکپارچه و پیشرفته.
+- **منوی ناوبری ریسپانسیو**: سایدبار کناری با حالت‌های داینامیک و جابجایی بسیار روان بین تب‌ها.
+- **معماری MVVM**: برنامه‌نویسی شده با استفاده از کیت `CommunityToolkit.Mvvm` برای داشتن کدهایی تمیز، قابل نگهداری و تست‌پذیر.
+- **پشتیبانی کامل از زبان فارسی**: راست‌چین شده (RTL) و کاملاً بهینه‌سازی شده برای کاربران فارسی‌زبان.
 
-## 💻 Tech Stack
+## 💻 تکنولوژی‌های استفاده شده
 
-- **Framework**: .NET 10.0 (WPF)
-- **UI Components**: MaterialDesignThemes
-- **Architecture**: MVVM (Model-View-ViewModel)
-- **Database**: Entity Framework Core (SQLite)
-- **Search**: FuzzySharp
+- **فریم‌ورک**: .NET 10.0 (WPF)
+- **کامپوننت‌های رابط کاربری**: MaterialDesignThemes
+- **معماری نرم‌افزار**: MVVM (Model-View-ViewModel)
+- **پایگاه داده**: Entity Framework Core (سیستم SQLite)
+- **سیستم جستجو**: FuzzySharp
 
-## 🚀 Getting Started
+## 🚀 راهنمای راه‌اندازی
 
-### Prerequisites
+### پیش‌نیازها
 - [.NET 10.0 SDK](https://dotnet.microsoft.com/)
-- Windows 10 or 11
+- ویندوز ۱۰ یا ویندوز ۱۱
 
-### Installation
+### نصب و اجرا
 
-1. Clone the repository:
+۱. کلون کردن مخزن در سیستم شما:
    ```bash
    git clone https://github.com/a-dabiri483/MovieManagerDesktop.git
    ```
-2. Navigate to the project directory:
+۲. ورود به پوشه پروژه:
    ```bash
    cd MovieManagerDesktop
    ```
-3. Restore dependencies:
+۳. دانلود و نصب وابستگی‌ها:
    ```bash
    dotnet restore
    ```
-4. Run the application:
+۴. اجرای برنامه:
    ```bash
    dotnet run
    ```
 
-## 🎨 UI/UX Highlights
+## 🎨 نکات برجسته طراحی
 
-- **Hero Banner**: Animated gradient background.
-- **Borderless Window**: Custom title bar and window controls.
-- **High-Quality Icons**: Native Windows taskbar integration.
-- **Persian Language Support**: RTL UI optimized for Persian speakers.
+- **بنر اختصاصی**: بک‌گراند گرادیانت با انیمیشن‌های حرکتی.
+- **پنجره بدون حاشیه (Borderless Window)**: نوار عنوان اختصاصی با دکمه‌های کنترل پنجره سفارشی‌سازی شده.
+- **آیکون‌های با کیفیت بالا**: یکپارچه‌سازی لایه‌بندی شده و دقیق با تسک‌بار ویندوز.
 
-## 📝 License
+## 📝 لایسنس
 
-This project is open-source.
+این پروژه یک پروژه متن‌باز (Open-Source) است.
