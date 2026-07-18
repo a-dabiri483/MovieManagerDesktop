@@ -7,7 +7,6 @@ namespace MovieManagerDesktop.ViewModels
         public FavoritesViewModel() : base()
         {
             PageTitle = "علاقه‌مندی‌ها";
-            ShowFilters = false;
             ListFilterIndex = 1; // 1 = Favorites in MoviesViewModel
         }
     }

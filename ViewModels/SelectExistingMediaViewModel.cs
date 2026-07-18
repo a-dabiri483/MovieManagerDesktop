@@ -12,7 +12,7 @@ namespace MovieManagerDesktop.ViewModels
 {
     public partial class SelectExistingMediaViewModel : ObservableObject
     {
-        private readonly ScannedGroupViewModel _targetGroup;
+        private readonly System.Collections.Generic.List<ScannedGroupViewModel> _targetGroups;
         private readonly ScanViewModel _parent;
 
         [ObservableProperty]
@@ -21,9 +21,9 @@ namespace MovieManagerDesktop.ViewModels
         public ObservableCollection<VideoFile> ExistingMedia { get; } = new();
         public System.Action CloseAction { get; set; }
 
-        public SelectExistingMediaViewModel(ScannedGroupViewModel targetGroup, ScanViewModel parent)
+        public SelectExistingMediaViewModel(System.Collections.Generic.List<ScannedGroupViewModel> targetGroups, ScanViewModel parent)
         {
-            _targetGroup = targetGroup;
+            _targetGroups = targetGroups;
             _parent = parent;
             LoadExistingMedia();
         }
@@ -68,18 +68,22 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (selected == null) return;
 
-            // Associate target group with this selected media
-            _targetGroup.Representative.TmdbId = selected.TmdbId;
-            _targetGroup.Representative.PosterUrl = selected.PosterUrl;
-            _targetGroup.Representative.BackdropUrl = selected.BackdropUrl;
-            _targetGroup.Representative.FormattedTitle = selected.FormattedTitle;
-            _targetGroup.Representative.Year = selected.Year;
-            _targetGroup.Representative.CollectionName = selected.CollectionName;
-            _targetGroup.TitleOverride = selected.FormattedTitle;
-
-            // Try to fetch full details and save
             CloseAction?.Invoke();
-            await _parent.RetryGroupCommand.ExecuteAsync(_targetGroup);
+
+            foreach (var group in _targetGroups)
+            {
+                // Associate target group with this selected media
+                group.Representative.TmdbId = selected.TmdbId;
+                group.Representative.PosterUrl = selected.PosterUrl;
+                group.Representative.BackdropUrl = selected.BackdropUrl;
+                group.Representative.FormattedTitle = selected.FormattedTitle;
+                group.Representative.Year = selected.Year;
+                group.Representative.CollectionName = selected.CollectionName;
+                group.TitleOverride = selected.FormattedTitle;
+
+                // Try to fetch full details and save
+                await _parent.RetryGroupCommand.ExecuteAsync(group);
+            }
         }
     }
 }

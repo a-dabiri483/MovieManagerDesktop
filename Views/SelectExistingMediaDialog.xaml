@@ -37,7 +37,7 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Border Grid.Row="0" Background="{DynamicResource CardBackground}" Padding="15"
+        <Border Grid.Row="0" Background="{DynamicResource SidebarBackground}" Padding="15" CornerRadius="8,8,0,0"
                 MouseLeftButtonDown="Header_MouseLeftButtonDown"
                 MouseMove="Header_MouseMove"
                 MouseLeftButtonUp="Header_MouseLeftButtonUp">
@@ -83,7 +83,9 @@
                             <Button Content="انتخاب" 
                                     Command="{Binding DataContext.SelectMediaCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                     CommandParameter="{Binding}"
-                                    Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                    Style="{StaticResource MaterialDesignRaisedButton}" 
+                                    Background="{DynamicResource PrimaryColor}"
+                                    Foreground="White"
                                     Height="24" Padding="5,0" FontSize="11" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>

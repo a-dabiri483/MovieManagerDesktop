@@ -81,8 +81,14 @@
                 </TextBlock>
                 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
-                    <!-- Removed Bell Button -->
-                    
+                    <!-- Favorite Button -->
+                    <Button Command="{Binding ToggleFavoriteCommand}" 
+                            Background="{DynamicResource CardBackground}" BorderThickness="1" BorderBrush="{DynamicResource NormalBorder}"
+                            Foreground="{DynamicResource PrimaryText}" Width="50" Height="50" Padding="0"
+                            materialDesign:ButtonAssist.CornerRadius="25"
+                            ToolTip="افزودن/حذف از علاقه‌مندی‌ها" Margin="0,0,10,0">
+                        <materialDesign:PackIcon Kind="{Binding FavoriteIconKind}" Width="24" Height="24" Foreground="{Binding FavoriteIconColor}"/>
+                    </Button>
                     <Button Command="{Binding ToggleWatchedCommand}" 
                             Background="{DynamicResource CardBackground}" BorderThickness="1" BorderBrush="{DynamicResource NormalBorder}"
                         Foreground="{DynamicResource PrimaryText}" Height="50" Padding="15,0"
@@ -119,6 +125,83 @@
                         </TextBlock>
                     </StackPanel>
                 </Button>
+                
+                    <!-- Operations Menu -->
+                    <materialDesign:PopupBox PlacementMode="BottomAndAlignRightEdges"
+                                             StaysOpen="False"
+                                             Margin="10,0,0,0"
+                                             Foreground="{DynamicResource PrimaryText}"
+                                             ToolTip="عملیات بیشتر"
+                                             VerticalAlignment="Center">
+                        <materialDesign:PopupBox.ToggleContent>
+                            <Border Background="{DynamicResource CardBackground}" BorderThickness="1" BorderBrush="{DynamicResource NormalBorder}" Width="50" Height="50" CornerRadius="25">
+                                <materialDesign:PackIcon Kind="DotsVertical" Width="24" Height="24" Foreground="{DynamicResource PrimaryText}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </materialDesign:PopupBox.ToggleContent>
+                        <Border Background="{DynamicResource CardBackground}" CornerRadius="8">
+                            <StackPanel MinWidth="220" Margin="0,8">
+                                <Button Command="{Binding UpdateSeriesTrackerCommand}" 
+                                        Visibility="{Binding IsSeries, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Style="{StaticResource MaterialDesignFlatButton}" 
+                                        Foreground="{DynamicResource PrimaryText}" 
+                                        HorizontalContentAlignment="Right" Padding="15,10" Height="Auto">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="30"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <materialDesign:PackIcon Grid.Column="0" Kind="Sync" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Column="1" Text="بروزرسانی اطلاعات ردیاب" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                    </Grid>
+                                </Button>
+                                
+                                <Button Command="{Binding RefreshDataCommand}" 
+                                        Visibility="{Binding IsMovie, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Style="{StaticResource MaterialDesignFlatButton}" 
+                                        Foreground="{DynamicResource PrimaryText}" 
+                                        HorizontalContentAlignment="Right" Padding="15,10" Height="Auto">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="30"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <materialDesign:PackIcon Grid.Column="0" Kind="Refresh" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Column="1" Text="بروز رسانی" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                    </Grid>
+                                </Button>
+
+                                <Button Command="{Binding ChangePosterCommand}" 
+                                        Style="{StaticResource MaterialDesignFlatButton}" 
+                                        Foreground="{DynamicResource PrimaryText}" 
+                                        HorizontalContentAlignment="Right" Padding="15,10" Height="Auto">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="30"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <materialDesign:PackIcon Grid.Column="0" Kind="ImageEdit" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Column="1" Text="دریافت مجدد پوستر" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                    </Grid>
+                                </Button>
+                                
+                                <Separator Background="{DynamicResource NormalBorder}" Margin="0,4"/>
+                                
+                                <Button Command="{Binding DeleteMovieCommand}" 
+                                        Style="{StaticResource MaterialDesignFlatButton}" 
+                                        Foreground="#FF5252" 
+                                        HorizontalContentAlignment="Right" Padding="15,10" Height="Auto">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="30"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <materialDesign:PackIcon Grid.Column="0" Kind="DeleteOutline" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Column="1" Text="حذف" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                    </Grid>
+                                </Button>
+                            </StackPanel>
+                        </Border>
+                    </materialDesign:PopupBox>
                 </StackPanel>
             </Grid>
             

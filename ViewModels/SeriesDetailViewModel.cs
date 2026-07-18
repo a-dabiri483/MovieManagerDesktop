@@ -57,10 +57,23 @@ namespace MovieManagerDesktop.ViewModels
 
         public ObservableCollection<SeasonGroup> Seasons { get; } = new();
 
+        [ObservableProperty]
+        private bool _isFavorite;
+        
+        public string FavoriteIconKind => IsFavorite ? "Heart" : "HeartOutline";
+        public string FavoriteIconColor => IsFavorite ? "#FF4081" : "#888888";
+
+        partial void OnIsFavoriteChanged(bool value)
+        {
+            OnPropertyChanged(nameof(FavoriteIconKind));
+            OnPropertyChanged(nameof(FavoriteIconColor));
+        }
+
         public SeriesDetailViewModel(VideoFile series)
         {
             _series = series;
             _mediaService = new IdentifyMediaService();
+            _isFavorite = series.IsFavorite;
 
             LoadSeriesTrackerInfo();
             _ = LoadDetailsAsync();
@@ -265,6 +278,232 @@ namespace MovieManagerDesktop.ViewModels
             {
                 IsLoading = false;
             }
+        }
+
+        [RelayCommand]
+        private void ToggleFavorite()
+        {
+            IsFavorite = !IsFavorite;
+            using var db = new AppDbContext();
+            var filesToUpdate = db.VideoFiles.Where(v => v.FormattedTitle.ToLower() == _series.FormattedTitle.ToLower()).ToList();
+            foreach (var f in filesToUpdate)
+            {
+                f.IsFavorite = IsFavorite;
+            }
+            db.SaveChanges();
+            _series.IsFavorite = IsFavorite;
+            App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowSuccess(IsFavorite ? "به علاقه‌مندی‌ها اضافه شد" : "از علاقه‌مندی‌ها حذف شد"));
+        }
+
+        [RelayCommand]
+        private async Task ChangePosterAsync()
+        {
+            if (Series.TmdbId == null || Series.TmdbId == 0)
+            {
+                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowError("شناسه TMDB یافت نشد، امکان واکشی پوستر وجود ندارد"));
+                return;
+            }
+
+            var service = new IdentifyMediaService();
+            var posters = await service.GetMediaPostersAsync(Series.TmdbId.Value, "Series");
+            
+            if (posters == null || posters.Count == 0)
+            {
+                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowError("پوستر جایگزینی یافت نشد"));
+                return;
+            }
+
+            var vm = new PosterSelectionViewModel(posters);
+            bool posterChanged = false;
+            
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                var dialog = new MovieManagerDesktop.Views.PosterSelectionDialog(vm);
+                dialog.ShowDialog();
+                
+                if (!string.IsNullOrEmpty(vm.SelectedPosterUrl))
+                {
+                    posterChanged = true;
+                }
+            });
+
+            if (posterChanged)
+            {
+                var savedPath = await service.DownloadAndSaveImageAsync(vm.SelectedPosterUrl, Series.FormattedTitle);
+                if (savedPath != null)
+                {
+                    using var db = new AppDbContext();
+                    var dbFiles = db.VideoFiles.Where(v => v.FormattedTitle.ToLower() == Series.FormattedTitle.ToLower()).ToList();
+                    foreach (var dbFile in dbFiles)
+                    {
+                        dbFile.PosterUrl = savedPath;
+                    }
+                    await db.SaveChangesAsync();
+
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        var temp = Series;
+                        Series = null;
+                        temp.PosterUrl = savedPath;
+                        Series = temp;
+                        WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
+                        ToastService.Instance.ShowSuccess("پوستر با موفقیت تغییر کرد");
+                    });
+                }
+            }
+        }
+
+        [RelayCommand]
+        private async Task RefreshSeriesAsync()
+        {
+            if (_series.TmdbId == null) return;
+            IsLoading = true;
+            try
+            {
+                var settings = SettingsManager.LoadSettings();
+                string apiKey = string.IsNullOrEmpty(settings.TmdbApiKey) ? "3272e27041f0b0ee11dbaf0315ce5b21" : settings.TmdbApiKey;
+                string language = string.IsNullOrEmpty(settings.TmdbLanguage) ? "fa-IR" : settings.TmdbLanguage;
+                
+                await _mediaService.IdentifySeriesDetailsAsync(_series, apiKey, language);
+                
+                using var db = new AppDbContext();
+                var dbSeries = db.VideoFiles.FirstOrDefault(v => v.Id == _series.Id);
+                if (dbSeries != null)
+                {
+                    dbSeries.FirstAirDate = _series.FirstAirDate;
+                    dbSeries.LastAirDate = _series.LastAirDate;
+                    dbSeries.NetworkName = _series.NetworkName;
+                    dbSeries.AirDay = _series.AirDay;
+                    dbSeries.AirTime = _series.AirTime;
+                    dbSeries.TotalSeasonsCount = _series.TotalSeasonsCount;
+                    dbSeries.TotalEpisodesCount = _series.TotalEpisodesCount;
+                    dbSeries.NextEpisodeDate = _series.NextEpisodeDate;
+                    dbSeries.NextEpisodeNumber = _series.NextEpisodeNumber;
+                    dbSeries.SeriesStatus = _series.SeriesStatus;
+                    dbSeries.PosterUrl = _series.PosterUrl;
+                    dbSeries.BackdropUrl = _series.BackdropUrl;
+                    await db.SaveChangesAsync();
+                }
+                
+                // Refresh seasons/episodes from TMDB
+                var existingSeasons = db.TvSeasons.Where(s => s.TmdbSeriesId == _series.TmdbId.Value).ToList();
+                var existingEpisodes = db.TvEpisodes.Where(e => e.TmdbSeriesId == _series.TmdbId.Value).ToList();
+                db.TvSeasons.RemoveRange(existingSeasons);
+                db.TvEpisodes.RemoveRange(existingEpisodes);
+                await db.SaveChangesAsync();
+                
+                var (fetchedSeasons, fetchedEpisodes) = await _mediaService.FetchSeriesDetailsAsync(_series.TmdbId.Value);
+                if (fetchedSeasons.Count > 0)
+                {
+                    db.TvSeasons.AddRange(fetchedSeasons);
+                    db.TvEpisodes.AddRange(fetchedEpisodes);
+                    await db.SaveChangesAsync();
+                }
+                
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    LoadSeriesTrackerInfo();
+                    Seasons.Clear();
+                    foreach (var s in fetchedSeasons.OrderBy(x => x.SeasonNumber))
+                    {
+                        var group = new SeasonGroup { Season = s };
+                        foreach (var e in fetchedEpisodes.Where(ep => ep.SeasonNumber == s.SeasonNumber).OrderBy(x => x.EpisodeNumber))
+                        {
+                            group.Episodes.Add(e);
+                        }
+                        Seasons.Add(group);
+                    }
+                    OnPropertyChanged(nameof(Series));
+                    ToastService.Instance.ShowSuccess("اطلاعات سریال با موفقیت بروزرسانی شد");
+                });
+            }
+            catch (System.Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowError($"خطا: {ex.Message}"));
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        [RelayCommand]
+        private async Task RefreshTrackerAsync()
+        {
+            if (_series.TmdbId == null) return;
+            IsLoading = true;
+            try
+            {
+                var settings = SettingsManager.LoadSettings();
+                string apiKey = string.IsNullOrEmpty(settings.TmdbApiKey) ? "3272e27041f0b0ee11dbaf0315ce5b21" : settings.TmdbApiKey;
+                string language = string.IsNullOrEmpty(settings.TmdbLanguage) ? "fa-IR" : settings.TmdbLanguage;
+                
+                await _mediaService.IdentifySeriesDetailsAsync(_series, apiKey, language);
+                
+                using var db = new AppDbContext();
+                var dbSeries = db.VideoFiles.FirstOrDefault(v => v.Id == _series.Id);
+                if (dbSeries != null)
+                {
+                    dbSeries.SeriesStatus = _series.SeriesStatus;
+                    dbSeries.FirstAirDate = _series.FirstAirDate;
+                    dbSeries.LastAirDate = _series.LastAirDate;
+                    dbSeries.NetworkName = _series.NetworkName;
+                    dbSeries.AirDay = _series.AirDay;
+                    dbSeries.AirTime = _series.AirTime;
+                    dbSeries.NextEpisodeDate = _series.NextEpisodeDate;
+                    dbSeries.NextEpisodeNumber = _series.NextEpisodeNumber;
+                    dbSeries.TotalSeasonsCount = _series.TotalSeasonsCount;
+                    dbSeries.TotalEpisodesCount = _series.TotalEpisodesCount;
+                    await db.SaveChangesAsync();
+                }
+                
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    LoadSeriesTrackerInfo();
+                    OnPropertyChanged(nameof(Series));
+                    ToastService.Instance.ShowSuccess("اطلاعات ردیاب بروزرسانی شد");
+                });
+            }
+            catch (System.Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowError($"خطا: {ex.Message}"));
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        [RelayCommand]
+        private async Task DeleteSeriesAsync()
+        {
+            var result = System.Windows.MessageBox.Show(
+                $"آیا مطمئن هستید که می‌خواهید سریال «{_series.FormattedTitle}» را حذف کنید؟",
+                "تأیید حذف",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Warning);
+
+            if (result != System.Windows.MessageBoxResult.Yes) return;
+
+            using var db = new AppDbContext();
+            var filesToDelete = db.VideoFiles.Where(v => v.FormattedTitle.ToLower() == _series.FormattedTitle.ToLower()).ToList();
+            db.VideoFiles.RemoveRange(filesToDelete);
+
+            if (_series.TmdbId.HasValue)
+            {
+                var seasons = db.TvSeasons.Where(s => s.TmdbSeriesId == _series.TmdbId.Value).ToList();
+                var episodes = db.TvEpisodes.Where(e => e.TmdbSeriesId == _series.TmdbId.Value).ToList();
+                db.TvSeasons.RemoveRange(seasons);
+                db.TvEpisodes.RemoveRange(episodes);
+            }
+
+            await db.SaveChangesAsync();
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                ToastService.Instance.ShowSuccess("سریال با موفقیت حذف شد");
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(new MoviesViewModel()));
+                WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
+            });
         }
 
         [RelayCommand]

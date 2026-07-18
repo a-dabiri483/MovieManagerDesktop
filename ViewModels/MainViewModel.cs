@@ -15,7 +15,7 @@ namespace MovieManagerDesktop.ViewModels
         private readonly FavoritesViewModel _favoritesViewModel = new FavoritesViewModel();
 
         private readonly CollectionsViewModel _collectionsViewModel = new CollectionsViewModel();
-        private readonly WatchlistViewModel _watchlistViewModel = new WatchlistViewModel();
+
 
         public MainViewModel()
         {
@@ -31,10 +31,6 @@ namespace MovieManagerDesktop.ViewModels
                 else if (m.ViewModel != null && m.ViewModel.GetType() == typeof(FavoritesViewModel))
                 {
                     CurrentViewModel = _favoritesViewModel;
-                }
-                else if (m.ViewModel != null && m.ViewModel.GetType() == typeof(WatchlistViewModel))
-                {
-                    CurrentViewModel = _watchlistViewModel;
                 }
 
                 else
@@ -86,12 +82,7 @@ namespace MovieManagerDesktop.ViewModels
             _ = _favoritesViewModel.LoadMoviesAsync();
         }
 
-        [RelayCommand]
-        private void NavigateToWatchlist()
-        {
-            CurrentViewModel = _watchlistViewModel;
-            _ = _watchlistViewModel.LoadMoviesAsync();
-        }
+
 
 
 

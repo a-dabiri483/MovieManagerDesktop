@@ -39,6 +39,21 @@ namespace MovieManagerDesktop.ViewModels
         private int _listFilterIndex = 0; // 0: All, 1: Favorites, 2: Watchlist
 
         [ObservableProperty]
+        private int _sortIndex = 0; // 0: Date Added, 1: Name, 2: Year, 3: Rating
+
+        partial void OnSortIndexChanged(int value) => _ = LoadMoviesAsync();
+
+        [ObservableProperty]
+        private int _sortDirectionIndex = 0; // 0: نزولی, 1: صعودی
+        
+        partial void OnSortDirectionIndexChanged(int value) => _ = LoadMoviesAsync();
+
+        [ObservableProperty]
+        private int _selectedGenreIndex = 0;
+
+        partial void OnSelectedGenreIndexChanged(int value) => _ = LoadMoviesAsync();
+
+        [ObservableProperty]
         private bool _isQuickFilterMovies = false;
         partial void OnIsQuickFilterMoviesChanged(bool value) => _ = LoadMoviesAsync();
 
@@ -108,20 +123,60 @@ namespace MovieManagerDesktop.ViewModels
 
         public ObservableCollection<GalleryItemViewModel> Movies { get; } = new();
 
+        public ObservableCollection<string> Genres { get; } = new();
+
         public MoviesViewModel()
         {
             LoadSearchHistory();
             var settings = SettingsManager.LoadSettings();
             PosterSize = settings.PosterSize > 50 ? settings.PosterSize : 220;
+            _ = LoadGenresAsync();
             _ = LoadMoviesAsync();
             
             WeakReferenceMessenger.Default.Register<MovieManagerDesktop.Messages.MediaUpdatedMessage>(this, (r, m) =>
             {
                 Application.Current.Dispatcher.Invoke(() =>
                 {
+                    _ = LoadGenresAsync();
                     _ = LoadMoviesAsync();
                 });
             });
+        }
+
+        private async Task LoadGenresAsync()
+        {
+            try
+            {
+                var genres = await Task.Run(() =>
+                {
+                    using var db = new AppDbContext();
+                    var allGenres = db.VideoFiles
+                        .Where(v => !string.IsNullOrEmpty(v.Genres))
+                        .Select(v => v.Genres)
+                        .ToList();
+                    
+                    var uniqueGenres = allGenres
+                        .SelectMany(g => g.Split(new[] { ',', '،' }, StringSplitOptions.RemoveEmptyEntries))
+                        .Select(g => g.Trim())
+                        .Where(g => !string.IsNullOrEmpty(g))
+                        .Distinct()
+                        .OrderBy(g => g)
+                        .ToList();
+                    return uniqueGenres;
+                });
+
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    Genres.Clear();
+                    Genres.Add("همه ژانرها");
+                    foreach (var g in genres)
+                    {
+                        Genres.Add(g);
+                    }
+                    if (SelectedGenreIndex >= Genres.Count) SelectedGenreIndex = 0;
+                });
+            }
+            catch { }
         }
 
         public async Task LoadMoviesAsync()
@@ -139,25 +194,29 @@ namespace MovieManagerDesktop.ViewModels
 
                 if (!string.IsNullOrWhiteSpace(SearchQuery))
                 {
-                    // Fuzzy search: ignore spaces and non-alphanumeric chars for title matching
-                    var cleanSearch = new string(SearchQuery.ToLower().Where(char.IsLetterOrDigit).ToArray());
-                    if (!string.IsNullOrWhiteSpace(cleanSearch))
+                    string FixPersian(string? text) => (text ?? "").ToLowerInvariant().Replace("ي", "ی").Replace("ك", "ک");
+                    
+                    var searchTerms = FixPersian(SearchQuery).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    
+                    if (searchTerms.Length > 0)
                     {
-                        var lowerSearch = SearchQuery.ToLowerInvariant();
-                        var allItems = query.ToList(); // Load into memory for Fuzzy search
+                        var allItems = query.ToList(); // Load into memory for string matching
                         
                         query = allItems.Where(v => 
                         {
-                            int threshold = 75; // Adjust fuzziness tolerance
+                            string title = FixPersian(v.FormattedTitle);
+                            string fileName = FixPersian(v.FileName);
+                            string actors = FixPersian(v.Actors);
+                            string director = FixPersian(v.Director);
+                            string collection = FixPersian(v.CollectionName);
 
-                            if (v.FormattedTitle != null && Fuzz.PartialRatio(v.FormattedTitle.ToLowerInvariant(), lowerSearch) >= threshold) return true;
-                            if (v.FileName != null && Fuzz.PartialRatio(v.FileName.ToLowerInvariant(), lowerSearch) >= threshold) return true;
-                            
-                            // Deep search: Actors and Director
-                            if (v.Actors != null && Fuzz.PartialRatio(v.Actors.ToLowerInvariant(), lowerSearch) >= threshold) return true;
-                            if (v.Director != null && Fuzz.PartialRatio(v.Director.ToLowerInvariant(), lowerSearch) >= threshold) return true;
-                            
-                            return false;
+                            return searchTerms.All(term => 
+                                title.Contains(term) || 
+                                fileName.Contains(term) ||
+                                actors.Contains(term) ||
+                                director.Contains(term) ||
+                                collection.Contains(term)
+                            );
                         }).AsQueryable();
                     }
                 }
@@ -193,7 +252,18 @@ namespace MovieManagerDesktop.ViewModels
                     allFiles = allFiles.Where(v => v.CollectionName != null && v.CollectionName.Equals(CollectionFilter, StringComparison.OrdinalIgnoreCase)).ToList();
                 }
 
-                return allFiles
+                if (SelectedGenreIndex > 0 && SelectedGenreIndex < Genres.Count)
+                {
+                    string selectedGenre = Genres[SelectedGenreIndex];
+                    allFiles = allFiles.Where(v => 
+                    {
+                        if (string.IsNullOrWhiteSpace(v.Genres)) return false;
+                        var parts = v.Genres.Split(new[] { ',', '،' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim());
+                        return parts.Any(p => p.Equals(selectedGenre, StringComparison.OrdinalIgnoreCase));
+                    }).ToList();
+                }
+                
+                var resultList = allFiles
                     .GroupBy(v => new { Title = (v.FormattedTitle ?? "ناشناس").ToLowerInvariant(), Type = v.MediaType })
                     .Select(g => 
                     {
@@ -204,9 +274,20 @@ namespace MovieManagerDesktop.ViewModels
                             first.NumberOfSeasons = g.Select(x => x.Season).Distinct().Count(s => s != null);
                         }
                         return new GalleryItemViewModel(first, UpdateSelectionState);
-                    })
-                    .OrderByDescending(v => v.File.DateAdded)
-                    .ToList();
+                    });
+
+                bool isAscending = SortDirectionIndex == 1;
+
+                if (SortIndex == 1) // Name
+                    resultList = isAscending ? resultList.OrderBy(v => v.File.FormattedTitle) : resultList.OrderByDescending(v => v.File.FormattedTitle);
+                else if (SortIndex == 2) // Year
+                    resultList = isAscending ? resultList.OrderBy(v => v.File.Year) : resultList.OrderByDescending(v => v.File.Year);
+                else if (SortIndex == 3) // Rating
+                    resultList = isAscending ? resultList.OrderBy(v => v.File.Rating) : resultList.OrderByDescending(v => v.File.Rating);
+                else // Date Added
+                    resultList = isAscending ? resultList.OrderBy(v => v.File.DateAdded) : resultList.OrderByDescending(v => v.File.DateAdded);
+
+                return resultList.ToList();
                 });
 
                 foreach (var m in grouped)

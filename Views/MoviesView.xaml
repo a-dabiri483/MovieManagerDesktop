@@ -98,7 +98,7 @@
                     </Grid>
                 </Border>
 
-                <!-- Action buttons: Filter, Size reset -->
+                <!-- Action buttons: Sort, Filter, Size reset -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                     <ToggleButton x:Name="FilterButton" Visibility="{Binding ShowFilters, Converter={StaticResource BooleanToVisibilityConverter}}" Style="{StaticResource MaterialDesignFlatButton}" Foreground="{DynamicResource PrimaryColor}" ToolTip="فیلترها" Padding="10,0">
                         <StackPanel Orientation="Horizontal">
@@ -110,6 +110,23 @@
                     <Popup IsOpen="{Binding IsChecked, ElementName=FilterButton}" StaysOpen="False" PlacementTarget="{Binding ElementName=FilterButton}" Placement="Bottom">
                         <Border Background="{DynamicResource CardBackground}" CornerRadius="8" Padding="15" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" Margin="0,10,0,0">
                             <StackPanel>
+                                <TextBlock Text="ترتیب نمایش:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,5"/>
+                                <ComboBox SelectedIndex="{Binding SortIndex}" Width="150" Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,10">
+                                    <ComboBoxItem Content="تاریخ افزودن"/>
+                                    <ComboBoxItem Content="نام"/>
+                                    <ComboBoxItem Content="سال تولید"/>
+                                    <ComboBoxItem Content="امتیاز"/>
+                                </ComboBox>
+
+                                <TextBlock Text="جهت مرتب‌سازی:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,5"/>
+                                <ComboBox SelectedIndex="{Binding SortDirectionIndex}" Width="150" Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,10">
+                                    <ComboBoxItem Content="نزولی"/>
+                                    <ComboBoxItem Content="صعودی"/>
+                                </ComboBox>
+                                
+                                <TextBlock Text="ژانر:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,5"/>
+                                <ComboBox ItemsSource="{Binding Genres}" SelectedIndex="{Binding SelectedGenreIndex}" Width="150" Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,10" />
+
                                 <TextBlock Text="نوع:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,5"/>
                                 <ComboBox SelectedIndex="{Binding MediaTypeFilterIndex}" Width="150" Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,10">
                                     <ComboBoxItem Content="همه" />
@@ -208,13 +225,6 @@
                             <StackPanel Orientation="Horizontal">
                                 <materialDesign:PackIcon Kind="HeartOutline" VerticalAlignment="Center"/>
                                 <TextBlock Text="علاقه‌مندی" Margin="5,0,0,0" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-
-                        <Button Command="{Binding ToggleWatchlistSelectedCommand}" Style="{StaticResource MaterialDesignFlatButton}" Foreground="#FFC107" ToolTip="تغییر وضعیت لیست تماشا" Margin="0,0,5,0">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="BookmarkOutline" VerticalAlignment="Center"/>
-                                <TextBlock Text="لیست تماشا" Margin="5,0,0,0" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 
@@ -540,20 +550,12 @@
                                             <!-- Series Status Badge (Removed from here, moved to hover overlay) -->
                                             
                                             <Border Grid.Column="2" Background="#99000000" CornerRadius="8" Padding="2" HorizontalAlignment="Right" VerticalAlignment="Top">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <!-- Favorite Toggle -->
-                                                    <Button Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                            CommandParameter="{Binding}"
-                                                            Style="{StaticResource MaterialDesignIconForegroundButton}" Width="28" Height="28" Padding="0">
-                                                        <materialDesign:PackIcon Kind="Heart" Foreground="{Binding FavoriteIconForeground}" Width="18" Height="18"/>
-                                                    </Button>
-                                                    <!-- Watchlist Toggle -->
-                                                    <Button Command="{Binding DataContext.ToggleWatchlistCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                            CommandParameter="{Binding}"
-                                                            Style="{StaticResource MaterialDesignIconForegroundButton}" Width="28" Height="28" Padding="0">
-                                                        <materialDesign:PackIcon Kind="Bookmark" Foreground="{Binding WatchlistIconForeground}" Width="18" Height="18"/>
-                                                    </Button>
-                                                </StackPanel>
+                                                <!-- Favorite Toggle -->
+                                                <Button Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Style="{StaticResource MaterialDesignIconForegroundButton}" Width="28" Height="28" Padding="0">
+                                                    <materialDesign:PackIcon Kind="Heart" Foreground="{Binding FavoriteIconForeground}" Width="18" Height="18"/>
+                                                </Button>
                                             </Border>
                                         </Grid>
                                     </Border>

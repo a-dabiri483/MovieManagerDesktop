@@ -26,14 +26,15 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-
-            <TextBlock Text="{Binding PageTitle}" Style="{StaticResource TextH2}" VerticalAlignment="Center" Margin="0,0,20,0">
+            
+            <TextBlock Text="مجموعه‌ها" Style="{StaticResource TextH2}" VerticalAlignment="Center" Margin="0,0,20,0">
                 <TextBlock.Effect>
                     <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.5" Color="Black"/>
                 </TextBlock.Effect>
             </TextBlock>
-            
+
             <!-- Search -->
             <Border Grid.Column="1" Background="{DynamicResource CardBackground}" CornerRadius="20" Padding="15,0" MaxWidth="350" HorizontalAlignment="Left" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" VerticalAlignment="Center">
                 <Grid>
@@ -48,6 +49,55 @@
                     <materialDesign:PackIcon Grid.Column="1" Kind="Magnify" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
                 </Grid>
             </Border>
+
+            <!-- Action buttons: Sort, Filter, Size reset -->
+            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <ToggleButton x:Name="FilterButton" Style="{StaticResource MaterialDesignFlatButton}" Foreground="{DynamicResource PrimaryColor}" ToolTip="فیلترها" Padding="10,0">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="FilterVariant" VerticalAlignment="Center"/>
+                        <TextBlock Text="فیلترها" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </ToggleButton>
+                
+                <Popup IsOpen="{Binding IsChecked, ElementName=FilterButton}" StaysOpen="False" PlacementTarget="{Binding ElementName=FilterButton}" Placement="Bottom">
+                    <Border Background="{DynamicResource CardBackground}" CornerRadius="8" Padding="15" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Text="ترتیب نمایش:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,5"/>
+                            <ComboBox SelectedIndex="{Binding SortIndex}" Width="150" Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,10">
+                                <ComboBoxItem Content="حروف الفبا"/>
+                                <ComboBoxItem Content="تعداد فیلم‌ها"/>
+                            </ComboBox>
+
+                            <TextBlock Text="جهت مرتب‌سازی:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,5"/>
+                            <ComboBox SelectedIndex="{Binding SortDirectionIndex}" Width="150" Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,10">
+                                <ComboBoxItem Content="نزولی"/>
+                                <ComboBoxItem Content="صعودی"/>
+                            </ComboBox>
+                        </StackPanel>
+                    </Border>
+                </Popup>
+
+                <ToggleButton x:Name="SizeButton" Style="{StaticResource MaterialDesignFlatButton}" Foreground="{DynamicResource SecondaryText}" ToolTip="تغییر سایز پوستر" Padding="10,0" Margin="10,0,0,0">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ImageSizeSelectActual" VerticalAlignment="Center"/>
+                        <TextBlock Text="سایز" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </ToggleButton>
+                
+                <Popup IsOpen="{Binding IsChecked, ElementName=SizeButton}" StaysOpen="False" PlacementTarget="{Binding ElementName=SizeButton}" Placement="Bottom">
+                    <Border Background="{DynamicResource CardBackground}" CornerRadius="8" Padding="15" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" Margin="0,10,0,0">
+                        <StackPanel>
+                            <TextBlock Text="تغییر ابعاد:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,10"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="ImageSizeSelectSmall" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <Slider Minimum="150" Maximum="350" Value="{Binding PosterSize}" Width="150" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryColor}"/>
+                                <materialDesign:PackIcon Kind="ImageSizeSelectLarge" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                            </StackPanel>
+                            <Button Command="{Binding ResetSizeCommand}" Content="بازگشت به سایز پیش‌فرض" Style="{StaticResource MaterialDesignFlatButton}" Foreground="{DynamicResource SecondaryText}" Margin="0,15,0,0" FontSize="12"/>
+                        </StackPanel>
+                    </Border>
+                </Popup>
+            </StackPanel>
         </Grid>
 
         <ProgressBar Grid.Row="1" IsIndeterminate="True" Height="4" VerticalAlignment="Top" Background="Transparent" Foreground="{DynamicResource PrimaryColor}" Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"/>
@@ -88,7 +138,7 @@
 
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Grid Width="220" Height="330" Margin="10" CacheMode="BitmapCache">
+                    <Grid Width="{Binding DataContext.PosterSize, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="10" CacheMode="BitmapCache">
                         <materialDesign:Card Background="{DynamicResource CardBackground}" UniformCornerRadius="12" RenderTransformOrigin="0.5,0.5" ClipToBounds="True">
                             <materialDesign:Card.RenderTransform>
                                 <ScaleTransform ScaleX="1" ScaleY="1"/>
@@ -122,7 +172,7 @@
                             <Button Command="{Binding OpenCollectionMoviesCommand}" Style="{StaticResource MaterialDesignFlatButton}" Padding="0" Height="Auto">
                                 <Grid>
                                     <!-- Poster -->
-                                    <Image Source="{Binding PosterUrl, Converter={StaticResource ImageUrlToCachedImageConverter}}" Stretch="UniformToFill" />
+                                    <Image Source="{Binding PosterUrl, Converter={StaticResource ImageUrlToCachedImageConverter}}" Stretch="UniformToFill" Height="{Binding DataContext.PosterHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                                     
                                     <Border VerticalAlignment="Bottom" Background="#CC000000" Padding="12,10">
                                         <StackPanel>

@@ -62,7 +62,8 @@ namespace MovieManagerDesktop.Views
 
         private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-        }
+
+        }
 
         private void CheckBox_Click(object sender, System.Windows.RoutedEventArgs e)
         {
@@ -70,6 +71,11 @@ namespace MovieManagerDesktop.Views
             {
                 vm.UpdateBulkToolbar();
             }
+        }
+
+        private void TextBox_TextChanged_1(object sender, TextChangedEventArgs e)
+        {
+
         }
     }
 }

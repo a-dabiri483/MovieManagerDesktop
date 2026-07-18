@@ -30,7 +30,8 @@
         
         <!-- Header -->
         <Border Grid.Row="0" 
-                Background="{DynamicResource CardBackground}" 
+                Background="{DynamicResource SidebarBackground}" 
+                CornerRadius="8,8,0,0"
                 Padding="20,15"
                 MouseLeftButtonDown="Header_MouseLeftButtonDown"
                 MouseMove="Header_MouseMove"
@@ -119,7 +120,7 @@
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="#1AFFFFFF"/>
+                                                <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
                                                 <Setter Property="Cursor" Value="Hand"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
@@ -164,7 +165,9 @@
                                         Content="انتخاب"
                                         Command="{Binding DataContext.SelectResultCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         CommandParameter="{Binding}"
-                                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Background="{DynamicResource PrimaryColor}"
+                                        Foreground="White"
                                         VerticalAlignment="Center"
                                         Padding="15,5"/>
                             </Grid>

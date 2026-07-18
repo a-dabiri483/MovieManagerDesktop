@@ -10,8 +10,12 @@ namespace MovieManagerDesktop.ViewModels
         public CollectionMoviesViewModel(string collectionName) : base()
         {
             CollectionName = collectionName;
-            PageTitle = $"مجموعه {CollectionName}";
-            ShowFilters = false;
+            
+            // Remove "Collection" and "مجموعه" (case-insensitive) to prevent duplicates
+            string cleanName = System.Text.RegularExpressions.Regex.Replace(collectionName, @"(?i)collection", "").Trim();
+            cleanName = cleanName.Replace("مجموعه", "").Trim();
+            
+            PageTitle = $"مجموعه {cleanName}";
             CollectionFilter = collectionName;
         }
     }

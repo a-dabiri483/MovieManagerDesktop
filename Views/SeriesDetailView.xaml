@@ -38,10 +38,67 @@
                         </Border.Background>
                     </Border>
                     
-                    <Button Command="{Binding GoBackCommand}" Style="{StaticResource MaterialDesignIconForegroundButton}" 
-                            HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20" Foreground="White">
-                        <materialDesign:PackIcon Kind="ArrowRight" Width="30" Height="30"/>
-                    </Button>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20">
+                        <Button Command="{Binding GoBackCommand}" 
+                                Background="#80000000" BorderThickness="0" 
+                                Foreground="White" Width="50" Height="50"
+                                materialDesign:ButtonAssist.CornerRadius="25">
+                            <materialDesign:PackIcon Kind="ArrowRight" Width="30" Height="30"/>
+                        </Button>
+                    </StackPanel>
+                    
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="20">
+                        <!-- Favorite Button -->
+                        <Button Command="{Binding ToggleFavoriteCommand}" 
+                                Background="#80000000" BorderThickness="0"
+                                Foreground="White" Width="50" Height="50" Padding="0" Margin="0,0,10,0"
+                                materialDesign:ButtonAssist.CornerRadius="25"
+                                ToolTip="افزودن/حذف از علاقه‌مندی‌ها">
+                            <materialDesign:PackIcon Kind="{Binding FavoriteIconKind}" Width="24" Height="24" Foreground="{Binding FavoriteIconColor}"/>
+                        </Button>
+                        
+                        <!-- Operations Menu -->
+                        <materialDesign:PopupBox PlacementMode="BottomAndAlignRightEdges"
+                                                  StaysOpen="False"
+                                                  ToolTip="عملیات بیشتر">
+                            <materialDesign:PopupBox.ToggleContent>
+                                <Border Background="#80000000" Width="50" Height="50" CornerRadius="25">
+                                    <materialDesign:PackIcon Kind="DotsVertical" Width="24" Height="24" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </materialDesign:PopupBox.ToggleContent>
+                            <StackPanel MinWidth="220">
+                                <Button Command="{Binding RefreshSeriesCommand}" Style="{StaticResource MaterialDesignFlatButton}" 
+                                        HorizontalContentAlignment="Right" Padding="15,10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Refresh" Width="20" Height="20" VerticalAlignment="Center"/>
+                                        <TextBlock Text="بروز رسانی" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding ChangePosterCommand}" Style="{StaticResource MaterialDesignFlatButton}" 
+                                        HorizontalContentAlignment="Right" Padding="15,10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="ImageEdit" Width="20" Height="20" VerticalAlignment="Center"/>
+                                        <TextBlock Text="دریافت مجدد پوستر" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Command="{Binding RefreshTrackerCommand}" Style="{StaticResource MaterialDesignFlatButton}" 
+                                        HorizontalContentAlignment="Right" Padding="15,10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="RadarOutline" Width="20" Height="20" VerticalAlignment="Center"/>
+                                        <TextBlock Text="دریافت اطلاعات ردیاب" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    </StackPanel>
+                                </Button>
+                                <Separator/>
+                                <Button Command="{Binding DeleteSeriesCommand}" Style="{StaticResource MaterialDesignFlatButton}" 
+                                        HorizontalContentAlignment="Right" Padding="15,10" Foreground="#FF5252">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="DeleteOutline" Width="20" Height="20" VerticalAlignment="Center"/>
+                                        <TextBlock Text="حذف سریال" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </materialDesign:PopupBox>
+                    </StackPanel>
 
                     <Grid VerticalAlignment="Bottom" Margin="30">
                         <Grid.ColumnDefinitions>

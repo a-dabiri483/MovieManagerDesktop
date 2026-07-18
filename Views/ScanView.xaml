@@ -11,7 +11,7 @@
              Background="{DynamicResource MainBackground}">
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        
+
         <!-- Compact DataGrid Style -->
         <Style TargetType="DataGrid">
             <Setter Property="Background" Value="Transparent"/>
@@ -20,9 +20,9 @@
             <Setter Property="RowBackground" Value="Transparent"/>
             <Setter Property="AlternatingRowBackground" Value="Transparent"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
-            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
-            <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource LightBorder}"/>
-            <Setter Property="VerticalGridLinesBrush" Value="Transparent"/>
+            <Setter Property="GridLinesVisibility" Value="All"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource NormalBorder}"/>
+            <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource NormalBorder}"/>
             <Setter Property="AutoGenerateColumns" Value="False"/>
             <Setter Property="CanUserAddRows" Value="False"/>
             <Setter Property="SelectionMode" Value="Extended"/>
@@ -30,17 +30,17 @@
             <Setter Property="RowHeight" Value="32"/>
             <Setter Property="FontSize" Value="13"/>
         </Style>
-        
+
         <Style TargetType="DataGridColumnHeader">
             <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
             <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Padding" Value="8,6"/>
             <Setter Property="BorderThickness" Value="0,0,1,1"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource LightBorder}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource NormalBorder}"/>
             <Setter Property="HorizontalContentAlignment" Value="Center"/>
         </Style>
-        
+
         <Style TargetType="DataGridRow">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
@@ -56,7 +56,7 @@
                 </Trigger>
             </Style.Triggers>
         </Style>
-        
+
         <Style TargetType="DataGridCell">
             <Setter Property="Padding" Value="8,4"/>
             <Setter Property="Background" Value="Transparent"/>
@@ -113,17 +113,23 @@
             </Setter>
         </Style>
     </UserControl.Resources>
-    
+
     <Grid Margin="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <!-- 0: Header -->
-            <RowDefinition Height="Auto"/> <!-- 1: Scan Controls -->
-            <RowDefinition Height="Auto"/> <!-- 2: Bulk Toolbar -->
-            <RowDefinition Height="Auto"/> <!-- 3: Progress Bar -->
-            <RowDefinition Height="*"/>    <!-- 4: DataGrid -->
-            <RowDefinition Height="Auto"/> <!-- 5: Status Bar -->
+            <RowDefinition Height="Auto"/>
+            <!-- 0: Header -->
+            <RowDefinition Height="Auto"/>
+            <!-- 1: Scan Controls -->
+            <RowDefinition Height="Auto"/>
+            <!-- 2: Bulk Toolbar -->
+            <RowDefinition Height="Auto"/>
+            <!-- 3: Progress Bar -->
+            <RowDefinition Height="*"/>
+            <!-- 4: DataGrid -->
+            <RowDefinition Height="Auto"/>
+            <!-- 5: Status Bar -->
         </Grid.RowDefinitions>
-        
+
         <!-- Header -->
         <Grid Grid.Row="0" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
@@ -131,27 +137,30 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            
+
             <Button Grid.Column="0" Command="{Binding GoBackCommand}" 
                     Background="Transparent" BorderThickness="0" 
                     Foreground="{DynamicResource SecondaryText}" 
                     Padding="10,5">
                 <StackPanel Orientation="Horizontal"/>
             </Button>
-            
+
             <TextBlock Grid.Column="1" Text="اسکن و شناسایی فیلم‌ها" 
                        Style="{StaticResource TextH3}" 
                        HorizontalAlignment="Center"/>
         </Grid>
-        
+
         <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,10">
             <Grid MinWidth="800">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/> <!-- Right: Scan Controls -->
-                    <ColumnDefinition Width="*"/>    <!-- Center: Filters -->
-                    <ColumnDefinition Width="Auto"/> <!-- Left: Search -->
+                    <ColumnDefinition Width="Auto"/>
+                    <!-- Right: Scan Controls -->
+                    <ColumnDefinition Width="*"/>
+                    <!-- Center: Filters -->
+                    <ColumnDefinition Width="Auto"/>
+                    <!-- Left: Search -->
                 </Grid.ColumnDefinitions>
-                
+
                 <!-- Scan Controls -->
                 <Border Grid.Column="0" 
                         Background="{DynamicResource CardBackground}" 
@@ -159,76 +168,76 @@
                         Padding="10,5" 
                         BorderBrush="{DynamicResource NormalBorder}" 
                         BorderThickness="1">
-                <StackPanel Orientation="Horizontal">
-                    <TextBox Text="{Binding SelectedDirectory, UpdateSourceTrigger=PropertyChanged}"
+                    <StackPanel Orientation="Horizontal">
+                        <TextBox Text="{Binding SelectedDirectory, UpdateSourceTrigger=PropertyChanged}"
                              materialDesign:HintAssist.Hint="مسیر (D:\Movies)"
                              Foreground="{DynamicResource PrimaryText}" 
                              FontSize="12" 
                              Width="150"
                              VerticalAlignment="Center"
                              Margin="0,0,10,0"/>
-                    <Button Command="{Binding BrowseFolderCommand}"
+                        <Button Command="{Binding BrowseFolderCommand}"
                             Style="{StaticResource MaterialDesignIconForegroundButton}"
                             Foreground="{DynamicResource SecondaryText}"
                             ToolTip="انتخاب پوشه"
                             Width="30" Height="30" Padding="0" Margin="0,0,5,0">
-                        <materialDesign:PackIcon Kind="FolderOpen"/>
-                    </Button>
-                    <Button Command="{Binding StartScanCommand}"
+                            <materialDesign:PackIcon Kind="FolderOpen"/>
+                        </Button>
+                        <Button Command="{Binding StartScanCommand}"
                             Content="اسکن" 
                             Style="{StaticResource MaterialDesignRaisedButton}"
                             Background="{DynamicResource PrimaryColor}"
                             Foreground="#050510"
                             Height="28" Padding="15,0"
                             Visibility="{Binding StartButtonVisibility}"/>
-                    <Button Command="{Binding StopScanCommand}"
+                        <Button Command="{Binding StopScanCommand}"
                             Content="توقف" 
                             Style="{StaticResource MaterialDesignOutlinedButton}"
                             Foreground="{DynamicResource ErrorColor}"
                             BorderBrush="{DynamicResource ErrorColor}"
                             Height="28" Padding="15,0"
                             Visibility="{Binding StopButtonVisibility}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Filter Chips -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <RadioButton Content="همه" Style="{StaticResource ChipRadioButton}" IsChecked="{Binding IsFilterAll}" GroupName="Filters"/>
+                    <RadioButton Content="ثبت شد" Style="{StaticResource ChipRadioButton}" IsChecked="{Binding IsFilterRegistered}" GroupName="Filters"/>
+                    <RadioButton Content="خطا در ثبت" Style="{StaticResource ChipRadioButton}" IsChecked="{Binding IsFilterError}" GroupName="Filters"/>
+                    <RadioButton Content="آماده بررسی" Style="{StaticResource ChipRadioButton}" IsChecked="{Binding IsFilterPending}" GroupName="Filters"/>
                 </StackPanel>
-            </Border>
-            
-            <!-- Filter Chips -->
-            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <RadioButton Content="همه" Style="{StaticResource ChipRadioButton}" IsChecked="{Binding IsFilterAll}" GroupName="Filters"/>
-                <RadioButton Content="ثبت شد" Style="{StaticResource ChipRadioButton}" IsChecked="{Binding IsFilterRegistered}" GroupName="Filters"/>
-                <RadioButton Content="خطا در ثبت" Style="{StaticResource ChipRadioButton}" IsChecked="{Binding IsFilterError}" GroupName="Filters"/>
-                <RadioButton Content="آماده بررسی" Style="{StaticResource ChipRadioButton}" IsChecked="{Binding IsFilterPending}" GroupName="Filters"/>
-            </StackPanel>
-            
-            <!-- Search -->
-            <Border Grid.Column="2" 
+
+                <!-- Search -->
+                <Border Grid.Column="2" 
                     Background="{DynamicResource CardBackground}" 
                     CornerRadius="16" 
                     Padding="10,5" 
                     BorderBrush="{DynamicResource NormalBorder}" 
                     BorderThickness="1"
                     Width="200">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBox Grid.Column="0" 
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0" 
                              Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
                              materialDesign:HintAssist.Hint="جستجو..."
                              Foreground="{DynamicResource PrimaryText}" 
                              FontSize="12" 
                              BorderThickness="0"
                              VerticalAlignment="Center"/>
-                    <materialDesign:PackIcon Grid.Column="1" 
+                        <materialDesign:PackIcon Grid.Column="1" 
                                              Kind="Magnify" 
                                              Width="16" Height="16" 
                                              Foreground="{DynamicResource SecondaryText}" 
                                              VerticalAlignment="Center"/>
-                </Grid>
-            </Border>
+                    </Grid>
+                </Border>
             </Grid>
         </ScrollViewer>
-        
+
         <!-- Bulk Actions Toolbar -->
         <Border Grid.Row="2" 
                 Background="#0AFFFFFF" 
@@ -246,14 +255,14 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                
+
                 <TextBlock Grid.Column="0" 
                            Text="{Binding SelectedCountText}" 
                            Foreground="{DynamicResource SecondaryText}" 
                            VerticalAlignment="Center"
                            Margin="0,0,15,0"
                            FontSize="12"/>
-                
+
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
                     <Button Command="{Binding RegisterSelectedCommand}"
                             Content="ثبت انتخاب شده‌ها" 
@@ -272,7 +281,7 @@
                 </StackPanel>
             </Grid>
         </Border>
-        
+
         <!-- Progress Bar -->
         <Border Grid.Row="3" 
                 Margin="0,0,0,10" 
@@ -288,12 +297,11 @@
                 <ProgressBar IsIndeterminate="{Binding IsScanningIndeterminate}" 
                              Value="{Binding ScanProgressValue}" 
                              Maximum="100" 
-                             Height="6" 
-                             Background="#20FFFFFF" 
-                             Foreground="{DynamicResource PrimaryColor}"/>
+                             Height="8" 
+                             Background="#20FFFFFF" Foreground="#FF007912" BorderBrush="#FF007912"/>
             </StackPanel>
         </Border>
-        
+
         <!-- DataGrid Results -->
         <DataGrid Grid.Row="4" 
                   ItemsSource="{Binding ScannedFilesView}"
@@ -316,31 +324,31 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                
+
                 <!-- Title -->
                 <DataGridTextColumn Header="نام" 
                                     Binding="{Binding DisplayTitle}" 
                                     Width="2*" 
                                     IsReadOnly="True"/>
-                
+
                 <!-- Year -->
                 <DataGridTextColumn Header="سال" 
                                     Binding="{Binding YearOverride}" 
                                     Width="60" 
                                     IsReadOnly="True"/>
-                
+
                 <!-- Type -->
                 <DataGridTextColumn Header="نوع" 
                                     Binding="{Binding MediaType}" 
                                     Width="70" 
                                     IsReadOnly="True"/>
-                
+
                 <!-- Count -->
                 <DataGridTextColumn Header="تعداد" 
                                     Binding="{Binding FileCountText}" 
                                     Width="70" 
                                     IsReadOnly="True"/>
-                
+
                 <!-- Status -->
                 <DataGridTemplateColumn Header="وضعیت" Width="120">
                     <DataGridTemplateColumn.CellTemplate>
@@ -387,7 +395,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                
+
                 <!-- Actions -->
                 <DataGridTemplateColumn Header="عملیات" Width="100">
                     <DataGridTemplateColumn.CellTemplate>
@@ -414,7 +422,7 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
             </DataGrid.Columns>
-            
+
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                     <!-- Removed IsSelected setter to prevent row selection from toggling checkbox -->
@@ -457,7 +465,7 @@
                 </Style>
             </DataGrid.RowStyle>
         </DataGrid>
-        
+
         <!-- Status Bar -->
         <Border Grid.Row="5" 
                 BorderThickness="0,1,0,0" 
@@ -469,13 +477,13 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                
+
                 <TextBlock Grid.Column="0" 
                            Text="{Binding StatusMessage}" 
                            Foreground="{DynamicResource PrimaryColor}" 
                            FontSize="12" 
                            VerticalAlignment="Center"/>
-                
+
                 <TextBlock Grid.Column="1" 
                            Text="راهنما: برای جستجوی دستی روی آیکون مداد کلیک کنید یا راست‌کلیک کنید" 
                            Foreground="{DynamicResource SecondaryText}" 

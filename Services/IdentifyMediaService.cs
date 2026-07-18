@@ -1156,5 +1156,45 @@ namespace MovieManagerDesktop.Services
                 MovieManagerDesktop.Services.LoggerService.Error("Jikan API identification failed", ex);
             }
         }
+        public async Task<List<string>> GetMediaPostersAsync(int tmdbId, string mediaType)
+        {
+            var posters = new List<string>();
+            try
+            {
+                var settings = SettingsManager.LoadSettings();
+                string apiKey = settings.TmdbApiKey ?? "3272e27041f0b0ee11dbaf0315ce5b21";
+                string type = mediaType.ToLower() == "series" ? "tv" : "movie";
+                
+                string url = $"https://api.themoviedb.org/3/{type}/{tmdbId}/images?api_key={apiKey}";
+                var response = await _httpClient.GetAsync(url);
+                if (response.IsSuccessStatusCode)
+                {
+                    var json = await response.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(json);
+                    var root = doc.RootElement;
+                    
+                    if (root.TryGetProperty("posters", out var postersArray))
+                    {
+                        foreach (var poster in postersArray.EnumerateArray())
+                        {
+                            if (poster.TryGetProperty("file_path", out var path))
+                            {
+                                posters.Add($"https://image.tmdb.org/t/p/w500{path.GetString()}");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MovieManagerDesktop.Services.LoggerService.Error("Failed to fetch posters", ex);
+            }
+            return posters;
+        }
+        
+        public async Task<string?> DownloadAndSaveImageAsync(string url, string fileNamePrefix)
+        {
+            return await DownloadImageAsync(url, fileNamePrefix);
+        }
     }
 }

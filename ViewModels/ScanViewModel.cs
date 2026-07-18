@@ -277,7 +277,19 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (group == null) return;
             
-            var vm = new SelectExistingMediaViewModel(group, this);
+            var targetGroups = new List<ScannedGroupViewModel>();
+            if (group.IsChecked)
+            {
+                targetGroups = _allGroups.Where(g => g.IsChecked).ToList();
+            }
+            else
+            {
+                targetGroups.Add(group);
+            }
+
+            if (targetGroups.Count == 0) return;
+
+            var vm = new SelectExistingMediaViewModel(targetGroups, this);
             var view = new SelectExistingMediaDialog
             {
                 DataContext = vm,

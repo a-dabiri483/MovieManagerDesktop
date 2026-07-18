@@ -6,6 +6,7 @@ using MovieManagerDesktop.Models;
 using MovieManagerDesktop.Data;
 using System.Collections.ObjectModel;
 using System.Linq;
+using MovieManagerDesktop.Services;
 
 namespace MovieManagerDesktop.ViewModels
 {
@@ -19,6 +20,8 @@ namespace MovieManagerDesktop.ViewModels
 
         [ObservableProperty]
         private bool _isMovie;
+
+        public bool IsSeries => !IsMovie;
         
         public ObservableCollection<VideoFile> Episodes { get; } = new();
         
@@ -52,6 +55,12 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private bool _showSeriesTracker = false;
         
+        [ObservableProperty]
+        private bool _isFavorite;
+        
+        public string FavoriteIconKind => IsFavorite ? "Heart" : "HeartOutline";
+        public string FavoriteIconColor => IsFavorite ? "#FF4081" : "#888888";
+
         private readonly ObservableObject _parentViewModel;
 
         public MediaDetailsViewModel(VideoFile media, ObservableObject parentViewModel = null)
@@ -59,6 +68,7 @@ namespace MovieManagerDesktop.ViewModels
             Media = media;
             _parentViewModel = parentViewModel ?? new MoviesViewModel();
             IsWatched = media.IsWatched;
+            IsFavorite = media.IsFavorite;
             IsMovie = media.MediaType != "Series";
             if (!IsMovie)
             {
@@ -66,6 +76,12 @@ namespace MovieManagerDesktop.ViewModels
             }
 
             LoadEpisodes();
+        }
+        
+        partial void OnIsFavoriteChanged(bool value)
+        {
+            OnPropertyChanged(nameof(FavoriteIconKind));
+            OnPropertyChanged(nameof(FavoriteIconColor));
         }
 
         private void LoadEpisodes()
@@ -173,6 +189,20 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
+        private void ToggleFavorite()
+        {
+            IsFavorite = !IsFavorite;
+            using var db = new AppDbContext();
+            var filesToUpdate = db.VideoFiles.Where(v => v.FormattedTitle.ToLower() == Media.FormattedTitle.ToLower()).ToList();
+            foreach (var f in filesToUpdate)
+            {
+                f.IsFavorite = IsFavorite;
+            }
+            db.SaveChanges();
+            Media.IsFavorite = IsFavorite;
+        }
+
+        [RelayCommand]
         private void ToggleWatched()
         {
             IsWatched = !IsWatched;
@@ -227,6 +257,135 @@ namespace MovieManagerDesktop.ViewModels
         private void Refresh()
         {
             LoadEpisodes();
+        }
+
+        [RelayCommand]
+        private async Task ChangePosterAsync()
+        {
+            if (Media.TmdbId == null || Media.TmdbId == 0)
+            {
+                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowError("شناسه TMDB یافت نشد، امکان واکشی پوستر وجود ندارد"));
+                return;
+            }
+
+            var service = new IdentifyMediaService();
+            var posters = await service.GetMediaPostersAsync(Media.TmdbId.Value, Media.MediaType ?? "Movie");
+            
+            if (posters == null || posters.Count == 0)
+            {
+                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowError("پوستر جایگزینی یافت نشد"));
+                return;
+            }
+
+            var vm = new PosterSelectionViewModel(posters);
+            bool posterChanged = false;
+            
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                var dialog = new MovieManagerDesktop.Views.PosterSelectionDialog(vm);
+                dialog.ShowDialog();
+                
+                if (!string.IsNullOrEmpty(vm.SelectedPosterUrl))
+                {
+                    posterChanged = true;
+                }
+            });
+
+            if (posterChanged)
+            {
+                var savedPath = await service.DownloadAndSaveImageAsync(vm.SelectedPosterUrl, Media.FormattedTitle);
+                if (savedPath != null)
+                {
+                    using var db = new AppDbContext();
+                    var dbFiles = db.VideoFiles.Where(v => v.FormattedTitle.ToLower() == Media.FormattedTitle.ToLower()).ToList();
+                    foreach (var dbFile in dbFiles)
+                    {
+                        dbFile.PosterUrl = savedPath;
+                    }
+                    await db.SaveChangesAsync();
+
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        var temp = Media;
+                        Media = null;
+                        temp.PosterUrl = savedPath;
+                        Media = temp;
+                        WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
+                        ToastService.Instance.ShowSuccess("پوستر با موفقیت تغییر کرد");
+                    });
+                }
+            }
+        }
+
+        [RelayCommand]
+        private async Task RefreshDataAsync()
+        {
+            try
+            {
+                var service = new IdentifyMediaService();
+                var updatedFile = await service.IdentifyMediaAsync(Media);
+                
+                using var db = new AppDbContext();
+                var dbFile = db.VideoFiles.FirstOrDefault(v => v.Id == Media.Id);
+                if (dbFile != null)
+                {
+                    dbFile.PosterUrl = updatedFile.PosterUrl;
+                    dbFile.BackdropUrl = updatedFile.BackdropUrl;
+                    dbFile.Year = updatedFile.Year;
+                    dbFile.Rating = updatedFile.Rating;
+                    dbFile.Overview = updatedFile.Overview;
+                    dbFile.Genres = updatedFile.Genres;
+                    dbFile.Actors = updatedFile.Actors;
+                    dbFile.Director = updatedFile.Director;
+                    dbFile.Resolution = updatedFile.Resolution;
+                    await db.SaveChangesAsync();
+                }
+
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    Media.PosterUrl = updatedFile.PosterUrl;
+                    Media.BackdropUrl = updatedFile.BackdropUrl;
+                    Media.Year = updatedFile.Year;
+                    Media.Rating = updatedFile.Rating;
+                    Media.Overview = updatedFile.Overview;
+                    Media.Genres = updatedFile.Genres;
+                    Media.Actors = updatedFile.Actors;
+                    Media.Director = updatedFile.Director;
+                    Media.Resolution = updatedFile.Resolution;
+                    
+                    OnPropertyChanged(nameof(Media));
+                    if (!IsMovie) LoadSeriesTrackerInfo();
+                    ToastService.Instance.ShowSuccess("اطلاعات با موفقیت بروزرسانی شد");
+                });
+            }
+            catch (System.Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowError($"خطا: {ex.Message}"));
+            }
+        }
+
+        [RelayCommand]
+        private void DeleteMovie()
+        {
+            var result = System.Windows.MessageBox.Show(
+                $"آیا مطمئن هستید که می‌خواهید «{Media.FormattedTitle}» را حذف کنید؟",
+                "تأیید حذف",
+                System.Windows.MessageBoxButton.YesNo,
+                System.Windows.MessageBoxImage.Warning);
+
+            if (result != System.Windows.MessageBoxResult.Yes) return;
+
+            using var db = new AppDbContext();
+            var filesToDelete = db.VideoFiles.Where(v => v.FormattedTitle.ToLower() == Media.FormattedTitle.ToLower()).ToList();
+            db.VideoFiles.RemoveRange(filesToDelete);
+            db.SaveChanges();
+
+            App.Current.Dispatcher.Invoke(() =>
+            {
+                ToastService.Instance.ShowSuccess("فایل با موفقیت حذف شد");
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(new MoviesViewModel()));
+                WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
+            });
         }
 
         [RelayCommand]

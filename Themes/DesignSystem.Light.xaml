@@ -8,21 +8,21 @@
     <SolidColorBrush x:Key="HoverBackground" Color="#D1D5DB"/>
     
     <!-- Text Colors -->
-    <SolidColorBrush x:Key="PrimaryText" Color="#1A202C"/>
-    <SolidColorBrush x:Key="SecondaryText" Color="#4A5568"/>
+    <SolidColorBrush x:Key="PrimaryText" Color="#000000"/>
+    <SolidColorBrush x:Key="SecondaryText" Color="#000000"/>
     <SolidColorBrush x:Key="DisabledText" Color="#A0AEC0"/>
     
     <!-- Border Colors -->
-    <SolidColorBrush x:Key="NormalBorder" Color="#E2E8F0"/>
-    <SolidColorBrush x:Key="LightBorder" Color="#EDF2F7"/>
+    <SolidColorBrush x:Key="NormalBorder" Color="#CBD5E0"/>
+    <SolidColorBrush x:Key="LightBorder" Color="#E2E8F0"/>
 
     <!-- Legacy aliases -->
     <SolidColorBrush x:Key="ColorBackground" Color="#F5F7FA"/>
     <SolidColorBrush x:Key="ColorSurface" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="ColorSurfaceLight" Color="#E4E7EB"/>
     <SolidColorBrush x:Key="ColorSurfaceGlass" Color="#25000000"/>
-    <SolidColorBrush x:Key="TextPrimary" Color="#1A202C"/>
-    <SolidColorBrush x:Key="TextSecondary" Color="#4A5568"/>
+    <SolidColorBrush x:Key="TextPrimary" Color="#000000"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#000000"/>
     <SolidColorBrush x:Key="TextDisabled" Color="#A0AEC0"/>
 
 </ResourceDictionary>

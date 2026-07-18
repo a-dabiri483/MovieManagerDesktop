@@ -203,7 +203,7 @@ d:DesignHeight="700" d:DesignWidth="1100">
                         <!-- Icon -->
                         <materialDesign:PackIcon Kind="MovieOpen" Width="36" Height="36" Foreground="{StaticResource ColorPrimary}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                         <TextBlock Text="{Binding MovieCount}" FontSize="42" FontWeight="Black" Foreground="{StaticResource ColorPrimary}" HorizontalAlignment="Center"/>
-                        <TextBlock Text="فیلم‌ها" Foreground="White" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="فیلم‌ها" Foreground="{DynamicResource PrimaryText}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                         <!-- Mini sparkline simulation -->
                         <Border Height="4" Width="40" CornerRadius="2" Background="{StaticResource ColorPrimary}" Opacity="0.5" Margin="0,15,0,0"/>
                     </StackPanel>
@@ -213,7 +213,7 @@ d:DesignHeight="700" d:DesignWidth="1100">
                     <StackPanel HorizontalAlignment="Center">
                         <materialDesign:PackIcon Kind="TelevisionClassic" Width="36" Height="36" Foreground="{StaticResource ColorSecondary}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                         <TextBlock Text="{Binding SeriesCount}" FontSize="42" FontWeight="Black" Foreground="{StaticResource ColorSecondary}" HorizontalAlignment="Center"/>
-                        <TextBlock Text="سریال‌ها" Foreground="White" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="سریال‌ها" Foreground="{DynamicResource PrimaryText}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                         <Border Height="4" Width="40" CornerRadius="2" Background="{StaticResource ColorSecondary}" Opacity="0.5" Margin="0,15,0,0"/>
                     </StackPanel>
                 </materialDesign:Card>
@@ -222,13 +222,13 @@ d:DesignHeight="700" d:DesignWidth="1100">
                     <StackPanel HorizontalAlignment="Center">
                         <materialDesign:PackIcon Kind="FolderMultipleImage" Width="36" Height="36" Foreground="{StaticResource ColorAccent}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
                         <TextBlock Text="{Binding TotalCount}" FontSize="42" FontWeight="Black" Foreground="{StaticResource ColorAccent}" HorizontalAlignment="Center"/>
-                        <TextBlock Text="مجموع" Foreground="White" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                        <TextBlock Text="مجموع" Foreground="{DynamicResource PrimaryText}" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"/>
                         <Border Height="4" Width="40" CornerRadius="2" Background="{StaticResource ColorAccent}" Opacity="0.5" Margin="0,15,0,0"/>
                     </StackPanel>
                 </materialDesign:Card>
             </UniformGrid>
             <!-- Actions -->
-            <TextBlock Text="عملیات سریع" FontSize="22" FontWeight="Bold" Foreground="White" Margin="10,0,0,15" />
+            <TextBlock Text="عملیات سریع" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}" Margin="10,0,0,15" />
             <UniformGrid Columns="2">
                 <materialDesign:Card Style="{StaticResource ActionCardStyle}">
                     <materialDesign:Card.InputBindings>
@@ -251,31 +251,20 @@ d:DesignHeight="700" d:DesignWidth="1100">
                             <materialDesign:PackIcon Kind="Magnify" Width="32" Height="32" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="اسکن حافظه" FontSize="18" FontWeight="Bold" Foreground="White"/>
-                            <TextBlock Text="جستجوی خودکار فیلم و سریال در درایوها" FontSize="14" Foreground="{StaticResource TextSecondary}" Margin="0,4,0,0" />
+                            <TextBlock Text="اسکن حافظه" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
+                            <TextBlock Text="جستجوی خودکار فیلم و سریال در درایوها" FontSize="14" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0" />
                         </StackPanel>
-                        <materialDesign:PackIcon x:Name="Chevron1" Grid.Column="2" Kind="ChevronRight" Width="28" Height="28" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center" Margin="20" RenderTransformOrigin="0.5,0.5">
+                        <materialDesign:PackIcon x:Name="Chevron1" Grid.Column="2" Kind="ChevronRight" Width="28" Height="28" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="20" RenderTransformOrigin="0.5,0.5">
                             <materialDesign:PackIcon.RenderTransform>
-                                <TranslateTransform X="0"/>
+                                <TransformGroup>
+                                    <ScaleTransform/>
+                                    <SkewTransform/>
+                                    <RotateTransform Angle="179.95"/>
+                                    <TranslateTransform/>
+                                </TransformGroup>
                             </materialDesign:PackIcon.RenderTransform>
                         </materialDesign:PackIcon>
                     </Grid>
-                    <materialDesign:Card.Triggers>
-                        <EventTrigger RoutedEvent="MouseEnter">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="Chevron1" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" To="-10" Duration="0:0:0.2"/>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                        <EventTrigger RoutedEvent="MouseLeave">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="Chevron1" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" To="0" Duration="0:0:0.2"/>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                    </materialDesign:Card.Triggers>
                 </materialDesign:Card>
                 <materialDesign:Card Style="{StaticResource ActionCardStyle}">
                     <Grid>
@@ -294,31 +283,21 @@ d:DesignHeight="700" d:DesignWidth="1100">
                             <materialDesign:PackIcon Kind="SearchWeb" Width="32" Height="32" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock Text="جستجوی دستی" FontSize="18" FontWeight="Bold" Foreground="White"/>
-                            <TextBlock Text="جستجوی فیلم خاص با نام یا کد IMDB" FontSize="14" Foreground="{StaticResource TextSecondary}" Margin="0,4,0,0" />
+                            <TextBlock Text="جستجوی دستی" FontSize="18" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
+                            <TextBlock Text="جستجوی فیلم خاص با نام یا کد IMDB" FontSize="14" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0" />
                         </StackPanel>
-                        <materialDesign:PackIcon x:Name="Chevron2" Grid.Column="2" Kind="ChevronRight" Width="28" Height="28" Foreground="{StaticResource TextSecondary}" VerticalAlignment="Center" Margin="20" RenderTransformOrigin="0.5,0.5">
+                        <materialDesign:PackIcon x:Name="Chevron2" Grid.Column="2" Kind="ChevronRight" Width="28" Height="28" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="20" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Left">
                             <materialDesign:PackIcon.RenderTransform>
-                                <TranslateTransform X="0"/>
+                                <TransformGroup>
+                                    <ScaleTransform/>
+                                    <SkewTransform/>
+                                    <RotateTransform Angle="179.996"/>
+                                    <TranslateTransform/>
+                                </TransformGroup>
                             </materialDesign:PackIcon.RenderTransform>
                         </materialDesign:PackIcon>
                     </Grid>
-                    <materialDesign:Card.Triggers>
-                        <EventTrigger RoutedEvent="MouseEnter">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="Chevron2" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" To="-10" Duration="0:0:0.2"/>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                        <EventTrigger RoutedEvent="MouseLeave">
-                            <BeginStoryboard>
-                                <Storyboard>
-                                    <DoubleAnimation Storyboard.TargetName="Chevron2" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" To="0" Duration="0:0:0.2"/>
-                                </Storyboard>
-                            </BeginStoryboard>
-                        </EventTrigger>
-                    </materialDesign:Card.Triggers>
+
                 </materialDesign:Card>
             </UniformGrid>
         </StackPanel>

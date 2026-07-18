@@ -17,9 +17,22 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private string _posterUrl;
 
+        [ObservableProperty]
+        private string _originalName;
+
         public CollectionItemViewModel(string name, int count, string posterUrl)
         {
-            Name = name;
+            OriginalName = name;
+            // Clean Name to prevent duplicate "مجموعه" or "Collection"
+            string cleanName = name ?? "";
+            cleanName = System.Text.RegularExpressions.Regex.Replace(cleanName, @"(?i)collection", "").Trim();
+            cleanName = cleanName.Replace("مجموعه", "").Trim();
+            if (!cleanName.StartsWith("مجموعه"))
+            {
+                cleanName = $"مجموعه {cleanName}";
+            }
+
+            Name = cleanName;
             MovieCount = count;
             PosterUrl = posterUrl;
         }
@@ -27,7 +40,7 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void OpenCollectionMovies()
         {
-            WeakReferenceMessenger.Default.Send(new NavigationMessage(new CollectionMoviesViewModel(Name)));
+            WeakReferenceMessenger.Default.Send(new NavigationMessage(new CollectionMoviesViewModel(OriginalName)));
         }
     }
 }

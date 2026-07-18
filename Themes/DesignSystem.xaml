@@ -24,14 +24,14 @@
     <SolidColorBrush x:Key="HoverBackground" Color="#533483"/>
     
     <!-- Text Colors -->
-    <SolidColorBrush x:Key="PrimaryText" Color="#EAEAEA"/>
-    <SolidColorBrush x:Key="SecondaryText" Color="#A0A0A0"/>
+    <SolidColorBrush x:Key="PrimaryText" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SecondaryText" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="DisabledText" Color="#6C757D"/>
     
     <!-- Border Colors -->
     <SolidColorBrush x:Key="PrimaryBorder" Color="#00B4D8"/>
-    <SolidColorBrush x:Key="NormalBorder" Color="#2D3748"/>
-    <SolidColorBrush x:Key="LightBorder" Color="#4A5568"/>
+    <SolidColorBrush x:Key="NormalBorder" Color="#4A5568"/>
+    <SolidColorBrush x:Key="LightBorder" Color="#2D3748"/>
 
     <!-- ========================================== -->
     <!-- LEGACY ALIASES (Prevents existing UI from breaking) -->
@@ -48,8 +48,8 @@
     <SolidColorBrush x:Key="ColorSurface" Color="#16213E"/>
     <SolidColorBrush x:Key="ColorSurfaceLight" Color="#0F3460"/>
     <SolidColorBrush x:Key="ColorSurfaceGlass" Color="#2516213E"/>
-    <SolidColorBrush x:Key="TextPrimary" Color="#EAEAEA"/>
-    <SolidColorBrush x:Key="TextSecondary" Color="#A0A0A0"/>
+    <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#FFFFFF"/>
     <SolidColorBrush x:Key="TextDisabled" Color="#6C757D"/>
 
     <!-- ========================================== -->

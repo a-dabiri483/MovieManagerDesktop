@@ -72,21 +72,21 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                
+
                                 <!-- Active Indicator Line -->
                                 <Border x:Name="ActiveIndicator" Grid.ColumnSpan="3" HorizontalAlignment="Right" Width="3" CornerRadius="1.5" Background="{DynamicResource PrimaryColor}" Margin="0,10,-15,10" Opacity="0">
                                     <Border.Effect>
                                         <DropShadowEffect Color="#00B4D8" BlurRadius="8" ShadowDepth="0" Opacity="0.8"/>
                                     </Border.Effect>
                                 </Border>
-                                
+
                                 <materialDesign:PackIcon x:Name="icon" Grid.Column="0" Kind="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" 
                                                          Width="22" Height="22" VerticalAlignment="Center" Foreground="{TemplateBinding Foreground}" RenderTransformOrigin="0.5,0.5">
                                     <materialDesign:PackIcon.RenderTransform>
                                         <RotateTransform Angle="0"/>
                                     </materialDesign:PackIcon.RenderTransform>
                                 </materialDesign:PackIcon>
-                                
+
                                 <ContentPresenter Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0"/>
                             </Grid>
                         </Border>
@@ -120,146 +120,139 @@
     <materialDesign:DialogHost Identifier="RootDialog" DialogBackground="{DynamicResource MainBackground}">
         <Border CornerRadius="16" ClipToBounds="True">
             <Grid>
-            <!-- Background Flat Color -->
-            <Border Background="{DynamicResource MainBackground}" />
+                <!-- Background Flat Color -->
+                <Border Background="{DynamicResource MainBackground}" />
 
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="260" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="260" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-                <!-- LEFT SIDEBAR -->
-                <Border Grid.Column="0" BorderBrush="{DynamicResource LightBorder}" BorderThickness="0,0,1,0" Background="{DynamicResource SidebarBackground}">
-                    <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="100" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="80" />
-                    </Grid.RowDefinitions>
+                    <!-- LEFT SIDEBAR -->
+                    <Border Grid.Column="0" BorderBrush="{DynamicResource LightBorder}" BorderThickness="0,0,1,0" Background="{DynamicResource SidebarBackground}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="100" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="80" />
+                            </Grid.RowDefinitions>
 
-                    <!-- App Logo / Title -->
-                    <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="25,0" Cursor="Hand">
-                        <StackPanel.InputBindings>
-                            <MouseBinding Gesture="LeftClick" Command="{Binding NavigateToHomeCommand}" />
-                        </StackPanel.InputBindings>
-                        <Image x:Name="AppLogo" Source="pack://application:,,,/Assets/logo.png" Width="55" Height="55" RenderOptions.BitmapScalingMode="HighQuality">
-                            <Image.Effect>
-                                <DropShadowEffect Color="#FF533483" BlurRadius="10" ShadowDepth="0" Opacity="0.5"/>
-                            </Image.Effect>
-                        </Image>
-                        <StackPanel Margin="15,0,0,0" VerticalAlignment="Center">
-                            <TextBlock Text="مدیریت" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
-                            <TextBlock Text="فیلم و سریال" FontSize="14" Foreground="{DynamicResource SecondaryText}"/>
-                        </StackPanel>
-                    </StackPanel>
+                            <!-- App Logo / Title -->
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="25,0" Cursor="Hand">
+                                <StackPanel.InputBindings>
+                                    <MouseBinding Gesture="LeftClick" Command="{Binding NavigateToHomeCommand}" />
+                                </StackPanel.InputBindings>
+                                <Image x:Name="AppLogo" Source="pack://application:,,,/Assets/logo.png" Width="55" Height="55" RenderOptions.BitmapScalingMode="HighQuality">
+                                    <Image.Effect>
+                                        <DropShadowEffect Color="#FF533483" BlurRadius="10" ShadowDepth="0" Opacity="0.5"/>
+                                    </Image.Effect>
+                                </Image>
+                                <StackPanel Margin="15,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="مدیریت" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
+                                    <TextBlock Text="فیلم و سریال" FontSize="14" Foreground="{DynamicResource SecondaryText}"/>
+                                </StackPanel>
+                            </StackPanel>
 
-                    <!-- Navigation Items -->
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden" Margin="0,10">
-                        <StackPanel>
-                            <!-- Categories -->
-                            <TextBlock Text="کتابخانه من" Foreground="{DynamicResource SecondaryText}" FontSize="12" FontWeight="SemiBold" Margin="25,20,0,5"/>
-                            <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="HomeOutline" Content="داشبورد" Command="{Binding NavigateToHomeCommand}" IsChecked="True"/>
-                            <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="MoviePlayOutline" Content="فیلم‌ها و سریال‌ها" Command="{Binding NavigateToMoviesCommand}" />
-                            
-                            <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="HeartOutline" Content="علاقه‌مندی‌ها" Command="{Binding NavigateToFavoritesCommand}" />
+                            <!-- Navigation Items -->
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden" Margin="0,10">
+                                <StackPanel>
+                                    <!-- Categories -->
+                                    <TextBlock Text="کتابخانه من" Foreground="{DynamicResource SecondaryText}" FontSize="12" FontWeight="SemiBold" Margin="25,20,0,5"/>
+                                    <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="HomeOutline" Content="داشبورد" Command="{Binding NavigateToHomeCommand}" IsChecked="True"/>
+                                    <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="MoviePlayOutline" Content="فیلم‌ها و سریال‌ها" Command="{Binding NavigateToMoviesCommand}" />
 
-                            <!-- Collections -->
-                            <TextBlock Text="دسته‌بندی‌ها" Foreground="{DynamicResource SecondaryText}" FontSize="12" FontWeight="SemiBold" Margin="25,20,0,5"/>
-                            <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="AnimationPlayOutline" Content="مجموعه‌ها" Command="{Binding NavigateToCollectionsCommand}" />
+                                    <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="HeartOutline" Content="علاقه‌مندی‌ها" Command="{Binding NavigateToFavoritesCommand}" />
 
-                            <!-- Tracker -->
-                            <TextBlock Text="سایر" Foreground="{DynamicResource SecondaryText}" FontSize="12" FontWeight="SemiBold" Margin="25,20,0,5"/>
-                            <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="BookmarkOutline" Content="لیست تماشا" Command="{Binding NavigateToWatchlistCommand}" />
-                            
-                            <!-- System -->
-                            <TextBlock Text="سیستم" Foreground="{DynamicResource SecondaryText}" FontSize="12" FontWeight="SemiBold" Margin="25,20,0,5"/>
-                            <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="Harddisk" Content="اسکن خودکار درایوها" Command="{Binding NavigateToScanCommand}" />
-                        </StackPanel>
-                    </ScrollViewer>
+                                    <!-- Collections -->
+                                    <TextBlock Text="دسته‌بندی‌ها" Foreground="{DynamicResource SecondaryText}" FontSize="12" FontWeight="SemiBold" Margin="25,20,0,5"/>
+                                    <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="AnimationPlayOutline" Content="مجموعه‌ها" Command="{Binding NavigateToCollectionsCommand}" />
 
-                    <!-- Bottom Settings -->
-                    <RadioButton Grid.Row="2" Style="{StaticResource SidebarRadioButtonStyle}" Tag="CogOutline" Content="تنظیمات" Command="{Binding NavigateToSettingsCommand}"/>
+                                    <!-- System -->
+                                    <TextBlock Text="سیستم" Foreground="{DynamicResource SecondaryText}" FontSize="12" FontWeight="SemiBold" Margin="25,20,0,5"/>
+                                    <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="Harddisk" Content="اسکن خودکار درایوها" Command="{Binding NavigateToScanCommand}" />
+                                </StackPanel>
+                            </ScrollViewer>
+
+                            <!-- Bottom Settings -->
+                            <RadioButton Grid.Row="2" Style="{StaticResource SidebarRadioButtonStyle}" Tag="CogOutline" Content="تنظیمات" Command="{Binding NavigateToSettingsCommand}"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- RIGHT MAIN CONTENT AREA -->
+                    <Grid Grid.Column="1">
+
+                        <!-- Content Control connecting to ViewModels (Full Screen without Margins) -->
+                        <ContentControl Content="{Binding CurrentViewModel, NotifyOnTargetUpdated=True}" Margin="0" Foreground="Black">
+                            <ContentControl.Style>
+                                <Style TargetType="ContentControl">
+                                    <Style.Triggers>
+                                        <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.25"/>
+                                                    <ThicknessAnimation Storyboard.TargetProperty="Margin" From="0,30,0,0" To="0" Duration="0:0:0.25">
+                                                        <ThicknessAnimation.EasingFunction>
+                                                            <QuadraticEase EasingMode="EaseOut"/>
+                                                        </ThicknessAnimation.EasingFunction>
+                                                    </ThicknessAnimation>
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ContentControl.Style>
+                        </ContentControl>
+
+                        <!-- Custom Window Title Bar for Dragging and Controls -->
+                        <Border Panel.ZIndex="10" VerticalAlignment="Top" MouseLeftButtonDown="Window_MouseLeftButtonDown" Height="40" WindowChrome.IsHitTestVisibleInChrome="True" Background="{DynamicResource SidebarBackground}" BorderBrush="{DynamicResource LightBorder}">
+                            <Border.Resources>
+                                <Style x:Key="WindowBtnStyle" TargetType="Button">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+                                    <Setter Property="BorderThickness" Value="0"/>
+                                    <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+                                    <Setter Property="FontSize" Value="10"/>
+                                    <Setter Property="Width" Value="45"/>
+                                    <Setter Property="Height" Value="30"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="Button">
+                                                <Border Background="{TemplateBinding Background}">
+                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
+                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                                <Style x:Key="WindowCloseBtnStyle" TargetType="Button" BasedOn="{StaticResource WindowBtnStyle}">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource ErrorColor}"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Resources>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                                <Button Content="&#xE921;" Style="{StaticResource WindowBtnStyle}" Click="BtnMinimize_Click"/>
+                                <Button x:Name="BtnMaximize" Content="&#xE922;" Style="{StaticResource WindowBtnStyle}" Click="BtnMaximize_Click"/>
+                                <Button Content="&#xE8BB;" Style="{StaticResource WindowCloseBtnStyle}" Click="BtnClose_Click"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Global Toasts overlay -->
+                    <controls:ToastControl Grid.ColumnSpan="2" VerticalAlignment="Top" HorizontalAlignment="Center" Panel.ZIndex="9999" Margin="0,30,0,0" />
+
                 </Grid>
-            </Border>
-
-            <!-- RIGHT MAIN CONTENT AREA -->
-            <Grid Grid.Column="1">
-                
-                <!-- Content Control connecting to ViewModels (Full Screen without Margins) -->
-                <ContentControl Content="{Binding CurrentViewModel, NotifyOnTargetUpdated=True}" Margin="0">
-                    <ContentControl.Style>
-                        <Style TargetType="ContentControl">
-                            <Style.Triggers>
-                                <EventTrigger RoutedEvent="Binding.TargetUpdated">
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.25"/>
-                                            <ThicknessAnimation Storyboard.TargetProperty="Margin" From="0,30,0,0" To="0" Duration="0:0:0.25">
-                                                <ThicknessAnimation.EasingFunction>
-                                                    <QuadraticEase EasingMode="EaseOut"/>
-                                                </ThicknessAnimation.EasingFunction>
-                                            </ThicknessAnimation>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </EventTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ContentControl.Style>
-                </ContentControl>
-
-                <!-- Custom Window Title Bar for Dragging and Controls -->
-                <Border Panel.ZIndex="10" VerticalAlignment="Top" MouseLeftButtonDown="Window_MouseLeftButtonDown" Height="40" WindowChrome.IsHitTestVisibleInChrome="True">
-                    <Border.Background>
-                        <SolidColorBrush Color="Transparent" />
-                    </Border.Background>
-                    <Border.Resources>
-                        <Style x:Key="WindowBtnStyle" TargetType="Button">
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
-                            <Setter Property="BorderThickness" Value="0"/>
-                            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
-                            <Setter Property="FontSize" Value="10"/>
-                            <Setter Property="Width" Value="45"/>
-                            <Setter Property="Height" Value="30"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="Button">
-                                        <Border Background="{TemplateBinding Background}">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
-                                    <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                        <Style x:Key="WindowCloseBtnStyle" TargetType="Button" BasedOn="{StaticResource WindowBtnStyle}">
-                            <Style.Triggers>
-                                <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter Property="Background" Value="{DynamicResource ErrorColor}"/>
-                                    <Setter Property="Foreground" Value="White"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Resources>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
-                        <Button Content="&#xE921;" Style="{StaticResource WindowBtnStyle}" Click="BtnMinimize_Click"/>
-                        <Button x:Name="BtnMaximize" Content="&#xE922;" Style="{StaticResource WindowBtnStyle}" Click="BtnMaximize_Click"/>
-                        <Button Content="&#xE8BB;" Style="{StaticResource WindowCloseBtnStyle}" Click="BtnClose_Click"/>
-                    </StackPanel>
-                </Border>
             </Grid>
-            
-            <!-- Global Toasts overlay -->
-            <controls:ToastControl Grid.ColumnSpan="2" VerticalAlignment="Top" HorizontalAlignment="Center" Panel.ZIndex="9999" Margin="0,30,0,0" />
-            
-        </Grid>
-        </Grid>
-    </Border>
+        </Border>
     </materialDesign:DialogHost>
 </Window>
