@@ -1,0 +1,402 @@
+<UserControl x:Class="MovieManagerDesktop.Views.FolderIconToolView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
+             xmlns:models="clr-namespace:MovieManagerDesktop.Models"
+             d:DataContext="{d:DesignInstance Type=viewmodels:FolderIconToolViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="800" d:DesignWidth="1200"
+             Background="{DynamicResource MainBackground}">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        
+        <!-- TabControl Style -->
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+
+        <Style TargetType="TabItem">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border Name="Border" Padding="25,12" Margin="0,0,5,0" CornerRadius="8,8,0,0" Background="{DynamicResource MainBackground}" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="0,0,0,2">
+                            <ContentPresenter x:Name="ContentSite" VerticalAlignment="Center" HorizontalAlignment="Center" ContentSource="Header" Margin="10,2"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource PrimaryColor}" />
+                                <Setter TargetName="Border" Property="BorderThickness" Value="0,0,0,3" />
+                                <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}" />
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="False">
+                                <Setter Property="Foreground" Value="{DynamicResource SecondaryText}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Compact DataGrid Style (Copied from ScanView) -->
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource NormalBorder}"/>
+            <Setter Property="RowBackground" Value="Transparent"/>
+            <Setter Property="AlternatingRowBackground" Value="Transparent"/>
+            <Setter Property="HeadersVisibility" Value="Column"/>
+            <Setter Property="GridLinesVisibility" Value="All"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource NormalBorder}"/>
+            <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource NormalBorder}"/>
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="SelectionMode" Value="Extended"/>
+            <Setter Property="SelectionUnit" Value="FullRow"/>
+            <Setter Property="RowHeight" Value="38"/>
+            <Setter Property="FontSize" Value="13"/>
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource NormalBorder}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style TargetType="DataGridCell">
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Background="Transparent" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" 
+                                              VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource PrimaryColor}"/>
+                    <Setter Property="Foreground" Value="#000000"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="DataGridRow">
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="#2000B4D8"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <!-- Increased top margin significantly to prevent title bar overlap -->
+    <Grid Margin="20,60,20,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,25">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" Command="{Binding GoBackCommand}" 
+                    Background="Transparent" BorderThickness="0" 
+                    Foreground="{DynamicResource SecondaryText}" 
+                    Padding="10,5">
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="ArrowRight" Width="20" Height="20" VerticalAlignment="Center"/>
+                    <TextBlock Text="بازگشت" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Button>
+
+            <TextBlock Grid.Column="1" Text="ساخت آیکون پوشه" 
+                       Style="{StaticResource TextH2}" 
+                       HorizontalAlignment="Center" Margin="0,0,80,0"/>
+        </Grid>
+
+        <!-- TabControl -->
+        <TabControl Grid.Row="1">
+            
+            <!-- حالت دستی -->
+            <TabItem Header="حالت دستی (Manual)">
+                <Grid Margin="0,20,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Top Bar: Browse & Scan -->
+                    <Border Grid.Row="0" Background="{DynamicResource CardBackground}" CornerRadius="12" Padding="15" Margin="0,0,0,15">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="مسیر جستجو:" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center" Margin="0,0,15,0" FontWeight="SemiBold"/>
+                            
+                            <Border Grid.Column="1" Background="{DynamicResource MainBackground}" CornerRadius="6" Padding="10,8" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" Margin="0,0,15,0">
+                                <TextBlock Text="{Binding ManualFolderPath}" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            </Border>
+
+                            <Button Grid.Column="2" Command="{Binding BrowseManualFolderCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Content="انتخاب پوشه" Margin="0,0,10,0"/>
+                            <Button Grid.Column="3" Command="{Binding ScanManualFoldersCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Content="اسکن" Width="100"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Lists -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Folders WITHOUT Icon -->
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <TextBlock Grid.Row="0" Text="پوشه‌های بدون آیکون" Foreground="{DynamicResource PrimaryText}" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,10"/>
+                            <ProgressBar Grid.Row="1" IsIndeterminate="True" Visibility="{Binding IsManualScanning, Converter={StaticResource BooleanToVisibilityConverter}}" Height="2" Margin="0,0,0,5" Foreground="{DynamicResource PrimaryColor}"/>
+                            
+                            <DataGrid x:Name="ManualWithoutIconsGrid" Grid.Row="2" ItemsSource="{Binding FoldersWithoutIcons}" SelectedItem="{Binding SelectedFolderWithoutIcon}" Foreground="{DynamicResource PrimaryText}">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="نام پوشه" Binding="{Binding Name}" Width="*">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Margin" Value="10,0,0,0"/>
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+                                <Button Command="{Binding DataContext.SearchGoogleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource MaterialDesignOutlinedButton}" Content="جستجو گوگل" Margin="0,0,10,0"/>
+                                <Button Command="{Binding DataContext.ApplyCustomIconCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding SelectedItems, ElementName=ManualWithoutIconsGrid}" Style="{StaticResource MaterialDesignRaisedButton}" Content="انتخاب کاور و اعمال"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Folders WITH Icon -->
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <TextBlock Grid.Row="0" Text="پوشه‌های دارای آیکون" Foreground="{DynamicResource PrimaryText}" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,10"/>
+                            <ProgressBar Grid.Row="1" IsIndeterminate="True" Visibility="{Binding IsManualScanning, Converter={StaticResource BooleanToVisibilityConverter}}" Height="2" Margin="0,0,0,5" Foreground="{DynamicResource PrimaryColor}"/>
+                            
+                            <DataGrid x:Name="ManualWithIconsGrid" Grid.Row="2" ItemsSource="{Binding FoldersWithIcons}" SelectedItem="{Binding SelectedFolderWithIcon}" Foreground="{DynamicResource PrimaryText}">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="آیکون" Width="50">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Image Source="{Binding IconPath}" Width="24" Height="24" HorizontalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="نام پوشه" Binding="{Binding Name}" Width="*">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <Button Grid.Row="3" Command="{Binding DataContext.RemoveManualIconCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding SelectedItems, ElementName=ManualWithIconsGrid}" Style="{StaticResource MaterialDesignOutlinedButton}" Content="حذف آیکون (ریست)" HorizontalAlignment="Right" Margin="0,15,0,0" Foreground="#FF4B4B"/>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- حالت اتوماتیک -->
+            <TabItem Header="حالت اتوماتیک (API)">
+                <Grid Margin="0,20,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Top Bar -->
+                    <Border Grid.Row="0" Background="{DynamicResource CardBackground}" CornerRadius="12" Padding="15" Margin="0,0,0,15">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="مسیر جستجو:" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center" Margin="0,0,15,0" FontWeight="SemiBold"/>
+                            
+                            <Border Grid.Column="1" Background="{DynamicResource MainBackground}" CornerRadius="6" Padding="10,8" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" Margin="0,0,15,0">
+                                <TextBlock Text="{Binding AutoFolderPath}" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                            </Border>
+
+                            <Button Grid.Column="2" Command="{Binding BrowseAutoFolderCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Content="انتخاب پوشه" Margin="0,0,10,0"/>
+                            <Button Grid.Column="3" Command="{Binding ScanAutoFoldersCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Content="اسکن" Width="100"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Lists for Auto mode -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="6.5*"/>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="3.5*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- List of items to auto fetch -->
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0" Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="پوشه‌های بدون آیکون" Foreground="{DynamicResource PrimaryText}" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"/>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                    <Button Command="{Binding SelectAllAutoItemsCommand}" Style="{StaticResource MaterialDesignFlatButton}" Content="انتخاب همه" Margin="0,0,5,0" Padding="10,0" Height="25"/>
+                                    <Button Command="{Binding DeselectAllAutoItemsCommand}" Style="{StaticResource MaterialDesignFlatButton}" Content="لغو همه" Padding="10,0" Height="25"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <ProgressBar Grid.Row="1" IsIndeterminate="True" Visibility="{Binding IsAutoBusy, Converter={StaticResource BooleanToVisibilityConverter}}" Height="2" Margin="0,0,0,5" Foreground="{DynamicResource PrimaryColor}"/>
+
+                            <DataGrid x:Name="AutoWithoutIconsGrid" Grid.Row="2" ItemsSource="{Binding AutoFoldersWithoutIcon}" Foreground="{DynamicResource PrimaryText}" RowHeight="55">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="✓" Width="40">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTextColumn Header="نام پوشه" Binding="{Binding FolderName}" Width="1.5*">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                <Setter Property="ToolTip" Value="{Binding FolderName}"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+
+                                    <DataGridTextColumn Header="نام یافت شده (API)" Binding="{Binding MediaTitle}" Width="1.5*">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                                <Setter Property="ToolTip" Value="{Binding MediaTitle}"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+
+                                    <DataGridTemplateColumn Header="کاور" Width="55">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Image Source="{Binding PosterPreview}" Width="35" Height="45" Stretch="UniformToFill" HorizontalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+
+                                    <DataGridTemplateColumn Header="وضعیت" Width="*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding StatusIcon}" Margin="0,0,5,0" FontSize="14"/>
+                                                    <TextBlock Text="{Binding StatusLabel}" Foreground="{DynamicResource SecondaryText}"/>
+                                                    <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" Margin="10,0,0,0" ToolTip="{Binding ErrorMessage}" MaxWidth="150" TextTrimming="CharacterEllipsis"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <!-- Bottom Actions for left panel -->
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+                                <Button Command="{Binding DataContext.SearchAutoIconsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding SelectedItems, ElementName=AutoWithoutIconsGrid}" Style="{StaticResource MaterialDesignOutlinedButton}" Content="شناسایی خودکار موارد انتخاب شده" Margin="0,0,10,0"/>
+                                <Button Command="{Binding DataContext.ApplyAutoIconsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding SelectedItems, ElementName=AutoWithoutIconsGrid}" Style="{StaticResource MaterialDesignRaisedButton}" Content="دانلود و اعمال موارد انتخاب شده"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Folders WITH Icon in Auto mode -->
+                        <Grid Grid.Column="2">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            
+                            <TextBlock Grid.Row="0" Text="پوشه‌های تکمیل شده" Foreground="{DynamicResource PrimaryText}" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,10"/>
+                            <ProgressBar Grid.Row="1" IsIndeterminate="True" Visibility="{Binding IsAutoBusy, Converter={StaticResource BooleanToVisibilityConverter}}" Height="2" Margin="0,0,0,5" Foreground="{DynamicResource PrimaryColor}"/>
+                            
+                            <DataGrid Grid.Row="2" ItemsSource="{Binding AutoFoldersWithIcon}" Foreground="{DynamicResource PrimaryText}">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="آیکون" Width="50">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Image Source="{Binding IconPath}" Width="24" Height="24" HorizontalAlignment="Center"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="نام پوشه" Binding="{Binding FolderName}" Width="*">
+                                        <DataGridTextColumn.ElementStyle>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                            </Style>
+                                        </DataGridTextColumn.ElementStyle>
+                                    </DataGridTextColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Grid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</UserControl>

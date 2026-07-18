@@ -1,0 +1,211 @@
+<UserControl x:Class="MovieManagerDesktop.Views.ToolsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
+             d:DataContext="{d:DesignInstance Type=viewmodels:ToolsViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="800" d:DesignWidth="1200"
+             Background="{DynamicResource MainBackground}">
+
+    <Grid Margin="30,60,30,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" 
+                   Text="ابزارهای سازمان‌دهی" 
+                   Style="{StaticResource TextH2}" 
+                   HorizontalAlignment="Center"
+                   Margin="0,10,0,5"/>
+
+        <TextBlock Grid.Row="1" 
+                   Text="ابزارهای حرفه‌ای برای مدیریت و سازمان‌دهی پوشه‌ها و فایل‌های فیلم و سریال" 
+                   Foreground="{DynamicResource SecondaryText}" 
+                   FontSize="14" 
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,30"/>
+
+        <!-- Tool Cards -->
+        <UniformGrid Grid.Row="2" Columns="3" Margin="0,0,0,20" VerticalAlignment="Top">
+            
+            <!-- Card 1: Folder Icon Generator -->
+            <Border Margin="10" CornerRadius="16" Cursor="Hand"
+                    Background="{DynamicResource CardBackground}"
+                    BorderBrush="{DynamicResource NormalBorder}"
+                    BorderThickness="1">
+                <Border.InputBindings>
+                    <MouseBinding Gesture="LeftClick" Command="{Binding OpenFolderIconCommand}"/>
+                </Border.InputBindings>
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#00B4D8" BlurRadius="20" ShadowDepth="0" Opacity="0.3"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid Margin="25">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Icon -->
+                    <Border Grid.Row="0" Width="60" Height="60" CornerRadius="16" 
+                            Background="#1A00B4D8" HorizontalAlignment="Center" Margin="0,0,0,20">
+                        <materialDesign:PackIcon Kind="FolderImage" Width="30" Height="30" 
+                                                 Foreground="{DynamicResource PrimaryColor}"
+                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Title -->
+                    <TextBlock Grid.Row="1" Text="ساخت آیکون پوشه" 
+                               FontSize="18" FontWeight="Bold" 
+                               Foreground="{DynamicResource PrimaryText}" 
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,12"/>
+
+                    <!-- Description -->
+                    <TextBlock Grid.Row="2" TextWrapping="Wrap" TextAlignment="Center"
+                               Foreground="{DynamicResource SecondaryText}" FontSize="13" LineHeight="22">
+                        پوستر فیلم یا سریال را روی یک قاب سه‌بعدی ترکیب کرده و آن را به عنوان آیکون پوشه ویندوز اعمال می‌کند.
+                    </TextBlock>
+
+                    <!-- Action hint -->
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                        <TextBlock Text="شروع" Foreground="{DynamicResource PrimaryColor}" FontWeight="SemiBold" FontSize="14"/>
+                        <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource PrimaryColor}" 
+                                                 Width="18" Height="18" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Card 2: Name Cleaner -->
+            <Border Margin="10" CornerRadius="16" Cursor="Hand"
+                    Background="{DynamicResource CardBackground}"
+                    BorderBrush="{DynamicResource NormalBorder}"
+                    BorderThickness="1">
+                <Border.InputBindings>
+                    <MouseBinding Gesture="LeftClick" Command="{Binding OpenNameCleanerCommand}"/>
+                </Border.InputBindings>
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource SecondaryColor}"/>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#7B2CBF" BlurRadius="20" ShadowDepth="0" Opacity="0.3"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid Margin="25">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Width="60" Height="60" CornerRadius="16" 
+                            Background="#1A7B2CBF" HorizontalAlignment="Center" Margin="0,0,0,20">
+                        <materialDesign:PackIcon Kind="Broom" Width="30" Height="30" 
+                                                 Foreground="{DynamicResource SecondaryColor}"
+                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <TextBlock Grid.Row="1" Text="تمیزکننده نام پوشه‌ها" 
+                               FontSize="18" FontWeight="Bold" 
+                               Foreground="{DynamicResource PrimaryText}" 
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,12"/>
+
+                    <TextBlock Grid.Row="2" TextWrapping="Wrap" TextAlignment="Center"
+                               Foreground="{DynamicResource SecondaryText}" FontSize="13" LineHeight="22">
+                        نام‌های شلوغ پوشه‌ها (شامل رزولوشن، انکودر و کلمات اضافه) را اسکن کرده و به نام‌های تمیز و خوانا تغییر می‌دهد.
+                    </TextBlock>
+
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                        <TextBlock Text="شروع" Foreground="{DynamicResource SecondaryColor}" FontWeight="SemiBold" FontSize="14"/>
+                        <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource SecondaryColor}" 
+                                                 Width="18" Height="18" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Card 3: Series Organizer -->
+            <Border Margin="10" CornerRadius="16" Cursor="Hand"
+                    Background="{DynamicResource CardBackground}"
+                    BorderBrush="{DynamicResource NormalBorder}"
+                    BorderThickness="1">
+                <Border.InputBindings>
+                    <MouseBinding Gesture="LeftClick" Command="{Binding OpenSeriesOrganizerCommand}"/>
+                </Border.InputBindings>
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource SuccessColor}"/>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#06D6A0" BlurRadius="20" ShadowDepth="0" Opacity="0.3"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid Margin="25">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Width="60" Height="60" CornerRadius="16" 
+                            Background="#1A06D6A0" HorizontalAlignment="Center" Margin="0,0,0,20">
+                        <materialDesign:PackIcon Kind="FolderSwapOutline" Width="30" Height="30" 
+                                                 Foreground="{DynamicResource SuccessColor}"
+                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <TextBlock Grid.Row="1" Text="مرتب‌ساز سریال‌ها" 
+                               FontSize="18" FontWeight="Bold" 
+                               Foreground="{DynamicResource PrimaryText}" 
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,12"/>
+
+                    <TextBlock Grid.Row="2" TextWrapping="Wrap" TextAlignment="Center"
+                               Foreground="{DynamicResource SecondaryText}" FontSize="13" LineHeight="22">
+                        قسمت‌های پراکنده‌ی سریال‌ها را بر اساس نامشان شناسایی و دسته‌بندی کرده و در پوشه‌ی مخصوص هر سریال قرار می‌دهد.
+                    </TextBlock>
+
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                        <TextBlock Text="شروع" Foreground="{DynamicResource SuccessColor}" FontWeight="SemiBold" FontSize="14"/>
+                        <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource SuccessColor}" 
+                                                 Width="18" Height="18" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+        </UniformGrid>
+    </Grid>
+</UserControl>

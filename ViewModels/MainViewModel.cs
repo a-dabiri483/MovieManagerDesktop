@@ -58,6 +58,12 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
+        private void NavigateToTools()
+        {
+            CurrentViewModel = new ToolsViewModel();
+        }
+
+        [RelayCommand]
         private void NavigateToMovies()
         {
             CurrentViewModel = _moviesViewModel;

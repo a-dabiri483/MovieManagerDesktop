@@ -52,6 +52,18 @@
         <DataTemplate DataType="{x:Type viewmodels:SeriesDetailViewModel}">
             <views:SeriesDetailView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:ToolsViewModel}">
+            <views:ToolsView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:FolderIconToolViewModel}">
+            <views:FolderIconToolView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:NameCleanerToolViewModel}">
+            <views:NameCleanerToolView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:SeriesOrganizerToolViewModel}">
+            <views:SeriesOrganizerToolView />
+        </DataTemplate>
 
         <!-- Style for modern sidebar buttons -->
         <Style x:Key="SidebarRadioButtonStyle" TargetType="RadioButton">
@@ -172,6 +184,7 @@
                                     <!-- System -->
                                     <TextBlock Text="سیستم" Foreground="{DynamicResource SecondaryText}" FontSize="12" FontWeight="SemiBold" Margin="25,20,0,5"/>
                                     <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="Harddisk" Content="اسکن خودکار درایوها" Command="{Binding NavigateToScanCommand}" />
+                                    <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="Tools" Content="ابزارهای سازمان‌دهی" Command="{Binding NavigateToToolsCommand}" />
                                 </StackPanel>
                             </ScrollViewer>
 

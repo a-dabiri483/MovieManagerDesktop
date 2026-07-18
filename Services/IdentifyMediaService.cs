@@ -52,7 +52,7 @@ namespace MovieManagerDesktop.Services
             }
         }
 
-        private async Task<string?> DownloadImageAsync(string? url, string fileNamePrefix)
+        public async Task<string?> DownloadImageAsync(string? url, string fileNamePrefix)
         {
             if (string.IsNullOrWhiteSpace(url)) return null;
             try
@@ -65,13 +65,19 @@ namespace MovieManagerDesktop.Services
                 string fileName = $"{cleanPrefix}_{Guid.NewGuid().ToString("N").Substring(0,6)}{ext}";
                 string filePath = Path.Combine(_imagesDirectory, fileName);
                 
-                var imageBytes = await _httpClient.GetByteArrayAsync(url);
+                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+                var response = await _httpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+
+                var imageBytes = await response.Content.ReadAsByteArrayAsync();
                 await File.WriteAllBytesAsync(filePath, imageBytes);
                 return filePath; // Return local path!
             }
-            catch
+            catch (Exception ex)
             {
-                return url; // Fallback to URL if download fails
+                MovieManagerDesktop.Services.LoggerService.Error($"Failed to download image from {url}", ex);
+                return null;
             }
         }
 
