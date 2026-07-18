@@ -8,6 +8,7 @@
         Title="Movie Collection Dashboard" Height="750" Width="1250"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         WindowStartupLocation="CenterScreen"
+        Icon="Assets/logo.ico"
         FontFamily="{StaticResource AppFontFamily}"
         FlowDirection="RightToLeft"
         MouseMove="Window_MouseMove">
