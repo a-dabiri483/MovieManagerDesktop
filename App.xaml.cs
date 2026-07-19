@@ -82,16 +82,4 @@ public partial class App : Application
         System.Windows.MessageBox.Show($"خطای سیستمی رخ داد:\n{e.Exception.Message}\n\n{e.Exception.InnerException?.Message}", "خطای برنامه", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
         e.Handled = true; 
     }
-
-    protected override async void OnExit(ExitEventArgs e)
-    {
-        base.OnExit(e);
-        // Fire-and-forget the backup task so it doesn't block UI excessively, but wait for it to complete if possible
-        // Actually, since OnExit is synchronous mostly, a Task.Run and Wait will ensure it finishes before process death
-        try 
-        {
-            await System.Threading.Tasks.Task.Run(async () => await MovieManagerDesktop.Services.BackupManager.RunBackupAsync());
-        }
-        catch { }
-    }
 }

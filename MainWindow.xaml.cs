@@ -32,6 +32,24 @@ namespace MovieManagerDesktop
         {
             InitializeComponent();
             this.SourceInitialized += MainWindow_SourceInitialized;
+            this.Closing += MainWindow_Closing;
+        }
+
+        private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+        {
+            // If already collapsed, it means we are exiting programmatically
+            if (this.Visibility == Visibility.Collapsed) return;
+
+            e.Cancel = true;
+            this.Visibility = Visibility.Collapsed;
+
+            try
+            {
+                await MovieManagerDesktop.Services.BackupManager.RunBackupAsync();
+            }
+            catch { }
+
+            Environment.Exit(0);
         }
 
         private void MainWindow_SourceInitialized(object? sender, EventArgs e)
@@ -81,8 +99,18 @@ namespace MovieManagerDesktop
             this.WindowState = WindowState.Minimized;
         }
 
-        private void BtnClose_Click(object sender, RoutedEventArgs e)
+        private async void BtnClose_Click(object sender, RoutedEventArgs e)
         {
+            // Hide the window immediately so the user feels it closed instantly
+            this.Visibility = Visibility.Collapsed;
+            
+            try
+            {
+                // Run the backup before exiting
+                await MovieManagerDesktop.Services.BackupManager.RunBackupAsync();
+            }
+            catch { }
+
             Environment.Exit(0);
         }
 

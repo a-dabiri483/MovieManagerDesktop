@@ -34,7 +34,7 @@ namespace MovieManagerDesktop.Services
             try
             {
                 // Generate the backup JSON string
-                var backupJson = await GenerateBackupJsonAsync();
+                var backupJson = await GenerateBackupJsonAsync(settings);
                 
                 string localBackupFilePath = string.Empty;
 
@@ -72,11 +72,25 @@ namespace MovieManagerDesktop.Services
             }
         }
 
-        private static async Task<string> GenerateBackupJsonAsync()
+        public class FullBackupModel
+        {
+            public List<VideoFile> VideoFiles { get; set; } = new();
+            public List<TvSeason> TvSeasons { get; set; } = new();
+            public List<TvEpisode> TvEpisodes { get; set; } = new();
+            public SettingsModel Settings { get; set; } = new();
+        }
+
+        private static async Task<string> GenerateBackupJsonAsync(SettingsModel settings)
         {
             using var db = new AppDbContext();
-            var allFiles = await db.VideoFiles.ToListAsync();
-            return JsonSerializer.Serialize(allFiles, new JsonSerializerOptions { WriteIndented = true });
+            var backupModel = new FullBackupModel
+            {
+                VideoFiles = await db.VideoFiles.ToListAsync(),
+                TvSeasons = await db.TvSeasons.ToListAsync(),
+                TvEpisodes = await db.TvEpisodes.ToListAsync(),
+                Settings = settings
+            };
+            return JsonSerializer.Serialize(backupModel, new JsonSerializerOptions { WriteIndented = true });
         }
 
         private static async Task<string> RunLocalBackupAsync(SettingsModel settings, string backupJson)
