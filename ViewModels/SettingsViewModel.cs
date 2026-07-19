@@ -90,12 +90,12 @@ namespace MovieManagerDesktop.ViewModels
                 SetProperty(ref _selectedTheme, value);
                 ApplyTheme(value, IsDarkTheme);
                 AutoSaveTheme();
-                OnPropertyChanged(nameof(IsDeepPurple));
+                OnPropertyChanged(nameof(IsCyan));
                 OnPropertyChanged(nameof(IsMidnightBlue));
                 OnPropertyChanged(nameof(IsOLEDBlack));
             }
         }
-        private string _selectedTheme = "DeepPurple";
+        private string _selectedTheme = "Cyan";
 
         public bool IsDarkTheme
         {
@@ -116,10 +116,10 @@ namespace MovieManagerDesktop.ViewModels
             set { IsDarkTheme = !value; }
         }
 
-        public bool IsDeepPurple
+        public bool IsCyan
         {
-            get => SelectedTheme == "DeepPurple";
-            set { if (value) SelectedTheme = "DeepPurple"; }
+            get => SelectedTheme == "Cyan";
+            set { if (value) SelectedTheme = "Cyan"; }
         }
 
         public bool IsMidnightBlue
@@ -142,7 +142,7 @@ namespace MovieManagerDesktop.ViewModels
             OmdbApiKey = settings.OmdbApiKey;
             TmdbLanguage = settings.TmdbLanguage ?? "fa-IR";
             _isDarkTheme = settings.IsDarkTheme;
-            SelectedTheme = settings.Theme ?? "DeepPurple"; // This calls ApplyTheme
+            SelectedTheme = settings.Theme ?? "Cyan"; // This calls ApplyTheme
         }
 
         [RelayCommand]
@@ -180,10 +180,10 @@ namespace MovieManagerDesktop.ViewModels
             System.Windows.Media.Color primaryColor;
             System.Windows.Media.Color secondaryColor;
             
-            if (themeName == "DeepPurple")
+            if (themeName == "Cyan")
             {
-                primaryColor = System.Windows.Media.Color.FromRgb(103, 58, 183);
-                secondaryColor = System.Windows.Media.Color.FromRgb(156, 39, 176);
+                primaryColor = System.Windows.Media.Color.FromRgb(0, 180, 216); // Cyan #00B4D8
+                secondaryColor = System.Windows.Media.Color.FromRgb(58, 134, 255); // Blue #3A86FF
                 theme = MaterialDesignThemes.Wpf.Theme.Create(baseTheme, primaryColor, secondaryColor);
             }
             else if (themeName == "MidnightBlue")

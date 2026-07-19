@@ -82,7 +82,7 @@
 
                         <TextBlock Text="رنگ‌بندی کلی برنامه را تغییر دهید:" Foreground="{DynamicResource SecondaryText}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,15"/>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <RadioButton IsChecked="{Binding IsDeepPurple}" Content="بنفش تاریک (Deep Purple)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,20,0" GroupName="Themes"/>
+                            <RadioButton IsChecked="{Binding IsCyan}" Content="فیروزه‌ای (Cyan)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,20,0" GroupName="Themes"/>
                             <RadioButton IsChecked="{Binding IsMidnightBlue}" Content="آبی نیمه‌شب (Midnight Blue)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,20,0" GroupName="Themes"/>
                             <RadioButton IsChecked="{Binding IsOLEDBlack}" Content="مشکی مطلق (OLED Black)" Foreground="{DynamicResource PrimaryText}" FontSize="16" GroupName="Themes"/>
                         </StackPanel>

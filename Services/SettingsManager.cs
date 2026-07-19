@@ -11,7 +11,7 @@ namespace MovieManagerDesktop.Services
         public string OmdbApiKey { get; set; } = string.Empty;
         public string TmdbLanguage { get; set; } = "fa-IR"; // fa-IR or en-US
         public int PosterSize { get; set; } = 220;
-        public string Theme { get; set; } = "DeepPurple"; // DeepPurple, MidnightBlue, OLEDBlack
+        public string Theme { get; set; } = "Cyan"; // Cyan, MidnightBlue, OLEDBlack
         public bool IsDarkTheme { get; set; } = true;
         public int MediaTypeFilterIndex { get; set; } = 0;
         public int WatchedFilterIndex { get; set; } = 0;

@@ -18,7 +18,7 @@ public partial class App : Application
         this.DispatcherUnhandledException += App_DispatcherUnhandledException;
 
         var settings = MovieManagerDesktop.Services.SettingsManager.LoadSettings();
-        ApplyTheme(settings.Theme ?? "DeepPurple", settings.IsDarkTheme);
+        ApplyTheme(settings.Theme ?? "Cyan", settings.IsDarkTheme);
 
         using (var db = new MovieManagerDesktop.Data.AppDbContext())
         {
@@ -35,12 +35,12 @@ public partial class App : Application
         System.Windows.Media.Color primaryColor;
         System.Windows.Media.Color secondaryColor;
         
-        if (themeName == "DeepPurple")
-        {
-            primaryColor = System.Windows.Media.Color.FromRgb(103, 58, 183);
-            secondaryColor = System.Windows.Media.Color.FromRgb(156, 39, 176);
-            theme = MaterialDesignThemes.Wpf.Theme.Create(baseTheme, primaryColor, secondaryColor);
-        }
+            if (themeName == "Cyan")
+            {
+                primaryColor = System.Windows.Media.Color.FromRgb(0, 180, 216); // Cyan #00B4D8
+                secondaryColor = System.Windows.Media.Color.FromRgb(58, 134, 255); // Blue #3A86FF
+                theme = MaterialDesignThemes.Wpf.Theme.Create(baseTheme, primaryColor, secondaryColor);
+            }
         else if (themeName == "MidnightBlue")
         {
             primaryColor = System.Windows.Media.Color.FromRgb(25, 118, 210);

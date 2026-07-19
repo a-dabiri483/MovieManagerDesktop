@@ -8,7 +8,7 @@
     
     <!-- Primary Colors -->
     <SolidColorBrush x:Key="PrimaryColor" Color="#00B4D8"/>
-    <SolidColorBrush x:Key="SecondaryColor" Color="#7B2CBF"/>
+    <SolidColorBrush x:Key="SecondaryColor" Color="#3A86FF"/>
     <SolidColorBrush x:Key="AccentColor" Color="#FF6B6B"/>
     
     <!-- Status Colors -->
@@ -21,7 +21,7 @@
     <SolidColorBrush x:Key="MainBackground" Color="#1A1A2E"/>
     <SolidColorBrush x:Key="CardBackground" Color="#16213E"/>
     <SolidColorBrush x:Key="SidebarBackground" Color="#0F3460"/>
-    <SolidColorBrush x:Key="HoverBackground" Color="#533483"/>
+    <SolidColorBrush x:Key="HoverBackground" Color="#1E3A8A"/>
     
     <!-- Text Colors -->
     <SolidColorBrush x:Key="PrimaryText" Color="#FFFFFF"/>
@@ -38,7 +38,7 @@
     <!-- ========================================== -->
     <SolidColorBrush x:Key="ColorPrimary" Color="#00B4D8"/>
     <SolidColorBrush x:Key="ColorPrimaryDark" Color="#0092B0"/>
-    <SolidColorBrush x:Key="ColorSecondary" Color="#7B2CBF"/>
+    <SolidColorBrush x:Key="ColorSecondary" Color="#3A86FF"/>
     <SolidColorBrush x:Key="ColorAccent" Color="#FF6B6B"/>
     <SolidColorBrush x:Key="ColorSuccess" Color="#06D6A0"/>
     <SolidColorBrush x:Key="ColorWarning" Color="#FFD166"/>
