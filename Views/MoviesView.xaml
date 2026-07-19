@@ -12,7 +12,7 @@
              d:DataContext="{d:DesignInstance Type=viewmodels:MoviesViewModel}"
              d:DesignHeight="700" d:DesignWidth="1000"
              FlowDirection="RightToLeft"
-             Loaded="UserControl_Loaded">
+             Loaded="MoviesView_Loaded">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
@@ -359,7 +359,7 @@
             </StackPanel>
 
             <!-- Actual Content -->
-            <ListBox x:Name="MoviesItemsControl" ItemsSource="{Binding Movies}" SelectionMode="Extended" SelectionChanged="MoviesItemsControl_SelectionChanged" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" ScrollViewer.CanContentScroll="True" Background="Transparent" BorderThickness="0" PreviewKeyDown="MoviesItemsControl_PreviewKeyDown" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListBox x:Name="MoviesItemsControl" ItemsSource="{Binding Movies}" SelectionMode="Extended" SelectionChanged="MoviesItemsControl_SelectionChanged" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Standard" ScrollViewer.CanContentScroll="True" Background="Transparent" BorderThickness="0" PreviewKeyDown="MoviesItemsControl_PreviewKeyDown" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                 <ListBox.Style>
                     <Style TargetType="ListBox">
                         <Setter Property="Visibility" Value="Visible"/>
@@ -551,8 +551,7 @@
                                             
                                             <Border Grid.Column="2" Background="#99000000" CornerRadius="8" Padding="2" HorizontalAlignment="Right" VerticalAlignment="Top">
                                                 <!-- Favorite Toggle -->
-                                                <Button Command="{Binding DataContext.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                        CommandParameter="{Binding}"
+                                                <Button Command="{Binding ToggleFavoriteCommand}"
                                                         Style="{StaticResource MaterialDesignIconForegroundButton}" Width="28" Height="28" Padding="0">
                                                     <materialDesign:PackIcon Kind="Heart" Foreground="{Binding FavoriteIconForeground}" Width="18" Height="18"/>
                                                 </Button>

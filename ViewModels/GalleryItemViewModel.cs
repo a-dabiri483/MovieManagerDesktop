@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using MovieManagerDesktop.Models;
 
 namespace MovieManagerDesktop.ViewModels
@@ -63,12 +64,20 @@ namespace MovieManagerDesktop.ViewModels
         public System.Windows.Visibility WatchedBadgeVisibility => IsWatched ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
 
         private Action? _onSelectionChanged;
+        private Action<GalleryItemViewModel>? _onToggleFavorite;
         private bool _isSelected;
 
-        public GalleryItemViewModel(VideoFile file, Action? onSelectionChanged = null)
+        public GalleryItemViewModel(VideoFile file, Action? onSelectionChanged = null, Action<GalleryItemViewModel>? onToggleFavorite = null)
         {
             File = file;
             _onSelectionChanged = onSelectionChanged;
+            _onToggleFavorite = onToggleFavorite;
+        }
+
+        [RelayCommand]
+        private void ToggleFavorite()
+        {
+            _onToggleFavorite?.Invoke(this);
         }
 
         public bool IsSelected

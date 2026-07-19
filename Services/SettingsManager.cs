@@ -13,6 +13,15 @@ namespace MovieManagerDesktop.Services
         public int PosterSize { get; set; } = 220;
         public string Theme { get; set; } = "DeepPurple"; // DeepPurple, MidnightBlue, OLEDBlack
         public bool IsDarkTheme { get; set; } = true;
+        public int MediaTypeFilterIndex { get; set; } = 0;
+        public int WatchedFilterIndex { get; set; } = 0;
+        public int ListFilterIndex { get; set; } = 0;
+        public int SortIndex { get; set; } = 0;
+        public int SortDirectionIndex { get; set; } = 0;
+        public int SelectedGenreIndex { get; set; } = 0;
+        public bool IsQuickFilterMovies { get; set; } = false;
+        public bool IsQuickFilterSeries { get; set; } = false;
+        public bool IsQuickFilterUnwatched { get; set; } = false;
     }
 
     public static class SettingsManager

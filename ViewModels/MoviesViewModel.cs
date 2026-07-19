@@ -31,42 +31,65 @@ namespace MovieManagerDesktop.ViewModels
         
         [ObservableProperty]
         private int _mediaTypeFilterIndex = 0; // 0: All, 1: Movies, 2: Series
+        partial void OnMediaTypeFilterIndexChanged(int value) => SaveAndLoad();
         
         [ObservableProperty]
         private int _watchedFilterIndex = 0; // 0: All, 1: Watched, 2: Unwatched
+        partial void OnWatchedFilterIndexChanged(int value) => SaveAndLoad();
         
         [ObservableProperty]
         private int _listFilterIndex = 0; // 0: All, 1: Favorites, 2: Watchlist
+        partial void OnListFilterIndexChanged(int value) => SaveAndLoad();
 
         [ObservableProperty]
         private int _sortIndex = 0; // 0: Date Added, 1: Name, 2: Year, 3: Rating
 
-        partial void OnSortIndexChanged(int value) => _ = LoadMoviesAsync();
+        partial void OnSortIndexChanged(int value) => SaveAndLoad();
 
         [ObservableProperty]
         private int _sortDirectionIndex = 0; // 0: نزولی, 1: صعودی
         
-        partial void OnSortDirectionIndexChanged(int value) => _ = LoadMoviesAsync();
+        partial void OnSortDirectionIndexChanged(int value) => SaveAndLoad();
 
         [ObservableProperty]
         private int _selectedGenreIndex = 0;
 
-        partial void OnSelectedGenreIndexChanged(int value) => _ = LoadMoviesAsync();
+        partial void OnSelectedGenreIndexChanged(int value) => SaveAndLoad();
 
         [ObservableProperty]
         private bool _isQuickFilterMovies = false;
-        partial void OnIsQuickFilterMoviesChanged(bool value) => _ = LoadMoviesAsync();
+        partial void OnIsQuickFilterMoviesChanged(bool value) => SaveAndLoad();
 
         [ObservableProperty]
         private double _scrollPosition = 0;
 
+        // Index of the last item clicked to open details, used for scroll restoration
+        public int LastClickedIndex { get; set; } = -1;
+
         [ObservableProperty]
         private bool _isQuickFilterSeries = false;
-        partial void OnIsQuickFilterSeriesChanged(bool value) => _ = LoadMoviesAsync();
+        partial void OnIsQuickFilterSeriesChanged(bool value) => SaveAndLoad();
 
         [ObservableProperty]
         private bool _isQuickFilterUnwatched = false;
-        partial void OnIsQuickFilterUnwatchedChanged(bool value) => _ = LoadMoviesAsync();
+        partial void OnIsQuickFilterUnwatchedChanged(bool value) => SaveAndLoad();
+
+        private void SaveAndLoad()
+        {
+            var settings = SettingsManager.LoadSettings();
+            settings.MediaTypeFilterIndex = MediaTypeFilterIndex;
+            settings.WatchedFilterIndex = WatchedFilterIndex;
+            settings.ListFilterIndex = ListFilterIndex;
+            settings.SortIndex = SortIndex;
+            settings.SortDirectionIndex = SortDirectionIndex;
+            settings.SelectedGenreIndex = SelectedGenreIndex;
+            settings.IsQuickFilterMovies = IsQuickFilterMovies;
+            settings.IsQuickFilterSeries = IsQuickFilterSeries;
+            settings.IsQuickFilterUnwatched = IsQuickFilterUnwatched;
+            SettingsManager.SaveSettings(settings);
+            
+            _ = LoadMoviesAsync();
+        }
 
         public string PersonFilterName { get; set; } = string.Empty;
         public string PersonFilterType { get; set; } = string.Empty; // "Actor" or "Director"
@@ -130,6 +153,17 @@ namespace MovieManagerDesktop.ViewModels
             LoadSearchHistory();
             var settings = SettingsManager.LoadSettings();
             PosterSize = settings.PosterSize > 50 ? settings.PosterSize : 220;
+            
+            _mediaTypeFilterIndex = settings.MediaTypeFilterIndex;
+            _watchedFilterIndex = settings.WatchedFilterIndex;
+            _listFilterIndex = settings.ListFilterIndex;
+            _sortIndex = settings.SortIndex;
+            _sortDirectionIndex = settings.SortDirectionIndex;
+            _selectedGenreIndex = settings.SelectedGenreIndex;
+            _isQuickFilterMovies = settings.IsQuickFilterMovies;
+            _isQuickFilterSeries = settings.IsQuickFilterSeries;
+            _isQuickFilterUnwatched = settings.IsQuickFilterUnwatched;
+            
             _ = LoadGenresAsync();
             _ = LoadMoviesAsync();
             
@@ -273,7 +307,9 @@ namespace MovieManagerDesktop.ViewModels
                             first.NumberOfEpisodes = g.Count();
                             first.NumberOfSeasons = g.Select(x => x.Season).Distinct().Count(s => s != null);
                         }
-                        return new GalleryItemViewModel(first, UpdateSelectionState);
+                        first.IsFavorite = g.Any(x => x.IsFavorite);
+                        first.IsWatchlist = g.Any(x => x.IsWatchlist);
+                        return new GalleryItemViewModel(first, UpdateSelectionState, async (item) => await ToggleFavoriteAsync(item));
                     });
 
                 bool isAscending = SortDirectionIndex == 1;
@@ -304,9 +340,7 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         partial void OnSearchQueryChanged(string value) => _ = LoadMoviesAsync();
-        partial void OnMediaTypeFilterIndexChanged(int value) => _ = LoadMoviesAsync();
-        partial void OnWatchedFilterIndexChanged(int value) => _ = LoadMoviesAsync();
-        partial void OnListFilterIndexChanged(int value) => _ = LoadMoviesAsync();
+
 
         private void UpdateSelectionState()
         {
@@ -319,6 +353,7 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (item != null && item.File != null)
             {
+                LastClickedIndex = Movies.IndexOf(item);
                 WeakReferenceMessenger.Default.Send(new NavigationMessage(new MediaDetailsViewModel(item.File, this)));
             }
         }

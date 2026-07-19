@@ -2,6 +2,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace MovieManagerDesktop.Views
 {
@@ -14,33 +15,56 @@ namespace MovieManagerDesktop.Views
         }
 
         private bool _isRestoringScroll = false;
-        private bool _hasRestoredScroll = false;
 
-        private void UserControl_Loaded(object sender, System.Windows.RoutedEventArgs e)
+        private void MoviesView_Loaded(object sender, System.Windows.RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MoviesViewModel vm)
             {
-                this.LayoutUpdated += MoviesView_LayoutUpdated;
-            }
-        }
-
-        private void MoviesView_LayoutUpdated(object? sender, System.EventArgs e)
-        {
-            if (_hasRestoredScroll) return;
-
-            if (DataContext is ViewModels.MoviesViewModel vm)
-            {
-                var scrollViewer = FindVisualChild<ScrollViewer>(MoviesItemsControl);
-                if (scrollViewer != null)
+                if (vm.LastClickedIndex >= 0 && vm.LastClickedIndex < vm.Movies.Count)
                 {
-                    _hasRestoredScroll = true;
-                    this.LayoutUpdated -= MoviesView_LayoutUpdated;
+                    // Hide list instantly to prevent visible jump
+                    MoviesItemsControl.Opacity = 0;
 
-                    _isRestoringScroll = true;
-                    Dispatcher.BeginInvoke(new System.Action(() => {
-                        scrollViewer.ScrollToVerticalOffset(vm.ScrollPosition);
-                        _isRestoringScroll = false;
-                    }), System.Windows.Threading.DispatcherPriority.ContextIdle);
+                    var timer = new DispatcherTimer { Interval = System.TimeSpan.FromMilliseconds(50) };
+                    int attempts = 0;
+                    timer.Tick += (s, args) =>
+                    {
+                        attempts++;
+                        try
+                        {
+                            _isRestoringScroll = true;
+                            MoviesItemsControl.ScrollIntoView(vm.Movies[vm.LastClickedIndex]);
+                            _isRestoringScroll = false;
+                        }
+                        catch { _isRestoringScroll = false; }
+
+                        if (attempts >= 2)
+                        {
+                            timer.Stop();
+                            // Show list after scroll is in place
+                            MoviesItemsControl.Opacity = 1;
+                        }
+                    };
+                    timer.Start();
+                }
+                else if (vm.ScrollPosition > 0)
+                {
+                    MoviesItemsControl.Opacity = 0;
+
+                    var timer = new DispatcherTimer { Interval = System.TimeSpan.FromMilliseconds(50) };
+                    timer.Tick += (s, args) =>
+                    {
+                        timer.Stop();
+                        var scrollViewer = FindVisualChild<ScrollViewer>(MoviesItemsControl);
+                        if (scrollViewer != null)
+                        {
+                            _isRestoringScroll = true;
+                            scrollViewer.ScrollToVerticalOffset(vm.ScrollPosition);
+                            _isRestoringScroll = false;
+                        }
+                        MoviesItemsControl.Opacity = 1;
+                    };
+                    timer.Start();
                 }
             }
         }
