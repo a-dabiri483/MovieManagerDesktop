@@ -109,7 +109,7 @@
                                 <Setter Property="BorderBrush" Value="{DynamicResource SecondaryColor}"/>
                                 <Setter Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect Color="#7B2CBF" BlurRadius="20" ShadowDepth="0" Opacity="0.3"/>
+                                        <DropShadowEffect Color="#3A86FF" BlurRadius="20" ShadowDepth="0" Opacity="0.3"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
@@ -125,7 +125,7 @@
                     </Grid.RowDefinitions>
 
                     <Border Grid.Row="0" Width="60" Height="60" CornerRadius="16" 
-                            Background="#1A7B2CBF" HorizontalAlignment="Center" Margin="0,0,0,20">
+                            Background="#1A3A86FF" HorizontalAlignment="Center" Margin="0,0,0,20">
                         <materialDesign:PackIcon Kind="Broom" Width="30" Height="30" 
                                                  Foreground="{DynamicResource SecondaryColor}"
                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>

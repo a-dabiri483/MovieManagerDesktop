@@ -94,7 +94,7 @@
                             Visibility="{Binding HasMorePosters, Converter={StaticResource BooleanToVisibilityConverter}}"
                             Style="{StaticResource MaterialDesignRaisedButton}" 
                             Background="{DynamicResource PrimaryColor}"
-                            Foreground="White"
+                            Foreground="#050510"
                             Content="بارگیری بیشتر" 
                             Margin="0,20,0,20" 
                             HorizontalAlignment="Center" 

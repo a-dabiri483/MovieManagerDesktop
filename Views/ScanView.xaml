@@ -142,7 +142,10 @@
                     Background="Transparent" BorderThickness="0" 
                     Foreground="{DynamicResource SecondaryText}" 
                     Padding="10,5">
-                <StackPanel Orientation="Horizontal"/>
+                <StackPanel Orientation="Horizontal">
+                    <materialDesign:PackIcon Kind="ArrowRight" Width="20" Height="20" VerticalAlignment="Center"/>
+                    <TextBlock Text="بازگشت" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
             </Button>
 
             <TextBlock Grid.Column="1" Text="اسکن و شناسایی فیلم‌ها" 

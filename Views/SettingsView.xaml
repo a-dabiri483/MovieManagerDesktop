@@ -16,8 +16,15 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Back Button -->
-        <Button Grid.Row="0" Command="{Binding GoBackCommand}" HorizontalAlignment="Left" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,10" Padding="0"/>
+        <Button Grid.Row="0" Command="{Binding GoBackCommand}" 
+                Background="Transparent" BorderThickness="0" 
+                Foreground="{DynamicResource SecondaryText}" 
+                HorizontalAlignment="Left" Padding="10,5" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <materialDesign:PackIcon Kind="ArrowRight" Width="20" Height="20" VerticalAlignment="Center"/>
+                <TextBlock Text="بازگشت" Margin="5,0,0,0" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Button>
 
         <TextBlock Grid.Row="1" Text="تنظیمات نرم افزار" Style="{StaticResource TextH2}" Margin="0,0,0,20">
             <TextBlock.Effect>
@@ -60,7 +67,15 @@
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal">
-                            <Button Command="{Binding SaveSettingsCommand}" Content="ذخیره تنظیمات" Background="{DynamicResource SuccessColor}" BorderBrush="{DynamicResource SuccessColor}" Width="150"/>
+                            <Button Command="{Binding SaveSettingsCommand}" 
+                                    Style="{StaticResource MaterialDesignRaisedButton}"
+                                    Background="{DynamicResource SuccessColor}" Foreground="#050510" BorderThickness="0" 
+                                    Width="150" Height="40" materialDesign:ButtonAssist.CornerRadius="8">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ContentSave" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                    <TextBlock Text="ذخیره تنظیمات" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
                             <!-- StatusMessage removed, using Toasts -->
                         </StackPanel>
                     </StackPanel>
@@ -101,7 +116,7 @@
                         
                         <StackPanel Orientation="Horizontal">
                             <Button Command="{Binding ExportJsonCommand}" 
-                                    Style="{StaticResource MaterialDesignFlatButton}" Foreground="{DynamicResource PrimaryColor}" 
+                                    Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="{DynamicResource PrimaryColor}" BorderBrush="{DynamicResource PrimaryColor}"
                                     HorizontalAlignment="Left" Width="200" Height="45" Margin="0,0,15,0" materialDesign:ButtonAssist.CornerRadius="12">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Export" VerticalAlignment="Center" Width="20" Height="20" Margin="0,0,10,0"/>
@@ -110,7 +125,7 @@
                             </Button>
 
                             <Button Command="{Binding ImportJsonCommand}" 
-                                    Style="{StaticResource MaterialDesignFlatButton}" Foreground="{DynamicResource PrimaryColor}" 
+                                    Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="{DynamicResource WarningColor}" BorderBrush="{DynamicResource WarningColor}"
                                     HorizontalAlignment="Left" Width="200" Height="45" materialDesign:ButtonAssist.CornerRadius="12">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Import" VerticalAlignment="Center" Width="20" Height="20" Margin="0,0,10,0"/>

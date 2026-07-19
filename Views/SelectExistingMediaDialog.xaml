@@ -85,7 +85,7 @@
                                     CommandParameter="{Binding}"
                                     Style="{StaticResource MaterialDesignRaisedButton}" 
                                     Background="{DynamicResource PrimaryColor}"
-                                    Foreground="White"
+                                    Foreground="#050510"
                                     Height="24" Padding="5,0" FontSize="11" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>

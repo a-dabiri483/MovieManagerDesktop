@@ -167,7 +167,7 @@
                                         CommandParameter="{Binding}"
                                         Style="{StaticResource MaterialDesignRaisedButton}"
                                         Background="{DynamicResource PrimaryColor}"
-                                        Foreground="White"
+                                        Foreground="#050510"
                                         VerticalAlignment="Center"
                                         Padding="15,5"/>
                             </Grid>

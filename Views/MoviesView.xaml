@@ -348,8 +348,8 @@
                 <TextBlock Text="برای شروع، پوشه فیلم‌های خود را اسکن کنید" FontSize="14" Foreground="{StaticResource TextDisabled}" HorizontalAlignment="Center" Margin="0,0,0,30"/>
                 
                 <Button Content="شروع اسکن" Command="{Binding GoToScanCommand}"
-                        Style="{StaticResource MaterialDesignFlatButton}"
-                        Background="{DynamicResource CardBackground}" Foreground="{DynamicResource PrimaryColor}" 
+                        Style="{StaticResource MaterialDesignRaisedButton}"
+                        Background="{DynamicResource PrimaryColor}" Foreground="#050510" 
                         Width="200" Height="45" FontSize="16" materialDesign:ButtonAssist.CornerRadius="8"
                         HorizontalAlignment="Center">
                     <Button.Effect>
