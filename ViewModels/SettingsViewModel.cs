@@ -143,6 +143,9 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private bool _isGoogleDriveAutoBackupEnabled;
 
+        [ObservableProperty]
+        private int _backupFrequencyIndex;
+
         [RelayCommand]
         private void BrowseBackupPath()
         {
@@ -170,6 +173,7 @@ namespace MovieManagerDesktop.ViewModels
             _isLocalAutoBackupEnabled = settings.IsLocalAutoBackupEnabled;
             _localAutoBackupPath = settings.LocalAutoBackupPath;
             _isGoogleDriveAutoBackupEnabled = settings.IsGoogleDriveAutoBackupEnabled;
+            _backupFrequencyIndex = settings.BackupFrequencyIndex;
         }
 
         [RelayCommand]
@@ -187,6 +191,7 @@ namespace MovieManagerDesktop.ViewModels
             settings.IsLocalAutoBackupEnabled = IsLocalAutoBackupEnabled;
             settings.LocalAutoBackupPath = LocalAutoBackupPath;
             settings.IsGoogleDriveAutoBackupEnabled = IsGoogleDriveAutoBackupEnabled;
+            settings.BackupFrequencyIndex = BackupFrequencyIndex;
             
             SettingsManager.SaveSettings(settings);
             StatusMessage = "تنظیمات با موفقیت ذخیره شد.";
@@ -277,6 +282,7 @@ namespace MovieManagerDesktop.ViewModels
                     db.Database.EnsureCreated();
                     
                     ToastService.Instance.ShowSuccess("دیتابیس با موفقیت خالی شد.");
+                    WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
                 }
                 catch (Exception ex)
                 {
@@ -303,9 +309,16 @@ namespace MovieManagerDesktop.ViewModels
 
                 if (dialog.ShowDialog() == true)
                 {
-                    var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { WriteIndented = true });
+                    var backupModel = new MovieManagerDesktop.Services.BackupManager.FullBackupModel
+                    {
+                        VideoFiles = db.VideoFiles.ToList(),
+                        TvSeasons = db.TvSeasons.ToList(),
+                        TvEpisodes = db.TvEpisodes.ToList(),
+                        Settings = SettingsManager.LoadSettings()
+                    };
+                    var json = JsonSerializer.Serialize(backupModel, new JsonSerializerOptions { WriteIndented = true });
                     await File.WriteAllTextAsync(dialog.FileName, json);
-                    ToastService.Instance.ShowSuccess("نسخه پشتیبان با موفقیت صادر شد.");
+                    ToastService.Instance.ShowSuccess("نسخه پشتیبان جامع با موفقیت صادر شد.");
                 }
             }
             catch (Exception ex)
@@ -329,24 +342,79 @@ namespace MovieManagerDesktop.ViewModels
                 if (dialog.ShowDialog() == true)
                 {
                     var json = await File.ReadAllTextAsync(dialog.FileName);
-                    var importedData = JsonSerializer.Deserialize<System.Collections.Generic.List<Models.VideoFile>>(json);
                     
-                    if (importedData != null && importedData.Any())
+                    System.Collections.Generic.List<Models.VideoFile> videoFiles = new();
+                    System.Collections.Generic.List<Models.TvSeason> tvSeasons = new();
+                    System.Collections.Generic.List<Models.TvEpisode> tvEpisodes = new();
+                    SettingsModel importedSettings = null;
+
+                    if (json.TrimStart().StartsWith("["))
                     {
-                        var confirmDialog = new ConfirmDialog($"تعداد {importedData.Count} فیلم در این فایل وجود دارد. آیا مایل به ادغام آن‌ها با دیتابیس فعلی هستید؟");
+                        // Old format (just VideoFiles list)
+                        var oldData = JsonSerializer.Deserialize<System.Collections.Generic.List<Models.VideoFile>>(json);
+                        if (oldData != null) videoFiles = oldData;
+                    }
+                    else
+                    {
+                        // New format (FullBackupModel)
+                        var fullData = JsonSerializer.Deserialize<MovieManagerDesktop.Services.BackupManager.FullBackupModel>(json);
+                        if (fullData != null)
+                        {
+                            if (fullData.VideoFiles != null) videoFiles = fullData.VideoFiles;
+                            if (fullData.TvSeasons != null) tvSeasons = fullData.TvSeasons;
+                            if (fullData.TvEpisodes != null) tvEpisodes = fullData.TvEpisodes;
+                            importedSettings = fullData.Settings;
+                        }
+                    }
+                    
+                    if (videoFiles.Any())
+                    {
+                        var confirmDialog = new ConfirmDialog($"تعداد {videoFiles.Count} فیلم/سریال در این فایل وجود دارد. آیا مایل به ادغام تمامی اطلاعات بک‌آپ با دیتابیس فعلی هستید؟");
                         var result = await DialogHost.Show(confirmDialog, "RootDialog");
 
                         if (result is bool res && res)
                         {
                             using var db = new AppDbContext();
-                            var existingIds = db.VideoFiles.Select(v => v.Id).ToList();
-                            var newItems = importedData.Where(i => !existingIds.Contains(i.Id)).ToList();
                             
-                            db.VideoFiles.AddRange(newItems);
+                            // Import VideoFiles
+                            var existingVideoIds = db.VideoFiles.Select(v => v.Id).ToList();
+                            var newVideos = videoFiles.Where(i => !existingVideoIds.Contains(i.Id)).ToList();
+                            db.VideoFiles.AddRange(newVideos);
+
+                            // Import TvSeasons
+                            var existingSeasonIds = db.TvSeasons.Select(s => s.Id).ToList();
+                            var newSeasons = tvSeasons.Where(i => !existingSeasonIds.Contains(i.Id)).ToList();
+                            db.TvSeasons.AddRange(newSeasons);
+
+                            // Import TvEpisodes
+                            var existingEpisodeIds = db.TvEpisodes.Select(e => e.Id).ToList();
+                            var newEpisodes = tvEpisodes.Where(i => !existingEpisodeIds.Contains(i.Id)).ToList();
+                            db.TvEpisodes.AddRange(newEpisodes);
+                            
                             await db.SaveChangesAsync();
+
+                            // Restore Settings if present
+                            if (importedSettings != null)
+                            {
+                                SettingsManager.SaveSettings(importedSettings);
+                                // The settings will take effect on next restart, or we can apply theme immediately
+                                SelectedDataSource = importedSettings.SelectedDataSource ?? "FM_DB";
+                                TmdbApiKey = importedSettings.TmdbApiKey;
+                                OmdbApiKey = importedSettings.OmdbApiKey;
+                                TmdbLanguage = importedSettings.TmdbLanguage ?? "fa-IR";
+                                IsDarkTheme = importedSettings.IsDarkTheme;
+                                SelectedTheme = importedSettings.Theme ?? "Cyan";
+                            }
                             
-                            ToastService.Instance.ShowSuccess($"{newItems.Count} فیلم با موفقیت به دیتابیس اضافه شد.");
+                            ToastService.Instance.ShowSuccess("اطلاعات پشتیبان با موفقیت بازیابی شد.");
+                            
+                            // Send message to refresh lists
+                            WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
                         }
+                    }
+                    else
+                    {
+                        ToastService.Instance.ShowError("هیچ اطلاعات معتبری در فایل یافت نشد.");
                     }
                 }
             }

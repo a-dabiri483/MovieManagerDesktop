@@ -27,6 +27,8 @@ namespace MovieManagerDesktop.Services
         public bool IsLocalAutoBackupEnabled { get; set; } = false;
         public string LocalAutoBackupPath { get; set; } = string.Empty;
         public bool IsGoogleDriveAutoBackupEnabled { get; set; } = false;
+        public int BackupFrequencyIndex { get; set; } = 0; // 0: Always on exit, 1: Daily, 2: Weekly
+        public DateTime LastBackupTime { get; set; } = DateTime.MinValue;
     }
 
     public static class SettingsManager

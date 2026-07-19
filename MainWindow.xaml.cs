@@ -37,19 +37,51 @@ namespace MovieManagerDesktop
 
         private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
-            // If already collapsed, it means we are exiting programmatically
             if (this.Visibility == Visibility.Collapsed) return;
 
-            e.Cancel = true;
-            this.Visibility = Visibility.Collapsed;
-
-            try
+            if (MovieManagerDesktop.Services.BackupManager.IsBackupNeeded())
             {
-                await MovieManagerDesktop.Services.BackupManager.RunBackupAsync();
-            }
-            catch { }
+                e.Cancel = true;
 
-            Environment.Exit(0);
+                // Show a beautiful modern dialog
+                var dialogContent = new System.Windows.Controls.StackPanel { Margin = new Thickness(40) };
+                dialogContent.Children.Add(new System.Windows.Controls.TextBlock 
+                { 
+                    Text = "در حال تهیه نسخه پشتیبان...", 
+                    FontSize = 18, 
+                    FontWeight = FontWeights.Bold, 
+                    Foreground = (System.Windows.Media.Brush)Application.Current.FindResource("PrimaryText"),
+                    Margin = new Thickness(0, 0, 0, 20),
+                    HorizontalAlignment = HorizontalAlignment.Center
+                });
+                
+                var progress = new System.Windows.Controls.ProgressBar 
+                {
+                    Style = (Style)Application.Current.FindResource("MaterialDesignCircularProgressBar"),
+                    IsIndeterminate = true,
+                    Width = 45,
+                    Height = 45,
+                    HorizontalAlignment = HorizontalAlignment.Center
+                };
+                dialogContent.Children.Add(progress);
+
+                _ = MaterialDesignThemes.Wpf.DialogHost.Show(dialogContent, "RootDialog");
+
+                try
+                {
+                    await MovieManagerDesktop.Services.BackupManager.RunBackupAsync();
+                }
+                catch { }
+
+                this.Visibility = Visibility.Collapsed;
+                Environment.Exit(0);
+            }
+            else
+            {
+                // No backup needed, exit normally
+                this.Visibility = Visibility.Collapsed;
+                Environment.Exit(0);
+            }
         }
 
         private void MainWindow_SourceInitialized(object? sender, EventArgs e)
@@ -99,19 +131,9 @@ namespace MovieManagerDesktop
             this.WindowState = WindowState.Minimized;
         }
 
-        private async void BtnClose_Click(object sender, RoutedEventArgs e)
+        private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
-            // Hide the window immediately so the user feels it closed instantly
-            this.Visibility = Visibility.Collapsed;
-            
-            try
-            {
-                // Run the backup before exiting
-                await MovieManagerDesktop.Services.BackupManager.RunBackupAsync();
-            }
-            catch { }
-
-            Environment.Exit(0);
+            this.Close();
         }
 
         private void BtnMaximize_Click(object sender, RoutedEventArgs e)

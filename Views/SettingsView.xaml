@@ -228,6 +228,15 @@
                                     <TextBlock Text="آپلود خودکار در Google Drive" Foreground="{DynamicResource PrimaryText}" FontSize="16" VerticalAlignment="Center"/>
                                 </StackPanel>
 
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,25">
+                                    <TextBlock Text="زمان‌بندی بک‌آپ:" Foreground="{DynamicResource SecondaryText}" FontSize="15" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                                    <ComboBox SelectedIndex="{Binding BackupFrequencyIndex}" Width="200" Foreground="{DynamicResource PrimaryText}">
+                                        <ComboBoxItem Content="همیشه هنگام خروج" />
+                                        <ComboBoxItem Content="یک‌بار در روز" />
+                                        <ComboBoxItem Content="یک‌بار در هفته" />
+                                    </ComboBox>
+                                </StackPanel>
+
                                 <Button Command="{Binding SaveSettingsCommand}" 
                                         Style="{StaticResource MaterialDesignRaisedButton}"
                                         Background="{DynamicResource SuccessColor}" Foreground="#050510" BorderThickness="0" 

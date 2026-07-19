@@ -23,12 +23,46 @@ namespace MovieManagerDesktop.Services
         private const string CredentialsFile = "credentials.json";
         private static readonly string TokenStorePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MovieManager", "GoogleAuth");
 
+        public static bool IsBackupNeeded()
+        {
+            var settings = SettingsManager.LoadSettings();
+            if (!settings.IsLocalAutoBackupEnabled && !settings.IsGoogleDriveAutoBackupEnabled)
+            {
+                return false;
+            }
+
+            if (settings.BackupFrequencyIndex == 1) // Daily
+            {
+                if (DateTime.Now.Date <= settings.LastBackupTime.Date)
+                    return false;
+            }
+            else if (settings.BackupFrequencyIndex == 2) // Weekly
+            {
+                if ((DateTime.Now - settings.LastBackupTime).TotalDays < 7)
+                    return false;
+            }
+
+            return true;
+        }
+
         public static async Task<bool> RunBackupAsync()
         {
             var settings = SettingsManager.LoadSettings();
             if (!settings.IsLocalAutoBackupEnabled && !settings.IsGoogleDriveAutoBackupEnabled)
             {
                 return true;
+            }
+
+            // Check Frequency
+            if (settings.BackupFrequencyIndex == 1) // Daily
+            {
+                if (DateTime.Now.Date <= settings.LastBackupTime.Date)
+                    return true;
+            }
+            else if (settings.BackupFrequencyIndex == 2) // Weekly
+            {
+                if ((DateTime.Now - settings.LastBackupTime).TotalDays < 7)
+                    return true;
             }
 
             try
@@ -61,6 +95,10 @@ namespace MovieManagerDesktop.Services
                         System.IO.File.Delete(localBackupFilePath);
                     }
                 }
+
+                // Update Last Backup Time
+                settings.LastBackupTime = DateTime.Now;
+                SettingsManager.SaveSettings(settings);
 
                 return true;
             }
