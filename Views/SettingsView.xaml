@@ -7,7 +7,7 @@
              xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=viewmodels:SettingsViewModel}"
-             d:DesignHeight="700" d:DesignWidth="1000">
+             d:DesignHeight="700" d:DesignWidth="1100">
 
     <Grid Margin="40,50,40,40">
         <Grid.RowDefinitions>
@@ -26,165 +26,232 @@
             </StackPanel>
         </Button>
 
-        <TextBlock Grid.Row="1" Text="تنظیمات نرم افزار" Style="{StaticResource TextH2}" Margin="0,0,0,20">
+        <TextBlock Grid.Row="1" Text="تنظیمات نرم افزار" Style="{StaticResource TextH2}" Margin="0,0,0,30">
             <TextBlock.Effect>
                 <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.5" Color="Black"/>
             </TextBlock.Effect>
         </TextBlock>
 
-        <!-- Settings Cards -->
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-            <StackPanel MaxWidth="800" HorizontalAlignment="Left">
+        <!-- Main Tab Layout -->
+        <TabControl Grid.Row="2" TabStripPlacement="Right" Background="Transparent" BorderThickness="0">
+            <!-- Sidebar / Tab Styling -->
+            <TabControl.Resources>
+                <Style TargetType="TabItem">
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="BorderThickness" Value="0"/>
+                    <Setter Property="Padding" Value="15,16"/>
+                    <Setter Property="Margin" Value="0,0,0,8"/>
+                    <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+                    <Setter Property="Cursor" Value="Hand"/>
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="TabItem">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="12" Margin="0,0,30,0">
+                                    <ContentPresenter ContentSource="Header" Margin="{TemplateBinding Padding}"/>
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter Property="Background" Value="#1A3A86FF"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryColor}"/>
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </TabControl.Resources>
+
+            <!-- 1. General Settings -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" MinWidth="180">
+                        <materialDesign:PackIcon Kind="CogOutline" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="عمومی" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
                 
-                <!-- Data Source Card -->
-                <materialDesign:Card Background="{DynamicResource CardBackground}" UniformCornerRadius="16" Padding="25" Margin="0,0,0,20">
-                    <StackPanel>
-                        <TextBlock Text="منبع دریافت اطلاعات فیلم‌ها" Foreground="{DynamicResource PrimaryText}" FontSize="20" FontWeight="Bold" Margin="0,0,0,20"/>
-                        
-                        <!-- FM-DB -->
-                        <RadioButton IsChecked="{Binding IsFmDbSelected}" Content="سایت FM-DB (پیشنهادی - کاملا رایگان و بدون نیاز به کلید)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,0,10" GroupName="DataSources"/>
-                        
-                        <!-- TMDB -->
-                        <RadioButton IsChecked="{Binding IsTmdbSelected}" Content="سایت TMDb (نیازمند دریافت کلید از سایت)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,0,5" GroupName="DataSources"/>
-                        <TextBox Text="{Binding TmdbApiKey, UpdateSourceTrigger=PropertyChanged}" 
-                                 materialDesign:HintAssist.Hint="کلید API سایت TMDb" 
-                                 Foreground="{DynamicResource PrimaryText}" FontSize="14" Margin="30,0,0,15"
-                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                 IsEnabled="{Binding IsTmdbSelected}"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,20,0">
+                    <StackPanel MaxWidth="800" HorizontalAlignment="Left">
+                        <!-- Data Source Card -->
+                        <materialDesign:Card Background="{DynamicResource CardBackground}" UniformCornerRadius="16" Padding="30" Margin="0,0,0,20">
+                            <StackPanel>
+                                <TextBlock Text="منبع دریافت اطلاعات فیلم‌ها" Foreground="{DynamicResource PrimaryText}" FontSize="20" FontWeight="Bold" Margin="0,0,0,25"/>
+                                
+                                <!-- FM-DB -->
+                                <RadioButton IsChecked="{Binding IsFmDbSelected}" Content="سایت FM-DB (پیشنهادی - کاملا رایگان و بدون نیاز به کلید)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,0,15" GroupName="DataSources"/>
+                                
+                                <!-- TMDB -->
+                                <RadioButton IsChecked="{Binding IsTmdbSelected}" Content="سایت TMDb (نیازمند دریافت کلید از سایت)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,0,10" GroupName="DataSources"/>
+                                <TextBox Text="{Binding TmdbApiKey, UpdateSourceTrigger=PropertyChanged}" 
+                                         materialDesign:HintAssist.Hint="کلید API سایت TMDb" 
+                                         Foreground="{DynamicResource PrimaryText}" FontSize="14" Margin="35,0,0,20"
+                                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                         IsEnabled="{Binding IsTmdbSelected}"/>
 
-                        <!-- OMDB -->
-                        <RadioButton IsChecked="{Binding IsOmdbSelected}" Content="سایت OMDb (نیازمند دریافت کلید از سایت)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,0,5" GroupName="DataSources"/>
-                        <TextBox Text="{Binding OmdbApiKey, UpdateSourceTrigger=PropertyChanged}" 
-                                 materialDesign:HintAssist.Hint="کلید API سایت OMDb" 
-                                 Foreground="{DynamicResource PrimaryText}" FontSize="14" Margin="30,0,0,30"
-                                 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                 IsEnabled="{Binding IsOmdbSelected}"/>
+                                <!-- OMDB -->
+                                <RadioButton IsChecked="{Binding IsOmdbSelected}" Content="سایت OMDb (نیازمند دریافت کلید از سایت)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,0,10" GroupName="DataSources"/>
+                                <TextBox Text="{Binding OmdbApiKey, UpdateSourceTrigger=PropertyChanged}" 
+                                         materialDesign:HintAssist.Hint="کلید API سایت OMDb" 
+                                         Foreground="{DynamicResource PrimaryText}" FontSize="14" Margin="35,0,0,30"
+                                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+                                         IsEnabled="{Binding IsOmdbSelected}"/>
 
-                        <TextBlock Text="زبان دریافت اطلاعات (برای سایت‌هایی که پشتیبانی می‌کنند مانند TMDb)" Foreground="{DynamicResource SecondaryText}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,15"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,25">
-                            <RadioButton IsChecked="{Binding IsPersianLanguage}" Content="فارسی" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,20,0" GroupName="Languages"/>
-                            <RadioButton IsChecked="{Binding IsEnglishLanguage}" Content="انگلیسی" Foreground="{DynamicResource PrimaryText}" FontSize="16" GroupName="Languages"/>
-                        </StackPanel>
+                                <Separator Background="{DynamicResource NormalBorder}" Margin="0,10,0,25"/>
 
-                        <StackPanel Orientation="Horizontal">
-                            <Button Command="{Binding SaveSettingsCommand}" 
-                                    Style="{StaticResource MaterialDesignRaisedButton}"
-                                    Background="{DynamicResource SuccessColor}" Foreground="#050510" BorderThickness="0" 
-                                    Width="150" Height="40" materialDesign:ButtonAssist.CornerRadius="8">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="ContentSave" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                    <TextBlock Text="ذخیره تنظیمات" VerticalAlignment="Center"/>
+                                <TextBlock Text="زبان دریافت اطلاعات (برای سایت‌هایی که پشتیبانی می‌کنند مانند TMDb)" Foreground="{DynamicResource SecondaryText}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,15"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,35">
+                                    <RadioButton IsChecked="{Binding IsPersianLanguage}" Content="فارسی" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,30,0" GroupName="Languages"/>
+                                    <RadioButton IsChecked="{Binding IsEnglishLanguage}" Content="انگلیسی" Foreground="{DynamicResource PrimaryText}" FontSize="16" GroupName="Languages"/>
                                 </StackPanel>
-                            </Button>
-                            <!-- StatusMessage removed, using Toasts -->
-                        </StackPanel>
-                    </StackPanel>
-                </materialDesign:Card>
 
-                <!-- Appearance Card -->
-                <materialDesign:Card Background="{DynamicResource CardBackground}" UniformCornerRadius="16" Padding="25" Margin="0,0,0,20">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                            <materialDesign:PackIcon Kind="Palette" Foreground="{DynamicResource PrimaryColor}" Width="28" Height="28" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="ظاهر برنامه" Foreground="{DynamicResource PrimaryText}" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        
-                        <TextBlock Text="حالت نمایش (تم):" Foreground="{DynamicResource SecondaryText}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,15"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,25">
-                            <RadioButton IsChecked="{Binding IsDarkTheme}" Content="تاریک (Dark)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,20,0" GroupName="Mode"/>
-                            <RadioButton IsChecked="{Binding IsLightTheme}" Content="روشن (Light)" Foreground="{DynamicResource PrimaryText}" FontSize="16" GroupName="Mode"/>
-                        </StackPanel>
-
-                        <TextBlock Text="رنگ‌بندی کلی برنامه را تغییر دهید:" Foreground="{DynamicResource SecondaryText}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,15"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                            <RadioButton IsChecked="{Binding IsCyan}" Content="فیروزه‌ای (Cyan)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,20,0" GroupName="Themes"/>
-                            <RadioButton IsChecked="{Binding IsMidnightBlue}" Content="آبی نیمه‌شب (Midnight Blue)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,20,0" GroupName="Themes"/>
-                            <RadioButton IsChecked="{Binding IsOLEDBlack}" Content="مشکی مطلق (OLED Black)" Foreground="{DynamicResource PrimaryText}" FontSize="16" GroupName="Themes"/>
-                        </StackPanel>
-                    </StackPanel>
-                </materialDesign:Card>
-
-                <!-- Backup & Restore -->
-                <materialDesign:Card Background="{DynamicResource CardBackground}" UniformCornerRadius="16" Padding="25" Margin="0,0,0,30">
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                            <materialDesign:PackIcon Kind="DatabaseExport" Foreground="{DynamicResource PrimaryColor}" Width="28" Height="28" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="پشتیبان‌گیری و بازیابی" Foreground="{DynamicResource PrimaryText}" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        
-                        <TextBlock Text="می‌توانید از تمامی اطلاعات دیتابیس (نام فیلم‌ها، نمرات، پوسترها و وضعیت مشاهده) فایل پشتیبان JSON تهیه کنید یا فایل قبلی را وارد نمایید." Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,25" TextWrapping="Wrap" LineHeight="24"/>
-                        
-                        <StackPanel Orientation="Horizontal">
-                            <Button Command="{Binding ExportJsonCommand}" 
-                                    Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="{DynamicResource PrimaryColor}" BorderBrush="{DynamicResource PrimaryColor}"
-                                    HorizontalAlignment="Left" Width="200" Height="45" Margin="0,0,15,0" materialDesign:ButtonAssist.CornerRadius="12">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Export" VerticalAlignment="Center" Width="20" Height="20" Margin="0,0,10,0"/>
-                                    <TextBlock Text="تهیه خروجی (Export)" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Button>
-
-                            <Button Command="{Binding ImportJsonCommand}" 
-                                    Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="{DynamicResource WarningColor}" BorderBrush="{DynamicResource WarningColor}"
-                                    HorizontalAlignment="Left" Width="200" Height="45" materialDesign:ButtonAssist.CornerRadius="12">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Import" VerticalAlignment="Center" Width="20" Height="20" Margin="0,0,10,0"/>
-                                    <TextBlock Text="بازیابی (Import)" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Button>
-                        </StackPanel>
-                    </StackPanel>
-                </materialDesign:Card>
-
-                <!-- Danger Zone Card -->
-                <materialDesign:Card Background="{DynamicResource CardBackground}" UniformCornerRadius="16" Padding="25">
-                    <materialDesign:Card.Style>
-                        <Style TargetType="materialDesign:Card" BasedOn="{StaticResource {x:Type materialDesign:Card}}">
-                            <Setter Property="BorderThickness" Value="1"/>
-                            <Setter Property="BorderBrush" Value="{DynamicResource ErrorColor}"/>
-                        </Style>
-                    </materialDesign:Card.Style>
-                    <StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                            <materialDesign:PackIcon Kind="AlertCircleOutline" Foreground="{DynamicResource ErrorColor}" Width="28" Height="28" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                            <TextBlock Text="منطقه خطرناک" Foreground="{DynamicResource ErrorColor}" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                        
-                        <TextBlock Text="عملیات زیر غیرقابل بازگشت است و تمام اطلاعات دیتابیس فیلم‌ها و سریال‌های برنامه را به‌طور کامل پاک می‌کند. فایل‌های روی سیستم شما حذف نخواهند شد." Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,25" TextWrapping="Wrap" LineHeight="24"/>
-                        
-                        <Button Command="{Binding ClearDatabaseCommand}" 
-                                Background="{DynamicResource ErrorColor}" BorderBrush="{DynamicResource ErrorColor}" Foreground="White" 
-                                HorizontalAlignment="Left" Width="250" Height="50" materialDesign:ButtonAssist.CornerRadius="12">
-                            <Button.Style>
-                                <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
-                                    <Style.Triggers>
-                                        <EventTrigger RoutedEvent="MouseEnter">
-                                            <BeginStoryboard>
-                                                <Storyboard>
-                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.8" Duration="0:0:0.2"/>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </EventTrigger>
-                                        <EventTrigger RoutedEvent="MouseLeave">
-                                            <BeginStoryboard>
-                                                <Storyboard>
-                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </EventTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Button.Style>
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="DatabaseRemove" VerticalAlignment="Center" Width="20" Height="20" Margin="0,0,10,0"/>
-                                <TextBlock Text="حذف کامل دیتابیس" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <Button Command="{Binding SaveSettingsCommand}" 
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Background="{DynamicResource SuccessColor}" Foreground="#050510" BorderThickness="0" 
+                                        HorizontalAlignment="Left" Width="180" Height="45" materialDesign:ButtonAssist.CornerRadius="8">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="ContentSave" VerticalAlignment="Center" Width="20" Height="20" Margin="0,0,8,0"/>
+                                        <TextBlock Text="ذخیره تنظیمات عمومی" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
                             </StackPanel>
-                        </Button>
+                        </materialDesign:Card>
                     </StackPanel>
-                </materialDesign:Card>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- 2. Appearance -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" MinWidth="180">
+                        <materialDesign:PackIcon Kind="PaletteOutline" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="شخصی‌سازی ظاهر" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
                 
-            </StackPanel>
-        </ScrollViewer>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,20,0">
+                    <StackPanel MaxWidth="800" HorizontalAlignment="Left">
+                        <materialDesign:Card Background="{DynamicResource CardBackground}" UniformCornerRadius="16" Padding="30" Margin="0,0,0,20">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,25">
+                                    <materialDesign:PackIcon Kind="Palette" Foreground="{DynamicResource PrimaryColor}" Width="28" Height="28" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <TextBlock Text="ظاهر برنامه" Foreground="{DynamicResource PrimaryText}" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                
+                                <TextBlock Text="حالت نمایش (تم):" Foreground="{DynamicResource SecondaryText}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,15"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,30">
+                                    <RadioButton IsChecked="{Binding IsDarkTheme}" Content="تاریک (Dark)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,30,0" GroupName="Mode"/>
+                                    <RadioButton IsChecked="{Binding IsLightTheme}" Content="روشن (Light)" Foreground="{DynamicResource PrimaryText}" FontSize="16" GroupName="Mode"/>
+                                </StackPanel>
+                                
+                                <Separator Background="{DynamicResource NormalBorder}" Margin="0,0,0,25"/>
+
+                                <TextBlock Text="رنگ‌بندی کلی برنامه را تغییر دهید:" Foreground="{DynamicResource SecondaryText}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,15"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <RadioButton IsChecked="{Binding IsCyan}" Content="فیروزه‌ای (Cyan)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,30,0" GroupName="Themes"/>
+                                    <RadioButton IsChecked="{Binding IsMidnightBlue}" Content="آبی نیمه‌شب (Midnight Blue)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,30,0" GroupName="Themes"/>
+                                    <RadioButton IsChecked="{Binding IsOLEDBlack}" Content="مشکی مطلق (OLED Black)" Foreground="{DynamicResource PrimaryText}" FontSize="16" GroupName="Themes"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </materialDesign:Card>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- 3. Data Management -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" MinWidth="180">
+                        <materialDesign:PackIcon Kind="DatabaseOutline" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="مدیریت اطلاعات" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,20,0">
+                    <StackPanel MaxWidth="800" HorizontalAlignment="Left">
+                        <!-- Backup & Restore -->
+                        <materialDesign:Card Background="{DynamicResource CardBackground}" UniformCornerRadius="16" Padding="30" Margin="0,0,0,20">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                    <materialDesign:PackIcon Kind="DatabaseExport" Foreground="{DynamicResource PrimaryColor}" Width="28" Height="28" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <TextBlock Text="پشتیبان‌گیری و بازیابی" Foreground="{DynamicResource PrimaryText}" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                
+                                <TextBlock Text="می‌توانید از تمامی اطلاعات دیتابیس (نام فیلم‌ها، نمرات، پوسترها و وضعیت مشاهده) فایل پشتیبان JSON تهیه کنید یا فایل قبلی را وارد نمایید." Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,30" TextWrapping="Wrap" FontSize="15" LineHeight="26"/>
+                                
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Command="{Binding ExportJsonCommand}" 
+                                            Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="{DynamicResource PrimaryColor}" BorderBrush="{DynamicResource PrimaryColor}"
+                                            HorizontalAlignment="Left" Width="210" Height="45" Margin="0,0,20,0" materialDesign:ButtonAssist.CornerRadius="8">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="Export" VerticalAlignment="Center" Width="20" Height="20" Margin="0,0,10,0"/>
+                                            <TextBlock Text="تهیه خروجی (Export)" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button Command="{Binding ImportJsonCommand}" 
+                                            Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="{DynamicResource WarningColor}" BorderBrush="{DynamicResource WarningColor}"
+                                            HorizontalAlignment="Left" Width="210" Height="45" materialDesign:ButtonAssist.CornerRadius="8">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="Import" VerticalAlignment="Center" Width="20" Height="20" Margin="0,0,10,0"/>
+                                            <TextBlock Text="بازیابی (Import)" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </StackPanel>
+                        </materialDesign:Card>
+
+                        <!-- Danger Zone Card -->
+                        <materialDesign:Card Background="#0DFF5252" UniformCornerRadius="16" Padding="30">
+                            <materialDesign:Card.Style>
+                                <Style TargetType="materialDesign:Card" BasedOn="{StaticResource {x:Type materialDesign:Card}}">
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                    <Setter Property="BorderBrush" Value="#4DFF5252"/>
+                                </Style>
+                            </materialDesign:Card.Style>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                    <materialDesign:PackIcon Kind="AlertCircleOutline" Foreground="{DynamicResource ErrorColor}" Width="28" Height="28" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <TextBlock Text="منطقه خطرناک" Foreground="{DynamicResource ErrorColor}" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                
+                                <TextBlock Text="عملیات زیر غیرقابل بازگشت است و تمام اطلاعات دیتابیس فیلم‌ها و سریال‌های برنامه را به‌طور کامل پاک می‌کند. فایل‌های روی سیستم شما حذف نخواهند شد." Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,30" TextWrapping="Wrap" FontSize="15" LineHeight="26"/>
+                                
+                                <Button Command="{Binding ClearDatabaseCommand}" 
+                                        Background="{DynamicResource ErrorColor}" BorderBrush="{DynamicResource ErrorColor}" Foreground="White" 
+                                        HorizontalAlignment="Left" Width="250" Height="50" materialDesign:ButtonAssist.CornerRadius="8">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignRaisedButton}">
+                                            <Style.Triggers>
+                                                <EventTrigger RoutedEvent="MouseEnter">
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0.8" Duration="0:0:0.2"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger>
+                                                <EventTrigger RoutedEvent="MouseLeave">
+                                                    <BeginStoryboard>
+                                                        <Storyboard>
+                                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
+                                                        </Storyboard>
+                                                    </BeginStoryboard>
+                                                </EventTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="DatabaseRemove" VerticalAlignment="Center" Width="22" Height="22" Margin="0,0,10,0"/>
+                                        <TextBlock Text="حذف کامل دیتابیس" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </materialDesign:Card>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
     </Grid>
 </UserControl>
-
