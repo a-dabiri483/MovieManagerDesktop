@@ -155,6 +155,9 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
                             <TextBlock Grid.Column="0" Text="مسیر جستجو:" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center" Margin="0,0,15,0" FontWeight="SemiBold"/>
@@ -163,8 +166,32 @@
                                 <TextBlock Text="{Binding ManualFolderPath}" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                             </Border>
 
-                            <Button Grid.Column="2" Command="{Binding BrowseManualFolderCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Content="انتخاب پوشه" Margin="0,0,10,0"/>
-                            <Button Grid.Column="3" Command="{Binding ScanManualFoldersCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Content="اسکن" Width="100"/>
+                            <Button Grid.Column="2" Command="{Binding BrowseManualFolderCommand}" 
+                                    Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                    Foreground="{DynamicResource PrimaryColor}" BorderBrush="{DynamicResource PrimaryColor}"
+                                    Height="36" Margin="10,0,0,0" Content="انتخاب پوشه"/>
+
+                            <Button Grid.Column="3" Command="{Binding ScanManualFoldersCommand}" 
+                                    Style="{StaticResource MaterialDesignRaisedButton}" 
+                                    Background="{DynamicResource PrimaryColor}"
+                                    Height="36" Padding="20,0" Margin="10,0,0,0" Content="اسکن"/>
+
+                            <!-- Bottom buttons moved up -->
+                            <Button Grid.Column="4" Command="{Binding DataContext.SearchGoogleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                    Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                    Height="36" Margin="10,0,0,0" Content="جستجو گوگل"/>
+
+                            <Button Grid.Column="5" Command="{Binding DataContext.ApplyCustomIconCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                    CommandParameter="{Binding SelectedItems, ElementName=ManualWithoutIconsGrid}" 
+                                    Style="{StaticResource MaterialDesignRaisedButton}" 
+                                    Background="{DynamicResource SuccessColor}" Foreground="#050510"
+                                    Height="36" Padding="20,0" Margin="10,0,0,0" Content="انتخاب کاور و اعمال"/>
+
+                            <Button Grid.Column="6" Command="{Binding DataContext.RemoveManualIconCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                    CommandParameter="{Binding SelectedItems, ElementName=ManualWithIconsGrid}" 
+                                    Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                    Height="36" Margin="10,0,0,0" Foreground="{DynamicResource ErrorColor}" BorderBrush="{DynamicResource ErrorColor}" 
+                                    Content="حذف آیکون (ریست)"/>
                         </Grid>
                     </Border>
 
@@ -201,10 +228,7 @@
                                 </DataGrid.Columns>
                             </DataGrid>
 
-                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
-                                <Button Command="{Binding DataContext.SearchGoogleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" Style="{StaticResource MaterialDesignOutlinedButton}" Content="جستجو گوگل" Margin="0,0,10,0"/>
-                                <Button Command="{Binding DataContext.ApplyCustomIconCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding SelectedItems, ElementName=ManualWithoutIconsGrid}" Style="{StaticResource MaterialDesignRaisedButton}" Content="انتخاب کاور و اعمال"/>
-                            </StackPanel>
+                            <!-- Bottom actions moved to top bar -->
                         </Grid>
 
                         <!-- Folders WITH Icon -->
@@ -238,7 +262,7 @@
                                 </DataGrid.Columns>
                             </DataGrid>
 
-                            <Button Grid.Row="3" Command="{Binding DataContext.RemoveManualIconCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding SelectedItems, ElementName=ManualWithIconsGrid}" Style="{StaticResource MaterialDesignOutlinedButton}" Content="حذف آیکون (ریست)" HorizontalAlignment="Right" Margin="0,15,0,0" Foreground="#FF4B4B"/>
+                            <!-- Bottom action moved to top bar -->
                         </Grid>
                     </Grid>
                 </Grid>
@@ -260,6 +284,8 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
                             <TextBlock Grid.Column="0" Text="مسیر جستجو:" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center" Margin="0,0,15,0" FontWeight="SemiBold"/>
@@ -268,8 +294,27 @@
                                 <TextBlock Text="{Binding AutoFolderPath}" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                             </Border>
 
-                            <Button Grid.Column="2" Command="{Binding BrowseAutoFolderCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Content="انتخاب پوشه" Margin="0,0,10,0"/>
-                            <Button Grid.Column="3" Command="{Binding ScanAutoFoldersCommand}" Style="{StaticResource MaterialDesignRaisedButton}" Content="اسکن" Width="100"/>
+                            <Button Grid.Column="2" Command="{Binding BrowseAutoFolderCommand}" 
+                                    Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                    Foreground="{DynamicResource PrimaryColor}" BorderBrush="{DynamicResource PrimaryColor}"
+                                    Height="36" Margin="10,0,0,0" Content="انتخاب پوشه"/>
+
+                            <Button Grid.Column="3" Command="{Binding ScanAutoFoldersCommand}" 
+                                    Style="{StaticResource MaterialDesignRaisedButton}" 
+                                    Background="{DynamicResource PrimaryColor}"
+                                    Height="36" Padding="20,0" Margin="10,0,0,0" Content="اسکن"/>
+
+                            <!-- Bottom buttons moved up -->
+                            <Button Grid.Column="4" Command="{Binding DataContext.SearchAutoIconsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                    CommandParameter="{Binding SelectedItems, ElementName=AutoWithoutIconsGrid}" 
+                                    Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                    Height="36" Margin="10,0,0,0" Content="شناسایی خودکار انتخاب شده‌ها"/>
+
+                            <Button Grid.Column="5" Command="{Binding DataContext.ApplyAutoIconsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                    CommandParameter="{Binding SelectedItems, ElementName=AutoWithoutIconsGrid}" 
+                                    Style="{StaticResource MaterialDesignRaisedButton}" 
+                                    Background="{DynamicResource SuccessColor}" Foreground="#050510"
+                                    Height="36" Padding="20,0" Margin="10,0,0,0" Content="دانلود و اعمال انتخاب شده‌ها"/>
                         </Grid>
                     </Border>
 
@@ -357,11 +402,7 @@
                                 </DataGrid.Columns>
                             </DataGrid>
 
-                            <!-- Bottom Actions for left panel -->
-                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
-                                <Button Command="{Binding DataContext.SearchAutoIconsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding SelectedItems, ElementName=AutoWithoutIconsGrid}" Style="{StaticResource MaterialDesignOutlinedButton}" Content="شناسایی خودکار موارد انتخاب شده" Margin="0,0,10,0"/>
-                                <Button Command="{Binding DataContext.ApplyAutoIconsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding SelectedItems, ElementName=AutoWithoutIconsGrid}" Style="{StaticResource MaterialDesignRaisedButton}" Content="دانلود و اعمال موارد انتخاب شده"/>
-                            </StackPanel>
+                            <!-- Bottom actions moved to top bar -->
                         </Grid>
 
                         <!-- Folders WITH Icon in Auto mode -->
