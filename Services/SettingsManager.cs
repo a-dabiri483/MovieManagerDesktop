@@ -22,6 +22,11 @@ namespace MovieManagerDesktop.Services
         public bool IsQuickFilterMovies { get; set; } = false;
         public bool IsQuickFilterSeries { get; set; } = false;
         public bool IsQuickFilterUnwatched { get; set; } = false;
+        
+        // Auto Backup Settings
+        public bool IsLocalAutoBackupEnabled { get; set; } = false;
+        public string LocalAutoBackupPath { get; set; } = string.Empty;
+        public bool IsGoogleDriveAutoBackupEnabled { get; set; } = false;
     }
 
     public static class SettingsManager

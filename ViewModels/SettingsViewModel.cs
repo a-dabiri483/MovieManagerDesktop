@@ -134,6 +134,29 @@ namespace MovieManagerDesktop.ViewModels
             set { if (value) SelectedTheme = "OLEDBlack"; }
         }
 
+        [ObservableProperty]
+        private bool _isLocalAutoBackupEnabled;
+
+        [ObservableProperty]
+        private string _localAutoBackupPath = string.Empty;
+
+        [ObservableProperty]
+        private bool _isGoogleDriveAutoBackupEnabled;
+
+        [RelayCommand]
+        private void BrowseBackupPath()
+        {
+            var dialog = new Microsoft.Win32.OpenFolderDialog
+            {
+                Title = "پوشه پشتیبان‌گیری را انتخاب کنید"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                LocalAutoBackupPath = dialog.FolderName;
+            }
+        }
+
         public SettingsViewModel()
         {
             var settings = SettingsManager.LoadSettings();
@@ -143,6 +166,10 @@ namespace MovieManagerDesktop.ViewModels
             TmdbLanguage = settings.TmdbLanguage ?? "fa-IR";
             _isDarkTheme = settings.IsDarkTheme;
             SelectedTheme = settings.Theme ?? "Cyan"; // This calls ApplyTheme
+            
+            _isLocalAutoBackupEnabled = settings.IsLocalAutoBackupEnabled;
+            _localAutoBackupPath = settings.LocalAutoBackupPath;
+            _isGoogleDriveAutoBackupEnabled = settings.IsGoogleDriveAutoBackupEnabled;
         }
 
         [RelayCommand]
@@ -156,6 +183,10 @@ namespace MovieManagerDesktop.ViewModels
             settings.TmdbLanguage = TmdbLanguage;
             settings.Theme = SelectedTheme;
             settings.IsDarkTheme = IsDarkTheme;
+            
+            settings.IsLocalAutoBackupEnabled = IsLocalAutoBackupEnabled;
+            settings.LocalAutoBackupPath = LocalAutoBackupPath;
+            settings.IsGoogleDriveAutoBackupEnabled = IsGoogleDriveAutoBackupEnabled;
             
             SettingsManager.SaveSettings(settings);
             StatusMessage = "تنظیمات با موفقیت ذخیره شد.";
