@@ -74,19 +74,24 @@ namespace MovieManagerDesktop.ViewModels
         private bool _isQuickFilterUnwatched = false;
         partial void OnIsQuickFilterUnwatchedChanged(bool value) => SaveAndLoad();
 
+        protected bool _disableSaveSettings = false;
+
         private void SaveAndLoad()
         {
-            var settings = SettingsManager.LoadSettings();
-            settings.MediaTypeFilterIndex = MediaTypeFilterIndex;
-            settings.WatchedFilterIndex = WatchedFilterIndex;
-            settings.ListFilterIndex = ListFilterIndex;
-            settings.SortIndex = SortIndex;
-            settings.SortDirectionIndex = SortDirectionIndex;
-            settings.SelectedGenreIndex = SelectedGenreIndex;
-            settings.IsQuickFilterMovies = IsQuickFilterMovies;
-            settings.IsQuickFilterSeries = IsQuickFilterSeries;
-            settings.IsQuickFilterUnwatched = IsQuickFilterUnwatched;
-            SettingsManager.SaveSettings(settings);
+            if (!_disableSaveSettings)
+            {
+                var settings = SettingsManager.LoadSettings();
+                settings.MediaTypeFilterIndex = MediaTypeFilterIndex;
+                settings.WatchedFilterIndex = WatchedFilterIndex;
+                settings.ListFilterIndex = ListFilterIndex;
+                settings.SortIndex = SortIndex;
+                settings.SortDirectionIndex = SortDirectionIndex;
+                settings.SelectedGenreIndex = SelectedGenreIndex;
+                settings.IsQuickFilterMovies = IsQuickFilterMovies;
+                settings.IsQuickFilterSeries = IsQuickFilterSeries;
+                settings.IsQuickFilterUnwatched = IsQuickFilterUnwatched;
+                SettingsManager.SaveSettings(settings);
+            }
             
             _ = LoadMoviesAsync();
         }
