@@ -205,6 +205,61 @@
                     </StackPanel>
                 </Grid>
             </Border>
+            <!-- Card 4: Series Renamer -->
+            <Border Margin="10" CornerRadius="16" Cursor="Hand"
+                    Background="{DynamicResource CardBackground}"
+                    BorderBrush="{DynamicResource NormalBorder}"
+                    BorderThickness="1">
+                <Border.InputBindings>
+                    <MouseBinding Gesture="LeftClick" Command="{Binding OpenSeriesFileRenamerCommand}"/>
+                </Border.InputBindings>
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Style.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource InfoColor}"/>
+                                <Setter Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#9D4EDD" BlurRadius="20" ShadowDepth="0" Opacity="0.3"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid Margin="25">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Width="60" Height="60" CornerRadius="16" 
+                            Background="#1A9D4EDD" HorizontalAlignment="Center" Margin="0,0,0,20">
+                        <materialDesign:PackIcon Kind="RenameBox" Width="30" Height="30" 
+                                                 Foreground="{DynamicResource InfoColor}"
+                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <TextBlock Grid.Row="1" Text="تغییر نام هوشمند" 
+                               FontSize="18" FontWeight="Bold" 
+                               Foreground="{DynamicResource PrimaryText}" 
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,12"/>
+
+                    <TextBlock Grid.Row="2" TextWrapping="Wrap" TextAlignment="Center"
+                               Foreground="{DynamicResource SecondaryText}" FontSize="13" LineHeight="22">
+                        فایل‌های درهم‌ریخته سریال‌ها را شناسایی کرده و آن‌ها را بر اساس اطلاعات سرور با نام و قالبی تمیز تغییر نام می‌دهد.
+                    </TextBlock>
+
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20,0,0">
+                        <TextBlock Text="شروع" Foreground="{DynamicResource InfoColor}" FontWeight="SemiBold" FontSize="14"/>
+                        <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource InfoColor}" 
+                                                 Width="18" Height="18" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
 
         </UniformGrid>
     </Grid>

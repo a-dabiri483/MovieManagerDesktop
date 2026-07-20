@@ -52,11 +52,44 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private string _autoFolderPath = string.Empty;
 
-        [ObservableProperty]
-        private ObservableCollection<AutoIconItem> _autoFoldersWithoutIcon = new();
+        public ObservableCollection<AutoIconItem> AutoFoldersWithoutIcon { get; } = new();
+        public ObservableCollection<AutoIconItem> AutoFoldersWithIcon { get; } = new();
 
-        [ObservableProperty]
-        private ObservableCollection<AutoIconItem> _autoFoldersWithIcon = new();
+        private bool _isAllSelectedAuto = true;
+        public bool IsAllSelectedAuto
+        {
+            get => _isAllSelectedAuto;
+            set
+            {
+                if (SetProperty(ref _isAllSelectedAuto, value))
+                {
+                    foreach (var item in AutoFoldersWithoutIcon)
+                    {
+                        item.IsSelected = value;
+                    }
+                }
+            }
+        }
+
+        [RelayCommand]
+        private void CheckSelectedItems(System.Collections.IList selectedItems)
+        {
+            if (selectedItems == null) return;
+            foreach (var item in selectedItems.Cast<AutoIconItem>())
+            {
+                item.IsSelected = true;
+            }
+        }
+
+        [RelayCommand]
+        private void UncheckSelectedItems(System.Collections.IList selectedItems)
+        {
+            if (selectedItems == null) return;
+            foreach (var item in selectedItems.Cast<AutoIconItem>())
+            {
+                item.IsSelected = false;
+            }
+        }
 
         [ObservableProperty]
         private string _autoStatusMessage = "یک پوشه انتخاب کنید و روی «اسکن» کلیک کنید.";

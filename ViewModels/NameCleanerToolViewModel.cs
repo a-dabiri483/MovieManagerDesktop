@@ -7,6 +7,7 @@ using MovieManagerDesktop.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -56,16 +57,40 @@ namespace MovieManagerDesktop.ViewModels
         public ObservableCollection<FolderRenameItem> PendingItems { get; } = new();
         public ObservableCollection<FolderRenameItem> CompletedItems { get; } = new();
 
-        [RelayCommand]
-        private void SelectAllPending()
+        private bool _isAllSelected = true;
+        public bool IsAllSelected
         {
-            foreach (var item in PendingItems) item.IsSelected = true;
+            get => _isAllSelected;
+            set
+            {
+                if (SetProperty(ref _isAllSelected, value))
+                {
+                    foreach (var item in PendingItems)
+                    {
+                        item.IsSelected = value;
+                    }
+                }
+            }
         }
 
         [RelayCommand]
-        private void DeselectAllPending()
+        private void CheckSelectedItems(System.Collections.IList selectedItems)
         {
-            foreach (var item in PendingItems) item.IsSelected = false;
+            if (selectedItems == null) return;
+            foreach (var item in selectedItems.Cast<FolderRenameItem>())
+            {
+                item.IsSelected = true;
+            }
+        }
+
+        [RelayCommand]
+        private void UncheckSelectedItems(System.Collections.IList selectedItems)
+        {
+            if (selectedItems == null) return;
+            foreach (var item in selectedItems.Cast<FolderRenameItem>())
+            {
+                item.IsSelected = false;
+            }
         }
 
         [RelayCommand]
@@ -162,6 +187,7 @@ namespace MovieManagerDesktop.ViewModels
                 IsProcessing = false;
             }
         }
+
 
         private void Log(string message)
         {

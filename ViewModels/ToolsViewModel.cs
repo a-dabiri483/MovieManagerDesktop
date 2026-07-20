@@ -24,5 +24,11 @@ namespace MovieManagerDesktop.ViewModels
         {
             WeakReferenceMessenger.Default.Send(new NavigationMessage(new SeriesOrganizerToolViewModel()));
         }
+
+        [RelayCommand]
+        private void OpenSeriesFileRenamer()
+        {
+            WeakReferenceMessenger.Default.Send(new NavigationMessage(new SeriesFileRenamerViewModel()));
+        }
     }
 }

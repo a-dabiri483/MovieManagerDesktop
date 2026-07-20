@@ -35,16 +35,40 @@ namespace MovieManagerDesktop.ViewModels
         public ObservableCollection<OrganizerItem> PendingItems { get; } = new();
         public ObservableCollection<OrganizerItem> CompletedItems { get; } = new();
 
-        [RelayCommand]
-        private void SelectAllPending()
+        private bool _isAllSelected = true;
+        public bool IsAllSelected
         {
-            foreach (var item in PendingItems) item.IsSelected = true;
+            get => _isAllSelected;
+            set
+            {
+                if (SetProperty(ref _isAllSelected, value))
+                {
+                    foreach (var item in PendingItems)
+                    {
+                        item.IsSelected = value;
+                    }
+                }
+            }
         }
 
         [RelayCommand]
-        private void DeselectAllPending()
+        private void CheckSelectedItems(System.Collections.IList selectedItems)
         {
-            foreach (var item in PendingItems) item.IsSelected = false;
+            if (selectedItems == null) return;
+            foreach (var item in selectedItems.Cast<OrganizerItem>())
+            {
+                item.IsSelected = true;
+            }
+        }
+
+        [RelayCommand]
+        private void UncheckSelectedItems(System.Collections.IList selectedItems)
+        {
+            if (selectedItems == null) return;
+            foreach (var item in selectedItems.Cast<OrganizerItem>())
+            {
+                item.IsSelected = false;
+            }
         }
 
         [RelayCommand]
@@ -162,5 +186,6 @@ namespace MovieManagerDesktop.ViewModels
                 IsProcessing = false;
             }
         }
+
     }
 }

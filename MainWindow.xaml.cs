@@ -44,32 +44,70 @@ namespace MovieManagerDesktop
                 e.Cancel = true;
 
                 // Show a beautiful modern dialog
-                var dialogContent = new System.Windows.Controls.StackPanel { Margin = new Thickness(40) };
-                dialogContent.Children.Add(new System.Windows.Controls.TextBlock 
-                { 
-                    Text = "در حال تهیه نسخه پشتیبان...", 
-                    FontSize = 18, 
-                    FontWeight = FontWeights.Bold, 
-                    Foreground = (System.Windows.Media.Brush)Application.Current.FindResource("PrimaryText"),
-                    Margin = new Thickness(0, 0, 0, 20),
-                    HorizontalAlignment = HorizontalAlignment.Center
-                });
+                var border = new System.Windows.Controls.Border
+                {
+                    Background = (System.Windows.Media.Brush)Application.Current.FindResource("CardBackground"),
+                    CornerRadius = new CornerRadius(16),
+                    Padding = new Thickness(40),
+                    Width = 380
+                };
+
+                var stackPanel = new System.Windows.Controls.StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
                 
-                var progress = new System.Windows.Controls.ProgressBar 
+                var icon = new MaterialDesignThemes.Wpf.PackIcon
+                {
+                    Kind = MaterialDesignThemes.Wpf.PackIconKind.CloudUploadOutline,
+                    Width = 64,
+                    Height = 64,
+                    Foreground = (System.Windows.Media.Brush)Application.Current.FindResource("PrimaryColor"),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(0, 0, 0, 20)
+                };
+
+                var title = new System.Windows.Controls.TextBlock
+                {
+                    Text = "در حال تهیه نسخه پشتیبان",
+                    FontSize = 22,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = (System.Windows.Media.Brush)Application.Current.FindResource("PrimaryText"),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Margin = new Thickness(0, 0, 0, 10)
+                };
+
+                var subtitle = new System.Windows.Controls.TextBlock
+                {
+                    Text = "لطفاً منتظر بمانید تا اطلاعات شما با موفقیت ذخیره شود...",
+                    FontSize = 14,
+                    Foreground = (System.Windows.Media.Brush)Application.Current.FindResource("SecondaryText"),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    TextWrapping = TextWrapping.Wrap,
+                    TextAlignment = TextAlignment.Center,
+                    Margin = new Thickness(0, 0, 0, 30)
+                };
+
+                var progress = new System.Windows.Controls.ProgressBar
                 {
                     Style = (Style)Application.Current.FindResource("MaterialDesignCircularProgressBar"),
                     IsIndeterminate = true,
-                    Width = 45,
-                    Height = 45,
-                    HorizontalAlignment = HorizontalAlignment.Center
+                    Width = 40,
+                    Height = 40,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Foreground = (System.Windows.Media.Brush)Application.Current.FindResource("PrimaryColor")
                 };
-                dialogContent.Children.Add(progress);
 
-                _ = MaterialDesignThemes.Wpf.DialogHost.Show(dialogContent, "RootDialog");
+                stackPanel.Children.Add(icon);
+                stackPanel.Children.Add(title);
+                stackPanel.Children.Add(subtitle);
+                stackPanel.Children.Add(progress);
+                border.Child = stackPanel;
+
+                _ = MaterialDesignThemes.Wpf.DialogHost.Show(border, "RootDialog");
 
                 try
                 {
-                    await MovieManagerDesktop.Services.BackupManager.RunBackupAsync();
+                    var backupTask = MovieManagerDesktop.Services.BackupManager.RunBackupAsync();
+                    var delayTask = Task.Delay(2000); // Minimum 2 seconds delay to ensure the beautiful UI is seen
+                    await Task.WhenAll(backupTask, delayTask);
                 }
                 catch { }
 

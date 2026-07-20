@@ -18,6 +18,7 @@
             <converters:ImageUrlToCachedImageConverter x:Key="ImageUrlToCachedImageConverter" />
             <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
             <converters:SeriesStatusConverter x:Key="SeriesStatusConverter" />
+            <converters:MultipleSelectionToVisibilityConverter x:Key="MultipleSelectionToVisibilityConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

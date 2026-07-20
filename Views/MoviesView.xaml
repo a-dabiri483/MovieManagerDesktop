@@ -469,7 +469,7 @@
                                     </Style>
                                 </materialDesign:Card.Style>
                                 <Grid>
-                                    <Border Background="#4D00E5FF" CornerRadius="12" Panel.ZIndex="1" IsHitTestVisible="False">
+                                    <Border BorderBrush="{DynamicResource PrimaryColor}" BorderThickness="4" CornerRadius="12" Panel.ZIndex="1" IsHitTestVisible="False">
                                         <Border.Style>
                                             <Style TargetType="Border">
                                                 <Setter Property="Visibility" Value="Collapsed"/>
@@ -480,12 +480,23 @@
                                                 </Style.Triggers>
                                             </Style>
                                         </Border.Style>
+
                                     </Border>
                                     <!-- Poster Click to Open Details -->
                                     <Button Command="{Binding DataContext.OpenDetailsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}" 
-                                            Style="{StaticResource MaterialDesignFlatButton}" 
-                                            Padding="0" Height="Auto">
+                                            CommandParameter="{Binding}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
+                                                <Setter Property="Padding" Value="0"/>
+                                                <Setter Property="Height" Value="Auto"/>
+                                                <Setter Property="IsHitTestVisible" Value="True"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DataContext.IsInSelectionMode, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
+                                                        <Setter Property="IsHitTestVisible" Value="False"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
                                         <Grid>
                                             <!-- Full Poster -->
                                             <Image Source="{Binding File.PosterUrl, Converter={StaticResource ImageUrlToCachedImageConverter}}" Stretch="UniformToFill" Height="{Binding DataContext.PosterHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" />

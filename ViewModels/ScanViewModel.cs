@@ -110,6 +110,28 @@ namespace MovieManagerDesktop.ViewModels
             set { if (value) { _selectedFilter = "آماده بررسی"; OnPropertyChanged(nameof(IsFilterPending)); ApplyFilters(); } }
         }
 
+        [RelayCommand]
+        private void CheckSelectedItems(System.Collections.IList selectedItems)
+        {
+            if (selectedItems == null) return;
+            foreach (var group in selectedItems.Cast<ScannedGroupViewModel>())
+            {
+                group.IsChecked = true;
+            }
+            UpdateBulkToolbar();
+        }
+
+        [RelayCommand]
+        private void UncheckSelectedItems(System.Collections.IList selectedItems)
+        {
+            if (selectedItems == null) return;
+            foreach (var group in selectedItems.Cast<ScannedGroupViewModel>())
+            {
+                group.IsChecked = false;
+            }
+            UpdateBulkToolbar();
+        }
+
         public ObservableCollection<ScannedGroupViewModel> ScannedFilesView { get; } = new();
 
         public ScanViewModel()

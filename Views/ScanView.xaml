@@ -14,11 +14,11 @@
 
         <!-- Compact DataGrid Style -->
         <Style TargetType="DataGrid">
-            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="BorderBrush" Value="{DynamicResource NormalBorder}"/>
-            <Setter Property="RowBackground" Value="Transparent"/>
-            <Setter Property="AlternatingRowBackground" Value="Transparent"/>
+            <Setter Property="RowBackground" Value="{DynamicResource MainBackground}"/>
+            <Setter Property="AlternatingRowBackground" Value="{DynamicResource CardBackground}"/>
             <Setter Property="HeadersVisibility" Value="Column"/>
             <Setter Property="GridLinesVisibility" Value="All"/>
             <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource NormalBorder}"/>
@@ -42,17 +42,35 @@
         </Style>
 
         <Style TargetType="DataGridRow">
-            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Background" Value="{DynamicResource MainBackground}"/>
             <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
             <Setter Property="Margin" Value="0"/>
             <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
+            <Setter Property="ContextMenu">
+                <Setter.Value>
+                    <ContextMenu>
+                        <MenuItem Header="تیک زدن موارد انتخاب شده" 
+                                  Command="{Binding PlacementTarget.Tag.DataContext.CheckSelectedItemsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                  CommandParameter="{Binding PlacementTarget.Tag.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                            <MenuItem.Icon>
+                                <materialDesign:PackIcon Kind="CheckboxMarked" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                        <MenuItem Header="برداشتن تیک موارد انتخاب شده" 
+                                  Command="{Binding PlacementTarget.Tag.DataContext.UncheckSelectedItemsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                  CommandParameter="{Binding PlacementTarget.Tag.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                            <MenuItem.Icon>
+                                <materialDesign:PackIcon Kind="CheckboxBlankOutline" />
+                            </MenuItem.Icon>
+                        </MenuItem>
+                    </ContextMenu>
+                </Setter.Value>
+            </Setter>
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="BorderBrush" Value="Transparent"/>
-                </Trigger>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
+                    <Setter Property="Background" Value="#2000B4D8"/>
+                    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
                 </Trigger>
             </Style.Triggers>
         </Style>
@@ -73,7 +91,6 @@
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="BorderBrush" Value="Transparent"/>
                     <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
                 </Trigger>
             </Style.Triggers>
@@ -305,13 +322,13 @@
             </StackPanel>
         </Border>
 
-        <!-- DataGrid Results -->
         <DataGrid Grid.Row="4" 
                   ItemsSource="{Binding ScannedFilesView}"
                   SelectedItem="{Binding SelectedItem}"
                   x:Name="ResultsDataGrid"
                   SelectionChanged="ResultsDataGrid_SelectionChanged"
-                  PreviewKeyDown="ResultsDataGrid_PreviewKeyDown">
+                  PreviewKeyDown="ResultsDataGrid_PreviewKeyDown"
+                  Tag="{Binding RelativeSource={RelativeSource AncestorType=UserControl}}">
             <DataGrid.Columns>
                 <!-- CheckBox -->
                 <DataGridTemplateColumn Width="40">
@@ -332,25 +349,57 @@
                 <DataGridTextColumn Header="نام" 
                                     Binding="{Binding DisplayTitle}" 
                                     Width="2*" 
-                                    IsReadOnly="True"/>
+                                    IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
 
                 <!-- Year -->
                 <DataGridTextColumn Header="سال" 
                                     Binding="{Binding YearOverride}" 
                                     Width="60" 
-                                    IsReadOnly="True"/>
+                                    IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
 
                 <!-- Type -->
                 <DataGridTextColumn Header="نوع" 
                                     Binding="{Binding MediaType}" 
                                     Width="70" 
-                                    IsReadOnly="True"/>
+                                    IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
 
                 <!-- Count -->
                 <DataGridTextColumn Header="تعداد" 
                                     Binding="{Binding FileCountText}" 
                                     Width="70" 
-                                    IsReadOnly="True"/>
+                                    IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
 
                 <!-- Status -->
                 <DataGridTemplateColumn Header="وضعیت" Width="120">
@@ -429,27 +478,44 @@
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                     <!-- Removed IsSelected setter to prevent row selection from toggling checkbox -->
-                    <Setter Property="Tag" Value="{Binding DataContext, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                    <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource AncestorType=DataGrid}}"/>
                     <Setter Property="ContextMenu">
                         <Setter.Value>
                             <ContextMenu Background="{DynamicResource MainBackground}" 
                                          Foreground="{DynamicResource PrimaryText}">
+                                <MenuItem Header="تیک زدن موارد انتخاب شده" 
+                                          Command="{Binding PlacementTarget.Tag.DataContext.CheckSelectedItemsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                          CommandParameter="{Binding PlacementTarget.Tag.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          Visibility="{Binding PlacementTarget.Tag.SelectedItems.Count, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource MultipleSelectionToVisibilityConverter}}">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon Kind="CheckboxMarked" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="برداشتن تیک موارد انتخاب شده" 
+                                          Command="{Binding PlacementTarget.Tag.DataContext.UncheckSelectedItemsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                          CommandParameter="{Binding PlacementTarget.Tag.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          Visibility="{Binding PlacementTarget.Tag.SelectedItems.Count, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource MultipleSelectionToVisibilityConverter}}">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon Kind="CheckboxBlankOutline" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <Separator/>
                                 <MenuItem Header="جستجوی دستی" 
-                                          Command="{Binding PlacementTarget.Tag.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                          Command="{Binding PlacementTarget.Tag.DataContext.OpenEditDialogCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
                                           CommandParameter="{Binding}">
                                     <MenuItem.Icon>
                                         <materialDesign:PackIcon Kind="Pencil"/>
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <MenuItem Header="جستجوی مجدد" 
-                                          Command="{Binding PlacementTarget.Tag.RetryGroupCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                          Command="{Binding PlacementTarget.Tag.DataContext.RetryGroupCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
                                           CommandParameter="{Binding}">
                                     <MenuItem.Icon>
                                         <materialDesign:PackIcon Kind="Refresh"/>
                                     </MenuItem.Icon>
                                 </MenuItem>
                                 <MenuItem Header="اضافه کردن به سریال‌های موجود" 
-                                          Command="{Binding PlacementTarget.Tag.OpenSelectExistingDialogCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                          Command="{Binding PlacementTarget.Tag.DataContext.OpenSelectExistingDialogCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
                                           CommandParameter="{Binding}">
                                     <MenuItem.Icon>
                                         <materialDesign:PackIcon Kind="PlaylistPlus"/>
@@ -457,7 +523,7 @@
                                 </MenuItem>
                                 <Separator/>
                                 <MenuItem Header="حذف از لیست" 
-                                          Command="{Binding PlacementTarget.Tag.DeleteSelectedCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                          Command="{Binding PlacementTarget.Tag.DataContext.DeleteSelectedCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                     <MenuItem.Icon>
                                         <materialDesign:PackIcon Kind="Delete" Foreground="{DynamicResource ErrorColor}"/>
                                     </MenuItem.Icon>

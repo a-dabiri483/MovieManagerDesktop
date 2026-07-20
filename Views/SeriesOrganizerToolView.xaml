@@ -114,7 +114,6 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <TextBlock Grid.Column="0" Text="مسیر جستجو:" 
@@ -122,21 +121,24 @@
                            FontWeight="SemiBold" FontSize="14"
                            VerticalAlignment="Center" Margin="0,0,15,0"/>
 
-                <Border Grid.Column="1" Background="{DynamicResource MainBackground}" 
-                        CornerRadius="8" Padding="10,8"
-                        BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1">
-                    <TextBlock Text="{Binding SelectedFolderPath}" 
-                               Foreground="{DynamicResource SecondaryText}" 
-                               VerticalAlignment="Center" FontSize="13"
-                               TextTrimming="CharacterEllipsis"/>
-                </Border>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBox Text="{Binding SelectedFolderPath, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="مسیر پوشه..."
+                             Foreground="{DynamicResource PrimaryText}" 
+                             FontSize="13" 
+                             Width="350"
+                             VerticalAlignment="Center"
+                             Margin="0,0,10,0"/>
+                    <Button Command="{Binding SelectFolderCommand}"
+                            Style="{StaticResource MaterialDesignIconForegroundButton}"
+                            Foreground="{DynamicResource SecondaryText}"
+                            ToolTip="انتخاب پوشه"
+                            Width="30" Height="30" Padding="0" Margin="0,0,5,0">
+                        <materialDesign:PackIcon Kind="FolderOpen"/>
+                    </Button>
+                </StackPanel>
 
-                <Button Grid.Column="2" Command="{Binding SelectFolderCommand}"
-                        Style="{StaticResource MaterialDesignOutlinedButton}"
-                        Foreground="{DynamicResource PrimaryColor}" BorderBrush="{DynamicResource PrimaryColor}"
-                        ToolTip="انتخاب پوشه" Height="36" Margin="8,0,0,0" Content="انتخاب پوشه"/>
-
-                <Button Grid.Column="3" Command="{Binding ScanFolderCommand}"
+                <Button Grid.Column="2" Command="{Binding ScanFolderCommand}"
                         Style="{StaticResource MaterialDesignRaisedButton}"
                         Background="{DynamicResource PrimaryColor}"
                         Height="36" Padding="20,0" Margin="10,0,0,0"
@@ -181,17 +183,36 @@
                         <StackPanel Grid.Column="0" Orientation="Horizontal">
                             <TextBlock Text="فایل‌های نیازمند سازمان‌دهی" Foreground="{DynamicResource PrimaryText}" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"/>
                         </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                            <Button Command="{Binding SelectAllPendingCommand}" Style="{StaticResource MaterialDesignFlatButton}" Content="انتخاب همه" Margin="0,0,5,0" Padding="10,0" Height="25"/>
-                            <Button Command="{Binding DeselectAllPendingCommand}" Style="{StaticResource MaterialDesignFlatButton}" Content="لغو همه" Padding="10,0" Height="25"/>
-                        </StackPanel>
                     </Grid>
 
                     <ProgressBar Grid.Row="1" IsIndeterminate="True" Visibility="{Binding IsProcessing, Converter={StaticResource BooleanToVisibilityConverter}}" Height="2" Margin="0,0,0,5" Foreground="{DynamicResource PrimaryColor}"/>
 
-                    <DataGrid Grid.Row="2" ItemsSource="{Binding PendingItems}" Foreground="{DynamicResource PrimaryText}" RowHeight="55" AutoGenerateColumns="False" CanUserAddRows="False" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" VerticalAlignment="Stretch">
+                    <DataGrid x:Name="SeriesOrganizerGrid" Grid.Row="2" ItemsSource="{Binding PendingItems}" RowHeight="55" AutoGenerateColumns="False" CanUserAddRows="False" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" VerticalAlignment="Stretch" Tag="{Binding RelativeSource={RelativeSource AncestorType=UserControl}}">
+                        <DataGrid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem Header="تیک زدن موارد انتخاب شده" 
+                                          Command="{Binding PlacementTarget.Tag.DataContext.CheckSelectedItemsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                          CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          Visibility="{Binding PlacementTarget.SelectedItems.Count, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource MultipleSelectionToVisibilityConverter}}">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon Kind="CheckboxMarked" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                                <MenuItem Header="برداشتن تیک موارد انتخاب شده" 
+                                          Command="{Binding PlacementTarget.Tag.DataContext.UncheckSelectedItemsCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" 
+                                          CommandParameter="{Binding PlacementTarget.SelectedItems, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          Visibility="{Binding PlacementTarget.SelectedItems.Count, RelativeSource={RelativeSource AncestorType=ContextMenu}, Converter={StaticResource MultipleSelectionToVisibilityConverter}}">
+                                    <MenuItem.Icon>
+                                        <materialDesign:PackIcon Kind="CheckboxBlankOutline" />
+                                    </MenuItem.Icon>
+                                </MenuItem>
+                            </ContextMenu>
+                        </DataGrid.ContextMenu>
                         <DataGrid.Columns>
-                            <DataGridTemplateColumn Header="✓" Width="40">
+                            <DataGridTemplateColumn Width="40">
+                                <DataGridTemplateColumn.Header>
+                                    <CheckBox IsChecked="{Binding DataContext.IsAllSelected, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center"/>
+                                </DataGridTemplateColumn.Header>
                                 <DataGridTemplateColumn.CellTemplate>
                                     <DataTemplate>
                                         <CheckBox IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
@@ -203,7 +224,7 @@
                                 <DataGridTextColumn.ElementStyle>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="VerticalAlignment" Value="Center"/>
-                                        <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
                                         <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
                                         <Setter Property="ToolTip" Value="{Binding FileName}"/>
                                     </Style>
@@ -234,7 +255,7 @@
                     
                     <TextBlock Grid.Row="0" Text="فایل‌های تکمیل شده" Foreground="{DynamicResource PrimaryText}" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,10"/>
                     
-                    <DataGrid Grid.Row="1" ItemsSource="{Binding CompletedItems}" Foreground="{DynamicResource PrimaryText}" RowHeight="55" AutoGenerateColumns="False" CanUserAddRows="False" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" VerticalAlignment="Stretch">
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding CompletedItems}" RowHeight="55" AutoGenerateColumns="False" CanUserAddRows="False" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" VerticalAlignment="Stretch">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="فایل منتقل شده" Binding="{Binding FileName}" Width="*" IsReadOnly="True">
                                 <DataGridTextColumn.ElementStyle>

@@ -11,22 +11,6 @@ namespace MovieManagerDesktop.Views
 
         private void ResultsDataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Sync selection with CheckBoxes when using keyboard modifiers (Ctrl/Shift)
-            if (System.Windows.Input.Keyboard.Modifiers.HasFlag(System.Windows.Input.ModifierKeys.Shift) || 
-                System.Windows.Input.Keyboard.Modifiers.HasFlag(System.Windows.Input.ModifierKeys.Control))
-            {
-                foreach (var item in e.AddedItems)
-                {
-                    if (item is ViewModels.ScannedGroupViewModel vm)
-                        vm.IsChecked = true;
-                }
-                foreach (var item in e.RemovedItems)
-                {
-                    if (item is ViewModels.ScannedGroupViewModel vm)
-                        vm.IsChecked = false;
-                }
-            }
-
             if (DataContext is ViewModels.ScanViewModel vmContext)
             {
                 vmContext.UpdateBulkToolbar();

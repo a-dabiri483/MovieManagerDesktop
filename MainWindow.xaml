@@ -5,7 +5,7 @@
         xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
         xmlns:views="clr-namespace:MovieManagerDesktop.Views"
         xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
-        Title="Movie Collection Dashboard" Height="750" Width="1250"
+        Title="مدیریت فیلم و سریال" Height="750" Width="1250"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         WindowStartupLocation="CenterScreen"
         Icon="Assets/logo.ico"
@@ -63,6 +63,9 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type viewmodels:SeriesOrganizerToolViewModel}">
             <views:SeriesOrganizerToolView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:SeriesFileRenamerViewModel}">
+            <views:SeriesFileRenamerView />
         </DataTemplate>
 
         <!-- Style for modern sidebar buttons -->
