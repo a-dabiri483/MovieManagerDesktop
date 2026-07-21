@@ -320,6 +320,7 @@
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto"/>
                                                         <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
 
                                                     <CheckBox Grid.Column="0" IsChecked="{Binding IsWatched}" 
@@ -342,6 +343,19 @@
                                                         <TextBlock Text="{Binding AirDate}" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,5,0,10"/>
                                                         <TextBlock Text="{Binding Overview}" FontSize="13" Foreground="{DynamicResource SecondaryText}" TextWrapping="Wrap" MaxHeight="60" TextTrimming="CharacterEllipsis"/>
                                                     </StackPanel>
+
+                                                    <Button Grid.Column="2" 
+                                                            Command="{Binding DataContext.PlayEpisodeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                                                            Background="Transparent"
+                                                            BorderBrush="{DynamicResource PrimaryColor}"
+                                                            Foreground="{DynamicResource PrimaryColor}"
+                                                            Width="40" Height="40"
+                                                            VerticalAlignment="Center"
+                                                            ToolTip="پخش این قسمت">
+                                                        <materialDesign:PackIcon Kind="Play" Width="24" Height="24"/>
+                                                    </Button>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>

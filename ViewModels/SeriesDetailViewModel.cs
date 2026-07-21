@@ -584,5 +584,65 @@ namespace MovieManagerDesktop.ViewModels
                 }
             }
         }
+
+        [RelayCommand]
+        private async Task PlayEpisodeAsync(TvEpisode episode)
+        {
+            if (episode == null) return;
+
+            using var db = new AppDbContext();
+            var videoFile = db.VideoFiles.FirstOrDefault(v => 
+                v.MediaType == "Series" && 
+                v.FormattedTitle.ToLower() == _series.FormattedTitle.ToLower() && 
+                v.Season == episode.SeasonNumber && 
+                v.Episode == episode.EpisodeNumber);
+
+            if (videoFile == null || string.IsNullOrWhiteSpace(videoFile.FilePath))
+            {
+                ToastService.Instance.ShowWarning("فایل این قسمت در دیتابیس یافت نشد. ممکن است اسکن نشده باشد.");
+                return;
+            }
+
+            try
+            {
+                await MpvPlayerService.PlayVideoAsync(videoFile.FilePath, (int)videoFile.LastWatchPosition, async (currentTime, percent, isFinished) => 
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                    {
+                        videoFile.LastWatchPosition = currentTime;
+                        videoFile.WatchProgressPercent = percent;
+                        if (isFinished && !episode.IsWatched)
+                        {
+                            episode.IsWatched = true;
+                            videoFile.IsWatched = true;
+                            // Re-evaluate progress
+                            Task.Run(() => ToggleEpisodeWatched(episode));
+                        }
+                    });
+
+                    // Save to database
+                    try
+                    {
+                        using var dbContext = new AppDbContext();
+                        var dbFile = await dbContext.VideoFiles.FindAsync(videoFile.Id);
+                        if (dbFile != null)
+                        {
+                            dbFile.LastWatchPosition = currentTime;
+                            dbFile.WatchProgressPercent = percent;
+                            dbFile.IsWatched = videoFile.IsWatched;
+                            await dbContext.SaveChangesAsync();
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        LoggerService.Error("Error saving watch progress", ex);
+                    }
+                });
+            }
+            catch (System.Exception ex)
+            {
+                ToastService.Instance.ShowError(ex.Message);
+            }
+        }
     }
 }

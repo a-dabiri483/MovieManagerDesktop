@@ -356,10 +356,59 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void OpenDetails(GalleryItemViewModel item)
         {
-            if (item != null && item.File != null)
+            if (item == null) return;
+            
+            LastClickedIndex = Movies.IndexOf(item);
+
+            if (item.File.MediaType == "Series")
             {
-                LastClickedIndex = Movies.IndexOf(item);
-                WeakReferenceMessenger.Default.Send(new NavigationMessage(new MediaDetailsViewModel(item.File, this)));
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(new SeriesDetailViewModel(item.File)));
+            }
+            else
+            {
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(new MediaDetailsViewModel(item.File)));
+            }
+        }
+
+        [RelayCommand]
+        private async Task PlayVideoAsync(GalleryItemViewModel item)
+        {
+            if (item == null || string.IsNullOrWhiteSpace(item.File.FilePath)) return;
+
+            try
+            {
+                await MpvPlayerService.PlayVideoAsync(item.File.FilePath, (int)item.File.LastWatchPosition, async (currentTime, percent, isFinished) => 
+                {
+                    Application.Current.Dispatcher.Invoke(() => 
+                    {
+                        item.File.LastWatchPosition = currentTime;
+                        item.File.WatchProgressPercent = percent;
+                        item.File.IsWatched = isFinished;
+                        item.NotifyFileChanged();
+                    });
+
+                    // Save to database
+                    try
+                    {
+                        using var db = new AppDbContext();
+                        var dbFile = await db.VideoFiles.FindAsync(item.File.Id);
+                        if (dbFile != null)
+                        {
+                            dbFile.LastWatchPosition = currentTime;
+                            dbFile.WatchProgressPercent = percent;
+                            dbFile.IsWatched = isFinished;
+                            await db.SaveChangesAsync();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LoggerService.Error("Error saving watch progress", ex);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                ToastService.Instance.ShowError(ex.Message);
             }
         }
 

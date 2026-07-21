@@ -218,39 +218,88 @@ namespace MovieManagerDesktop.ViewModels
 
 
         [RelayCommand]
-        private void PlayMovie()
+        private async System.Threading.Tasks.Task PlayMovieAsync()
         {
+            if (Media == null || string.IsNullOrWhiteSpace(Media.FilePath)) return;
+
             try
             {
-                if (!string.IsNullOrWhiteSpace(Media.FilePath) && System.IO.File.Exists(Media.FilePath))
+                await MpvPlayerService.PlayVideoAsync(Media.FilePath, (int)Media.LastWatchPosition, async (currentTime, percent, isFinished) => 
                 {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Media.FilePath) { UseShellExecute = true });
-                    
-                    if (!IsWatched) ToggleWatched(); // Auto mark as watched when played
-                }
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                    {
+                        Media.LastWatchPosition = currentTime;
+                        Media.WatchProgressPercent = percent;
+                        Media.IsWatched = isFinished;
+                        IsWatched = isFinished;
+                    });
+
+                    // Save to database
+                    try
+                    {
+                        using var db = new AppDbContext();
+                        var dbFile = await db.VideoFiles.FindAsync(Media.Id);
+                        if (dbFile != null)
+                        {
+                            dbFile.LastWatchPosition = currentTime;
+                            dbFile.WatchProgressPercent = percent;
+                            dbFile.IsWatched = isFinished;
+                            await db.SaveChangesAsync();
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        LoggerService.Error("Error saving watch progress", ex);
+                    }
+                });
             }
-            catch { }
+            catch (System.Exception ex)
+            {
+                ToastService.Instance.ShowError(ex.Message);
+            }
         }
 
         [RelayCommand]
-        private void PlayEpisode(VideoFile episode)
+        private async System.Threading.Tasks.Task PlayEpisodeAsync(VideoFile episode)
         {
+            if (episode == null || string.IsNullOrWhiteSpace(episode.FilePath)) return;
+
             try
             {
-                if (episode != null && !string.IsNullOrWhiteSpace(episode.FilePath) && System.IO.File.Exists(episode.FilePath))
+                await MpvPlayerService.PlayVideoAsync(episode.FilePath, (int)episode.LastWatchPosition, async (currentTime, percent, isFinished) => 
                 {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(episode.FilePath) { UseShellExecute = true });
-                    
-                    using var db = new AppDbContext();
-                    var dbEp = db.VideoFiles.FirstOrDefault(v => v.Id == episode.Id);
-                    if (dbEp != null) {
-                        dbEp.IsWatched = true;
-                        db.SaveChanges();
-                        episode.IsWatched = true;
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                    {
+                        episode.LastWatchPosition = currentTime;
+                        episode.WatchProgressPercent = percent;
+                        if (isFinished && !episode.IsWatched)
+                        {
+                            episode.IsWatched = true;
+                        }
+                    });
+
+                    // Save to database
+                    try
+                    {
+                        using var db = new AppDbContext();
+                        var dbEp = await db.VideoFiles.FindAsync(episode.Id);
+                        if (dbEp != null) {
+                            dbEp.LastWatchPosition = currentTime;
+                            dbEp.WatchProgressPercent = percent;
+                            dbEp.IsWatched = episode.IsWatched;
+                            await db.SaveChangesAsync();
+                        }
                     }
-                }
+                    catch (System.Exception ex)
+                    {
+                        LoggerService.Error("Error saving watch progress", ex);
+                    }
+                });
             }
-            catch { }
+            catch (System.Exception ex)
+            {
+                ToastService.Instance.ShowError(ex.Message);
+            }
         }
 
         [RelayCommand]
@@ -392,6 +441,48 @@ namespace MovieManagerDesktop.ViewModels
         private void GoBack()
         {
             WeakReferenceMessenger.Default.Send(new NavigationMessage(_parentViewModel));
+        }
+
+        [RelayCommand]
+        private async System.Threading.Tasks.Task PlayVideoAsync()
+        {
+            if (Media == null || string.IsNullOrWhiteSpace(Media.FilePath)) return;
+
+            try
+            {
+                await MpvPlayerService.PlayVideoAsync(Media.FilePath, (int)Media.LastWatchPosition, async (currentTime, percent, isFinished) => 
+                {
+                    System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                    {
+                        Media.LastWatchPosition = currentTime;
+                        Media.WatchProgressPercent = percent;
+                        Media.IsWatched = isFinished;
+                        IsWatched = isFinished;
+                    });
+
+                    // Save to database
+                    try
+                    {
+                        using var db = new AppDbContext();
+                        var dbFile = await db.VideoFiles.FindAsync(Media.Id);
+                        if (dbFile != null)
+                        {
+                            dbFile.LastWatchPosition = currentTime;
+                            dbFile.WatchProgressPercent = percent;
+                            dbFile.IsWatched = isFinished;
+                            await db.SaveChangesAsync();
+                        }
+                    }
+                    catch (System.Exception ex)
+                    {
+                        LoggerService.Error("Error saving watch progress", ex);
+                    }
+                });
+            }
+            catch (System.Exception ex)
+            {
+                ToastService.Instance.ShowError(ex.Message);
+            }
         }
     }
 }

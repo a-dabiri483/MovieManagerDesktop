@@ -38,6 +38,7 @@ namespace MovieManagerDesktop.Models
         public bool IsFavorite { get; set; } = false;
         public bool IsWatchlist { get; set; } = false;
         public double WatchProgressPercent { get; set; } = 0; // 0 to 100
+        public double LastWatchPosition { get; set; } = 0; // in seconds
         
         public string? BackdropUrl { get; set; }
         public string? CollectionName { get; set; }
