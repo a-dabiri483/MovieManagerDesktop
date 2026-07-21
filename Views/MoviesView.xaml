@@ -480,86 +480,44 @@
                                                 </Style.Triggers>
                                             </Style>
                                         </Border.Style>
-
                                     </Border>
-                                    <!-- Poster Click to Open Details -->
-                                    <Button Command="{Binding DataContext.OpenDetailsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                            CommandParameter="{Binding}">
-                                        <Button.Style>
-                                            <Style TargetType="Button" BasedOn="{StaticResource MaterialDesignFlatButton}">
-                                                <Setter Property="Padding" Value="0"/>
-                                                <Setter Property="Height" Value="Auto"/>
-                                                <Setter Property="IsHitTestVisible" Value="True"/>
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding DataContext.IsInSelectionMode, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
-                                                        <Setter Property="IsHitTestVisible" Value="False"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Button.Style>
-                                        <Grid>
-                                            <!-- Full Poster -->
-                                            <Image Source="{Binding File.PosterUrl, Converter={StaticResource ImageUrlToCachedImageConverter}}" Stretch="UniformToFill" Height="{Binding DataContext.PosterHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                                    
+                                    <!-- Poster Click Handler -->
+                                    <Grid Background="Transparent" MouseLeftButtonUp="Grid_MouseLeftButtonUp">
+                                        <!-- Full Poster -->
+                                        <Image Source="{Binding File.PosterUrl, Converter={StaticResource ImageUrlToCachedImageConverter}}" Stretch="UniformToFill" Height="{Binding DataContext.PosterHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" />
 
-                                            <!-- Sliding Info Overlay -->
-                                            <Border x:Name="InfoOverlay" VerticalAlignment="Bottom" Background="#CC000000" Padding="12,10" Panel.ZIndex="2">
-                                                <Border.RenderTransform>
-                                                    <TranslateTransform x:Name="InfoOverlayTransform" Y="100"/>
-                                                </Border.RenderTransform>
-                                                <StackPanel>
-                                                    <TextBlock Text="{Binding File.FormattedTitle}" Foreground="White" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                                                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                        <materialDesign:PackIcon Kind="Star" Foreground="{DynamicResource WarningColor}" VerticalAlignment="Center" Width="12" Height="12"/>
-                                                        <TextBlock Text="{Binding File.Rating}" Foreground="#E0E0E0" FontSize="12" Margin="4,0,8,0"/>
-                                                        <TextBlock Text="{Binding File.Year}" Foreground="#E0E0E0" FontSize="12" Margin="0,0,8,0"/>
-                                                    </StackPanel>
+                                        <!-- Sliding Info Overlay -->
+                                        <Border x:Name="InfoOverlay" VerticalAlignment="Bottom" Background="#CC000000" Padding="12,10" Panel.ZIndex="2">
+                                            <Border.RenderTransform>
+                                                <TranslateTransform x:Name="InfoOverlayTransform" Y="100"/>
+                                            </Border.RenderTransform>
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding File.FormattedTitle}" Foreground="White" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                    <materialDesign:PackIcon Kind="Star" Foreground="{DynamicResource WarningColor}" VerticalAlignment="Center" Width="12" Height="12"/>
+                                                    <TextBlock Text="{Binding File.Rating}" Foreground="#E0E0E0" FontSize="12" Margin="4,0,8,0"/>
+                                                    <TextBlock Text="{Binding File.Year}" Foreground="#E0E0E0" FontSize="12" Margin="0,0,8,0"/>
                                                 </StackPanel>
-                                            </Border>
+                                            </StackPanel>
+                                        </Border>
 
-                                            <!-- Series Status Badge -->
-                                            <Border CornerRadius="4" Padding="6,2" Background="{Binding File.SeriesStatus, Converter={StaticResource SeriesStatusColorConverter}}" Visibility="{Binding File.SeriesStatus, Converter={StaticResource NullToVisibilityConverter}}" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,10" Panel.ZIndex="3" IsHitTestVisible="False">
-                                                <Border.RenderTransform>
-                                                    <TranslateTransform x:Name="BadgeTransform" Y="0"/>
-                                                </Border.RenderTransform>
-                                                <TextBlock Text="{Binding File.SeriesStatus, Converter={StaticResource SeriesStatusConverter}}" Foreground="White" FontSize="10" FontWeight="Bold"/>
-                                            </Border>
-                                        </Grid>
-                                    </Button>
+                                        <!-- Series Status Badge -->
+                                        <Border CornerRadius="4" Padding="6,2" Background="{Binding File.SeriesStatus, Converter={StaticResource SeriesStatusColorConverter}}" Visibility="{Binding File.SeriesStatus, Converter={StaticResource NullToVisibilityConverter}}" VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,10" Panel.ZIndex="3" IsHitTestVisible="False">
+                                            <Border.RenderTransform>
+                                                <TranslateTransform x:Name="BadgeTransform" Y="0"/>
+                                            </Border.RenderTransform>
+                                            <TextBlock Text="{Binding File.SeriesStatus, Converter={StaticResource SeriesStatusConverter}}" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                        </Border>
+                                    </Grid>
 
-                                    <!-- Top Overlay (Checkbox and Icons) -->
+                                    <!-- Top Overlay (Icons) -->
                                     <Border VerticalAlignment="Top" HorizontalAlignment="Stretch" Padding="8" Background="Transparent" CornerRadius="12,12,0,0" Panel.ZIndex="5">
                                         <Grid>
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
                                                 <ColumnDefinition Width="*"/>
                                                 <ColumnDefinition Width="Auto"/>
                                             </Grid.ColumnDefinitions>
-                                            
-                                            <!-- Border to ensure CheckBox is visible -->
-                                            <Border Grid.Column="0" Background="#99000000" CornerRadius="4" Padding="4" HorizontalAlignment="Left" VerticalAlignment="Top" Panel.ZIndex="10" Margin="4">
-                                                <CheckBox IsChecked="{Binding IsSelected}" Foreground="{DynamicResource PrimaryColor}" BorderBrush="White">
-                                                    <CheckBox.Style>
-                                                        <Style TargetType="CheckBox" BasedOn="{StaticResource MaterialDesignCheckBox}">
-                                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding DataContext.IsSelectionMode, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="True">
-                                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding IsMouseOver, ElementName=posterCard}" Value="True">
-                                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                                    <Setter Property="Visibility" Value="Visible"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </CheckBox.Style>
-                                                </CheckBox>
-                                            </Border>
-                                            
-                                            
-                                            <!-- Series Status Badge (Removed from here, moved to hover overlay) -->
-                                            
                                             <Border Grid.Column="2" Background="#99000000" CornerRadius="8" Padding="2" HorizontalAlignment="Right" VerticalAlignment="Top">
                                                 <!-- Favorite Toggle -->
                                                 <Button Command="{Binding ToggleFavoriteCommand}"

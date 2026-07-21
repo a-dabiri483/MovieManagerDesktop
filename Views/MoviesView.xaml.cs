@@ -156,5 +156,40 @@ namespace MovieManagerDesktop.Views
                 vm.IsInSelectionMode = vm.SelectedCount > 0;
             }
         }
+
+        private void Grid_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            var grid = sender as Grid;
+            if (grid == null) return;
+
+            var mediaItem = grid.DataContext as ViewModels.GalleryItemViewModel;
+            var vm = this.DataContext as ViewModels.MoviesViewModel;
+            if (mediaItem == null || vm == null) return;
+
+            bool isCtrlOrShift = Keyboard.Modifiers.HasFlag(ModifierKeys.Control) || Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+
+            if (isCtrlOrShift)
+            {
+                // Let the ListBox handle normal multi-selection
+                return;
+            }
+
+            if (vm.IsInSelectionMode)
+            {
+                // Toggle selection state and handle to prevent ListBox from deselecting everything else
+                mediaItem.IsSelected = !mediaItem.IsSelected;
+                e.Handled = true;
+                
+                // Force update the selected count since we bypassed the normal ListBox selection path
+                vm.SelectedCount = vm.Movies.Count(m => m.IsSelected);
+                vm.IsInSelectionMode = vm.SelectedCount > 0;
+            }
+            else
+            {
+                // Open Details normally
+                vm.OpenDetailsCommand.Execute(mediaItem);
+                e.Handled = true;
+            }
+        }
     }
 }
