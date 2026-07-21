@@ -222,36 +222,46 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (Media == null || string.IsNullOrWhiteSpace(Media.FilePath)) return;
 
+            var settings = SettingsManager.LoadSettings();
+
             try
             {
-                await MpvPlayerService.PlayVideoAsync(Media.FilePath, (int)Media.LastWatchPosition, async (currentTime, percent, isFinished) => 
+                if (settings.PlayerType == "Custom")
                 {
-                    System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Media.FilePath) { UseShellExecute = true });
+                    if (!IsWatched) ToggleWatched(); // Auto mark as watched when played
+                }
+                else
+                {
+                    await MpvPlayerService.PlayVideoAsync(Media.FilePath, (int)Media.LastWatchPosition, async (currentTime, percent, isFinished) => 
                     {
-                        Media.LastWatchPosition = currentTime;
-                        Media.WatchProgressPercent = percent;
-                        Media.IsWatched = isFinished;
-                        IsWatched = isFinished;
-                    });
-
-                    // Save to database
-                    try
-                    {
-                        using var db = new AppDbContext();
-                        var dbFile = await db.VideoFiles.FindAsync(Media.Id);
-                        if (dbFile != null)
+                        System.Windows.Application.Current.Dispatcher.Invoke(() => 
                         {
-                            dbFile.LastWatchPosition = currentTime;
-                            dbFile.WatchProgressPercent = percent;
-                            dbFile.IsWatched = isFinished;
-                            await db.SaveChangesAsync();
+                            Media.LastWatchPosition = currentTime;
+                            Media.WatchProgressPercent = percent;
+                            Media.IsWatched = isFinished;
+                            IsWatched = isFinished;
+                        });
+
+                        // Save to database
+                        try
+                        {
+                            using var db = new AppDbContext();
+                            var dbFile = await db.VideoFiles.FindAsync(Media.Id);
+                            if (dbFile != null)
+                            {
+                                dbFile.LastWatchPosition = currentTime;
+                                dbFile.WatchProgressPercent = percent;
+                                dbFile.IsWatched = isFinished;
+                                await db.SaveChangesAsync();
+                            }
                         }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        LoggerService.Error("Error saving watch progress", ex);
-                    }
-                });
+                        catch (System.Exception ex)
+                        {
+                            LoggerService.Error("Error saving watch progress", ex);
+                        }
+                    });
+                }
             }
             catch (System.Exception ex)
             {
@@ -264,37 +274,54 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (episode == null || string.IsNullOrWhiteSpace(episode.FilePath)) return;
 
+            var settings = SettingsManager.LoadSettings();
+
             try
             {
-                await MpvPlayerService.PlayVideoAsync(episode.FilePath, (int)episode.LastWatchPosition, async (currentTime, percent, isFinished) => 
+                if (settings.PlayerType == "Custom")
                 {
-                    System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(episode.FilePath) { UseShellExecute = true });
+                    
+                    using var db = new AppDbContext();
+                    var dbEp = db.VideoFiles.FirstOrDefault(v => v.Id == episode.Id);
+                    if (dbEp != null) {
+                        dbEp.IsWatched = true;
+                        db.SaveChanges();
+                        episode.IsWatched = true;
+                    }
+                }
+                else
+                {
+                    await MpvPlayerService.PlayVideoAsync(episode.FilePath, (int)episode.LastWatchPosition, async (currentTime, percent, isFinished) => 
                     {
-                        episode.LastWatchPosition = currentTime;
-                        episode.WatchProgressPercent = percent;
-                        if (isFinished && !episode.IsWatched)
+                        System.Windows.Application.Current.Dispatcher.Invoke(() => 
                         {
-                            episode.IsWatched = true;
+                            episode.LastWatchPosition = currentTime;
+                            episode.WatchProgressPercent = percent;
+                            if (isFinished && !episode.IsWatched)
+                            {
+                                episode.IsWatched = true;
+                            }
+                        });
+
+                        // Save to database
+                        try
+                        {
+                            using var db = new AppDbContext();
+                            var dbEp = await db.VideoFiles.FindAsync(episode.Id);
+                            if (dbEp != null) {
+                                dbEp.LastWatchPosition = currentTime;
+                                dbEp.WatchProgressPercent = percent;
+                                dbEp.IsWatched = episode.IsWatched;
+                                await db.SaveChangesAsync();
+                            }
+                        }
+                        catch (System.Exception ex)
+                        {
+                            LoggerService.Error("Error saving watch progress", ex);
                         }
                     });
-
-                    // Save to database
-                    try
-                    {
-                        using var db = new AppDbContext();
-                        var dbEp = await db.VideoFiles.FindAsync(episode.Id);
-                        if (dbEp != null) {
-                            dbEp.LastWatchPosition = currentTime;
-                            dbEp.WatchProgressPercent = percent;
-                            dbEp.IsWatched = episode.IsWatched;
-                            await db.SaveChangesAsync();
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        LoggerService.Error("Error saving watch progress", ex);
-                    }
-                });
+                }
             }
             catch (System.Exception ex)
             {

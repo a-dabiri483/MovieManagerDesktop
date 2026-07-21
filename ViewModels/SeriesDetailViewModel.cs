@@ -603,41 +603,55 @@ namespace MovieManagerDesktop.ViewModels
                 return;
             }
 
+            var settings = SettingsManager.LoadSettings();
+
             try
             {
-                await MpvPlayerService.PlayVideoAsync(videoFile.FilePath, (int)videoFile.LastWatchPosition, async (currentTime, percent, isFinished) => 
+                if (settings.PlayerType == "Custom")
                 {
-                    System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(videoFile.FilePath) { UseShellExecute = true });
+                    
+                    episode.IsWatched = true;
+                    videoFile.IsWatched = true;
+                    // Re-evaluate progress
+                    Task.Run(() => ToggleEpisodeWatched(episode));
+                }
+                else
+                {
+                    await MpvPlayerService.PlayVideoAsync(videoFile.FilePath, (int)videoFile.LastWatchPosition, async (currentTime, percent, isFinished) => 
                     {
-                        videoFile.LastWatchPosition = currentTime;
-                        videoFile.WatchProgressPercent = percent;
-                        if (isFinished && !episode.IsWatched)
+                        System.Windows.Application.Current.Dispatcher.Invoke(() => 
                         {
-                            episode.IsWatched = true;
-                            videoFile.IsWatched = true;
-                            // Re-evaluate progress
-                            Task.Run(() => ToggleEpisodeWatched(episode));
+                            videoFile.LastWatchPosition = currentTime;
+                            videoFile.WatchProgressPercent = percent;
+                            if (isFinished && !episode.IsWatched)
+                            {
+                                episode.IsWatched = true;
+                                videoFile.IsWatched = true;
+                                // Re-evaluate progress
+                                Task.Run(() => ToggleEpisodeWatched(episode));
+                            }
+                        });
+
+                        // Save to database
+                        try
+                        {
+                            using var dbContext = new AppDbContext();
+                            var dbFile = await dbContext.VideoFiles.FindAsync(videoFile.Id);
+                            if (dbFile != null)
+                            {
+                                dbFile.LastWatchPosition = currentTime;
+                                dbFile.WatchProgressPercent = percent;
+                                dbFile.IsWatched = videoFile.IsWatched;
+                                await dbContext.SaveChangesAsync();
+                            }
+                        }
+                        catch (System.Exception ex)
+                        {
+                            LoggerService.Error("Error saving watch progress", ex);
                         }
                     });
-
-                    // Save to database
-                    try
-                    {
-                        using var dbContext = new AppDbContext();
-                        var dbFile = await dbContext.VideoFiles.FindAsync(videoFile.Id);
-                        if (dbFile != null)
-                        {
-                            dbFile.LastWatchPosition = currentTime;
-                            dbFile.WatchProgressPercent = percent;
-                            dbFile.IsWatched = videoFile.IsWatched;
-                            await dbContext.SaveChangesAsync();
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        LoggerService.Error("Error saving watch progress", ex);
-                    }
-                });
+                }
             }
             catch (System.Exception ex)
             {

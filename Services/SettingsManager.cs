@@ -29,6 +29,10 @@ namespace MovieManagerDesktop.Services
         public bool IsGoogleDriveAutoBackupEnabled { get; set; } = false;
         public int BackupFrequencyIndex { get; set; } = 0; // 0: Always on exit, 1: Daily, 2: Weekly
         public DateTime LastBackupTime { get; set; } = DateTime.MinValue;
+
+        // Player Settings
+        public string PlayerType { get; set; } = "Custom"; // Custom (Default computer player), Plugin (MPV)
+        public string MpvPath { get; set; } = string.Empty;
     }
 
     public static class SettingsManager

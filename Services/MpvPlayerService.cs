@@ -14,6 +14,12 @@ namespace MovieManagerDesktop.Services
         
         public static string GetMpvPath()
         {
+            var settings = SettingsManager.LoadSettings();
+            if (!string.IsNullOrWhiteSpace(settings.MpvPath) && File.Exists(settings.MpvPath))
+            {
+                return settings.MpvPath;
+            }
+
             var baseDir = AppDomain.CurrentDomain.BaseDirectory;
             var path = Path.Combine(baseDir, MpvFileName);
             if (File.Exists(path)) return path;

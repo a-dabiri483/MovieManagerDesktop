@@ -522,23 +522,7 @@
                                                 </ProgressBar.Style>
                                             </ProgressBar>
 
-                                            <!-- Play Button Overlay -->
-                                            <Button Command="{Binding DataContext.PlayVideoCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                    CommandParameter="{Binding}"
-                                                    Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                                    Background="#CC000000"
-                                                    BorderBrush="Transparent"
-                                                    Foreground="White"
-                                                    Width="36" Height="36"
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    Panel.ZIndex="5"
-                                                    ToolTip="پخش با MPV">
-                                                <Button.Visibility>
-                                                    <Binding Path="IsMouseOver" RelativeSource="{RelativeSource AncestorType=materialDesign:Card}" Converter="{StaticResource BooleanToVisibilityConverter}"/>
-                                                </Button.Visibility>
-                                                <materialDesign:PackIcon Kind="Play" Width="24" Height="24"/>
-                                            </Button>                                            <!-- Sliding Info Overlay -->
+                                            <!-- Sliding Info Overlay -->
                                             <Border x:Name="InfoOverlay" VerticalAlignment="Bottom" Background="#CC000000" Padding="12,10" Panel.ZIndex="2">
                                                 <Border.RenderTransform>
                                                     <TranslateTransform x:Name="InfoOverlayTransform" Y="100"/>

@@ -84,7 +84,7 @@
                                 <Button Command="{Binding RefreshTrackerCommand}" Style="{StaticResource MaterialDesignFlatButton}" 
                                         HorizontalContentAlignment="Right" Padding="15,10">
                                     <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="RadarOutline" Width="20" Height="20" VerticalAlignment="Center"/>
+                                        <materialDesign:PackIcon Kind="EyeOutline" Width="20" Height="20" VerticalAlignment="Center"/>
                                         <TextBlock Text="دریافت اطلاعات ردیاب" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                     </StackPanel>
                                 </Button>
