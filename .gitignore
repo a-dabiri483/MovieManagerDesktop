@@ -40,3 +40,6 @@ publish/
 *.db-wal
 *.sqlite
 *.sqlite3
+
+# OAuth credentials
+credentials.json

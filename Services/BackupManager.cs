@@ -167,11 +167,54 @@ namespace MovieManagerDesktop.Services
             return backupFilePath;
         }
 
-        private static async Task RunGoogleDriveBackupAsync(string filePath)
+        public static async Task ForceGoogleDriveBackupAsync(IProgress<double> progress = null, IProgress<string> textProgress = null)
+        {
+            var settings = SettingsManager.LoadSettings();
+            
+            if (textProgress != null) textProgress.Report("در حال جمع‌آوری اطلاعات از دیتابیس...");
+            var backupJson = await GenerateBackupJsonAsync(settings);
+            
+            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            var localBackupFilePath = Path.Combine(Path.GetTempPath(), $"MovieManager_Backup_{timestamp}.json");
+            System.IO.File.WriteAllText(localBackupFilePath, backupJson);
+
+            long fileLength = new FileInfo(localBackupFilePath).Length;
+            string formattedSize = fileLength > 1024 * 1024 
+                ? $"{(fileLength / 1024f / 1024f):F1} MB" 
+                : $"{(fileLength / 1024f):F1} KB";
+
+            if (textProgress != null) textProgress.Report($"حجم بکاپ محاسبه شد: {formattedSize}. آماده‌سازی آپلود...");
+            await Task.Delay(1000); // Give user time to see the size
+
+            try
+            {
+                await RunGoogleDriveBackupAsync(localBackupFilePath, progress, textProgress);
+            }
+            finally
+            {
+                System.IO.File.Delete(localBackupFilePath);
+            }
+        }
+
+        public static async Task DisconnectGoogleDriveAsync()
+        {
+            if (Directory.Exists(TokenStorePath))
+            {
+                Directory.Delete(TokenStorePath, true);
+            }
+            await Task.CompletedTask;
+        }
+
+        public static bool IsConnectedToGoogleDrive()
+        {
+            return Directory.Exists(TokenStorePath) && Directory.GetFiles(TokenStorePath).Length > 0;
+        }
+
+        private static async Task<DriveService> GetDriveServiceAsync()
         {
             if (!System.IO.File.Exists(CredentialsFile))
             {
-                throw new FileNotFoundException($"برای پشتیبان‌گیری در گوگل درایو فایل {CredentialsFile} نیاز است. لطفاً آن را در پوشه اصلی برنامه قرار دهید.");
+                throw new FileNotFoundException($"برای ارتباط با گوگل درایو فایل {CredentialsFile} نیاز است. لطفاً آن را در پوشه اصلی برنامه قرار دهید.");
             }
 
             UserCredential credential;
@@ -185,13 +228,25 @@ namespace MovieManagerDesktop.Services
                     new FileDataStore(TokenStorePath, true));
             }
 
-            var service = new DriveService(new BaseClientService.Initializer()
+            return new DriveService(new BaseClientService.Initializer()
             {
                 HttpClientInitializer = credential,
                 ApplicationName = ApplicationName,
             });
+        }
+
+        public static async Task ConnectToGoogleDriveAsync()
+        {
+            await GetDriveServiceAsync();
+        }
+
+        public static async Task RunGoogleDriveBackupAsync(string filePath, IProgress<double> progress = null, IProgress<string> textProgress = null)
+        {
+            if (textProgress != null) textProgress.Report("در حال برقراری ارتباط با گوگل درایو...");
+            var service = await GetDriveServiceAsync();
 
             // Find or create "MovieManagerBackups" folder
+            if (textProgress != null) textProgress.Report("در حال جستجوی پوشه مقصد...");
             string folderName = "MovieManagerBackups";
             string folderId = await GetOrCreateFolderAsync(service, folderName);
 
@@ -205,11 +260,48 @@ namespace MovieManagerDesktop.Services
             FilesResource.CreateMediaUpload request;
             using (var stream = new FileStream(filePath, FileMode.Open))
             {
+                long fileLength = stream.Length;
                 request = service.Files.Create(fileMetadata, stream, "application/json");
                 request.Fields = "id";
-                await request.UploadAsync();
+                request.ChunkSize = Google.Apis.Upload.ResumableUpload.MinimumChunkSize; // Minimum chunk size (256KB)
+                
+                if (progress != null)
+                {
+                    request.ProgressChanged += (Google.Apis.Upload.IUploadProgress uploadProgress) =>
+                    {
+                        if (uploadProgress.Status == Google.Apis.Upload.UploadStatus.Uploading)
+                        {
+                            double percentage = fileLength > 0 ? (double)uploadProgress.BytesSent / fileLength * 100 : 0;
+                            progress.Report(percentage);
+                            
+                            string sentSize = uploadProgress.BytesSent > 1024 * 1024 
+                                ? $"{(uploadProgress.BytesSent / 1024f / 1024f):F1} MB" 
+                                : $"{(uploadProgress.BytesSent / 1024f):F0} KB";
+                            if (textProgress != null) textProgress.Report($"ارسال شده: {sentSize} ({percentage:F1}%)");
+                        }
+                    };
+                }
+                
+                if (textProgress != null) textProgress.Report("شروع آپلود فایل...");
+                
+                // If file is very small (<256KB), simulate progress for a moment so UI looks good
+                if (fileLength < Google.Apis.Upload.ResumableUpload.MinimumChunkSize)
+                {
+                    if (progress != null) progress.Report(50.0);
+                    if (textProgress != null) textProgress.Report($"ارسال شده: {fileLength / 1024f / 2:F0} KB (50.0%)");
+                    await Task.Delay(800);
+                }
+
+                var response = await request.UploadAsync();
+                
+                if (response.Status == Google.Apis.Upload.UploadStatus.Completed)
+                {
+                    if (progress != null) progress.Report(100.0);
+                    if (textProgress != null) textProgress.Report("آپلود تکمیل شد.");
+                }
             }
 
+            if (textProgress != null) textProgress.Report("در حال پاک‌سازی بکاپ‌های قدیمی...");
             // Cleanup old backups on Drive (keep last 5)
             await CleanupDriveBackupsAsync(service, folderId);
         }
@@ -242,7 +334,7 @@ namespace MovieManagerDesktop.Services
         private static async Task CleanupDriveBackupsAsync(DriveService service, string folderId)
         {
             var request = service.Files.List();
-            request.Q = $"'{folderId}' in parents and name contains 'Backup_' and trashed=false";
+            request.Q = $"'{folderId}' in parents and trashed=false";
             request.Spaces = "drive";
             request.Fields = "files(id, name, createdTime)";
             request.OrderBy = "createdTime desc";
@@ -261,5 +353,124 @@ namespace MovieManagerDesktop.Services
                 }
             }
         }
+
+        public static async Task<List<CloudBackupModel>> GetDriveBackupsAsync()
+        {
+            if (!IsConnectedToGoogleDrive()) return new List<CloudBackupModel>();
+
+            var service = await GetDriveServiceAsync();
+            string folderName = "MovieManagerBackups";
+            string folderId = await GetOrCreateFolderAsync(service, folderName);
+
+            var request = service.Files.List();
+            request.Q = $"'{folderId}' in parents and name contains 'Backup_' and trashed=false";
+            request.Spaces = "drive";
+            request.Fields = "files(id, name, createdTime, size, webViewLink)";
+            request.OrderBy = "createdTime desc";
+
+            var result = await request.ExecuteAsync();
+            var list = new List<CloudBackupModel>();
+
+            if (result.Files != null)
+            {
+                foreach (var file in result.Files)
+                {
+                    list.Add(new CloudBackupModel
+                    {
+                        Id = file.Id,
+                        Name = file.Name,
+                        CreatedTime = file.CreatedTimeDateTimeOffset?.LocalDateTime ?? DateTime.Now,
+                        SizeInBytes = file.Size ?? 0,
+                        WebViewLink = file.WebViewLink
+                    });
+                }
+            }
+            return list;
+        }
+
+        public static async Task DownloadDriveBackupAsync(string fileId, string destinationPath, IProgress<double> progress = null, IProgress<string> textProgress = null, long expectedSize = 0)
+        {
+            var service = await GetDriveServiceAsync();
+            var request = service.Files.Get(fileId);
+            
+            if (expectedSize <= 0)
+            {
+                // Fetch file size if not provided
+                var metaRequest = service.Files.Get(fileId);
+                metaRequest.Fields = "size";
+                var meta = await metaRequest.ExecuteAsync();
+                expectedSize = meta.Size ?? 0;
+            }
+
+            request.MediaDownloader.ChunkSize = Google.Apis.Download.MediaDownloader.MinimumChunkSize; // 256KB
+            
+            if (progress != null)
+            {
+                request.MediaDownloader.ProgressChanged += (Google.Apis.Download.IDownloadProgress downloadProgress) =>
+                {
+                    if (downloadProgress.Status == Google.Apis.Download.DownloadStatus.Downloading)
+                    {
+                        double percentage = expectedSize > 0 ? (double)downloadProgress.BytesDownloaded / expectedSize * 100 : 0;
+                        progress.Report(percentage);
+                        
+                        string recvSize = downloadProgress.BytesDownloaded > 1024 * 1024 
+                            ? $"{(downloadProgress.BytesDownloaded / 1024f / 1024f):F1} MB" 
+                            : $"{(downloadProgress.BytesDownloaded / 1024f):F0} KB";
+                            
+                        if (textProgress != null) textProgress.Report($"دریافت شده: {recvSize} ({percentage:F1}%)");
+                    }
+                };
+            }
+
+            if (textProgress != null) textProgress.Report("شروع دانلود فایل...");
+
+            using var fileStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write);
+            var response = await request.DownloadAsync(fileStream);
+            
+            if (response.Status == Google.Apis.Download.DownloadStatus.Completed)
+            {
+                if (progress != null) progress.Report(100.0);
+                if (textProgress != null) textProgress.Report("دانلود تکمیل شد.");
+            }
+        }
+
+        public static async Task DeleteDriveBackupAsync(string fileId)
+        {
+            var service = await GetDriveServiceAsync();
+            await service.Files.Delete(fileId).ExecuteAsync();
+        }
+
+        public static async Task<string> ShareDriveBackupAsync(string fileId)
+        {
+            var service = await GetDriveServiceAsync();
+            
+            // Create a permission for anyone to read
+            var permission = new Google.Apis.Drive.v3.Data.Permission
+            {
+                Type = "anyone",
+                Role = "reader"
+            };
+
+            await service.Permissions.Create(permission, fileId).ExecuteAsync();
+
+            // Get the file's web view link
+            var request = service.Files.Get(fileId);
+            request.Fields = "webViewLink";
+            var file = await request.ExecuteAsync();
+
+            return file.WebViewLink;
+        }
+    }
+
+    public class CloudBackupModel
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public DateTime CreatedTime { get; set; }
+        public long SizeInBytes { get; set; }
+        public string WebViewLink { get; set; }
+        public string FormattedSize => SizeInBytes > 1024 * 1024 
+            ? $"{(SizeInBytes / 1024f / 1024f):F1} MB" 
+            : $"{(SizeInBytes / 1024f):F1} KB";
     }
 }

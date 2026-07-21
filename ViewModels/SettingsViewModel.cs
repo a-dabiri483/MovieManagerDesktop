@@ -12,7 +12,10 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Collections.ObjectModel;
+using System.Text.Json;
 using System.Threading.Tasks;
+using System.Windows; // For Clipboard
 
 namespace MovieManagerDesktop.ViewModels
 {
@@ -81,6 +84,26 @@ namespace MovieManagerDesktop.ViewModels
 
         [ObservableProperty]
         private string _statusMessage;
+
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(IsNotGoogleDriveConnected))]
+        private bool _isGoogleDriveConnected;
+
+        public bool IsNotGoogleDriveConnected => !IsGoogleDriveConnected;
+
+        [ObservableProperty]
+        private bool _isLoadingBackups;
+
+        [ObservableProperty]
+        private bool _isUploadingBackup;
+
+        [ObservableProperty]
+        private string _backupProgressText;
+
+        [ObservableProperty]
+        private double _backupProgressValue;
+
+        public ObservableCollection<MovieManagerDesktop.Services.CloudBackupModel> CloudBackups { get; } = new();
 
         public string SelectedTheme
         {
@@ -174,6 +197,170 @@ namespace MovieManagerDesktop.ViewModels
             _localAutoBackupPath = settings.LocalAutoBackupPath;
             _isGoogleDriveAutoBackupEnabled = settings.IsGoogleDriveAutoBackupEnabled;
             _backupFrequencyIndex = settings.BackupFrequencyIndex;
+
+            CheckGoogleDriveConnection();
+        }
+
+        private void CheckGoogleDriveConnection()
+        {
+            IsGoogleDriveConnected = MovieManagerDesktop.Services.BackupManager.IsConnectedToGoogleDrive();
+            if (IsGoogleDriveConnected)
+            {
+                _ = LoadCloudBackupsAsync();
+            }
+        }
+
+        [RelayCommand]
+        private async Task ConnectToGoogleDrive()
+        {
+            try
+            {
+                await MovieManagerDesktop.Services.BackupManager.ConnectToGoogleDriveAsync();
+                CheckGoogleDriveConnection();
+                ToastService.Instance.ShowSuccess("اتصال به حساب گوگل با موفقیت انجام شد.");
+            }
+            catch (Exception ex)
+            {
+                MovieManagerDesktop.Services.LoggerService.Error("Error connecting to Google Drive", ex);
+                ToastService.Instance.ShowError($"خطا در اتصال به گوگل: {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
+        private async Task DisconnectGoogleDrive()
+        {
+            var dialog = new ConfirmDialog("آیا از خروج از حساب گوگل و قطع دسترسی اطمینان دارید؟");
+            var result = await DialogHost.Show(dialog, "RootDialog");
+
+            if (result is bool res && res)
+            {
+                await MovieManagerDesktop.Services.BackupManager.DisconnectGoogleDriveAsync();
+                IsGoogleDriveConnected = false;
+                CloudBackups.Clear();
+                ToastService.Instance.ShowSuccess("دسترسی به حساب گوگل قطع شد.");
+            }
+        }
+
+        [RelayCommand]
+        private async Task LoadCloudBackupsAsync()
+        {
+            if (!IsGoogleDriveConnected) return;
+
+            IsLoadingBackups = true;
+            try
+            {
+                var backups = await MovieManagerDesktop.Services.BackupManager.GetDriveBackupsAsync();
+                CloudBackups.Clear();
+                foreach (var backup in backups)
+                {
+                    CloudBackups.Add(backup);
+                }
+            }
+            catch (Exception ex)
+            {
+                MovieManagerDesktop.Services.LoggerService.Error("Error loading cloud backups", ex);
+                ToastService.Instance.ShowError($"خطا در دریافت لیست بکاپ‌ها: {ex.Message}");
+            }
+            finally
+            {
+                IsLoadingBackups = false;
+            }
+        }
+
+        [RelayCommand]
+        private async Task DownloadAndRestoreCloudBackup(MovieManagerDesktop.Services.CloudBackupModel backup)
+        {
+            if (backup == null) return;
+
+            var confirmDialog = new ConfirmDialog($"آیا از دانلود و اعمال بکاپ '{backup.Name}' روی دیتابیس فعلی اطمینان دارید؟");
+            var result = await DialogHost.Show(confirmDialog, "RootDialog");
+
+            if (result is bool res && res)
+            {
+                try
+                {
+                    IsUploadingBackup = true;
+                    BackupProgressValue = 0;
+                    BackupProgressText = "در حال آماده‌سازی برای دانلود...";
+
+                    var progress = new Progress<double>(percent => 
+                    {
+                        BackupProgressValue = percent;
+                    });
+                    
+                    var textProgress = new Progress<string>(text => 
+                    {
+                        BackupProgressText = text;
+                    });
+
+                    string tempFile = Path.GetTempFileName();
+                    await MovieManagerDesktop.Services.BackupManager.DownloadDriveBackupAsync(backup.Id, tempFile, progress, textProgress, backup.SizeInBytes);
+                    
+                    BackupProgressText = "دانلود تکمیل شد. در حال ادغام با دیتابیس فعلی...";
+                    await ImportJsonFileAsync(tempFile);
+                    
+                    System.IO.File.Delete(tempFile);
+                }
+                catch (Exception ex)
+                {
+                    MovieManagerDesktop.Services.LoggerService.Error("Error restoring cloud backup", ex);
+                    ToastService.Instance.ShowError($"خطا در اعمال بکاپ: {ex.Message}");
+                }
+                finally
+                {
+                    await Task.Delay(1500);
+                    IsUploadingBackup = false;
+                }
+            }
+        }
+
+        [RelayCommand]
+        private async Task DeleteCloudBackup(MovieManagerDesktop.Services.CloudBackupModel backup)
+        {
+            if (backup == null) return;
+
+            var confirmDialog = new ConfirmDialog($"آیا از حذف بکاپ '{backup.Name}' از گوگل درایو اطمینان دارید؟");
+            var result = await DialogHost.Show(confirmDialog, "RootDialog");
+
+            if (result is bool res && res)
+            {
+                try
+                {
+                    await MovieManagerDesktop.Services.BackupManager.DeleteDriveBackupAsync(backup.Id);
+                    CloudBackups.Remove(backup);
+                    ToastService.Instance.ShowSuccess("بکاپ با موفقیت از گوگل درایو حذف شد.");
+                }
+                catch (Exception ex)
+                {
+                    MovieManagerDesktop.Services.LoggerService.Error("Error deleting cloud backup", ex);
+                    ToastService.Instance.ShowError($"خطا در حذف بکاپ: {ex.Message}");
+                }
+            }
+        }
+
+        [RelayCommand]
+        private async Task ShareCloudBackup(MovieManagerDesktop.Services.CloudBackupModel backup)
+        {
+            if (backup == null) return;
+
+            try
+            {
+                ToastService.Instance.ShowInfo("در حال ایجاد لینک اشتراک‌گذاری...");
+                string link = await MovieManagerDesktop.Services.BackupManager.ShareDriveBackupAsync(backup.Id);
+                System.Windows.Clipboard.SetText(link);
+                ToastService.Instance.ShowSuccess("لینک دانلود فایل در کلیپ‌بورد کپی شد.");
+                
+                // Update link in UI if empty
+                if (string.IsNullOrEmpty(backup.WebViewLink))
+                {
+                    backup.WebViewLink = link;
+                }
+            }
+            catch (Exception ex)
+            {
+                MovieManagerDesktop.Services.LoggerService.Error("Error sharing cloud backup", ex);
+                ToastService.Instance.ShowError($"خطا در ایجاد لینک اشتراک‌گذاری: {ex.Message}");
+            }
         }
 
         [RelayCommand]
@@ -329,6 +516,48 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
+        private async Task TestGoogleDrive()
+        {
+            try
+            {
+                IsUploadingBackup = true;
+                BackupProgressValue = 0;
+                BackupProgressText = "شروع عملیات پشتیبان‌گیری...";
+
+                var progress = new Progress<double>(percent => 
+                {
+                    BackupProgressValue = percent;
+                });
+                
+                var textProgress = new Progress<string>(text => 
+                {
+                    BackupProgressText = text;
+                });
+
+                await MovieManagerDesktop.Services.BackupManager.ForceGoogleDriveBackupAsync(progress, textProgress);
+                
+                ToastService.Instance.ShowSuccess("فایل بکاپ با موفقیت در گوگل درایو آپلود شد.");
+                
+                // Refresh list if connected
+                if (IsGoogleDriveConnected)
+                {
+                    await LoadCloudBackupsAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                MovieManagerDesktop.Services.LoggerService.Error("Error testing Google Drive", ex);
+                ToastService.Instance.ShowError($"خطا در آپلود بکاپ: {ex.Message}");
+            }
+            finally
+            {
+                // Wait a bit before hiding the progress bar so user can see it reached 100%
+                await Task.Delay(2000);
+                IsUploadingBackup = false;
+            }
+        }
+
+        [RelayCommand]
         private async Task ImportJson()
         {
             try
@@ -341,87 +570,100 @@ namespace MovieManagerDesktop.ViewModels
 
                 if (dialog.ShowDialog() == true)
                 {
-                    var json = await File.ReadAllTextAsync(dialog.FileName);
-                    
-                    System.Collections.Generic.List<Models.VideoFile> videoFiles = new();
-                    System.Collections.Generic.List<Models.TvSeason> tvSeasons = new();
-                    System.Collections.Generic.List<Models.TvEpisode> tvEpisodes = new();
-                    SettingsModel importedSettings = null;
-
-                    if (json.TrimStart().StartsWith("["))
-                    {
-                        // Old format (just VideoFiles list)
-                        var oldData = JsonSerializer.Deserialize<System.Collections.Generic.List<Models.VideoFile>>(json);
-                        if (oldData != null) videoFiles = oldData;
-                    }
-                    else
-                    {
-                        // New format (FullBackupModel)
-                        var fullData = JsonSerializer.Deserialize<MovieManagerDesktop.Services.BackupManager.FullBackupModel>(json);
-                        if (fullData != null)
-                        {
-                            if (fullData.VideoFiles != null) videoFiles = fullData.VideoFiles;
-                            if (fullData.TvSeasons != null) tvSeasons = fullData.TvSeasons;
-                            if (fullData.TvEpisodes != null) tvEpisodes = fullData.TvEpisodes;
-                            importedSettings = fullData.Settings;
-                        }
-                    }
-                    
-                    if (videoFiles.Any())
-                    {
-                        var confirmDialog = new ConfirmDialog($"تعداد {videoFiles.Count} فیلم/سریال در این فایل وجود دارد. آیا مایل به ادغام تمامی اطلاعات بک‌آپ با دیتابیس فعلی هستید؟");
-                        var result = await DialogHost.Show(confirmDialog, "RootDialog");
-
-                        if (result is bool res && res)
-                        {
-                            using var db = new AppDbContext();
-                            
-                            // Import VideoFiles
-                            var existingVideoIds = db.VideoFiles.Select(v => v.Id).ToList();
-                            var newVideos = videoFiles.Where(i => !existingVideoIds.Contains(i.Id)).ToList();
-                            db.VideoFiles.AddRange(newVideos);
-
-                            // Import TvSeasons
-                            var existingSeasonIds = db.TvSeasons.Select(s => s.Id).ToList();
-                            var newSeasons = tvSeasons.Where(i => !existingSeasonIds.Contains(i.Id)).ToList();
-                            db.TvSeasons.AddRange(newSeasons);
-
-                            // Import TvEpisodes
-                            var existingEpisodeIds = db.TvEpisodes.Select(e => e.Id).ToList();
-                            var newEpisodes = tvEpisodes.Where(i => !existingEpisodeIds.Contains(i.Id)).ToList();
-                            db.TvEpisodes.AddRange(newEpisodes);
-                            
-                            await db.SaveChangesAsync();
-
-                            // Restore Settings if present
-                            if (importedSettings != null)
-                            {
-                                SettingsManager.SaveSettings(importedSettings);
-                                // The settings will take effect on next restart, or we can apply theme immediately
-                                SelectedDataSource = importedSettings.SelectedDataSource ?? "FM_DB";
-                                TmdbApiKey = importedSettings.TmdbApiKey;
-                                OmdbApiKey = importedSettings.OmdbApiKey;
-                                TmdbLanguage = importedSettings.TmdbLanguage ?? "fa-IR";
-                                IsDarkTheme = importedSettings.IsDarkTheme;
-                                SelectedTheme = importedSettings.Theme ?? "Cyan";
-                            }
-                            
-                            ToastService.Instance.ShowSuccess("اطلاعات پشتیبان با موفقیت بازیابی شد.");
-                            
-                            // Send message to refresh lists
-                            WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
-                        }
-                    }
-                    else
-                    {
-                        ToastService.Instance.ShowError("هیچ اطلاعات معتبری در فایل یافت نشد.");
-                    }
+                    await ImportJsonFileAsync(dialog.FileName);
                 }
             }
             catch (Exception ex)
             {
-                MovieManagerDesktop.Services.LoggerService.Error("Error importing json", ex);
-                ToastService.Instance.ShowError($"خطا در بازیابی پشتیبان: {ex.Message}");
+                MovieManagerDesktop.Services.LoggerService.Error("Error importing json dialog", ex);
+                ToastService.Instance.ShowError($"خطا در انتخاب فایل: {ex.Message}");
+            }
+        }
+
+        private async Task ImportJsonFileAsync(string filePath)
+        {
+            try
+            {
+                var json = await File.ReadAllTextAsync(filePath);
+                
+                System.Collections.Generic.List<Models.VideoFile> videoFiles = new();
+                System.Collections.Generic.List<Models.TvSeason> tvSeasons = new();
+                System.Collections.Generic.List<Models.TvEpisode> tvEpisodes = new();
+                SettingsModel importedSettings = null;
+
+                if (json.TrimStart().StartsWith("["))
+                {
+                    // Old format (just VideoFiles list)
+                    var oldData = JsonSerializer.Deserialize<System.Collections.Generic.List<Models.VideoFile>>(json);
+                    if (oldData != null) videoFiles = oldData;
+                }
+                else
+                {
+                    // New format (FullBackupModel)
+                    var fullData = JsonSerializer.Deserialize<MovieManagerDesktop.Services.BackupManager.FullBackupModel>(json);
+                    if (fullData != null)
+                    {
+                        if (fullData.VideoFiles != null) videoFiles = fullData.VideoFiles;
+                        if (fullData.TvSeasons != null) tvSeasons = fullData.TvSeasons;
+                        if (fullData.TvEpisodes != null) tvEpisodes = fullData.TvEpisodes;
+                        importedSettings = fullData.Settings;
+                    }
+                }
+                
+                if (videoFiles.Any())
+                {
+                    var confirmDialog = new ConfirmDialog($"تعداد {videoFiles.Count} فیلم/سریال در این فایل وجود دارد. آیا مایل به ادغام تمامی اطلاعات بک‌آپ با دیتابیس فعلی هستید؟");
+                    var result = await DialogHost.Show(confirmDialog, "RootDialog");
+
+                    if (result is bool res && res)
+                    {
+                        using var db = new AppDbContext();
+                        
+                        // Import VideoFiles
+                        var existingVideoIds = db.VideoFiles.Select(v => v.Id).ToList();
+                        var newVideos = videoFiles.Where(i => !existingVideoIds.Contains(i.Id)).ToList();
+                        db.VideoFiles.AddRange(newVideos);
+
+                        // Import TvSeasons
+                        var existingSeasonIds = db.TvSeasons.Select(s => s.Id).ToList();
+                        var newSeasons = tvSeasons.Where(i => !existingSeasonIds.Contains(i.Id)).ToList();
+                        db.TvSeasons.AddRange(newSeasons);
+
+                        // Import TvEpisodes
+                        var existingEpisodeIds = db.TvEpisodes.Select(e => e.Id).ToList();
+                        var newEpisodes = tvEpisodes.Where(i => !existingEpisodeIds.Contains(i.Id)).ToList();
+                        db.TvEpisodes.AddRange(newEpisodes);
+                        
+                        await db.SaveChangesAsync();
+
+                        // Restore Settings if present
+                        if (importedSettings != null)
+                        {
+                            SettingsManager.SaveSettings(importedSettings);
+                            // The settings will take effect on next restart, or we can apply theme immediately
+                            SelectedDataSource = importedSettings.SelectedDataSource ?? "FM_DB";
+                            TmdbApiKey = importedSettings.TmdbApiKey;
+                            OmdbApiKey = importedSettings.OmdbApiKey;
+                            TmdbLanguage = importedSettings.TmdbLanguage ?? "fa-IR";
+                            IsDarkTheme = importedSettings.IsDarkTheme;
+                            SelectedTheme = importedSettings.Theme ?? "Cyan";
+                        }
+                        
+                        ToastService.Instance.ShowSuccess("اطلاعات پشتیبان با موفقیت بازیابی شد.");
+                        
+                        // Send message to refresh lists
+                        WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
+                    }
+                }
+                else
+                {
+                    ToastService.Instance.ShowError("هیچ اطلاعات معتبری در فایل یافت نشد.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MovieManagerDesktop.Services.LoggerService.Error("Error importing json content", ex);
+                ToastService.Instance.ShowError($"خطا در بازیابی اطلاعات: {ex.Message}");
             }
         }
 
