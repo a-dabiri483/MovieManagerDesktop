@@ -402,7 +402,7 @@ namespace MovieManagerDesktop.Services
                 expectedSize = meta.Size ?? 0;
             }
 
-            request.MediaDownloader.ChunkSize = Google.Apis.Download.MediaDownloader.MinimumChunkSize; // 256KB
+            request.MediaDownloader.ChunkSize = 256 * 1024; // 256KB
             
             if (progress != null)
             {
