@@ -99,29 +99,29 @@
                                          Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                                          IsEnabled="{Binding IsOmdbSelected}"/>
 
-                                 <Separator Background="{DynamicResource NormalBorder}" Margin="0,10,0,25"/>
-
-                                <!-- Player Settings -->
-                                <TextBlock Text="تنظیمات پخش‌کننده (Player)" Foreground="{DynamicResource PrimaryText}" FontSize="20" FontWeight="Bold" Margin="0,0,0,25"/>
-                                
-                                <RadioButton IsChecked="{Binding IsCustomPlayer}" Content="پخش‌کننده پیش‌فرض ویندوز (Custom)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,0,15" GroupName="PlayerSelection"/>
-                                
-                                <RadioButton IsChecked="{Binding IsPluginPlayer}" Content="افزونه قدرتمند MPV (نیاز به دانلود و معرفی مسیر)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,0,10" GroupName="PlayerSelection"/>
-                                <TextBox Text="{Binding MpvPath, UpdateSourceTrigger=PropertyChanged}" 
-                                         materialDesign:HintAssist.Hint="مسیر فایل اجرایی mpv.exe (اختیاری اگر در پوشه برنامه است)" 
-                                         Foreground="{DynamicResource PrimaryText}" FontSize="14" Margin="35,0,0,20"
-                                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                         IsEnabled="{Binding IsPluginPlayer}"/>
-                                <TextBlock Text="راهنما: ابتدا نرم‌افزار MPV را دانلود کرده و سپس مسیر فایل اجرایی آن را در اینجا قرار دهید." 
-                                           Foreground="{DynamicResource SecondaryText}" FontSize="12" Margin="35,0,0,30" 
-                                           Visibility="{Binding IsPluginPlayer, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-
                                 <Separator Background="{DynamicResource NormalBorder}" Margin="0,10,0,25"/>
 
                                 <TextBlock Text="زبان دریافت اطلاعات (برای سایت‌هایی که پشتیبانی می‌کنند مانند TMDb)" Foreground="{DynamicResource SecondaryText}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,15"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,35">
                                     <RadioButton IsChecked="{Binding IsPersianLanguage}" Content="فارسی" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,30,0" GroupName="Languages"/>
                                     <RadioButton IsChecked="{Binding IsEnglishLanguage}" Content="انگلیسی" Foreground="{DynamicResource PrimaryText}" FontSize="16" GroupName="Languages"/>
+                                </StackPanel>
+
+                                <Separator Background="{DynamicResource NormalBorder}" Margin="0,0,0,25"/>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                    <materialDesign:PackIcon Kind="PlayCircle" Foreground="{DynamicResource PrimaryColor}" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <TextBlock Text="تنظیمات پخش‌کننده (Player)" Foreground="{DynamicResource PrimaryText}" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Text="پخش‌کننده‌ای که برای باز کردن فیلم‌ها و سریال‌ها استفاده می‌شود را انتخاب کنید:" Foreground="{DynamicResource SecondaryText}" FontSize="15" FontWeight="Normal" Margin="0,0,0,15" TextWrapping="Wrap"/>
+                                
+                                <StackPanel Orientation="Vertical" Margin="0,0,0,35">
+                                    <RadioButton IsChecked="{Binding IsWindowsDefaultPlayer}" Content="پخش‌کننده پیش‌فرض ویندوز (بدون ثبت زمان تماشا)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,0,15" GroupName="PlayerMode"/>
+                                    <RadioButton IsChecked="{Binding IsInternalMpvPlayer}" Content="پلیر داخلی افزونه (پیشرفته - با ثبت خودکار زمان تماشا)" Foreground="{DynamicResource PrimaryText}" FontSize="16" GroupName="PlayerMode"/>
+                                    
+                                    <TextBlock Visibility="{Binding IsInternalMpvPlayer, Converter={StaticResource BooleanToVisibilityConverter}}" 
+                                               Text="* این افزونه هم‌اکنون به صورت کامل درون خود برنامه تعبیه شده است و نیازی به هیچ دانلود اضافه‌ای ندارد. از تماشای یکپارچه لذت ببرید!" 
+                                               Foreground="{DynamicResource SecondaryText}" FontSize="13" Margin="25,8,0,0" TextWrapping="Wrap"/>
                                 </StackPanel>
 
                                 <Button Command="{Binding SaveSettingsCommand}" 

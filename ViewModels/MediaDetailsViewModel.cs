@@ -10,11 +10,23 @@ using MovieManagerDesktop.Services;
 
 namespace MovieManagerDesktop.ViewModels
 {
+    public partial class VideoSeasonGroup : ObservableObject
+    {
+        public string Name { get; set; }
+        public int SeasonNumber { get; set; }
+        public ObservableCollection<VideoFile> Episodes { get; } = new();
+        
+        [ObservableProperty]
+        private bool _isWatched;
+    }
+
     public partial class MediaDetailsViewModel : ObservableObject
     {
         [ObservableProperty]
         private VideoFile _media;
         
+        public ObservableCollection<VideoSeasonGroup> Seasons { get; } = new();
+
         [ObservableProperty]
         private bool _isWatched;
 
@@ -95,12 +107,32 @@ namespace MovieManagerDesktop.ViewModels
                 .ThenBy(v => v.Episode)
                 .ToList();
                 
-            Episodes.Clear();
-            foreach (var ep in episodes)
+            Seasons.Clear();
+            var grouped = episodes.GroupBy(e => e.Season ?? 1).OrderBy(g => g.Key);
+            
+            bool allWatched = true;
+            foreach (var g in grouped)
             {
-                Episodes.Add(ep);
+                var seasonGroup = new VideoSeasonGroup
+                {
+                    SeasonNumber = g.Key,
+                    Name = $"فصل {g.Key}",
+                    IsWatched = g.All(e => e.IsWatched)
+                };
+                foreach (var ep in g)
+                {
+                    seasonGroup.Episodes.Add(ep);
+                    if (!ep.IsWatched) allWatched = false;
+                }
+                Seasons.Add(seasonGroup);
             }
-            HasEpisodes = Episodes.Any();
+            HasEpisodes = Seasons.Any();
+            
+            if (HasEpisodes)
+            {
+                IsWatched = allWatched;
+                Media.IsWatched = allWatched;
+            }
         }
 
         private void LoadSeriesTrackerInfo()
@@ -218,114 +250,254 @@ namespace MovieManagerDesktop.ViewModels
 
 
         [RelayCommand]
-        private async System.Threading.Tasks.Task PlayMovieAsync()
+        private async Task PlayMovie()
         {
-            if (Media == null || string.IsNullOrWhiteSpace(Media.FilePath)) return;
-
-            var settings = SettingsManager.LoadSettings();
-
             try
             {
-                if (settings.PlayerType == "Custom")
+                if (!string.IsNullOrWhiteSpace(Media.FilePath) && System.IO.File.Exists(Media.FilePath))
                 {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Media.FilePath) { UseShellExecute = true });
-                    if (!IsWatched) ToggleWatched(); // Auto mark as watched when played
-                }
-                else
-                {
-                    await MpvPlayerService.PlayVideoAsync(Media.FilePath, (int)Media.LastWatchPosition, async (currentTime, percent, isFinished) => 
+                    var settings = MovieManagerDesktop.Services.SettingsManager.LoadSettings();
+                    if (settings.PlayerMode == 1)
                     {
-                        System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                        // MPV
+                        long resumePos = Media.WatchProgressSeconds;
+                        string displayTitle = !string.IsNullOrEmpty(Media.FormattedTitle) ? Media.FormattedTitle : Media.FileName;
+                        var result = await MovieManagerDesktop.Services.MpvIntegrationService.PlayVideoAsync(Media.FilePath, resumePos, displayTitle);
+                        
+                        using var db = new AppDbContext();
+                        var dbMedia = db.VideoFiles.FirstOrDefault(v => v.Id == Media.Id);
+                        if (dbMedia != null)
                         {
-                            Media.LastWatchPosition = currentTime;
-                            Media.WatchProgressPercent = percent;
-                            Media.IsWatched = isFinished;
-                            IsWatched = isFinished;
-                        });
-
-                        // Save to database
-                        try
-                        {
-                            using var db = new AppDbContext();
-                            var dbFile = await db.VideoFiles.FindAsync(Media.Id);
-                            if (dbFile != null)
+                            dbMedia.WatchProgressSeconds = result.finalPositionSeconds;
+                            if (result.totalDuration > 0) dbMedia.TotalDurationSeconds = result.totalDuration;
+                            
+                            // Calculate simple percentage if duration is known. For now, mark as watched if EOF.
+                            if (result.isCompleted || result.finalPositionSeconds > 0)
                             {
-                                dbFile.LastWatchPosition = currentTime;
-                                dbFile.WatchProgressPercent = percent;
-                                dbFile.IsWatched = isFinished;
-                                await db.SaveChangesAsync();
+                                if (result.isCompleted)
+                                {
+                                    dbMedia.IsWatched = true;
+                                    dbMedia.WatchProgressPercent = 100;
+                                    dbMedia.WatchProgressSeconds = 0; // reset to 0 so next play starts from beginning
+                                }
+                                else if (dbMedia.TotalDurationSeconds > 0)
+                                {
+                                    dbMedia.WatchProgressPercent = (double)dbMedia.WatchProgressSeconds / dbMedia.TotalDurationSeconds * 100;
+                                }
+                                else
+                                {
+                                    dbMedia.WatchProgressPercent = 50; // Arbitrary since we don't have total duration yet
+                                }
                             }
+                            db.SaveChanges();
+                            
+                            App.Current.Dispatcher.Invoke(() => 
+                            {
+                                Media.IsWatched = dbMedia.IsWatched;
+                                Media.WatchProgressPercent = dbMedia.WatchProgressPercent;
+                                Media.WatchProgressSeconds = dbMedia.WatchProgressSeconds;
+                                Media.TotalDurationSeconds = dbMedia.TotalDurationSeconds;
+                            });
                         }
-                        catch (System.Exception ex)
-                        {
-                            LoggerService.Error("Error saving watch progress", ex);
-                        }
-                    });
+                    }
+                    else
+                    {
+                        // Default OS Player
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Media.FilePath) { UseShellExecute = true });
+                        if (!IsWatched) ToggleWatched(); // Auto mark as watched when played
+                    }
                 }
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                ToastService.Instance.ShowError(ex.Message);
+                MovieManagerDesktop.Services.LoggerService.Error("Error playing movie", ex);
             }
         }
 
         [RelayCommand]
-        private async System.Threading.Tasks.Task PlayEpisodeAsync(VideoFile episode)
+        private void ToggleEpisodeWatched(VideoFile episode)
         {
-            if (episode == null || string.IsNullOrWhiteSpace(episode.FilePath)) return;
-
-            var settings = SettingsManager.LoadSettings();
-
-            try
+            if (episode == null) return;
+            
+            Task.Run(() =>
             {
-                if (settings.PlayerType == "Custom")
+                using var db = new AppDbContext();
+                var dbEp = db.VideoFiles.FirstOrDefault(e => e.Id == episode.Id);
+                if (dbEp != null)
                 {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(episode.FilePath) { UseShellExecute = true });
+                    dbEp.IsWatched = episode.IsWatched;
+                    dbEp.WatchProgressPercent = episode.IsWatched ? 100 : 0;
+                    dbEp.WatchProgressSeconds = 0;
+                    db.SaveChanges();
                     
-                    using var db = new AppDbContext();
-                    var dbEp = db.VideoFiles.FirstOrDefault(v => v.Id == episode.Id);
-                    if (dbEp != null) {
-                        dbEp.IsWatched = true;
-                        db.SaveChanges();
-                        episode.IsWatched = true;
-                    }
-                }
-                else
-                {
-                    await MpvPlayerService.PlayVideoAsync(episode.FilePath, (int)episode.LastWatchPosition, async (currentTime, percent, isFinished) => 
+                    App.Current.Dispatcher.Invoke(() => 
                     {
-                        System.Windows.Application.Current.Dispatcher.Invoke(() => 
+                        episode.WatchProgressPercent = dbEp.WatchProgressPercent;
+                        episode.WatchProgressSeconds = dbEp.WatchProgressSeconds;
+                        
+                        if (HasEpisodes)
                         {
-                            episode.LastWatchPosition = currentTime;
-                            episode.WatchProgressPercent = percent;
-                            if (isFinished && !episode.IsWatched)
+                            var allEps = Seasons.SelectMany(s => s.Episodes).ToList();
+                            bool allWatched = allEps.All(e => e.IsWatched);
+                            if (IsWatched != allWatched)
                             {
-                                episode.IsWatched = true;
+                                IsWatched = allWatched;
+                                Media.IsWatched = allWatched;
                             }
-                        });
-
-                        // Save to database
-                        try
-                        {
-                            using var db = new AppDbContext();
-                            var dbEp = await db.VideoFiles.FindAsync(episode.Id);
-                            if (dbEp != null) {
-                                dbEp.LastWatchPosition = currentTime;
-                                dbEp.WatchProgressPercent = percent;
-                                dbEp.IsWatched = episode.IsWatched;
-                                await db.SaveChangesAsync();
+                            var seasonGroup = Seasons.FirstOrDefault(s => s.SeasonNumber == episode.Season);
+                            if (seasonGroup != null)
+                            {
+                                seasonGroup.IsWatched = seasonGroup.Episodes.All(e => e.IsWatched);
                             }
-                        }
-                        catch (System.Exception ex)
-                        {
-                            LoggerService.Error("Error saving watch progress", ex);
                         }
                     });
                 }
-            }
-            catch (System.Exception ex)
+            });
+        }
+
+        [RelayCommand]
+        private void ToggleSeasonWatched(VideoSeasonGroup seasonGroup)
+        {
+            if (seasonGroup == null) return;
+            Task.Run(() =>
             {
-                ToastService.Instance.ShowError(ex.Message);
+                using var db = new AppDbContext();
+                foreach (var ep in seasonGroup.Episodes)
+                {
+                    var dbEp = db.VideoFiles.FirstOrDefault(v => v.Id == ep.Id);
+                    if (dbEp != null)
+                    {
+                        dbEp.IsWatched = seasonGroup.IsWatched;
+                        dbEp.WatchProgressPercent = seasonGroup.IsWatched ? 100 : 0;
+                        dbEp.WatchProgressSeconds = 0;
+                    }
+                }
+                db.SaveChanges();
+                
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    foreach (var ep in seasonGroup.Episodes)
+                    {
+                        ep.IsWatched = seasonGroup.IsWatched;
+                        ep.WatchProgressPercent = seasonGroup.IsWatched ? 100 : 0;
+                        ep.WatchProgressSeconds = 0;
+                    }
+                    
+                    var allEps = Seasons.SelectMany(s => s.Episodes).ToList();
+                    bool allWatched = allEps.All(e => e.IsWatched);
+                    if (IsWatched != allWatched)
+                    {
+                        IsWatched = allWatched;
+                        Media.IsWatched = allWatched;
+                    }
+                });
+            });
+        }
+
+        [RelayCommand]
+        private async Task PlayLastEpisode()
+        {
+            if (Seasons.Count == 0) return;
+            var allEps = Seasons.SelectMany(s => s.Episodes).ToList();
+            var targetEpisode = allEps.FirstOrDefault(e => !e.IsWatched && e.WatchProgressPercent < 100) ?? allEps.LastOrDefault();
+            if (targetEpisode != null)
+            {
+                await PlayEpisode(targetEpisode);
+            }
+        }
+
+        [RelayCommand]
+        private async Task PlayEpisode(VideoFile episode)
+        {
+            try
+            {
+                if (episode != null && !string.IsNullOrWhiteSpace(episode.FilePath) && System.IO.File.Exists(episode.FilePath))
+                {
+                    var settings = MovieManagerDesktop.Services.SettingsManager.LoadSettings();
+                    if (settings.PlayerMode == 1)
+                    {
+                        // MPV - Use Playlist
+                        var allEps = Seasons.SelectMany(s => s.Episodes).ToList();
+                        int startIndex = allEps.IndexOf(episode);
+                        if (startIndex == -1) startIndex = 0;
+                        
+                        await MovieManagerDesktop.Services.MpvIntegrationService.PlayPlaylistAsync(
+                            allEps, 
+                            startIndex, 
+                            (int index, long currentPos, long totalDuration, bool isCompleted) => 
+                            {
+                                if (index >= 0 && index < allEps.Count)
+                                {
+                                    var currentEp = allEps[index];
+                                    using var db = new AppDbContext();
+                                    var dbEp = db.VideoFiles.FirstOrDefault(v => v.Id == currentEp.Id);
+                                    if (dbEp != null)
+                                    {
+                                        dbEp.WatchProgressSeconds = currentPos;
+                                        if (totalDuration > 0) dbEp.TotalDurationSeconds = totalDuration;
+                                        
+                                        if (isCompleted)
+                                        {
+                                            dbEp.IsWatched = true;
+                                            dbEp.WatchProgressPercent = 100;
+                                            dbEp.WatchProgressSeconds = 0; // reset
+                                        }
+                                        else if (dbEp.TotalDurationSeconds > 0)
+                                        {
+                                            dbEp.WatchProgressPercent = (double)dbEp.WatchProgressSeconds / dbEp.TotalDurationSeconds * 100;
+                                        }
+                                        else
+                                        {
+                                            dbEp.WatchProgressPercent = 50; // Indeterminate
+                                        }
+                                        db.SaveChanges();
+                                        
+                                        App.Current.Dispatcher.Invoke(() => 
+                                        {
+                                            currentEp.IsWatched = dbEp.IsWatched;
+                                            currentEp.WatchProgressPercent = dbEp.WatchProgressPercent;
+                                            currentEp.WatchProgressSeconds = dbEp.WatchProgressSeconds;
+                                            currentEp.TotalDurationSeconds = dbEp.TotalDurationSeconds;
+                                            
+                                            if (HasEpisodes)
+                                            {
+                                                bool allWatched = allEps.All(e => e.IsWatched);
+                                                if (IsWatched != allWatched)
+                                                {
+                                                    IsWatched = allWatched;
+                                                    Media.IsWatched = allWatched;
+                                                }
+                                                var seasonGroup = Seasons.FirstOrDefault(s => s.SeasonNumber == currentEp.Season);
+                                                if (seasonGroup != null)
+                                                {
+                                                    seasonGroup.IsWatched = seasonGroup.Episodes.All(e => e.IsWatched);
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                    }
+                    else
+                    {
+                        // Default OS Player
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(episode.FilePath) { UseShellExecute = true });
+                        using var db = new AppDbContext();
+                        var dbEp = db.VideoFiles.FirstOrDefault(v => v.Id == episode.Id);
+                        if (dbEp != null) {
+                            dbEp.IsWatched = true;
+                            db.SaveChanges();
+                            
+                            App.Current.Dispatcher.Invoke(() => {
+                                episode.IsWatched = true;
+                            });
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MovieManagerDesktop.Services.LoggerService.Error("Error playing episode", ex);
             }
         }
 
@@ -441,6 +613,51 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
+        private void ManualIdentify()
+        {
+            var searchDialogViewModel = new ApiSearchDialogViewModel(!string.IsNullOrEmpty(Media.FormattedTitle) ? Media.FormattedTitle : Media.FileName);
+            var searchDialog = new MovieManagerDesktop.Views.Dialogs.ApiSearchDialog { DataContext = searchDialogViewModel };
+            
+            searchDialogViewModel.CloseAction = () => searchDialog.Close();
+            searchDialogViewModel.SelectAction = async (result) => 
+            {
+                if (result.Id != 0)
+                {
+                    using var db = new AppDbContext();
+                    var oldTitle = Media.FormattedTitle.ToLower();
+                    
+                    var dbFiles = db.VideoFiles.Where(v => v.FormattedTitle.ToLower() == oldTitle && v.MediaType == Media.MediaType).ToList();
+                    foreach (var dbFile in dbFiles)
+                    {
+                        dbFile.TmdbId = result.Id;
+                        dbFile.FormattedTitle = result.Title;
+                        
+                        // Clear old data so RefreshData fetches fresh data
+                        dbFile.Overview = null;
+                        dbFile.Rating = null;
+                        dbFile.PosterUrl = null;
+                        dbFile.BackdropUrl = null;
+                        dbFile.Genres = null;
+                        dbFile.Actors = null;
+                        dbFile.Director = null;
+                    }
+                    await db.SaveChangesAsync();
+                    
+                    App.Current.Dispatcher.Invoke(() => {
+                        Media.TmdbId = result.Id;
+                        Media.FormattedTitle = result.Title;
+                        OnPropertyChanged(nameof(Media));
+                    });
+                    
+                    await RefreshDataAsync();
+                }
+            };
+            
+            searchDialog.Owner = System.Windows.Application.Current.MainWindow;
+            searchDialog.ShowDialog();
+        }
+
+        [RelayCommand]
         private void DeleteMovie()
         {
             var result = System.Windows.MessageBox.Show(
@@ -468,48 +685,6 @@ namespace MovieManagerDesktop.ViewModels
         private void GoBack()
         {
             WeakReferenceMessenger.Default.Send(new NavigationMessage(_parentViewModel));
-        }
-
-        [RelayCommand]
-        private async System.Threading.Tasks.Task PlayVideoAsync()
-        {
-            if (Media == null || string.IsNullOrWhiteSpace(Media.FilePath)) return;
-
-            try
-            {
-                await MpvPlayerService.PlayVideoAsync(Media.FilePath, (int)Media.LastWatchPosition, async (currentTime, percent, isFinished) => 
-                {
-                    System.Windows.Application.Current.Dispatcher.Invoke(() => 
-                    {
-                        Media.LastWatchPosition = currentTime;
-                        Media.WatchProgressPercent = percent;
-                        Media.IsWatched = isFinished;
-                        IsWatched = isFinished;
-                    });
-
-                    // Save to database
-                    try
-                    {
-                        using var db = new AppDbContext();
-                        var dbFile = await db.VideoFiles.FindAsync(Media.Id);
-                        if (dbFile != null)
-                        {
-                            dbFile.LastWatchPosition = currentTime;
-                            dbFile.WatchProgressPercent = percent;
-                            dbFile.IsWatched = isFinished;
-                            await db.SaveChangesAsync();
-                        }
-                    }
-                    catch (System.Exception ex)
-                    {
-                        LoggerService.Error("Error saving watch progress", ex);
-                    }
-                });
-            }
-            catch (System.Exception ex)
-            {
-                ToastService.Instance.ShowError(ex.Message);
-            }
         }
     }
 }

@@ -31,8 +31,7 @@ namespace MovieManagerDesktop.Services
         public DateTime LastBackupTime { get; set; } = DateTime.MinValue;
 
         // Player Settings
-        public string PlayerType { get; set; } = "Custom"; // Custom (Default computer player), Plugin (MPV)
-        public string MpvPath { get; set; } = string.Empty;
+        public int PlayerMode { get; set; } = 0; // 0: Windows Default, 1: Internal MPV
     }
 
     public static class SettingsManager

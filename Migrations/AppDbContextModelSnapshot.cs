@@ -17,6 +17,79 @@ namespace MovieManagerDesktop.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
 
+            modelBuilder.Entity("MovieManagerDesktop.Models.TvEpisode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AirDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("EpisodeNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsWatched")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Overview")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SeasonNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("StillPath")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("TmdbSeriesId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<double>("VoteAverage")
+                        .HasColumnType("REAL");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TvEpisodes");
+                });
+
+            modelBuilder.Entity("MovieManagerDesktop.Models.TvSeason", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AirDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("EpisodeCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsWatched")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Overview")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PosterPath")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SeasonNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TmdbSeriesId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TvSeasons");
+                });
+
             modelBuilder.Entity("MovieManagerDesktop.Models.VideoFile", b =>
                 {
                     b.Property<int>("Id")
@@ -24,6 +97,12 @@ namespace MovieManagerDesktop.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Actors")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AirDay")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AirTime")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("BackdropUrl")
@@ -52,6 +131,9 @@ namespace MovieManagerDesktop.Migrations
                     b.Property<long>("FileSizeBytes")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("FirstAirDate")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("FormattedTitle")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -77,11 +159,26 @@ namespace MovieManagerDesktop.Migrations
                     b.Property<bool>("IsWatchlist")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("LastAirDate")
+                        .HasColumnType("TEXT");
+
                     b.Property<int?>("LastAiredSeason")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("MediaType")
                         .HasColumnType("TEXT");
+
+                    b.Property<string>("NetworkName")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("NextEpisodeDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("NextEpisodeNumber")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("NextEpisodeSeason")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int?>("NumberOfEpisodes")
                         .HasColumnType("INTEGER");
@@ -113,8 +210,20 @@ namespace MovieManagerDesktop.Migrations
                     b.Property<int?>("TmdbId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<long>("TotalDurationSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("TotalEpisodesCount")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("TotalSeasonsCount")
+                        .HasColumnType("INTEGER");
+
                     b.Property<double>("WatchProgressPercent")
                         .HasColumnType("REAL");
+
+                    b.Property<long>("WatchProgressSeconds")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Year")
                         .HasColumnType("TEXT");

@@ -46,6 +46,16 @@ namespace MovieManagerDesktop.Data
             catch { }
             try
             {
+                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN WatchProgressSeconds INTEGER NOT NULL DEFAULT 0;");
+            }
+            catch { }
+            try
+            {
+                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN TotalDurationSeconds INTEGER NOT NULL DEFAULT 0;");
+            }
+            catch { }
+            try
+            {
                 Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN CollectionName TEXT;");
             }
             catch { }

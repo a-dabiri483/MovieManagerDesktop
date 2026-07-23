@@ -84,7 +84,7 @@
                                 <Button Command="{Binding RefreshTrackerCommand}" Style="{StaticResource MaterialDesignFlatButton}" 
                                         HorizontalContentAlignment="Right" Padding="15,10">
                                     <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="EyeOutline" Width="20" Height="20" VerticalAlignment="Center"/>
+                                        <materialDesign:PackIcon Kind="RadarOutline" Width="20" Height="20" VerticalAlignment="Center"/>
                                         <TextBlock Text="دریافت اطلاعات ردیاب" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                     </StackPanel>
                                 </Button>
@@ -295,7 +295,14 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Margin="0,0,0,30">
-                                <TextBlock Text="{Binding Season.Name, Converter={StaticResource SeasonNameConverter}}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,15"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                    <TextBlock Text="{Binding Season.Name, Converter={StaticResource SeasonNameConverter}}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
+                                    <CheckBox IsChecked="{Binding Season.IsWatched}" 
+                                              Command="{Binding DataContext.ToggleSeasonWatchedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                              CommandParameter="{Binding}"
+                                              Margin="15,0,0,0" VerticalAlignment="Center" 
+                                              Content="دیده شده" Foreground="{DynamicResource SecondaryText}"/>
+                                </StackPanel>
                                 
                                 <ItemsControl ItemsSource="{Binding Episodes}">
                                     <ItemsControl.ItemTemplate>
@@ -320,7 +327,6 @@
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto"/>
                                                         <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
 
                                                     <CheckBox Grid.Column="0" IsChecked="{Binding IsWatched}" 
@@ -343,19 +349,6 @@
                                                         <TextBlock Text="{Binding AirDate}" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,5,0,10"/>
                                                         <TextBlock Text="{Binding Overview}" FontSize="13" Foreground="{DynamicResource SecondaryText}" TextWrapping="Wrap" MaxHeight="60" TextTrimming="CharacterEllipsis"/>
                                                     </StackPanel>
-
-                                                    <Button Grid.Column="2" 
-                                                            Command="{Binding DataContext.PlayEpisodeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                            CommandParameter="{Binding}"
-                                                            Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
-                                                            Background="Transparent"
-                                                            BorderBrush="{DynamicResource PrimaryColor}"
-                                                            Foreground="{DynamicResource PrimaryColor}"
-                                                            Width="40" Height="40"
-                                                            VerticalAlignment="Center"
-                                                            ToolTip="پخش این قسمت">
-                                                        <materialDesign:PackIcon Kind="Play" Width="24" Height="24"/>
-                                                    </Button>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>

@@ -1,8 +1,9 @@
 using System;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace MovieManagerDesktop.Models
 {
-    public class VideoFile
+    public partial class VideoFile : ObservableObject
     {
         public int Id { get; set; }
         public string FilePath { get; set; } = string.Empty;
@@ -34,11 +35,23 @@ namespace MovieManagerDesktop.Models
         public int? NextEpisodeSeason { get; set; }
         public int? NextEpisodeNumber { get; set; }
 
-        public bool IsWatched { get; set; } = false;
-        public bool IsFavorite { get; set; } = false;
-        public bool IsWatchlist { get; set; } = false;
-        public double WatchProgressPercent { get; set; } = 0; // 0 to 100
-        public double LastWatchPosition { get; set; } = 0; // in seconds
+        [ObservableProperty]
+        private bool _isWatched = false;
+
+        [ObservableProperty]
+        private bool _isFavorite = false;
+
+        [ObservableProperty]
+        private bool _isWatchlist = false;
+
+        [ObservableProperty]
+        private double _watchProgressPercent = 0; // 0 to 100
+
+        [ObservableProperty]
+        private long _watchProgressSeconds = 0; // Exact resume position
+
+        [ObservableProperty]
+        private long _totalDurationSeconds = 0;
         
         public string? BackdropUrl { get; set; }
         public string? CollectionName { get; set; }

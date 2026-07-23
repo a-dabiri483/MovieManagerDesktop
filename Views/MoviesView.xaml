@@ -501,27 +501,6 @@
                                             <!-- Full Poster -->
                                             <Image Source="{Binding File.PosterUrl, Converter={StaticResource ImageUrlToCachedImageConverter}}" Stretch="UniformToFill" Height="{Binding DataContext.PosterHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" />
 
-                                            <!-- Watch Progress Bar -->
-                                            <ProgressBar Value="{Binding File.WatchProgressPercent}" 
-                                                         Maximum="100" 
-                                                         Height="4" 
-                                                         Background="#4C000000" 
-                                                         Foreground="#E50914" 
-                                                         BorderThickness="0" 
-                                                         VerticalAlignment="Bottom" 
-                                                         Panel.ZIndex="4">
-                                                <ProgressBar.Style>
-                                                    <Style TargetType="ProgressBar">
-                                                        <Setter Property="Visibility" Value="Visible"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding File.WatchProgressPercent}" Value="0">
-                                                                <Setter Property="Visibility" Value="Collapsed"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </ProgressBar.Style>
-                                            </ProgressBar>
-
                                             <!-- Sliding Info Overlay -->
                                             <Border x:Name="InfoOverlay" VerticalAlignment="Bottom" Background="#CC000000" Padding="12,10" Panel.ZIndex="2">
                                                 <Border.RenderTransform>

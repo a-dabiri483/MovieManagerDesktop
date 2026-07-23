@@ -82,33 +82,6 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private string _omdbApiKey;
 
-        public string PlayerType
-        {
-            get => _playerType;
-            set
-            {
-                SetProperty(ref _playerType, value);
-                OnPropertyChanged(nameof(IsCustomPlayer));
-                OnPropertyChanged(nameof(IsPluginPlayer));
-            }
-        }
-        private string _playerType = "Custom";
-
-        public bool IsCustomPlayer
-        {
-            get => PlayerType == "Custom";
-            set { if (value) PlayerType = "Custom"; }
-        }
-
-        public bool IsPluginPlayer
-        {
-            get => PlayerType == "Plugin";
-            set { if (value) PlayerType = "Plugin"; }
-        }
-
-        [ObservableProperty]
-        private string _mpvPath;
-
         [ObservableProperty]
         private string _statusMessage;
 
@@ -210,6 +183,30 @@ namespace MovieManagerDesktop.ViewModels
             }
         }
 
+        public int PlayerMode
+        {
+            get => _playerMode;
+            set
+            {
+                SetProperty(ref _playerMode, value);
+                OnPropertyChanged(nameof(IsWindowsDefaultPlayer));
+                OnPropertyChanged(nameof(IsInternalMpvPlayer));
+            }
+        }
+        private int _playerMode = 0;
+
+        public bool IsWindowsDefaultPlayer
+        {
+            get => PlayerMode == 0;
+            set { if (value) PlayerMode = 0; }
+        }
+
+        public bool IsInternalMpvPlayer
+        {
+            get => PlayerMode == 1;
+            set { if (value) PlayerMode = 1; }
+        }
+
         public SettingsViewModel()
         {
             var settings = SettingsManager.LoadSettings();
@@ -225,8 +222,9 @@ namespace MovieManagerDesktop.ViewModels
             _isGoogleDriveAutoBackupEnabled = settings.IsGoogleDriveAutoBackupEnabled;
             _backupFrequencyIndex = settings.BackupFrequencyIndex;
             
-            _playerType = settings.PlayerType ?? "Custom";
-            _mpvPath = settings.MpvPath ?? string.Empty;
+            _playerMode = settings.PlayerMode;
+            OnPropertyChanged(nameof(IsWindowsDefaultPlayer));
+            OnPropertyChanged(nameof(IsInternalMpvPlayer));
 
             CheckGoogleDriveConnection();
         }
@@ -409,10 +407,9 @@ namespace MovieManagerDesktop.ViewModels
             settings.LocalAutoBackupPath = LocalAutoBackupPath;
             settings.IsGoogleDriveAutoBackupEnabled = IsGoogleDriveAutoBackupEnabled;
             settings.BackupFrequencyIndex = BackupFrequencyIndex;
-
-            settings.PlayerType = PlayerType;
-            settings.MpvPath = MpvPath;
             
+            settings.PlayerMode = PlayerMode;
+
             SettingsManager.SaveSettings(settings);
             StatusMessage = "تنظیمات با موفقیت ذخیره شد.";
             // clear after 3 seconds
