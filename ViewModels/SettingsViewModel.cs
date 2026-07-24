@@ -701,8 +701,8 @@ namespace MovieManagerDesktop.ViewModels
                     proxy += "/?url=";
                 }
                 
-                // We use TMDB API for testing to avoid 204 No Content crashes on edge functions
-                string testUrl = proxy + Uri.EscapeDataString("https://api.themoviedb.org/3/configuration?api_key=3272e27041f0b0ee11dbaf0315ce5b21");
+                // We use Google's 204 endpoint for a fast, reliable test
+                string testUrl = proxy + Uri.EscapeDataString("https://www.google.com/generate_204");
                 
                 using var client = new System.Net.Http.HttpClient();
                 client.DefaultRequestHeaders.Add("User-Agent", "MovieManagerDesktop");
@@ -710,6 +710,7 @@ namespace MovieManagerDesktop.ViewModels
                 
                 var response = await client.GetAsync(testUrl);
                 
+                // 204 No Content is exactly what google generate_204 should return
                 if (response.IsSuccessStatusCode)
                 {
                     ToastService.Instance.ShowSuccess("اتصال موفق! پروکسی به درستی کار می‌کند.");
@@ -730,17 +731,32 @@ namespace MovieManagerDesktop.ViewModels
         private void CopyWorkerCode()
         {
             string workerCode = @"export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    let targetUrl = url.searchParams.get(""url"");
-    if (!targetUrl) return new Response(""Missing URL parameter."", { status: 400 });
-    
-    // Create a new request based on the target URL
-    const newRequest = new Request(targetUrl, request);
-    
-    // Cloudflare handles headers (including Host) automatically
-    return fetch(newRequest);
-  }
+    async fetch(request, env, ctx) {
+      if (request.method === ""OPTIONS"") {
+        return new Response(null, {
+          headers: {
+            ""Access-Control-Allow-Origin"": ""*"",
+            ""Access-Control-Allow-Methods"": ""GET, POST, PUT, DELETE, OPTIONS"",
+            ""Access-Control-Allow-Headers"": request.headers.get(""Access-Control-Request-Headers"") || ""*"",
+          },
+        });
+      }
+      const url = new URL(request.url);
+      const targetUrl = url.searchParams.get(""url"");
+      if (!targetUrl) return new Response(""Missing 'url' query parameter."", { status: 400 });
+      try {
+        const headers = new Headers(request.headers);
+        headers.delete(""Host""); headers.delete(""Origin""); headers.delete(""Referer"");
+        const response = await fetch(new Request(targetUrl, {
+          method: request.method, headers: headers, body: request.body, redirect: ""follow"",
+        }));
+        const modifiedResponse = new Response(response.body, response);
+        modifiedResponse.headers.set(""Access-Control-Allow-Origin"", ""*"");
+        modifiedResponse.headers.delete(""X-Frame-Options"");
+        modifiedResponse.headers.delete(""Content-Security-Policy"");
+        return modifiedResponse;
+      } catch (error) { return new Response(`Proxy Error: ${error.message}`, { status: 500 }); }
+    },
 };";
             try
             {
