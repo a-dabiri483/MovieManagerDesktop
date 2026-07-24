@@ -701,8 +701,8 @@ namespace MovieManagerDesktop.ViewModels
                     proxy += "/?url=";
                 }
                 
-                // We use Google's 204 endpoint for a fast, reliable test
-                string testUrl = proxy + Uri.EscapeDataString("https://www.google.com/generate_204");
+                // We use TMDB API for testing to avoid 204 No Content crashes on edge functions
+                string testUrl = proxy + Uri.EscapeDataString("https://api.themoviedb.org/3/configuration?api_key=3272e27041f0b0ee11dbaf0315ce5b21");
                 
                 using var client = new System.Net.Http.HttpClient();
                 client.DefaultRequestHeaders.Add("User-Agent", "MovieManagerDesktop");
@@ -710,7 +710,6 @@ namespace MovieManagerDesktop.ViewModels
                 
                 var response = await client.GetAsync(testUrl);
                 
-                // 204 No Content is exactly what google generate_204 should return
                 if (response.IsSuccessStatusCode)
                 {
                     ToastService.Instance.ShowSuccess("اتصال موفق! پروکسی به درستی کار می‌کند.");
