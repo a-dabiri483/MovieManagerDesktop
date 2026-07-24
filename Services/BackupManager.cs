@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using MovieManagerDesktop.Data;
 using System.Text.Json;
 using MovieManagerDesktop.Models;
+using System.Net.Http;
 
 namespace MovieManagerDesktop.Services
 {
@@ -232,7 +233,23 @@ namespace MovieManagerDesktop.Services
             {
                 HttpClientInitializer = credential,
                 ApplicationName = ApplicationName,
+                HttpClientFactory = new NoProxyHttpClientFactory()
             });
+        }
+
+        // Custom HttpClientFactory to explicitly disable system proxies for Google Drive API
+        private class NoProxyHttpClientFactory : Google.Apis.Http.HttpClientFactory
+        {
+            protected override HttpMessageHandler CreateHandler(Google.Apis.Http.CreateHttpClientArgs args)
+            {
+                var handler = base.CreateHandler(args) as HttpClientHandler;
+                if (handler != null)
+                {
+                    handler.UseProxy = false;
+                    handler.Proxy = null;
+                }
+                return handler;
+            }
         }
 
         public static async Task ConnectToGoogleDriveAsync()
@@ -263,7 +280,7 @@ namespace MovieManagerDesktop.Services
                 long fileLength = stream.Length;
                 request = service.Files.Create(fileMetadata, stream, "application/json");
                 request.Fields = "id";
-                request.ChunkSize = Google.Apis.Upload.ResumableUpload.MinimumChunkSize; // Minimum chunk size (256KB)
+                request.ChunkSize = 5 * 1024 * 1024; // 5MB chunk size for much faster upload
                 
                 if (progress != null)
                 {
@@ -284,8 +301,8 @@ namespace MovieManagerDesktop.Services
                 
                 if (textProgress != null) textProgress.Report("شروع آپلود فایل...");
                 
-                // If file is very small (<256KB), simulate progress for a moment so UI looks good
-                if (fileLength < Google.Apis.Upload.ResumableUpload.MinimumChunkSize)
+                // If file is very small (<5MB), simulate progress for a moment so UI looks good
+                if (fileLength < 5 * 1024 * 1024)
                 {
                     if (progress != null) progress.Report(50.0);
                     if (textProgress != null) textProgress.Report($"ارسال شده: {fileLength / 1024f / 2:F0} KB (50.0%)");
@@ -402,7 +419,7 @@ namespace MovieManagerDesktop.Services
                 expectedSize = meta.Size ?? 0;
             }
 
-            request.MediaDownloader.ChunkSize = 256 * 1024; // 256KB
+            request.MediaDownloader.ChunkSize = 5 * 1024 * 1024; // 5MB chunk size for faster download
             
             if (progress != null)
             {
