@@ -30,8 +30,6 @@ namespace MovieManagerDesktop.Services
         public int BackupFrequencyIndex { get; set; } = 0; // 0: Always on exit, 1: Daily, 2: Weekly
         public DateTime LastBackupTime { get; set; } = DateTime.MinValue;
 
-        // Player Settings
-        public int PlayerMode { get; set; } = 0; // 0: Windows Default, 1: Internal MPV
     }
 
     public static class SettingsManager
@@ -45,7 +43,11 @@ namespace MovieManagerDesktop.Services
                 try
                 {
                     var json = File.ReadAllText(SettingsFilePath);
-                    return JsonSerializer.Deserialize<SettingsModel>(json) ?? new SettingsModel();
+                    var options = new JsonSerializerOptions 
+                    { 
+                        NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
+                    };
+                    return JsonSerializer.Deserialize<SettingsModel>(json, options) ?? new SettingsModel();
                 }
                 catch
                 {
@@ -57,7 +59,12 @@ namespace MovieManagerDesktop.Services
 
         public static void SaveSettings(SettingsModel settings)
         {
-            var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+            var options = new JsonSerializerOptions 
+            { 
+                WriteIndented = true,
+                NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
+            };
+            var json = JsonSerializer.Serialize(settings, options);
             File.WriteAllText(SettingsFilePath, json);
         }
     }

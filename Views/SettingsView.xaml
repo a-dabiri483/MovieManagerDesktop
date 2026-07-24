@@ -109,21 +109,6 @@
 
                                 <Separator Background="{DynamicResource NormalBorder}" Margin="0,0,0,25"/>
 
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                                    <materialDesign:PackIcon Kind="PlayCircle" Foreground="{DynamicResource PrimaryColor}" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                    <TextBlock Text="تنظیمات پخش‌کننده (Player)" Foreground="{DynamicResource PrimaryText}" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
-                                </StackPanel>
-                                <TextBlock Text="پخش‌کننده‌ای که برای باز کردن فیلم‌ها و سریال‌ها استفاده می‌شود را انتخاب کنید:" Foreground="{DynamicResource SecondaryText}" FontSize="15" FontWeight="Normal" Margin="0,0,0,15" TextWrapping="Wrap"/>
-                                
-                                <StackPanel Orientation="Vertical" Margin="0,0,0,35">
-                                    <RadioButton IsChecked="{Binding IsWindowsDefaultPlayer}" Content="پخش‌کننده پیش‌فرض ویندوز (بدون ثبت زمان تماشا)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,0,15" GroupName="PlayerMode"/>
-                                    <RadioButton IsChecked="{Binding IsInternalMpvPlayer}" Content="پلیر داخلی افزونه (پیشرفته - با ثبت خودکار زمان تماشا)" Foreground="{DynamicResource PrimaryText}" FontSize="16" GroupName="PlayerMode"/>
-                                    
-                                    <TextBlock Visibility="{Binding IsInternalMpvPlayer, Converter={StaticResource BooleanToVisibilityConverter}}" 
-                                               Text="* این افزونه هم‌اکنون به صورت کامل درون خود برنامه تعبیه شده است و نیازی به هیچ دانلود اضافه‌ای ندارد. از تماشای یکپارچه لذت ببرید!" 
-                                               Foreground="{DynamicResource SecondaryText}" FontSize="13" Margin="25,8,0,0" TextWrapping="Wrap"/>
-                                </StackPanel>
-
                                 <Button Command="{Binding SaveSettingsCommand}" 
                                         Style="{StaticResource MaterialDesignRaisedButton}"
                                         Background="{DynamicResource SuccessColor}" Foreground="#050510" BorderThickness="0" 

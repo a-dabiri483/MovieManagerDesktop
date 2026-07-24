@@ -183,30 +183,6 @@ namespace MovieManagerDesktop.ViewModels
             }
         }
 
-        public int PlayerMode
-        {
-            get => _playerMode;
-            set
-            {
-                SetProperty(ref _playerMode, value);
-                OnPropertyChanged(nameof(IsWindowsDefaultPlayer));
-                OnPropertyChanged(nameof(IsInternalMpvPlayer));
-            }
-        }
-        private int _playerMode = 0;
-
-        public bool IsWindowsDefaultPlayer
-        {
-            get => PlayerMode == 0;
-            set { if (value) PlayerMode = 0; }
-        }
-
-        public bool IsInternalMpvPlayer
-        {
-            get => PlayerMode == 1;
-            set { if (value) PlayerMode = 1; }
-        }
-
         public SettingsViewModel()
         {
             var settings = SettingsManager.LoadSettings();
@@ -222,10 +198,6 @@ namespace MovieManagerDesktop.ViewModels
             _isGoogleDriveAutoBackupEnabled = settings.IsGoogleDriveAutoBackupEnabled;
             _backupFrequencyIndex = settings.BackupFrequencyIndex;
             
-            _playerMode = settings.PlayerMode;
-            OnPropertyChanged(nameof(IsWindowsDefaultPlayer));
-            OnPropertyChanged(nameof(IsInternalMpvPlayer));
-
             CheckGoogleDriveConnection();
         }
 
@@ -408,8 +380,6 @@ namespace MovieManagerDesktop.ViewModels
             settings.IsGoogleDriveAutoBackupEnabled = IsGoogleDriveAutoBackupEnabled;
             settings.BackupFrequencyIndex = BackupFrequencyIndex;
             
-            settings.PlayerMode = PlayerMode;
-
             SettingsManager.SaveSettings(settings);
             StatusMessage = "تنظیمات با موفقیت ذخیره شد.";
             // clear after 3 seconds
