@@ -169,6 +169,12 @@ namespace MovieManagerDesktop
             this.WindowState = WindowState.Minimized;
         }
 
+        private void BtnViewLogs_Click(object sender, RoutedEventArgs e)
+        {
+            var logWindow = new MovieManagerDesktop.Views.LogViewerWindow();
+            logWindow.Show();
+        }
+
         private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
             this.Close();

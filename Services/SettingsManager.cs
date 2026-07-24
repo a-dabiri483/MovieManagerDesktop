@@ -9,6 +9,7 @@ namespace MovieManagerDesktop.Services
         public string SelectedDataSource { get; set; } = "FM_DB"; // FM_DB, TMDB_ONLY, OMDB_ONLY
         public string TmdbApiKey { get; set; } = string.Empty;
         public string OmdbApiKey { get; set; } = string.Empty;
+        public string ApiProxyUrl { get; set; } = string.Empty;
         public string TmdbLanguage { get; set; } = "fa-IR"; // fa-IR or en-US
         public int PosterSize { get; set; } = 220;
         public string Theme { get; set; } = "Cyan"; // Cyan, MidnightBlue, OLEDBlack
@@ -66,6 +67,28 @@ namespace MovieManagerDesktop.Services
             };
             var json = JsonSerializer.Serialize(settings, options);
             File.WriteAllText(SettingsFilePath, json);
+        }
+
+        public static string WrapUrlWithProxy(string url)
+        {
+            var settings = LoadSettings();
+            if (!string.IsNullOrWhiteSpace(settings.ApiProxyUrl))
+            {
+                string proxy = settings.ApiProxyUrl.Trim();
+                // Ensure proxy url ends with correct parameter
+                if (!proxy.EndsWith("=") && !proxy.EndsWith("url=") && !proxy.EndsWith("url"))
+                {
+                    if (proxy.Contains("?")) proxy += "&url=";
+                    else proxy += "?url=";
+                }
+                else if (proxy.EndsWith("url"))
+                {
+                    proxy += "=";
+                }
+                
+                return proxy + Uri.EscapeDataString(url);
+            }
+            return url;
         }
     }
 }

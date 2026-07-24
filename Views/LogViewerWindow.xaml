@@ -1,0 +1,34 @@
+<Window x:Class="MovieManagerDesktop.Views.LogViewerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="لاگ‌های ارتباطات (Live Logs)" Height="450" Width="800"
+        WindowStartupLocation="CenterScreen"
+        Background="#1E1E1E" Foreground="#D4D4D4"
+        FontFamily="Consolas, Courier New, Monospace"
+        FlowDirection="LeftToRight"
+        Icon="pack://application:,,,/Assets/logo.ico">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="#252526" Padding="10">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="پاک کردن لاگ‌ها" Click="ClearLogs_Click" Padding="15,5" Background="#333" Foreground="White" BorderThickness="0" Margin="0,0,10,0"/>
+                <CheckBox x:Name="AutoScrollCheckBox" Content="اسکرول خودکار" IsChecked="True" Foreground="White" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <TextBox x:Name="LogTextBox" Grid.Row="1" 
+                 Background="#1E1E1E" Foreground="#D4D4D4"
+                 BorderThickness="0"
+                 IsReadOnly="True" 
+                 TextWrapping="Wrap" 
+                 VerticalScrollBarVisibility="Auto" 
+                 HorizontalScrollBarVisibility="Auto"
+                 Padding="10"
+                 FontSize="13"/>
+    </Grid>
+</Window>

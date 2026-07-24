@@ -501,6 +501,8 @@ namespace MovieManagerDesktop.ViewModels
             var selectedGroups = _allGroups.Where(x => x.IsChecked && !x.IsRegistered).ToList();
             if(!selectedGroups.Any()) return;
             
+            LoggerService.Info($"[اسکنر] شروع ثبت گروهی برای {selectedGroups.Count} گروه...");
+
             IsRegistering = true;
             IsScanningIndeterminate = false;
             ScanProgressValue = 0;
@@ -541,6 +543,7 @@ namespace MovieManagerDesktop.ViewModels
                             
                             if (!hasData)
                             {
+                                LoggerService.Warning($"[اسکنر] دیتایی برای '{representative.FormattedTitle}' یافت نشد.");
                                 Application.Current.Dispatcher.Invoke(() => {
                                     group.Status = "خطا در پیدا کردن";
                                     group.IsError = true;
@@ -637,6 +640,8 @@ namespace MovieManagerDesktop.ViewModels
                                 group.IsError = false;
                                 group.IsChecked = false;
                                 
+                                LoggerService.Info($"[اسکنر] '{group.TitleOverride}' با موفقیت در دیتابیس ثبت شد.");
+
                                 processedGroups++;
                                 ScanProgressValue = ((double)processedGroups / totalGroups) * 100;
                                 ScanProgressText = $"در حال ثبت... {((double)processedGroups / totalGroups) * 100:0}% ({processedGroups} از {totalGroups})";
@@ -644,6 +649,7 @@ namespace MovieManagerDesktop.ViewModels
                         }
                         catch (Exception ex)
                         {
+                            LoggerService.Error($"[اسکنر] خطا در پردازش '{group.Representative.FormattedTitle}': {ex.Message}", ex);
                             Application.Current.Dispatcher.Invoke(() => {
                                 group.Status = ex is InvalidOperationException ? ex.Message : "خطای سیستمی";
                                 group.IsError = true;
@@ -663,6 +669,7 @@ namespace MovieManagerDesktop.ViewModels
                     
                     if (!_cancellationTokenSource.Token.IsCancellationRequested)
                     {
+                        LoggerService.Info($"[اسکنر] عملیات ثبت گروهی پایان یافت. کل فایل‌های اضافه شده: {successCount}");
                         StatusMessage = $"ثبت با موفقیت تمام شد. {successCount} فایل ثبت شد.";
                     }
                     

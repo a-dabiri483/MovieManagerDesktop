@@ -206,6 +206,10 @@ namespace MovieManagerDesktop.ViewModels
                             dbSeries.NextEpisodeDate = _series.NextEpisodeDate;
                             dbSeries.NextEpisodeNumber = _series.NextEpisodeNumber;
                             dbSeries.SeriesStatus = _series.SeriesStatus;
+
+                            _mediaService.CleanTrackerInfoFromOverview(_series);
+                            dbSeries.Overview = _series.Overview;
+
                             await db.SaveChangesAsync();
                         }
                         
@@ -305,6 +309,7 @@ namespace MovieManagerDesktop.ViewModels
             }
 
             var service = new IdentifyMediaService();
+            LoggerService.Info($"[صفحه جزییات] جستجوی پوسترهای جایگزین برای: {_series.FormattedTitle}...");
             var posters = await service.GetMediaPostersAsync(Series.TmdbId.Value, "Series");
             
             if (posters == null || posters.Count == 0)
@@ -360,6 +365,7 @@ namespace MovieManagerDesktop.ViewModels
             IsLoading = true;
             try
             {
+                LoggerService.Info($"[صفحه جزییات] بروزرسانی اطلاعات سریال: {_series.FormattedTitle}...");
                 var settings = SettingsManager.LoadSettings();
                 string apiKey = string.IsNullOrEmpty(settings.TmdbApiKey) ? "3272e27041f0b0ee11dbaf0315ce5b21" : settings.TmdbApiKey;
                 string language = string.IsNullOrEmpty(settings.TmdbLanguage) ? "fa-IR" : settings.TmdbLanguage;
@@ -382,6 +388,10 @@ namespace MovieManagerDesktop.ViewModels
                     dbSeries.SeriesStatus = _series.SeriesStatus;
                     dbSeries.PosterUrl = _series.PosterUrl;
                     dbSeries.BackdropUrl = _series.BackdropUrl;
+
+                    _mediaService.CleanTrackerInfoFromOverview(_series);
+                    dbSeries.Overview = _series.Overview;
+
                     await db.SaveChangesAsync();
                 }
                 
@@ -438,6 +448,8 @@ namespace MovieManagerDesktop.ViewModels
                 string apiKey = string.IsNullOrEmpty(settings.TmdbApiKey) ? "3272e27041f0b0ee11dbaf0315ce5b21" : settings.TmdbApiKey;
                 string language = string.IsNullOrEmpty(settings.TmdbLanguage) ? "fa-IR" : settings.TmdbLanguage;
                 
+                LoggerService.Info($"[صفحه جزییات] بروزرسانی اطلاعات ردیاب: {_series.FormattedTitle}...");
+                
                 await _mediaService.IdentifySeriesDetailsAsync(_series, apiKey, language);
                 
                 using var db = new AppDbContext();
@@ -454,6 +466,10 @@ namespace MovieManagerDesktop.ViewModels
                     dbSeries.NextEpisodeNumber = _series.NextEpisodeNumber;
                     dbSeries.TotalSeasonsCount = _series.TotalSeasonsCount;
                     dbSeries.TotalEpisodesCount = _series.TotalEpisodesCount;
+                    
+                    _mediaService.CleanTrackerInfoFromOverview(_series);
+                    dbSeries.Overview = _series.Overview;
+                    
                     await db.SaveChangesAsync();
                 }
                 

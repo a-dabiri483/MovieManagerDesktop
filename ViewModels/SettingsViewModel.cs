@@ -83,6 +83,9 @@ namespace MovieManagerDesktop.ViewModels
         private string _omdbApiKey;
 
         [ObservableProperty]
+        private string _apiProxyUrl;
+
+        [ObservableProperty]
         private string _statusMessage;
 
         [ObservableProperty]
@@ -189,6 +192,7 @@ namespace MovieManagerDesktop.ViewModels
             SelectedDataSource = settings.SelectedDataSource ?? "FM_DB";
             TmdbApiKey = settings.TmdbApiKey;
             OmdbApiKey = settings.OmdbApiKey;
+            ApiProxyUrl = settings.ApiProxyUrl;
             TmdbLanguage = settings.TmdbLanguage ?? "fa-IR";
             _isDarkTheme = settings.IsDarkTheme;
             SelectedTheme = settings.Theme ?? "Cyan"; // This calls ApplyTheme
@@ -371,6 +375,7 @@ namespace MovieManagerDesktop.ViewModels
             settings.SelectedDataSource = SelectedDataSource;
             settings.TmdbApiKey = TmdbApiKey;
             settings.OmdbApiKey = OmdbApiKey;
+            settings.ApiProxyUrl = ApiProxyUrl;
             settings.TmdbLanguage = TmdbLanguage;
             settings.Theme = SelectedTheme;
             settings.IsDarkTheme = IsDarkTheme;
@@ -644,6 +649,7 @@ namespace MovieManagerDesktop.ViewModels
                             SelectedDataSource = importedSettings.SelectedDataSource ?? "FM_DB";
                             TmdbApiKey = importedSettings.TmdbApiKey;
                             OmdbApiKey = importedSettings.OmdbApiKey;
+                            ApiProxyUrl = importedSettings.ApiProxyUrl;
                             TmdbLanguage = importedSettings.TmdbLanguage ?? "fa-IR";
                             IsDarkTheme = importedSettings.IsDarkTheme;
                             SelectedTheme = importedSettings.Theme ?? "Cyan";

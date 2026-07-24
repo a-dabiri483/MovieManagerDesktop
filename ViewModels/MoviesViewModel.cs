@@ -442,6 +442,8 @@ namespace MovieManagerDesktop.ViewModels
                 foreach (var item in selectedItems)
                 {
                     Application.Current.Dispatcher.Invoke(() => item.IsUpdating = true);
+                    
+                    LoggerService.Info($"[بروزرسانی گروهی] شروع بررسی متادیتا برای '{item.File.FormattedTitle}'...");
 
                     var identified = await identifyService.IdentifyMediaAsync(item.File);
                     bool hasData = (identified.TmdbId.HasValue && identified.TmdbId > 0) || !string.IsNullOrWhiteSpace(identified.PosterUrl);

@@ -258,6 +258,7 @@
                                 </Style>
                             </Border.Resources>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                                <Button Content="&#xE8D7;" ToolTip="نمایش لاگ‌ها" Style="{StaticResource WindowBtnStyle}" Click="BtnViewLogs_Click"/>
                                 <Button Content="&#xE921;" Style="{StaticResource WindowBtnStyle}" Click="BtnMinimize_Click"/>
                                 <Button x:Name="BtnMaximize" Content="&#xE922;" Style="{StaticResource WindowBtnStyle}" Click="BtnMaximize_Click"/>
                                 <Button Content="&#xE8BB;" Style="{StaticResource WindowCloseBtnStyle}" Click="BtnClose_Click"/>

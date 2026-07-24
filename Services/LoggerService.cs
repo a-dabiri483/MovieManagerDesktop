@@ -33,6 +33,8 @@ namespace MovieManagerDesktop.Services
             }
         }
 
+        public static event EventHandler<string>? LogAdded;
+
         public static void Info(string message)
         {
             WriteLog("INFO", message);
@@ -51,17 +53,34 @@ namespace MovieManagerDesktop.Services
 
         private static void WriteLog(string level, string message)
         {
-            try
+            lock (_lock)
             {
-                lock (_lock)
+                try
                 {
-                    var logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level}] {message}{Environment.NewLine}";
-                    File.AppendAllText(LogFilePath, logEntry);
+                    string timeStr = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                    string logEntry = $"{timeStr} | {level,-5} | {message}";
+                    
+                    if (level == "ERROR")
+                    {
+                        logEntry += Environment.NewLine + "--------------------------------------------------";
+                    }
+
+                    // Trigger the event for live UI viewing FIRST
+                    LogAdded?.Invoke(null, logEntry);
+
+                    try 
+                    {
+                        File.AppendAllText(LogFilePath, logEntry + Environment.NewLine);
+                    }
+                    catch
+                    {
+                        // Ignore file writing errors
+                    }
                 }
-            }
-            catch
-            {
-                // Ignore logging errors to prevent recursive crashes
+                catch
+                {
+                    // Ignore logging errors to prevent crash loop
+                }
             }
         }
     }

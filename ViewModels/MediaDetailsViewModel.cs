@@ -493,6 +493,7 @@ namespace MovieManagerDesktop.ViewModels
         {
             try
             {
+                LoggerService.Info($"[صفحه جزییات] شروع بروزرسانی اطلاعات برای: {Media.FormattedTitle}");
                 var service = new IdentifyMediaService();
                 var updatedFile = await service.IdentifyMediaAsync(Media);
                 

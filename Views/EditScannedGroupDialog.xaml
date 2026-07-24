@@ -50,15 +50,27 @@
             </StackPanel>
         </Border>
         
-        <!-- Search Bar -->
         <Border Grid.Row="1" Padding="20">
             <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,15">
+                    <RadioButton Content="فیلم" Style="{StaticResource MaterialDesignTabRadioButton}" 
+                                 IsChecked="{Binding IsSearchTypeMovie}" Foreground="{DynamicResource PrimaryText}" Margin="0,0,15,0" Padding="15,5" Background="{DynamicResource CardBackground}"/>
+                    <RadioButton Content="سریال" Style="{StaticResource MaterialDesignTabRadioButton}" 
+                                 IsChecked="{Binding IsSearchTypeSeries}" Foreground="{DynamicResource PrimaryText}" Margin="0,0,15,0" Padding="15,5" Background="{DynamicResource CardBackground}"/>
+                    <RadioButton Content="انیمه (AniList)" Style="{StaticResource MaterialDesignTabRadioButton}" 
+                                 IsChecked="{Binding IsSearchTypeAnime}" Foreground="{DynamicResource PrimaryText}" Padding="15,5" Background="{DynamicResource CardBackground}"/>
+                </StackPanel>
                 
-                <TextBox Grid.Column="0" 
+                <TextBox Grid.Row="1" Grid.Column="0" 
                          Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
                          Style="{StaticResource MaterialDesignOutlinedTextBox}"
                          materialDesign:HintAssist.Hint="نام فیلم/سریال یا کد IMDB را وارد کنید..."
@@ -70,7 +82,7 @@
                     </TextBox.InputBindings>
                 </TextBox>
                 
-                <Button Grid.Column="1" 
+                <Button Grid.Row="1" Grid.Column="1" 
                         Command="{Binding SearchCommand}"
                         Content="جستجو"
                         Style="{StaticResource MaterialDesignRaisedButton}"

@@ -60,7 +60,8 @@ namespace MovieManagerDesktop.Services
                     return localPath;
                 }
 
-                var response = await _httpClient.GetAsync(url);
+                var wrappedUrl = SettingsManager.WrapUrlWithProxy(url);
+                var response = await _httpClient.GetAsync(wrappedUrl);
                 response.EnsureSuccessStatusCode();
                 var imageBytes = await response.Content.ReadAsByteArrayAsync();
                 

@@ -37,7 +37,7 @@ namespace MovieManagerDesktop.Services
         {
             _httpClient = new HttpClient();
             _httpClient.Timeout = TimeSpan.FromSeconds(25);
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "MovieManagerDesktop/1.0");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
         }
 
         public IdentifyMediaService()
@@ -65,7 +65,8 @@ namespace MovieManagerDesktop.Services
                 string fileName = $"{cleanPrefix}_{Guid.NewGuid().ToString("N").Substring(0,6)}{ext}";
                 string filePath = Path.Combine(_imagesDirectory, fileName);
                 
-                var request = new HttpRequestMessage(HttpMethod.Get, url);
+                string proxyUrl = SettingsManager.WrapUrlWithProxy(url);
+                var request = new HttpRequestMessage(HttpMethod.Get, proxyUrl);
                 request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
                 var response = await _httpClient.SendAsync(request);
                 response.EnsureSuccessStatusCode();
@@ -88,7 +89,7 @@ namespace MovieManagerDesktop.Services
                 var settings = SettingsManager.LoadSettings();
                 string apiKey = settings.TmdbApiKey ?? "3272e27041f0b0ee11dbaf0315ce5b21";
                 string url = $"https://api.themoviedb.org/3/find/{imdbId}?api_key={apiKey}&external_source=imdb_id";
-                var response = await _httpClient.GetAsync(url);
+                var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -118,6 +119,27 @@ namespace MovieManagerDesktop.Services
             return await SearchTmdbInternalAsync(query, language);
         }
 
+        public async Task<List<TmdbSearchResult>> SearchAnimeManualAsync(string query)
+        {
+            var results = new List<TmdbSearchResult>();
+            if (string.IsNullOrWhiteSpace(query)) return results;
+            
+            var anilistService = new AnilistService();
+            var data = await anilistService.SearchAnimeAsync(query);
+            if (data != null)
+            {
+                results.Add(new TmdbSearchResult
+                {
+                    Id = data.Id, // We store Anilist ID temporarily in TmdbId for the UI
+                    Title = !string.IsNullOrEmpty(data.TitleEnglish) ? data.TitleEnglish : data.TitleRomaji,
+                    ReleaseYear = data.SeasonYear > 0 ? data.SeasonYear.ToString() : "",
+                    PosterUrl = data.CoverImageUrl,
+                    MediaType = "Anime"
+                });
+            }
+            return results;
+        }
+
         private async Task<List<TmdbSearchResult>> SearchFmDbAsync(string query)
         {
             var results = new List<TmdbSearchResult>();
@@ -125,7 +147,8 @@ namespace MovieManagerDesktop.Services
             try
             {
                 string url = $"https://imdb.iamidiotareyoutoo.com/search?q={Uri.EscapeDataString(query)}";
-                var response = await _httpClient.GetAsync(url);
+                LoggerService.Info($"[موتور جستجو - دستی] ارسال درخواست به FM_DB: {url}");
+                var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -163,7 +186,8 @@ namespace MovieManagerDesktop.Services
             try
             {
                 string url = $"https://www.omdbapi.com/?apikey={apiKey}&s={Uri.EscapeDataString(query)}";
-                var response = await _httpClient.GetAsync(url);
+                LoggerService.Info($"[موتور جستجو - دستی] ارسال درخواست به OMDB: {url}");
+                var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -213,6 +237,7 @@ namespace MovieManagerDesktop.Services
                 string url;
                 if (query.StartsWith("tt", StringComparison.OrdinalIgnoreCase))
                 {
+                    LoggerService.Info($"[موتور جستجو - دستی] جستجو با شناسه IMDB: {query}");
                     // It's an IMDB ID, find Tmdb ID first
                     int? tmdbId = await GetTmdbIdFromImdbIdAsync(query);
                     if (tmdbId.HasValue)
@@ -220,11 +245,11 @@ namespace MovieManagerDesktop.Services
                         // We need to fetch details to get a TmdbSearchResult, just fetch as movie and tv
                         // but actually, we can just return one result. Let's do a multi search if it's not tt
                         url = $"https://api.themoviedb.org/3/movie/{tmdbId}?api_key={apiKey}&language={language}";
-                        var response = await _httpClient.GetAsync(url);
+                        var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                         if (!response.IsSuccessStatusCode)
                         {
                             url = $"https://api.themoviedb.org/3/tv/{tmdbId}?api_key={apiKey}&language={language}";
-                            response = await _httpClient.GetAsync(url);
+                            response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                         }
                         if (response.IsSuccessStatusCode)
                         {
@@ -252,11 +277,11 @@ namespace MovieManagerDesktop.Services
                 {
                     // Direct ID lookup
                     url = $"https://api.themoviedb.org/3/movie/{tmdbId}?api_key={apiKey}&language={language}";
-                    var response = await _httpClient.GetAsync(url);
+                    var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                     if (!response.IsSuccessStatusCode)
                     {
                         url = $"https://api.themoviedb.org/3/tv/{tmdbId}?api_key={apiKey}&language={language}";
-                        response = await _httpClient.GetAsync(url);
+                        response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                     }
                     if (response.IsSuccessStatusCode)
                     {
@@ -281,12 +306,12 @@ namespace MovieManagerDesktop.Services
                 }
 
                 url = $"https://api.themoviedb.org/3/search/multi?api_key={apiKey}&query={encodedQuery}&language={language}";
-                var resp = await _httpClient.GetAsync(url);
+                var resp = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 
                 if (!resp.IsSuccessStatusCode && language == "en-US")
                 {
                      url = url.Replace("language=en-US", "language=fa-IR");
-                     resp = await _httpClient.GetAsync(url);
+                     resp = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 }
 
                 if (resp.IsSuccessStatusCode)
@@ -339,45 +364,106 @@ namespace MovieManagerDesktop.Services
                 string source = settings.SelectedDataSource ?? "FM_DB";
                 string language = settings.TmdbLanguage ?? "fa-IR";
 
+                LoggerService.Info($"[اسکنر] شروع بررسی ارتباطات برای: {file.FormattedTitle}");
+
+                bool configApiSuccess = false;
+
+                // 1. First Step: Configured API
+                LoggerService.Info($"[موتور جستجو] (مرحله 1) شروع جستجو در سرور تنظیمات ({source})...");
+                
                 if (file.TmdbId.HasValue && file.TmdbId > 0)
                 {
+                    LoggerService.Info($"[موتور جستجو] آیدی TMDB موجود است. درخواست مستقیم از TMDB...");
                     await IdentifyWithTmdb(file, settings.TmdbApiKey, language);
+                    configApiSuccess = !string.IsNullOrWhiteSpace(file.PosterUrl) && !string.IsNullOrWhiteSpace(file.Overview);
                 }
                 else if (source == "FM_DB")
                 {
+                    LoggerService.Info($"[موتور جستجو] درخواست از سرور رایگان FM_DB...");
                     await IdentifyWithFmDb(file);
                     
                     if (file.TmdbId.HasValue && file.TmdbId > 0)
                     {
-                        // FM-DB found the TmdbId, now let's fetch the full details and high-quality TMDB poster
+                        LoggerService.Info($"[موتور جستجو] اطلاعات پایه از FM_DB دریافت شد. تکمیل اطلاعات از TMDB...");
                         await IdentifyWithTmdb(file, settings.TmdbApiKey, language);
+                        configApiSuccess = !string.IsNullOrWhiteSpace(file.PosterUrl) && !string.IsNullOrWhiteSpace(file.Overview);
                     }
                 }
                 else if (source == "TMDB_ONLY")
                 {
+                    LoggerService.Info($"[موتور جستجو] درخواست مستقیم از سرور اصلی TMDB...");
                     await IdentifyWithTmdb(file, settings.TmdbApiKey, language);
+                    configApiSuccess = !string.IsNullOrWhiteSpace(file.PosterUrl) && !string.IsNullOrWhiteSpace(file.Overview);
                 }
                 else if (source == "OMDB_ONLY")
                 {
+                    LoggerService.Info($"[موتور جستجو] درخواست مستقیم از سرور OMDB...");
                     await IdentifyWithOmdb(file, settings.OmdbApiKey);
+                    configApiSuccess = !string.IsNullOrWhiteSpace(file.PosterUrl) && !string.IsNullOrWhiteSpace(file.Overview);
                 }
 
-                if (file.MediaType == "Series")
+                // 2. Second Step: TVMaze (only if Configured API failed and it's a Series)
+                bool tvmazeSuccess = false;
+                if (!configApiSuccess && file.MediaType == "Series")
                 {
-                    bool isAnime = false;
-                    bool primaryFailed = string.IsNullOrWhiteSpace(file.PosterUrl) && string.IsNullOrWhiteSpace(file.Overview);
-                    
-                    if (!string.IsNullOrWhiteSpace(file.Genres) && file.Genres.Contains("Animation", StringComparison.OrdinalIgnoreCase))
+                    LoggerService.Info($"[موتور جستجو] (مرحله 2) سرور تنظیمات موفق نبود. سویچ به سرور جایگزین سریال (TVMaze)...");
+                    var tvmazeService = new TvMazeService();
+                    var tvmazeData = await tvmazeService.SearchSeriesAsync(file.FormattedTitle);
+                    if (tvmazeData != null && !string.IsNullOrEmpty(tvmazeData.Title))
                     {
-                        isAnime = true;
+                        if (string.IsNullOrWhiteSpace(file.FormattedTitle) || file.FormattedTitle == file.FileName) file.FormattedTitle = tvmazeData.Title;
+                        if (string.IsNullOrWhiteSpace(file.PosterUrl)) file.PosterUrl = tvmazeData.PosterUrl;
+                        if (string.IsNullOrWhiteSpace(file.Overview)) file.Overview = tvmazeData.Summary;
+                        if (string.IsNullOrWhiteSpace(file.Genres)) file.Genres = tvmazeData.Genres;
+                        if (file.Rating == null && tvmazeData.AverageRating > 0) file.Rating = tvmazeData.AverageRating;
+                        if (string.IsNullOrWhiteSpace(file.SeriesStatus)) file.SeriesStatus = tvmazeData.Status;
+                        
+                        if (!file.FirstAirDate.HasValue && DateTime.TryParse(tvmazeData.Premiered, out var prem)) file.FirstAirDate = prem;
+                        if (!file.LastAirDate.HasValue && DateTime.TryParse(tvmazeData.Ended, out var end)) file.LastAirDate = end;
+                        
+                        if (string.IsNullOrWhiteSpace(file.NetworkName)) file.NetworkName = tvmazeData.Network;
+                        if (string.IsNullOrWhiteSpace(file.AirDay)) file.AirDay = tvmazeData.ScheduleDays;
+                        if (string.IsNullOrWhiteSpace(file.AirTime)) file.AirTime = tvmazeData.ScheduleTime;
+
+                        if (!file.TmdbId.HasValue || file.TmdbId <= 0) file.TmdbId = tvmazeData.Id;
+                        
+                        tvmazeSuccess = true;
                     }
-                    
-                    if (primaryFailed || isAnime)
+                }
+
+                // 3. Fallback for BOTH Movies and Series: AniList
+                bool isAnimeFromTvMaze = file.Genres != null && file.Genres.Contains("Anime", StringComparison.OrdinalIgnoreCase);
+                bool primaryFailed = string.IsNullOrWhiteSpace(file.PosterUrl) && string.IsNullOrWhiteSpace(file.Overview);
+                
+                if (primaryFailed || isAnimeFromTvMaze)
+                {
+                    if (isAnimeFromTvMaze)
+                        LoggerService.Info($"[موتور جستجو] سیستم تشخیص داد این عنوان یک انیمه است. دریافت اطلاعات تخصصی از سرور AniList...");
+                    else
+                        LoggerService.Info($"[موتور جستجو] (مرحله نهایی) سرورهای قبلی پاسخگو نبودند یا دیتایی نداشتند. درخواست از سرور انیمه (AniList)...");
+                        
+                    var anilistService = new AnilistService();
+                    var anilistData = await anilistService.SearchAnimeAsync(file.FormattedTitle, file.Year);
+                    if (anilistData != null)
                     {
-                        await IdentifyWithJikanAsync(file);
+                        if (!string.IsNullOrEmpty(anilistData.TitleEnglish)) file.FormattedTitle = anilistData.TitleEnglish;
+                        else if (!string.IsNullOrEmpty(anilistData.TitleRomaji)) file.FormattedTitle = anilistData.TitleRomaji;
+
+                        if (!string.IsNullOrEmpty(anilistData.CoverImageUrl)) file.PosterUrl = anilistData.CoverImageUrl;
+                        if (!string.IsNullOrEmpty(anilistData.BannerImageUrl)) file.BackdropUrl = anilistData.BannerImageUrl;
+                        if (!string.IsNullOrEmpty(anilistData.Description)) file.Overview = anilistData.Description;
+                        if (anilistData.AverageScore > 0) file.Rating = anilistData.AverageScore;
+                        if (!string.IsNullOrEmpty(anilistData.Genres)) file.Genres = anilistData.Genres;
+                        if (!string.IsNullOrEmpty(anilistData.Status)) file.SeriesStatus = anilistData.Status;
+                        
+                        file.TmdbId = anilistData.Id;
+                        if (anilistData.Episodes > 1) file.TotalEpisodesCount = anilistData.Episodes;
                     }
                 }
                 
+                // Clean up any previously appended tracker info from overview
+                CleanTrackerInfoFromOverview(file);
+
                 // Fallback for backdrop if missing
                 if (string.IsNullOrWhiteSpace(file.BackdropUrl) && !string.IsNullOrWhiteSpace(file.PosterUrl))
                 {
@@ -409,9 +495,11 @@ namespace MovieManagerDesktop.Services
             string query = file.FormattedTitle;
             string url = $"https://imdb.iamidiotareyoutoo.com/search?q={Uri.EscapeDataString(query)}";
 
-            var response = await _httpClient.GetAsync(url);
+            LoggerService.Info($"[FM_DB] ارسال درخواست جستجو: {url}");
+            var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
             if (response.IsSuccessStatusCode)
             {
+                LoggerService.Info($"[FM_DB] پاسخ موفق دریافت شد.");
                 var json = await response.Content.ReadAsStringAsync();
                 var fmdbResponse = JsonSerializer.Deserialize<FmDbResponse>(json);
                 if (fmdbResponse != null && fmdbResponse.Ok && fmdbResponse.Description != null && fmdbResponse.Description.Any())
@@ -468,16 +556,20 @@ namespace MovieManagerDesktop.Services
                 }
             }
 
-            var response = await _httpClient.GetAsync(url);
+            LoggerService.Info($"[TMDB] ارسال درخواست جستجو/دریافت: {url}");
+            var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
             
             if (!response.IsSuccessStatusCode && language == "fa-IR")
             {
+                 LoggerService.Info($"[TMDB] پاسخ با زبان فارسی ناموفق بود. تلاش مجدد با زبان انگلیسی...");
                  url = url.Replace("language=fa-IR", "language=en-US");
-                 response = await _httpClient.GetAsync(url);
+                 LoggerService.Info($"[TMDB] ارسال درخواست جایگزین: {url}");
+                 response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
             }
 
             if (!response.IsSuccessStatusCode && isDirectIdLookup)
             {
+                LoggerService.Info($"[TMDB] درخواست مستقیم آیدی با خطا مواجه شد. تلاش با جستجوی عنوان...");
                 // Direct ID lookup failed (e.g. FM-DB gave a Movie ID for a Series)
                 // Fall back to title search
                 isDirectIdLookup = false;
@@ -498,23 +590,29 @@ namespace MovieManagerDesktop.Services
                         url = $"https://api.themoviedb.org/3/search/movie?api_key={apiKey}&query={query}&language={language}";
                 }
                 
-                response = await _httpClient.GetAsync(url);
+                LoggerService.Info($"[TMDB] ارسال درخواست جستجوی عنوان: {url}");
+                response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
             }
 
+            bool hasMatch = false;
             if (response.IsSuccessStatusCode)
             {
+                LoggerService.Info($"[TMDB] پاسخ موفق دریافت شد (200 OK)");
                 var json = await response.Content.ReadAsStringAsync();
                 using var document = JsonDocument.Parse(json);
                 var root = document.RootElement;
                 
                 if (!isDirectIdLookup && root.TryGetProperty("results", out var results) && results.GetArrayLength() == 0 && !string.IsNullOrWhiteSpace(file.Year))
                 {
+                    LoggerService.Info($"[TMDB] جستجو با سال ساخت نتیجه‌ای نداشت. جستجوی مجدد بدون سال...");
                     // Fallback: try searching without year
                     string fallbackType = file.MediaType == "Series" ? "tv" : "movie";
                     string fallbackUrl = $"https://api.themoviedb.org/3/search/{fallbackType}?api_key={apiKey}&query={query}&language={language}";
-                    response = await _httpClient.GetAsync(fallbackUrl);
+                    LoggerService.Info($"[TMDB] ارسال درخواست بدون سال: {fallbackUrl}");
+                    response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(fallbackUrl));
                     if (response.IsSuccessStatusCode)
                     {
+                        LoggerService.Info($"[TMDB] پاسخ درخواست بدون سال موفق بود.");
                         json = await response.Content.ReadAsStringAsync();
                         using var fallbackDoc = JsonDocument.Parse(json);
                         root = fallbackDoc.RootElement.Clone();
@@ -522,7 +620,6 @@ namespace MovieManagerDesktop.Services
                 }
                 
                 JsonElement firstMatch = default;
-                bool hasMatch = false;
 
                 if (isDirectIdLookup)
                 {
@@ -539,7 +636,7 @@ namespace MovieManagerDesktop.Services
                 if (!hasMatch && !isDirectIdLookup && language == "fa-IR")
                 {
                     string enUrl = url.Replace("language=fa-IR", "language=en-US");
-                    var enResponse = await _httpClient.GetAsync(enUrl);
+                    var enResponse = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(enUrl));
                     if (enResponse.IsSuccessStatusCode)
                     {
                         var enJson = await enResponse.Content.ReadAsStringAsync();
@@ -550,7 +647,7 @@ namespace MovieManagerDesktop.Services
                         if (enRoot.TryGetProperty("results", out var enRes) && enRes.GetArrayLength() == 0 && !string.IsNullOrWhiteSpace(file.Year))
                         {
                             string enFallbackUrl = $"https://api.themoviedb.org/3/search/multi?api_key={apiKey}&query={query}&language=en-US";
-                            var enFbResp = await _httpClient.GetAsync(enFallbackUrl);
+                            var enFbResp = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(enFallbackUrl));
                             if (enFbResp.IsSuccessStatusCode)
                             {
                                 enJson = await enFbResp.Content.ReadAsStringAsync();
@@ -609,7 +706,7 @@ namespace MovieManagerDesktop.Services
                         file.TmdbId = tmdbId;
                     }
                     
-                    string mediaType = "movie";
+                    string mediaType = (file.MediaType == "Series" || file.MediaType == "Anime") ? "tv" : "movie";
                     if (firstMatch.TryGetProperty("media_type", out var typeProp) && typeProp.ValueKind == JsonValueKind.String)
                     {
                         mediaType = typeProp.GetString();
@@ -622,7 +719,8 @@ namespace MovieManagerDesktop.Services
                         try
                         {
                             string detailsUrl = $"https://api.themoviedb.org/3/{mediaType}/{tmdbId}?api_key={apiKey}&append_to_response=credits&language={language}";
-                            var detailsResp = await _httpClient.GetAsync(detailsUrl);
+                            LoggerService.Info($"[TMDB] دریافت اطلاعات تکمیلی (بازیگران و عوامل): {detailsUrl}");
+                            var detailsResp = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(detailsUrl));
                             if (detailsResp.IsSuccessStatusCode)
                             {
                                 var detailsJson = await detailsResp.Content.ReadAsStringAsync();
@@ -672,7 +770,7 @@ namespace MovieManagerDesktop.Services
                                 if (language == "fa-IR" && (string.IsNullOrWhiteSpace(file.Overview) || string.IsNullOrWhiteSpace(file.Actors) || string.IsNullOrWhiteSpace(file.Director) || string.IsNullOrWhiteSpace(file.PosterUrl) || string.IsNullOrWhiteSpace(file.BackdropUrl)))
                                 {
                                     string enDetailsUrl = $"https://api.themoviedb.org/3/{mediaType}/{tmdbId}?api_key={apiKey}&append_to_response=credits&language=en-US";
-                                    var enDetailsResp = await _httpClient.GetAsync(enDetailsUrl);
+                                    var enDetailsResp = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(enDetailsUrl));
                                     if (enDetailsResp.IsSuccessStatusCode)
                                     {
                                         var enDetailsJson = await enDetailsResp.Content.ReadAsStringAsync();
@@ -730,16 +828,19 @@ namespace MovieManagerDesktop.Services
             try
             {
                 string url = $"https://api.themoviedb.org/3/tv/{file.TmdbId}?api_key={apiKey}&language={language}";
-                var response = await _httpClient.GetAsync(url);
+                LoggerService.Info($"[TMDB] استخراج اطلاعات دقیق سریال: {url}");
+                var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 
                 if (!response.IsSuccessStatusCode && language == "fa-IR")
                 {
                     url = $"https://api.themoviedb.org/3/tv/{file.TmdbId}?api_key={apiKey}&language=en-US";
-                    response = await _httpClient.GetAsync(url);
+                    LoggerService.Info($"[TMDB] تلاش مجدد با زبان انگلیسی: {url}");
+                    response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 }
                 
                 if (response.IsSuccessStatusCode)
                 {
+                    LoggerService.Info($"[TMDB] دریافت اطلاعات سریال موفق بود.");
                     var json = await response.Content.ReadAsStringAsync();
                     using var doc = JsonDocument.Parse(json);
                     var root = doc.RootElement;
@@ -813,7 +914,7 @@ namespace MovieManagerDesktop.Services
                             if (seasonToFetch >= 0)
                             {
                                 string seasonUrl = $"https://api.themoviedb.org/3/tv/{file.TmdbId}/season/{seasonToFetch}?api_key={apiKey}&language={language}";
-                                var seasonResp = await _httpClient.GetAsync(seasonUrl);
+                                var seasonResp = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(seasonUrl));
                                 if (seasonResp.IsSuccessStatusCode)
                                 {
                                     var seasonJson = await seasonResp.Content.ReadAsStringAsync();
@@ -845,6 +946,37 @@ namespace MovieManagerDesktop.Services
             {
                 // Ignore errors to not break the flow
             }
+
+            // Fallback to TVMaze ONLY if crucial info (Network) is missing from TMDB
+            try
+            {
+                if (string.IsNullOrWhiteSpace(file.NetworkName) || string.IsNullOrWhiteSpace(file.AirDay))
+                {
+                    LoggerService.Info($"[TMDB] اطلاعات شبکه یا روز پخش در TMDB یافت نشد، تلاش از طریق TVMaze...");
+                    var tvmazeService = new TvMazeService();
+                    var tvmazeResult = await tvmazeService.SearchSeriesAsync(file.FormattedTitle);
+                    if (tvmazeResult == null && !string.IsNullOrWhiteSpace(file.FileName))
+                    {
+                        LoggerService.Info($"[TVMaze] جستجو با نام اصلی فایل: {file.FileName}");
+                        tvmazeResult = await tvmazeService.SearchSeriesAsync(file.FileName);
+                    }
+                    if (tvmazeResult != null)
+                    {
+                        if (string.IsNullOrWhiteSpace(file.NetworkName) && !string.IsNullOrWhiteSpace(tvmazeResult.Network))
+                            file.NetworkName = tvmazeResult.Network;
+                        if (string.IsNullOrWhiteSpace(file.AirDay) && !string.IsNullOrWhiteSpace(tvmazeResult.ScheduleDays))
+                            file.AirDay = tvmazeResult.ScheduleDays;
+                        if (string.IsNullOrWhiteSpace(file.AirTime) && !string.IsNullOrWhiteSpace(tvmazeResult.ScheduleTime))
+                            file.AirTime = tvmazeResult.ScheduleTime;
+                        if (string.IsNullOrWhiteSpace(file.SeriesStatus) && !string.IsNullOrWhiteSpace(tvmazeResult.Status))
+                            file.SeriesStatus = tvmazeResult.Status;
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore TVMaze fallback errors
+            }
         }
         
         private async Task IdentifyWithOmdb(VideoFile file, string apiKey)
@@ -858,9 +990,11 @@ namespace MovieManagerDesktop.Services
                 url += $"&y={file.Year}";
             }
 
-            var response = await _httpClient.GetAsync(url);
+            LoggerService.Info($"[OMDB] ارسال درخواست جستجو: {url}");
+            var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
             if (response.IsSuccessStatusCode)
             {
+                LoggerService.Info($"[OMDB] پاسخ موفق دریافت شد.");
                 var json = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
@@ -905,15 +1039,18 @@ namespace MovieManagerDesktop.Services
                 string apiKey = settings.TmdbApiKey ?? "3272e27041f0b0ee11dbaf0315ce5b21";
                 string url = $"https://api.themoviedb.org/3/tv/{file.TmdbId.Value}?api_key={apiKey}&language=fa-IR";
                 
-                var response = await _httpClient.GetAsync(url);
+                LoggerService.Info($"[TMDB] استخراج مجدد وضعیت سریال: {url}");
+                var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 if (!response.IsSuccessStatusCode)
                 {
                     url = $"https://api.themoviedb.org/3/tv/{file.TmdbId.Value}?api_key={apiKey}&language=en-US";
-                    response = await _httpClient.GetAsync(url);
+                    LoggerService.Info($"[TMDB] تلاش مجدد با زبان انگلیسی: {url}");
+                    response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 }
 
                 if (response.IsSuccessStatusCode)
                 {
+                    LoggerService.Info($"[TMDB] دریافت وضعیت سریال موفق بود.");
                     var json = await response.Content.ReadAsStringAsync();
                     using var doc = JsonDocument.Parse(json);
                     var root = doc.RootElement;
@@ -977,6 +1114,7 @@ namespace MovieManagerDesktop.Services
                 System.Diagnostics.Debug.WriteLine($"Error updating series status: {ex.Message}");
             }
             
+            CleanTrackerInfoFromOverview(file);
             return file;
         }
         public async Task<(List<TvSeason> Seasons, List<TvEpisode> Episodes)> FetchSeriesDetailsAsync(int tmdbId)
@@ -992,11 +1130,11 @@ namespace MovieManagerDesktop.Services
 
                 // Step 1: Fetch series to get seasons
                 string url = $"https://api.themoviedb.org/3/tv/{tmdbId}?api_key={apiKey}&language={language}";
-                var response = await _httpClient.GetAsync(url);
+                var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 if (!response.IsSuccessStatusCode)
                 {
                     url = $"https://api.themoviedb.org/3/tv/{tmdbId}?api_key={apiKey}&language=en-US";
-                    response = await _httpClient.GetAsync(url);
+                    response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 }
 
                 if (response.IsSuccessStatusCode)
@@ -1031,11 +1169,11 @@ namespace MovieManagerDesktop.Services
                     if (season.SeasonNumber == 0) continue; // Skip specials
 
                     string seasonUrl = $"https://api.themoviedb.org/3/tv/{tmdbId}/season/{season.SeasonNumber}?api_key={apiKey}&language={language}";
-                    var sResponse = await _httpClient.GetAsync(seasonUrl);
+                    var sResponse = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(seasonUrl));
                     if (!sResponse.IsSuccessStatusCode)
                     {
                         seasonUrl = $"https://api.themoviedb.org/3/tv/{tmdbId}/season/{season.SeasonNumber}?api_key={apiKey}&language=en-US";
-                        sResponse = await _httpClient.GetAsync(seasonUrl);
+                        sResponse = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(seasonUrl));
                     }
 
                     if (sResponse.IsSuccessStatusCode)
@@ -1074,131 +1212,34 @@ namespace MovieManagerDesktop.Services
             return (seasons, episodes);
         }
 
-        private async Task IdentifyWithJikanAsync(VideoFile file)
+        public void CleanTrackerInfoFromOverview(VideoFile file)
         {
-            try
+            if (string.IsNullOrWhiteSpace(file.Overview)) return;
+            
+            string cleanOverview = file.Overview.Trim();
+            int separatorIndex = cleanOverview.IndexOf("\n---");
+            if (separatorIndex > -1)
             {
-                string query = Uri.EscapeDataString(file.FormattedTitle);
-                string searchUrl = $"https://api.jikan.moe/v4/anime?q={query}&limit=1&sfw=true";
-                
-                var response = await _httpClient.GetAsync(searchUrl);
-                if (!response.IsSuccessStatusCode) return;
-
-                var json = await response.Content.ReadAsStringAsync();
-                using var document = JsonDocument.Parse(json);
-                var root = document.RootElement;
-
-                if (root.TryGetProperty("data", out var dataArray) && dataArray.GetArrayLength() > 0)
+                string possibleTrackerBlock = cleanOverview.Substring(separatorIndex);
+                if (possibleTrackerBlock.Contains("وضعیت:") || possibleTrackerBlock.Contains("تاریخ شروع:") || possibleTrackerBlock.Contains("شبکه:") || possibleTrackerBlock.Contains("تعداد قسمت‌ها:"))
                 {
-                    var anime = dataArray[0];
-                    
-                    if (anime.TryGetProperty("title_english", out var titleEn) && titleEn.ValueKind == JsonValueKind.String && !string.IsNullOrEmpty(titleEn.GetString()))
+                    file.Overview = cleanOverview.Substring(0, separatorIndex).Trim();
+                }
+            }
+            else
+            {
+                int statusIndex = cleanOverview.LastIndexOf("وضعیت:");
+                if (statusIndex > 0)
+                {
+                    string possibleTrackerBlock = cleanOverview.Substring(statusIndex);
+                    if (possibleTrackerBlock.Contains("تاریخ شروع:") || possibleTrackerBlock.Contains("شبکه:") || possibleTrackerBlock.Contains("برنامه پخش:"))
                     {
-                        file.FormattedTitle = titleEn.GetString();
-                    }
-                    else if (anime.TryGetProperty("title", out var title) && title.ValueKind == JsonValueKind.String)
-                    {
-                        file.FormattedTitle = title.GetString();
-                    }
-
-                    if (anime.TryGetProperty("status", out var status) && status.ValueKind == JsonValueKind.String)
-                    {
-                        file.SeriesStatus = status.GetString();
-                    }
-
-                    if (anime.TryGetProperty("episodes", out var episodes) && episodes.ValueKind == JsonValueKind.Number)
-                    {
-                        file.TotalEpisodesCount = episodes.GetInt32();
-                        file.NumberOfEpisodes = episodes.GetInt32();
-                    }
-                    
-                    file.TotalSeasonsCount = 1; 
-                    file.NumberOfSeasons = 1;
-
-                    if (anime.TryGetProperty("aired", out var aired) && aired.ValueKind == JsonValueKind.Object)
-                    {
-                        if (aired.TryGetProperty("from", out var fromDate) && fromDate.ValueKind == JsonValueKind.String)
-                        {
-                            if (DateTime.TryParse(fromDate.GetString(), out var parsedDate))
-                            {
-                                file.FirstAirDate = parsedDate;
-                                if (file.Year == null) file.Year = parsedDate.Year.ToString();
-                            }
-                        }
-                        if (aired.TryGetProperty("to", out var toDate) && toDate.ValueKind == JsonValueKind.String && !string.IsNullOrEmpty(toDate.GetString()))
-                        {
-                            if (DateTime.TryParse(toDate.GetString(), out var parsedEndDate))
-                            {
-                                file.LastAirDate = parsedEndDate;
-                            }
-                        }
-                    }
-
-                    if (anime.TryGetProperty("broadcast", out var broadcast) && broadcast.ValueKind == JsonValueKind.Object)
-                    {
-                        if (broadcast.TryGetProperty("string", out var broadcastStr) && broadcastStr.ValueKind == JsonValueKind.String)
-                        {
-                            file.AirDay = broadcastStr.GetString();
-                        }
-                    }
-
-                    if (anime.TryGetProperty("studios", out var studios) && studios.ValueKind == JsonValueKind.Array && studios.GetArrayLength() > 0)
-                    {
-                        if (studios[0].TryGetProperty("name", out var studioName) && studioName.ValueKind == JsonValueKind.String)
-                        {
-                            file.NetworkName = studioName.GetString();
-                        }
-                    }
-
-                    if (anime.TryGetProperty("next_episode_to_air", out var nextEp) && nextEp.ValueKind == JsonValueKind.Object)
-                    {
-                        if (nextEp.TryGetProperty("aired_at", out var nextAirDate) && nextAirDate.ValueKind == JsonValueKind.String)
-                        {
-                            if (DateTime.TryParse(nextAirDate.GetString(), out var parsedNextDate))
-                            {
-                                file.NextEpisodeDate = parsedNextDate.ToString("yyyy-MM-dd");
-                            }
-                        }
-                        if (nextEp.TryGetProperty("episode", out var nextEpNum) && nextEpNum.ValueKind == JsonValueKind.Number)
-                        {
-                            file.NextEpisodeNumber = nextEpNum.GetInt32();
-                        }
-                    }
-
-                    if (anime.TryGetProperty("score", out var score) && score.ValueKind == JsonValueKind.Number)
-                    {
-                        file.Rating = Math.Round(score.GetDouble(), 1);
-                    }
-                    
-                    if (anime.TryGetProperty("genres", out var genres) && genres.ValueKind == JsonValueKind.Array)
-                    {
-                        var genreList = genres.EnumerateArray()
-                            .Select(g => g.TryGetProperty("name", out var name) ? name.GetString() : "")
-                            .Where(n => !string.IsNullOrEmpty(n))
-                            .ToList();
-                        if (genreList.Any())
-                        {
-                            file.Genres = string.Join("، ", genreList);
-                        }
-                    }
-
-                    if (anime.TryGetProperty("images", out var images) && images.ValueKind == JsonValueKind.Object)
-                    {
-                        if (images.TryGetProperty("jpg", out var jpg) && jpg.ValueKind == JsonValueKind.Object)
-                        {
-                            if (jpg.TryGetProperty("large_image_url", out var imgUrl) && imgUrl.ValueKind == JsonValueKind.String)
-                            {
-                                file.PosterUrl = imgUrl.GetString();
-                            }
-                        }
+                        file.Overview = cleanOverview.Substring(0, statusIndex).Trim();
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                MovieManagerDesktop.Services.LoggerService.Error("Jikan API identification failed", ex);
-            }
         }
+
         public async Task<List<string>> GetMediaPostersAsync(int tmdbId, string mediaType)
         {
             var posters = new List<string>();
@@ -1209,7 +1250,8 @@ namespace MovieManagerDesktop.Services
                 string type = mediaType.ToLower() == "series" ? "tv" : "movie";
                 
                 string url = $"https://api.themoviedb.org/3/{type}/{tmdbId}/images?api_key={apiKey}";
-                var response = await _httpClient.GetAsync(url);
+                LoggerService.Info($"[TMDB] دریافت لیست پوسترهای جایگزین: {url}");
+                var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 if (response.IsSuccessStatusCode)
                 {
                     var json = await response.Content.ReadAsStringAsync();
@@ -1241,3 +1283,4 @@ namespace MovieManagerDesktop.Services
         }
     }
 }
+

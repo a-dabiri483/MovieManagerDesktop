@@ -19,6 +19,15 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private bool _isSearching;
 
+        [ObservableProperty]
+        private bool _isSearchTypeMovie = true;
+
+        [ObservableProperty]
+        private bool _isSearchTypeSeries = false;
+
+        [ObservableProperty]
+        private bool _isSearchTypeAnime = false;
+
         public ObservableCollection<TmdbSearchResult> SearchResults { get; } = new();
         public System.Action CloseAction { get; set; }
 
@@ -41,12 +50,38 @@ namespace MovieManagerDesktop.ViewModels
 
             IsSearching = true;
             SearchResults.Clear();
+            
+            LoggerService.Info($"[جستجوی دستی] شروع جستجو برای: {SearchQuery} (انیمه: {IsSearchTypeAnime})");
 
-            var results = await _identifyService.SearchMediaAsync(SearchQuery);
+            System.Collections.Generic.List<TmdbSearchResult> results;
 
-            foreach (var r in results)
+            if (IsSearchTypeAnime)
             {
-                SearchResults.Add(r);
+                results = await _identifyService.SearchAnimeManualAsync(SearchQuery);
+            }
+            else
+            {
+                results = await _identifyService.SearchMediaAsync(SearchQuery);
+                if (results != null)
+                {
+                    if (IsSearchTypeMovie)
+                    {
+                        results = results.FindAll(r => (r.MediaType ?? "").ToLower() != "tv" && (r.MediaType ?? "").ToLower() != "series");
+                    }
+                    else if (IsSearchTypeSeries)
+                    {
+                        results = results.FindAll(r => (r.MediaType ?? "").ToLower() == "tv" || (r.MediaType ?? "").ToLower() == "series");
+                    }
+                }
+            }
+
+            if (results != null)
+            {
+                LoggerService.Info($"[جستجوی دستی] تعداد نتایج یافت شده: {results.Count}");
+                foreach (var r in results)
+                {
+                    SearchResults.Add(r);
+                }
             }
 
             IsSearching = false;
@@ -56,6 +91,8 @@ namespace MovieManagerDesktop.ViewModels
         private async Task SelectResultAsync(TmdbSearchResult result)
         {
             if (result == null) return;
+
+            LoggerService.Info($"[جستجوی دستی] آیتم انتخاب شد: {result.Title} (ID: {result.Id}) - اعمال روی گروه...");
 
             _targetGroup.IdOverride = result.Id.ToString();
             _targetGroup.TitleOverride = result.Title;

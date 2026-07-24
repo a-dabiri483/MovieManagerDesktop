@@ -16,6 +16,15 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private bool _isSearching;
 
+        [ObservableProperty]
+        private bool _isSearchTypeMovie = true;
+
+        [ObservableProperty]
+        private bool _isSearchTypeSeries = false;
+
+        [ObservableProperty]
+        private bool _isSearchTypeAnime = false;
+
         public ObservableCollection<TmdbSearchResult> SearchResults { get; } = new();
         public System.Action CloseAction { get; set; }
         public System.Action<TmdbSearchResult> SelectAction { get; set; }
@@ -34,7 +43,28 @@ namespace MovieManagerDesktop.ViewModels
             IsSearching = true;
             SearchResults.Clear();
 
-            var results = await _identifyService.SearchMediaAsync(SearchQuery);
+            System.Collections.Generic.List<TmdbSearchResult> results;
+
+            if (IsSearchTypeAnime)
+            {
+                results = await _identifyService.SearchAnimeManualAsync(SearchQuery);
+            }
+            else
+            {
+                results = await _identifyService.SearchMediaAsync(SearchQuery);
+                // Optional filtering based on RadioButtons
+                if (results != null)
+                {
+                    if (IsSearchTypeMovie)
+                    {
+                        results = results.FindAll(r => (r.MediaType ?? "").ToLower() != "tv" && (r.MediaType ?? "").ToLower() != "series");
+                    }
+                    else if (IsSearchTypeSeries)
+                    {
+                        results = results.FindAll(r => (r.MediaType ?? "").ToLower() == "tv" || (r.MediaType ?? "").ToLower() == "series");
+                    }
+                }
+            }
 
             if (results != null)
             {
