@@ -72,11 +72,16 @@ namespace MovieManagerDesktop.Services
 
         public static string WrapUrlWithProxy(string url)
         {
+            if (string.IsNullOrWhiteSpace(url) || !url.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                return url;
+
             var settings = LoadSettings();
             if (settings.IsApiProxyEnabled && !string.IsNullOrWhiteSpace(settings.ApiProxyUrl))
             {
                 string proxy = settings.ApiProxyUrl.Trim();
-                
+                if (url.StartsWith(proxy, StringComparison.OrdinalIgnoreCase))
+                    return url; // Already proxied
+
                 // Remove trailing slashes
                 proxy = proxy.TrimEnd('/');
                 

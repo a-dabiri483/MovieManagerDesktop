@@ -233,23 +233,7 @@ namespace MovieManagerDesktop.Services
             {
                 HttpClientInitializer = credential,
                 ApplicationName = ApplicationName,
-                HttpClientFactory = new NoProxyHttpClientFactory()
             });
-        }
-
-        // Custom HttpClientFactory to explicitly disable system proxies for Google Drive API
-        private class NoProxyHttpClientFactory : Google.Apis.Http.HttpClientFactory
-        {
-            protected override HttpMessageHandler CreateHandler(Google.Apis.Http.CreateHttpClientArgs args)
-            {
-                var handler = base.CreateHandler(args) as HttpClientHandler;
-                if (handler != null)
-                {
-                    handler.UseProxy = false;
-                    handler.Proxy = null;
-                }
-                return handler;
-            }
         }
 
         public static async Task ConnectToGoogleDriveAsync()

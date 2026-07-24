@@ -266,7 +266,7 @@ namespace MovieManagerDesktop.Services
                                 res.ReleaseYear = fad.GetString()!.Substring(0, 4);
 
                             if (root.TryGetProperty("poster_path", out var pp) && pp.ValueKind == JsonValueKind.String)
-                                res.PosterUrl = $"https://image.tmdb.org/t/p/w92{pp.GetString()}";
+                                res.PosterUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/w92{pp.GetString()}");
 
                             results.Add(res);
                             return results;
@@ -298,7 +298,7 @@ namespace MovieManagerDesktop.Services
                             res.ReleaseYear = fad.GetString()!.Substring(0, 4);
 
                         if (root.TryGetProperty("poster_path", out var pp) && pp.ValueKind == JsonValueKind.String)
-                            res.PosterUrl = $"https://image.tmdb.org/t/p/w92{pp.GetString()}";
+                            res.PosterUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/w92{pp.GetString()}");
 
                         results.Add(res);
                         return results;
@@ -339,7 +339,7 @@ namespace MovieManagerDesktop.Services
                                 res.ReleaseYear = fad.GetString()!.Substring(0, 4);
 
                             if (item.TryGetProperty("poster_path", out var pp) && pp.ValueKind == JsonValueKind.String)
-                                res.PosterUrl = $"https://image.tmdb.org/t/p/w92{pp.GetString()}";
+                                res.PosterUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/w92{pp.GetString()}");
                                 
                             results.Add(res);
                         }
@@ -671,13 +671,13 @@ namespace MovieManagerDesktop.Services
                     {
                         var path = posterPath.GetString();
                         if (!string.IsNullOrEmpty(path))
-                            file.PosterUrl = $"https://image.tmdb.org/t/p/w500{path}";
+                            file.PosterUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/w500{path}");
                     }
                     if (firstMatch.TryGetProperty("backdrop_path", out var backdropPath) && backdropPath.ValueKind == JsonValueKind.String)
                     {
                         var path = backdropPath.GetString();
                         if (!string.IsNullOrEmpty(path))
-                            file.BackdropUrl = $"https://image.tmdb.org/t/p/original{path}";
+                            file.BackdropUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/original{path}");
                     }
                     
                     if (firstMatch.TryGetProperty("genre_ids", out var genreIds) && genreIds.ValueKind == JsonValueKind.Array)
@@ -798,14 +798,14 @@ namespace MovieManagerDesktop.Services
                                         {
                                             var path = enPosterPath.GetString();
                                             if (!string.IsNullOrEmpty(path))
-                                                file.PosterUrl = $"https://image.tmdb.org/t/p/w500{path}";
+                                                file.PosterUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/w500{path}");
                                         }
                                         
                                         if (string.IsNullOrWhiteSpace(file.BackdropUrl) && enDetailsRoot.TryGetProperty("backdrop_path", out var enBackdropPath) && enBackdropPath.ValueKind == JsonValueKind.String)
                                         {
                                             var path = enBackdropPath.GetString();
                                             if (!string.IsNullOrEmpty(path))
-                                                file.BackdropUrl = $"https://image.tmdb.org/t/p/original{path}";
+                                                file.BackdropUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/original{path}");
                                         }
                                     }
                                 }

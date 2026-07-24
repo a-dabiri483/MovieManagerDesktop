@@ -67,9 +67,9 @@ namespace MovieManagerDesktop.Services
                     if (root.TryGetProperty("image", out var imgProp) && imgProp.ValueKind == JsonValueKind.Object)
                     {
                         if (imgProp.TryGetProperty("original", out var origProp) && origProp.ValueKind == JsonValueKind.String)
-                            result.PosterUrl = origProp.GetString() ?? "";
+                            result.PosterUrl = SettingsManager.WrapUrlWithProxy(origProp.GetString() ?? "");
                         else if (imgProp.TryGetProperty("medium", out var medProp) && medProp.ValueKind == JsonValueKind.String)
-                            result.PosterUrl = medProp.GetString() ?? "";
+                            result.PosterUrl = SettingsManager.WrapUrlWithProxy(medProp.GetString() ?? "");
                     }
                     
                     if (root.TryGetProperty("rating", out var ratingProp) && ratingProp.ValueKind == JsonValueKind.Object)

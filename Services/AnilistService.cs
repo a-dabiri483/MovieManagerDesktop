@@ -104,13 +104,13 @@ namespace MovieManagerDesktop.Services
                         if (media.TryGetProperty("coverImage", out var cover))
                         {
                             if (cover.TryGetProperty("extraLarge", out var el) && el.ValueKind == JsonValueKind.String)
-                                result.CoverImageUrl = el.GetString() ?? "";
+                                result.CoverImageUrl = SettingsManager.WrapUrlWithProxy(el.GetString() ?? "");
                             else if (cover.TryGetProperty("large", out var l) && l.ValueKind == JsonValueKind.String)
-                                result.CoverImageUrl = l.GetString() ?? "";
+                                result.CoverImageUrl = SettingsManager.WrapUrlWithProxy(l.GetString() ?? "");
                         }
 
                         if (media.TryGetProperty("bannerImage", out var banner) && banner.ValueKind == JsonValueKind.String)
-                            result.BannerImageUrl = banner.GetString() ?? "";
+                            result.BannerImageUrl = SettingsManager.WrapUrlWithProxy(banner.GetString() ?? "");
 
                         if (media.TryGetProperty("description", out var desc) && desc.ValueKind == JsonValueKind.String)
                             result.Description = desc.GetString() ?? "";
