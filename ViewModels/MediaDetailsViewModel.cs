@@ -268,6 +268,44 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
+        private void OpenFolder()
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(Media.FilePath))
+                {
+                    string targetPath = Media.FilePath;
+                    
+                    if (System.IO.File.Exists(targetPath))
+                    {
+                        // It's a file, get its directory
+                        targetPath = System.IO.Path.GetDirectoryName(targetPath);
+                    }
+                    else if (!System.IO.Directory.Exists(targetPath))
+                    {
+                        // Neither a valid file nor directory
+                        MovieManagerDesktop.Services.ToastService.Instance.ShowError("مسیر مورد نظر یافت نشد.");
+                        return;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(targetPath) && System.IO.Directory.Exists(targetPath))
+                    {
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo()
+                        {
+                            FileName = targetPath,
+                            UseShellExecute = true,
+                            Verb = "open"
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MovieManagerDesktop.Services.LoggerService.Error("Error opening folder", ex);
+            }
+        }
+
+        [RelayCommand]
         private void ToggleEpisodeWatched(VideoFile episode)
         {
             if (episode == null) return;

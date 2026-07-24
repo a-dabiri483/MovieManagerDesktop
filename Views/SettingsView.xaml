@@ -12,41 +12,45 @@
     <Grid Margin="40,50,40,40">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Button Grid.Row="0" Command="{Binding GoBackCommand}" 
-                Background="Transparent" BorderThickness="0" 
-                Foreground="{DynamicResource SecondaryText}" 
-                HorizontalAlignment="Left" Padding="10,5" Margin="0,0,0,10">
-            <StackPanel Orientation="Horizontal">
-                <materialDesign:PackIcon Kind="ArrowRight" Width="20" Height="20" VerticalAlignment="Center"/>
-                <TextBlock Text="بازگشت" Margin="5,0,0,0" VerticalAlignment="Center"/>
-            </StackPanel>
-        </Button>
-
-        <TextBlock Grid.Row="1" Text="تنظیمات نرم افزار" Style="{StaticResource TextH2}" Margin="0,0,0,30">
-            <TextBlock.Effect>
-                <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.5" Color="Black"/>
-            </TextBlock.Effect>
-        </TextBlock>
+        <!-- Header -->
+        <Grid Grid.Row="0" Margin="0,0,0,30">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <Button Command="{Binding GoBackCommand}" 
+                    Background="{DynamicResource CardBackground}" BorderThickness="0" 
+                    Foreground="{DynamicResource PrimaryText}" Width="45" Height="45" Margin="0,0,15,0" 
+                    ToolTip="بازگشت" materialDesign:ButtonAssist.CornerRadius="22" VerticalAlignment="Center">
+                <materialDesign:PackIcon Kind="ArrowRight" Width="26" Height="26"/>
+            </Button>
+            
+            <TextBlock Grid.Column="1" Text="تنظیمات نرم افزار" Style="{StaticResource TextH2}" VerticalAlignment="Center" Margin="0">
+                <TextBlock.Effect>
+                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.5" Color="Black"/>
+                </TextBlock.Effect>
+            </TextBlock>
+        </Grid>
 
         <!-- Main Tab Layout -->
-        <TabControl Grid.Row="2" TabStripPlacement="Right" Background="Transparent" BorderThickness="0">
+        <TabControl Grid.Row="1" TabStripPlacement="Top" Background="Transparent" BorderThickness="0">
             <!-- Sidebar / Tab Styling -->
             <TabControl.Resources>
                 <Style TargetType="TabItem">
                     <Setter Property="Background" Value="Transparent"/>
                     <Setter Property="BorderThickness" Value="0"/>
-                    <Setter Property="Padding" Value="15,16"/>
-                    <Setter Property="Margin" Value="0,0,0,8"/>
+                    <Setter Property="Padding" Value="20,12"/>
+                    <Setter Property="Margin" Value="0,0,10,0"/>
                     <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
                     <Setter Property="Cursor" Value="Hand"/>
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="TabItem">
-                                <Border Background="{TemplateBinding Background}" CornerRadius="12" Margin="0,0,30,0">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="12" Margin="0,0,0,20">
                                     <ContentPresenter ContentSource="Header" Margin="{TemplateBinding Padding}"/>
                                 </Border>
                                 <ControlTemplate.Triggers>
@@ -67,7 +71,7 @@
             <!-- 1. General Settings -->
             <TabItem>
                 <TabItem.Header>
-                    <StackPanel Orientation="Horizontal" MinWidth="180">
+                    <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="CogOutline" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,12,0"/>
                         <TextBlock Text="عمومی" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
@@ -127,7 +131,7 @@
             <!-- 2. Appearance -->
             <TabItem>
                 <TabItem.Header>
-                    <StackPanel Orientation="Horizontal" MinWidth="180">
+                    <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="PaletteOutline" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,12,0"/>
                         <TextBlock Text="شخصی‌سازی ظاهر" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
@@ -165,7 +169,7 @@
             <!-- 3. Data Management -->
             <TabItem>
                 <TabItem.Header>
-                    <StackPanel Orientation="Horizontal" MinWidth="180">
+                    <StackPanel Orientation="Horizontal">
                         <materialDesign:PackIcon Kind="DatabaseOutline" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,12,0"/>
                         <TextBlock Text="مدیریت اطلاعات" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>

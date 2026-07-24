@@ -81,6 +81,14 @@
                 </TextBlock>
                 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <!-- Open Folder Button -->
+                    <Button Command="{Binding OpenFolderCommand}" 
+                            Background="{DynamicResource CardBackground}" BorderThickness="1" BorderBrush="{DynamicResource NormalBorder}"
+                            Foreground="{DynamicResource PrimaryText}" Width="50" Height="50" Padding="0"
+                            materialDesign:ButtonAssist.CornerRadius="25"
+                            ToolTip="باز کردن پوشه" Margin="0,0,10,0">
+                        <materialDesign:PackIcon Kind="FolderOpenOutline" Width="24" Height="24"/>
+                    </Button>
                     <!-- Favorite Button -->
                     <Button Command="{Binding ToggleFavoriteCommand}" 
                             Background="{DynamicResource CardBackground}" BorderThickness="1" BorderBrush="{DynamicResource NormalBorder}"

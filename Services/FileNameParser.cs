@@ -34,9 +34,10 @@ namespace MovieManagerDesktop.Services
                 
                 string parsedTitle = info.Title;
                 
-                if (string.IsNullOrWhiteSpace(parsedTitle) || parsedTitle.All(c => char.IsDigit(c) || char.IsWhiteSpace(c)))
+                if (string.IsNullOrWhiteSpace(parsedTitle))
                 {
                      parsedTitle = Path.GetFileNameWithoutExtension(fileName);
+                     parsedTitle = System.Text.RegularExpressions.Regex.Replace(parsedTitle, @"[Ss]\d{1,2}[Ee]\d{1,2}(?:-[Ee]?\d{1,2})?", "");
                 }
                 
                 // Normalize Title to prevent splitting (e.g. "Turner & Hooch" vs "Turner And Hooch")

@@ -451,10 +451,21 @@ namespace MovieManagerDesktop.Services
             }
             else
             {
-                if (!string.IsNullOrWhiteSpace(file.Year))
-                    url = $"https://api.themoviedb.org/3/search/movie?api_key={apiKey}&query={query}&language={language}&primary_release_year={file.Year}";
+                string typeStr = file.MediaType == "Series" ? "tv" : "movie";
+                if (file.MediaType == "Series")
+                {
+                    if (!string.IsNullOrWhiteSpace(file.Year))
+                        url = $"https://api.themoviedb.org/3/search/tv?api_key={apiKey}&query={query}&language={language}&first_air_date_year={file.Year}";
+                    else
+                        url = $"https://api.themoviedb.org/3/search/tv?api_key={apiKey}&query={query}&language={language}";
+                }
                 else
-                    url = $"https://api.themoviedb.org/3/search/multi?api_key={apiKey}&query={query}&language={language}";
+                {
+                    if (!string.IsNullOrWhiteSpace(file.Year))
+                        url = $"https://api.themoviedb.org/3/search/movie?api_key={apiKey}&query={query}&language={language}&primary_release_year={file.Year}";
+                    else
+                        url = $"https://api.themoviedb.org/3/search/movie?api_key={apiKey}&query={query}&language={language}";
+                }
             }
 
             var response = await _httpClient.GetAsync(url);
@@ -463,6 +474,31 @@ namespace MovieManagerDesktop.Services
             {
                  url = url.Replace("language=fa-IR", "language=en-US");
                  response = await _httpClient.GetAsync(url);
+            }
+
+            if (!response.IsSuccessStatusCode && isDirectIdLookup)
+            {
+                // Direct ID lookup failed (e.g. FM-DB gave a Movie ID for a Series)
+                // Fall back to title search
+                isDirectIdLookup = false;
+                file.TmdbId = null;
+                
+                if (file.MediaType == "Series")
+                {
+                    if (!string.IsNullOrWhiteSpace(file.Year))
+                        url = $"https://api.themoviedb.org/3/search/tv?api_key={apiKey}&query={query}&language={language}&first_air_date_year={file.Year}";
+                    else
+                        url = $"https://api.themoviedb.org/3/search/tv?api_key={apiKey}&query={query}&language={language}";
+                }
+                else
+                {
+                    if (!string.IsNullOrWhiteSpace(file.Year))
+                        url = $"https://api.themoviedb.org/3/search/movie?api_key={apiKey}&query={query}&language={language}&primary_release_year={file.Year}";
+                    else
+                        url = $"https://api.themoviedb.org/3/search/movie?api_key={apiKey}&query={query}&language={language}";
+                }
+                
+                response = await _httpClient.GetAsync(url);
             }
 
             if (response.IsSuccessStatusCode)
@@ -474,7 +510,8 @@ namespace MovieManagerDesktop.Services
                 if (!isDirectIdLookup && root.TryGetProperty("results", out var results) && results.GetArrayLength() == 0 && !string.IsNullOrWhiteSpace(file.Year))
                 {
                     // Fallback: try searching without year
-                    string fallbackUrl = $"https://api.themoviedb.org/3/search/multi?api_key={apiKey}&query={query}&language={language}";
+                    string fallbackType = file.MediaType == "Series" ? "tv" : "movie";
+                    string fallbackUrl = $"https://api.themoviedb.org/3/search/{fallbackType}?api_key={apiKey}&query={query}&language={language}";
                     response = await _httpClient.GetAsync(fallbackUrl);
                     if (response.IsSuccessStatusCode)
                     {
