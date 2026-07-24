@@ -86,6 +86,9 @@ namespace MovieManagerDesktop.ViewModels
         private string _apiProxyUrl;
 
         [ObservableProperty]
+        private bool _isApiProxyEnabled;
+
+        [ObservableProperty]
         private string _statusMessage;
 
         [ObservableProperty]
@@ -193,6 +196,7 @@ namespace MovieManagerDesktop.ViewModels
             TmdbApiKey = settings.TmdbApiKey;
             OmdbApiKey = settings.OmdbApiKey;
             ApiProxyUrl = settings.ApiProxyUrl;
+            IsApiProxyEnabled = settings.IsApiProxyEnabled;
             TmdbLanguage = settings.TmdbLanguage ?? "fa-IR";
             _isDarkTheme = settings.IsDarkTheme;
             SelectedTheme = settings.Theme ?? "Cyan"; // This calls ApplyTheme
@@ -376,6 +380,7 @@ namespace MovieManagerDesktop.ViewModels
             settings.TmdbApiKey = TmdbApiKey;
             settings.OmdbApiKey = OmdbApiKey;
             settings.ApiProxyUrl = ApiProxyUrl;
+            settings.IsApiProxyEnabled = IsApiProxyEnabled;
             settings.TmdbLanguage = TmdbLanguage;
             settings.Theme = SelectedTheme;
             settings.IsDarkTheme = IsDarkTheme;
@@ -670,6 +675,83 @@ namespace MovieManagerDesktop.ViewModels
             {
                 MovieManagerDesktop.Services.LoggerService.Error("Error importing json content", ex);
                 ToastService.Instance.ShowError($"خطا در بازیابی اطلاعات: {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
+        private async Task TestProxyAsync()
+        {
+            if (string.IsNullOrWhiteSpace(ApiProxyUrl))
+            {
+                ToastService.Instance.ShowError("ابتدا آدرس ورکر را وارد کنید.");
+                return;
+            }
+
+            try
+            {
+                ToastService.Instance.ShowInfo("در حال بررسی اتصال به پروکسی...");
+                
+                string proxy = ApiProxyUrl.Trim().TrimEnd('/');
+                if (proxy.Contains("?"))
+                {
+                    if (!proxy.EndsWith("url=")) proxy += "&url=";
+                }
+                else
+                {
+                    proxy += "/?url=";
+                }
+                
+                // We use Google's 204 endpoint for a fast, reliable test
+                string testUrl = proxy + Uri.EscapeDataString("https://www.google.com/generate_204");
+                
+                using var client = new System.Net.Http.HttpClient();
+                client.DefaultRequestHeaders.Add("User-Agent", "MovieManagerDesktop");
+                client.Timeout = TimeSpan.FromSeconds(15);
+                
+                var response = await client.GetAsync(testUrl);
+                
+                // 204 No Content is exactly what google generate_204 should return
+                if (response.IsSuccessStatusCode)
+                {
+                    ToastService.Instance.ShowSuccess("اتصال موفق! پروکسی به درستی کار می‌کند.");
+                }
+                else
+                {
+                    ToastService.Instance.ShowError($"خطا: پروکسی متصل شد اما پاسخ نامعتبر بود. کد خطا: {(int)response.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                MovieManagerDesktop.Services.LoggerService.Error("Error testing proxy", ex);
+                ToastService.Instance.ShowError($"اتصال ناموفق بود: {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
+        private void CopyWorkerCode()
+        {
+            string workerCode = @"export default {
+  async fetch(request, env, ctx) {
+    const url = new URL(request.url);
+    let targetUrl = url.searchParams.get(""url"");
+    if (!targetUrl) return new Response(""Missing URL parameter."", { status: 400 });
+    
+    // Create a new request based on the target URL
+    const newRequest = new Request(targetUrl, request);
+    
+    // Cloudflare handles headers (including Host) automatically
+    return fetch(newRequest);
+  }
+};";
+            try
+            {
+                System.Windows.Clipboard.SetText(workerCode);
+                ToastService.Instance.ShowSuccess("کد ورکر در کلیپ‌بورد کپی شد.");
+            }
+            catch (Exception ex)
+            {
+                MovieManagerDesktop.Services.LoggerService.Error("Error copying worker code", ex);
+                ToastService.Instance.ShowError("خطا در کپی کردن کد.");
             }
         }
 

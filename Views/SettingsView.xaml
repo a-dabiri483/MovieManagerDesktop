@@ -103,15 +103,8 @@
                                          Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                                          IsEnabled="{Binding IsOmdbSelected}"/>
 
-                                <!-- Proxy Server -->
-                                <TextBlock Text="پروکسی ضدتحریم (اختیاری)" Foreground="{DynamicResource SecondaryText}" FontSize="16" FontWeight="SemiBold" Margin="0,15,0,10"/>
-                                <TextBox Text="{Binding ApiProxyUrl, UpdateSourceTrigger=PropertyChanged}" 
-                                         materialDesign:HintAssist.Hint="آدرس Cloudflare Worker Proxy (مثال: https://myproxy.worker.dev/?url=)" 
-                                         Foreground="{DynamicResource PrimaryText}" FontSize="14" Margin="0,0,0,30"
-                                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"/>
-
-                                <Separator Background="{DynamicResource NormalBorder}" Margin="0,10,0,25"/>
-
+                                <!-- Proxy Server was moved to a new card -->
+                                
                                 <TextBlock Text="زبان دریافت اطلاعات (برای سایت‌هایی که پشتیبانی می‌کنند مانند TMDb)" Foreground="{DynamicResource SecondaryText}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,15"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,35">
                                     <RadioButton IsChecked="{Binding IsPersianLanguage}" Content="فارسی" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,30,0" GroupName="Languages"/>
@@ -366,6 +359,111 @@
                                     <StackPanel Orientation="Horizontal">
                                         <materialDesign:PackIcon Kind="DatabaseRemove" VerticalAlignment="Center" Width="22" Height="22" Margin="0,0,10,0"/>
                                         <TextBlock Text="حذف کامل دیتابیس" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </materialDesign:Card>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <!-- 4. Anti-Sanction (Proxy) -->
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ShieldCheckOutline" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                        <TextBlock Text="ضدتحریم (پروکسی)" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </TabItem.Header>
+                
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,20,0">
+                    <StackPanel MaxWidth="800" HorizontalAlignment="Left">
+                        <!-- Anti-Sanction / Proxy Card -->
+                        <materialDesign:Card Background="{DynamicResource CardBackground}" UniformCornerRadius="16" Padding="30" Margin="0,0,0,20">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
+                                    <materialDesign:PackIcon Kind="ShieldCheck" Foreground="{DynamicResource PrimaryColor}" Width="28" Height="28" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <TextBlock Text="سیستم ضدتحریم (پروکسی)" Foreground="{DynamicResource PrimaryText}" FontSize="20" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <TextBlock Text="این سیستم به شما کمک می‌کند در صورت فیلتر بودن API سایت‌هایی مثل TMDb، بدون نیاز به VPN کل سیستم، از طریق Cloudflare ارتباط را برقرار کنید." Foreground="{DynamicResource SecondaryText}" TextWrapping="Wrap" Margin="0,0,0,25" FontSize="15"/>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,25">
+                                    <ToggleButton IsChecked="{Binding IsApiProxyEnabled}" Style="{StaticResource MaterialDesignSwitchToggleButton}" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                                    <TextBlock Text="فعال‌سازی سیستم ضدتحریم" Foreground="{DynamicResource PrimaryText}" FontSize="16" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel IsEnabled="{Binding IsApiProxyEnabled}">
+                                    <TextBlock Text="آدرس ورکر Cloudflare خود را وارد کنید (برنامه به‌طور خودکار ?url= را اعمال می‌کند):" Foreground="{DynamicResource SecondaryText}" FontSize="14" Margin="0,0,0,10"/>
+                                    
+                                    <Grid Margin="0,0,0,20">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Grid.Column="0" Text="{Binding ApiProxyUrl, UpdateSourceTrigger=PropertyChanged}" 
+                                                 materialDesign:HintAssist.Hint="مثال: https://my-proxy.username.workers.dev" 
+                                                 Foreground="{DynamicResource PrimaryText}" FontSize="15"
+                                                 Style="{StaticResource MaterialDesignOutlinedTextBox}" Padding="15,10" Height="45"/>
+                                        
+                                        <Button Grid.Column="1" Command="{Binding TestProxyCommand}" Margin="15,0,0,0" Height="45" Width="140" Style="{StaticResource MaterialDesignRaisedButton}" Background="#1E293B" BorderThickness="1" BorderBrush="{DynamicResource PrimaryColor}" Foreground="{DynamicResource PrimaryText}" materialDesign:ButtonAssist.CornerRadius="6">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="CloudCheck" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource PrimaryColor}"/>
+                                                <TextBlock Text="تست اتصال" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+
+                                    <!-- Guide section -->
+                                    <Border Background="#1E293B" CornerRadius="8" Padding="20" Margin="0,0,0,25">
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                                <materialDesign:PackIcon Kind="InformationOutline" Foreground="{DynamicResource PrimaryColor}" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                <TextBlock Text="راهنمای راه‌اندازی پروکسی شخصی در کلودفلر (رایگان):" Foreground="{DynamicResource PrimaryColor}" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            
+                                            <TextBlock Text="۱. در سایت Cloudflare ثبت نام کنید و به بخش Workers &amp; Pages بروید." Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,5" TextWrapping="Wrap"/>
+                                            <TextBlock Text="۲. یک Worker جدید بسازید (دکمه Create Worker)." Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,5" TextWrapping="Wrap"/>
+                                            <TextBlock Text="۳. در بخش ویرایش کد، کد زیر را به طور کامل جایگزین کدهای قبلی کنید:" Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,10" TextWrapping="Wrap"/>
+                                            
+                                            <Border Background="#0F172A" CornerRadius="6" Padding="15" Margin="0,0,0,10">
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+                                                    
+                                                    <Button Grid.Row="0" Command="{Binding CopyWorkerCodeCommand}" 
+                                                            Style="{StaticResource MaterialDesignFlatButton}" 
+                                                            Foreground="#9CDCFE" HorizontalAlignment="Right" 
+                                                            Padding="10,0" Height="30" Margin="0,0,0,10"
+                                                            materialDesign:ButtonAssist.CornerRadius="4" Background="#1E293B">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <materialDesign:PackIcon Kind="ContentCopy" VerticalAlignment="Center" Width="16" Height="16" Margin="0,0,5,0"/>
+                                                            <TextBlock Text="کپی کد" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Button>
+
+                                                    <TextBox Grid.Row="1" IsReadOnly="True" BorderThickness="0" Background="Transparent" 
+                                                             FontFamily="Consolas" Foreground="#9CDCFE" FontSize="13" 
+                                                             TextWrapping="Wrap" AcceptsReturn="True" 
+                                                             Text="export default {&#x0a;  async fetch(request, env, ctx) {&#x0a;    const url = new URL(request.url);&#x0a;    let targetUrl = url.searchParams.get(&quot;url&quot;);&#x0a;    if (!targetUrl) return new Response(&quot;Missing URL parameter.&quot;, { status: 400 });&#x0a;    &#x0a;    const newRequest = new Request(targetUrl, request);&#x0a;    return fetch(newRequest);&#x0a;  }&#x0a;};"
+                                                             Style="{StaticResource {x:Type TextBox}}"
+                                                             HorizontalScrollBarVisibility="Disabled"
+                                                             VerticalScrollBarVisibility="Auto"/>
+                                                </Grid>
+                                            </Border>
+                                            <TextBlock Text="۴. دکمه Deploy را بزنید. لینک داده شده (مانند worker-name.username.workers.dev) را کپی کرده و در کادر بالا وارد کنید." Foreground="{DynamicResource PrimaryText}" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <Button Command="{Binding SaveSettingsCommand}" 
+                                        Style="{StaticResource MaterialDesignRaisedButton}"
+                                        Background="{DynamicResource SuccessColor}" Foreground="#050510" BorderThickness="0" 
+                                        HorizontalAlignment="Left" Padding="20,0" Height="45" materialDesign:ButtonAssist.CornerRadius="8">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="ContentSave" VerticalAlignment="Center" Width="20" Height="20" Margin="0,0,8,0"/>
+                                        <TextBlock Text="ذخیره تنظیمات پروکسی" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
                             </StackPanel>

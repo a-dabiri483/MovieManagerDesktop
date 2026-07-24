@@ -10,6 +10,7 @@ namespace MovieManagerDesktop.Services
         public string TmdbApiKey { get; set; } = string.Empty;
         public string OmdbApiKey { get; set; } = string.Empty;
         public string ApiProxyUrl { get; set; } = string.Empty;
+        public bool IsApiProxyEnabled { get; set; } = false;
         public string TmdbLanguage { get; set; } = "fa-IR"; // fa-IR or en-US
         public int PosterSize { get; set; } = 220;
         public string Theme { get; set; } = "Cyan"; // Cyan, MidnightBlue, OLEDBlack
@@ -72,18 +73,21 @@ namespace MovieManagerDesktop.Services
         public static string WrapUrlWithProxy(string url)
         {
             var settings = LoadSettings();
-            if (!string.IsNullOrWhiteSpace(settings.ApiProxyUrl))
+            if (settings.IsApiProxyEnabled && !string.IsNullOrWhiteSpace(settings.ApiProxyUrl))
             {
                 string proxy = settings.ApiProxyUrl.Trim();
-                // Ensure proxy url ends with correct parameter
-                if (!proxy.EndsWith("=") && !proxy.EndsWith("url=") && !proxy.EndsWith("url"))
+                
+                // Remove trailing slashes
+                proxy = proxy.TrimEnd('/');
+                
+                // Add the correct query parameter for cloudflare worker proxy
+                if (proxy.Contains("?"))
                 {
-                    if (proxy.Contains("?")) proxy += "&url=";
-                    else proxy += "?url=";
+                    if (!proxy.EndsWith("url=")) proxy += "&url=";
                 }
-                else if (proxy.EndsWith("url"))
+                else
                 {
-                    proxy += "=";
+                    proxy += "/?url=";
                 }
                 
                 return proxy + Uri.EscapeDataString(url);
