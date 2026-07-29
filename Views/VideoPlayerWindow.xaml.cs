@@ -14,22 +14,23 @@ namespace MovieManagerDesktop.Views
         {
             InitializeComponent();
 
-            string ffmpegFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FFmpeg");
-
-            if (Engine.Config == null)
+            string ffmpegFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FFmpeg", "x64");
+            if (!Directory.Exists(ffmpegFolder))
             {
-                try
+                ffmpegFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FFmpeg");
+            }
+
+            try
+            {
+                Engine.Start(new EngineConfig()
                 {
-                    Engine.Start(new EngineConfig()
-                    {
-                        FFmpegPath = ffmpegFolder
-                    });
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Engine.Start failed: {ex.Message}\n\n{ex.StackTrace}", "Flyleaf Engine Error");
-                    return;
-                }
+                    FFmpegPath = ffmpegFolder
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Engine.Start failed: {ex.Message}\n\n{ex.StackTrace}", "Flyleaf Engine Error");
+                return;
             }
 
             Player = new Player();
