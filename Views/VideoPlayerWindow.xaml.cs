@@ -15,9 +15,15 @@ namespace MovieManagerDesktop.Views
 
             try
             {
-                Engine.Start();
+                Engine.Start(new EngineConfig()
+                {
+                    FFmpegPath = ":FFmpeg"
+                });
             }
-            catch { }
+            catch (Exception ex)
+            {
+                MovieManagerDesktop.Services.LoggerService.Error("Failed to start Flyleaf Engine", ex);
+            }
 
             Player = new Player();
             this.DataContext = this;

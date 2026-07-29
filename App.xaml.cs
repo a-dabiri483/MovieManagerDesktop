@@ -20,6 +20,15 @@ public partial class App : Application
         var settings = MovieManagerDesktop.Services.SettingsManager.LoadSettings();
         ApplyTheme(settings.Theme ?? "Cyan", settings.IsDarkTheme);
 
+        try
+        {
+            FlyleafLib.Engine.Start(new FlyleafLib.EngineConfig()
+            {
+                FFmpegPath = ":FFmpeg"
+            });
+        }
+        catch { }
+
         using (var db = new MovieManagerDesktop.Data.AppDbContext())
         {
             db.Database.EnsureCreated();
