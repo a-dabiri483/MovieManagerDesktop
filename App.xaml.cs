@@ -17,13 +17,20 @@ public partial class App : Application
         base.OnStartup(e);
         this.DispatcherUnhandledException += App_DispatcherUnhandledException;
 
-        if (FlyleafLib.Engine.Config == null)
+        try
         {
-            string ffmpegFolder = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FFmpeg");
-            FlyleafLib.Engine.Start(new FlyleafLib.EngineConfig()
+            if (FlyleafLib.Engine.Config == null)
             {
-                FFmpegPath = ffmpegFolder
-            });
+                string ffmpegFolder = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FFmpeg");
+                FlyleafLib.Engine.Start(new FlyleafLib.EngineConfig()
+                {
+                    FFmpegPath = ffmpegFolder
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            MovieManagerDesktop.Services.LoggerService.Error("Flyleaf engine startup warning", ex);
         }
 
 
