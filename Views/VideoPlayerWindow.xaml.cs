@@ -8,6 +8,9 @@ namespace MovieManagerDesktop.Views
 {
     public partial class VideoPlayerWindow : Window
     {
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto, SetLastError = true)]
+        private static extern bool SetDllDirectory(string lpPathName);
+
         public Player Player { get; set; }
 
         public VideoPlayerWindow(string filePath)
@@ -19,9 +22,16 @@ namespace MovieManagerDesktop.Views
             {
                 ffmpegFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FFmpeg");
             }
+            if (!Directory.Exists(ffmpegFolder))
+            {
+                ffmpegFolder = AppDomain.CurrentDomain.BaseDirectory;
+            }
 
             try
             {
+                SetDllDirectory(ffmpegFolder);
+                Environment.SetEnvironmentVariable("PATH", ffmpegFolder + ";" + Environment.GetEnvironmentVariable("PATH"));
+
                 Engine.Start(new EngineConfig()
                 {
                     FFmpegPath = ffmpegFolder
