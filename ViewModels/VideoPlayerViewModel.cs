@@ -62,7 +62,7 @@ namespace MovieManagerDesktop.ViewModels
             MediaPlayer.Stopped += (s, e) => IsPlaying = false;
 
             var media = new Media(_libVLC, filePath, FromType.FromPath);
-            MediaPlayer.Play(media);
+            MediaPlayer.Media = media;
         }
 
         private void MediaPlayer_LengthChanged(object sender, MediaPlayerLengthChangedEventArgs e)

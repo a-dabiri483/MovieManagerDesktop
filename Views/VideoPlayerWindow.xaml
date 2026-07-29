@@ -1,13 +1,16 @@
-<UserControl x:Class="MovieManagerDesktop.Views.VideoPlayerView"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800"
-             Background="Black">
+<Window x:Class="MovieManagerDesktop.Views.VideoPlayerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
+        mc:Ignorable="d"
+        Title="Video Player" Height="600" Width="1000"
+        WindowStyle="None" AllowsTransparency="True" Background="Black"
+        WindowStartupLocation="CenterScreen"
+        Loaded="Window_Loaded">
+    
     <Grid>
         <!-- The VLC Player View -->
         <vlc:VideoView MediaPlayer="{Binding MediaPlayer}" />
@@ -25,8 +28,7 @@
                     Value="{Binding Position, Mode=TwoWay}"
                     ValueChanged="Slider_ValueChanged"
                     Foreground="{DynamicResource PrimaryHueMidBrush}"
-                    IsMoveToPointEnabled="True"
-                    Style="{StaticResource MaterialDesignDiscreteSlider}"/>
+                    IsMoveToPointEnabled="True"/>
 
             <!-- Bottom Control Bar -->
             <Grid Grid.Row="1" Margin="10,0">
@@ -73,16 +75,16 @@
                     <Slider Minimum="0" Maximum="100" Value="{Binding Volume}" Width="100" Foreground="{DynamicResource PrimaryHueMidBrush}"/>
                 </StackPanel>
 
-                <!-- Go Back Button -->
-                <Button Grid.Column="5" Command="{Binding GoBackCommand}" Style="{StaticResource MaterialDesignIconButton}" Foreground="White" ToolTip="بستن و بازگشت">
+                <!-- Go Back Button (Close Window) -->
+                <Button Grid.Column="5" Click="CloseButton_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="White" ToolTip="بستن">
                     <materialDesign:PackIcon Kind="Close" Width="24" Height="24"/>
                 </Button>
             </Grid>
         </Grid>
 
-        <!-- Top Title Bar Overlay (Optional) -->
+        <!-- Top Title Bar Overlay -->
         <Border Background="#66000000" VerticalAlignment="Top" Height="40" Visibility="{Binding ElementName=ControlsGrid, Path=Visibility}">
             <TextBlock Text="{Binding Title}" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="15,0,0,0" FontSize="16" FontWeight="SemiBold"/>
         </Border>
     </Grid>
-</UserControl>
+</Window>

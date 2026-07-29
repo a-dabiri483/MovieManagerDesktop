@@ -1,18 +1,21 @@
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
-using System;
 
 namespace MovieManagerDesktop.Views
 {
-    public partial class VideoPlayerView : UserControl
+    public partial class VideoPlayerWindow : Window
     {
         private DispatcherTimer _mouseIdleTimer;
 
-        public VideoPlayerView()
+        public VideoPlayerWindow(string filePath)
         {
             InitializeComponent();
+            
+            // Set DataContext
+            this.DataContext = new ViewModels.VideoPlayerViewModel(filePath);
             
             _mouseIdleTimer = new DispatcherTimer
             {
@@ -20,11 +23,20 @@ namespace MovieManagerDesktop.Views
             };
             _mouseIdleTimer.Tick += MouseIdleTimer_Tick;
 
-            this.MouseMove += VideoPlayerView_MouseMove;
-            this.MouseLeave += VideoPlayerView_MouseLeave;
+            this.MouseMove += VideoPlayerWindow_MouseMove;
+            this.MouseLeave += VideoPlayerWindow_MouseLeave;
         }
 
-        private void VideoPlayerView_MouseMove(object sender, MouseEventArgs e)
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            var vm = this.DataContext as ViewModels.VideoPlayerViewModel;
+            if (vm != null && vm.MediaPlayer != null && !vm.MediaPlayer.IsPlaying)
+            {
+                vm.MediaPlayer.Play();
+            }
+        }
+
+        private void VideoPlayerWindow_MouseMove(object sender, MouseEventArgs e)
         {
             ControlsGrid.Visibility = Visibility.Visible;
             this.Cursor = Cursors.Arrow;
@@ -40,7 +52,7 @@ namespace MovieManagerDesktop.Views
             this.Cursor = Cursors.None;
         }
 
-        private void VideoPlayerView_MouseLeave(object sender, MouseEventArgs e)
+        private void VideoPlayerWindow_MouseLeave(object sender, MouseEventArgs e)
         {
             _mouseIdleTimer.Stop();
             ControlsGrid.Visibility = Visibility.Hidden;
@@ -48,7 +60,6 @@ namespace MovieManagerDesktop.Views
         
         private void Slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            // Update position if slider is dragged by user
             if (sender is Slider slider && slider.IsMouseOver && slider.IsMouseCaptured)
             {
                 var vm = this.DataContext as ViewModels.VideoPlayerViewModel;
@@ -57,6 +68,20 @@ namespace MovieManagerDesktop.Views
                     vm.SeekCommand.Execute((float)e.NewValue);
                 }
             }
+        }
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            var vm = this.DataContext as ViewModels.VideoPlayerViewModel;
+            vm?.Dispose();
+            this.Close();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            var vm = this.DataContext as ViewModels.VideoPlayerViewModel;
+            vm?.Dispose();
+            base.OnClosed(e);
         }
     }
 }

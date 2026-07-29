@@ -256,8 +256,11 @@ namespace MovieManagerDesktop.ViewModels
             {
                 if (!string.IsNullOrWhiteSpace(Media.FilePath) && System.IO.File.Exists(Media.FilePath))
                 {
-                    // Launch internal Video Player
-                    WeakReferenceMessenger.Default.Send(new NavigationMessage(new VideoPlayerViewModel(Media.FilePath)));
+                    // Launch independent Video Player Window
+                    App.Current.Dispatcher.Invoke(() => {
+                        var playerWindow = new MovieManagerDesktop.Views.VideoPlayerWindow(Media.FilePath);
+                        playerWindow.Show();
+                    });
                     if (!IsWatched) ToggleWatched(); // Auto mark as watched when played
                 }
             }
@@ -404,8 +407,11 @@ namespace MovieManagerDesktop.ViewModels
             {
                 if (episode != null && !string.IsNullOrWhiteSpace(episode.FilePath) && System.IO.File.Exists(episode.FilePath))
                 {
-                    // Launch internal Video Player
-                    WeakReferenceMessenger.Default.Send(new NavigationMessage(new VideoPlayerViewModel(episode.FilePath)));
+                    // Launch independent Video Player Window
+                    App.Current.Dispatcher.Invoke(() => {
+                        var playerWindow = new MovieManagerDesktop.Views.VideoPlayerWindow(episode.FilePath);
+                        playerWindow.Show();
+                    });
                     using var db = new AppDbContext();
                     var dbEp = db.VideoFiles.FirstOrDefault(v => v.Id == episode.Id);
                     if (dbEp != null) {
