@@ -13,78 +13,82 @@
     
     <Grid>
         <!-- The VLC Player View -->
-        <vlc:VideoView MediaPlayer="{Binding MediaPlayer}" />
+        <vlc:VideoView MediaPlayer="{Binding MediaPlayer}">
+            <!-- We place our overlay grid inside VideoView so LibVLCSharp handles the airspace issue -->
+            <Grid Background="Transparent" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
+                
+                <!-- Overlay Controls -->
+                <Grid x:Name="ControlsGrid" Background="#88000000" VerticalAlignment="Bottom" Height="80">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
 
-        <!-- Overlay Controls -->
-        <Grid x:Name="ControlsGrid" Background="#88000000" VerticalAlignment="Bottom" Height="80">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+                    <!-- Seek Slider -->
+                    <Slider Grid.Row="0" Margin="10,0"
+                            Minimum="0" Maximum="1" 
+                            Value="{Binding Position, Mode=TwoWay}"
+                            ValueChanged="Slider_ValueChanged"
+                            Foreground="{DynamicResource PrimaryHueMidBrush}"
+                            IsMoveToPointEnabled="True"/>
 
-            <!-- Seek Slider -->
-            <Slider Grid.Row="0" Margin="10,0"
-                    Minimum="0" Maximum="1" 
-                    Value="{Binding Position, Mode=TwoWay}"
-                    ValueChanged="Slider_ValueChanged"
-                    Foreground="{DynamicResource PrimaryHueMidBrush}"
-                    IsMoveToPointEnabled="True"/>
+                    <!-- Bottom Control Bar -->
+                    <Grid Grid.Row="1" Margin="10,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
 
-            <!-- Bottom Control Bar -->
-            <Grid Grid.Row="1" Margin="10,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+                        <!-- Play/Pause Button -->
+                        <Button Grid.Column="0" Command="{Binding PlayPauseCommand}" Style="{StaticResource MaterialDesignIconButton}" Foreground="White">
+                            <materialDesign:PackIcon Width="32" Height="32">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Kind" Value="Play" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                <Setter Property="Kind" Value="Pause" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                        </Button>
 
-                <!-- Play/Pause Button -->
-                <Button Grid.Column="0" Command="{Binding PlayPauseCommand}" Style="{StaticResource MaterialDesignIconButton}" Foreground="White">
-                    <materialDesign:PackIcon Width="32" Height="32">
-                        <materialDesign:PackIcon.Style>
-                            <Style TargetType="materialDesign:PackIcon">
-                                <Setter Property="Kind" Value="Play" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsPlaying}" Value="True">
-                                        <Setter Property="Kind" Value="Pause" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </materialDesign:PackIcon.Style>
-                    </materialDesign:PackIcon>
-                </Button>
+                        <!-- Stop Button -->
+                        <Button Grid.Column="1" Command="{Binding StopCommand}" Style="{StaticResource MaterialDesignIconButton}" Foreground="White">
+                            <materialDesign:PackIcon Kind="Stop" Width="24" Height="24"/>
+                        </Button>
 
-                <!-- Stop Button -->
-                <Button Grid.Column="1" Command="{Binding StopCommand}" Style="{StaticResource MaterialDesignIconButton}" Foreground="White">
-                    <materialDesign:PackIcon Kind="Stop" Width="24" Height="24"/>
-                </Button>
+                        <!-- Time Info -->
+                        <TextBlock Grid.Column="2" Foreground="White" VerticalAlignment="Center" Margin="10,0,0,0" FontSize="14">
+                            <Run Text="{Binding CurrentTimeDisplay}"/>
+                            <Run Text=" / "/>
+                            <Run Text="{Binding TotalTimeDisplay}"/>
+                        </TextBlock>
 
-                <!-- Time Info -->
-                <TextBlock Grid.Column="2" Foreground="White" VerticalAlignment="Center" Margin="10,0,0,0" FontSize="14">
-                    <Run Text="{Binding CurrentTimeDisplay}"/>
-                    <Run Text=" / "/>
-                    <Run Text="{Binding TotalTimeDisplay}"/>
-                </TextBlock>
+                        <!-- Volume Control -->
+                        <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,0">
+                            <materialDesign:PackIcon Kind="VolumeHigh" Foreground="White" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                            <Slider Minimum="0" Maximum="100" Value="{Binding Volume}" Width="100" Foreground="{DynamicResource PrimaryHueMidBrush}"/>
+                        </StackPanel>
 
-                <!-- Volume Control -->
-                <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,20,0">
-                    <materialDesign:PackIcon Kind="VolumeHigh" Foreground="White" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                    <Slider Minimum="0" Maximum="100" Value="{Binding Volume}" Width="100" Foreground="{DynamicResource PrimaryHueMidBrush}"/>
-                </StackPanel>
+                        <!-- Go Back Button (Close Window) -->
+                        <Button Grid.Column="5" Click="CloseButton_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="White" ToolTip="بستن">
+                            <materialDesign:PackIcon Kind="Close" Width="24" Height="24"/>
+                        </Button>
+                    </Grid>
+                </Grid>
 
-                <!-- Go Back Button (Close Window) -->
-                <Button Grid.Column="5" Click="CloseButton_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="White" ToolTip="بستن">
-                    <materialDesign:PackIcon Kind="Close" Width="24" Height="24"/>
-                </Button>
+                <!-- Top Title Bar Overlay -->
+                <Border Background="#66000000" VerticalAlignment="Top" Height="40" Visibility="{Binding ElementName=ControlsGrid, Path=Visibility}">
+                    <TextBlock Text="{Binding Title}" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="15,0,0,0" FontSize="16" FontWeight="SemiBold"/>
+                </Border>
             </Grid>
-        </Grid>
-
-        <!-- Top Title Bar Overlay -->
-        <Border Background="#66000000" VerticalAlignment="Top" Height="40" Visibility="{Binding ElementName=ControlsGrid, Path=Visibility}">
-            <TextBlock Text="{Binding Title}" Foreground="White" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="15,0,0,0" FontSize="16" FontWeight="SemiBold"/>
-        </Border>
+        </vlc:VideoView>
     </Grid>
 </Window>

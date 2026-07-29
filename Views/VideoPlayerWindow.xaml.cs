@@ -27,6 +27,14 @@ namespace MovieManagerDesktop.Views
             this.MouseLeave += VideoPlayerWindow_MouseLeave;
         }
 
+        private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ChangedButton == MouseButton.Left)
+            {
+                this.DragMove();
+            }
+        }
+
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             var vm = this.DataContext as ViewModels.VideoPlayerViewModel;
