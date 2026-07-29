@@ -67,6 +67,9 @@
         <DataTemplate DataType="{x:Type viewmodels:SeriesFileRenamerViewModel}">
             <views:SeriesFileRenamerView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:VideoPlayerViewModel}">
+            <views:VideoPlayerView />
+        </DataTemplate>
 
         <!-- Style for modern sidebar buttons -->
         <Style x:Key="SidebarRadioButtonStyle" TargetType="RadioButton">
