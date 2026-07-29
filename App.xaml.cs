@@ -17,8 +17,14 @@ public partial class App : Application
         base.OnStartup(e);
         this.DispatcherUnhandledException += App_DispatcherUnhandledException;
 
-        var settings = MovieManagerDesktop.Services.SettingsManager.LoadSettings();
-        ApplyTheme(settings.Theme ?? "Cyan", settings.IsDarkTheme);
+        if (FlyleafLib.Engine.Config == null)
+        {
+            string ffmpegFolder = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FFmpeg");
+            FlyleafLib.Engine.Start(new FlyleafLib.EngineConfig()
+            {
+                FFmpegPath = ffmpegFolder
+            });
+        }
 
 
 
