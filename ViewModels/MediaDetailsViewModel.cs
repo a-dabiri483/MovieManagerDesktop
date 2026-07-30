@@ -602,6 +602,55 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
+        private async System.Threading.Tasks.Task UpdateSeriesTrackerAsync()
+        {
+            if (Media.TmdbId == null) return;
+            
+            try
+            {
+                var settings = SettingsManager.LoadSettings();
+                string apiKey = string.IsNullOrEmpty(settings.TmdbApiKey) ? "3272e27041f0b0ee11dbaf0315ce5b21" : settings.TmdbApiKey;
+                string language = string.IsNullOrEmpty(settings.TmdbLanguage) ? "fa-IR" : settings.TmdbLanguage;
+                
+                LoggerService.Info($"[صفحه جزییات] بروزرسانی اطلاعات ردیاب: {Media.FormattedTitle}...");
+                var service = new IdentifyMediaService();
+                await service.IdentifySeriesDetailsAsync(Media, apiKey, language);
+                
+                using var db = new AppDbContext();
+                var dbSeries = db.VideoFiles.FirstOrDefault(v => v.Id == Media.Id);
+                if (dbSeries != null)
+                {
+                    dbSeries.SeriesStatus = Media.SeriesStatus;
+                    dbSeries.FirstAirDate = Media.FirstAirDate;
+                    dbSeries.LastAirDate = Media.LastAirDate;
+                    dbSeries.NetworkName = Media.NetworkName;
+                    dbSeries.AirDay = Media.AirDay;
+                    dbSeries.AirTime = Media.AirTime;
+                    dbSeries.NextEpisodeDate = Media.NextEpisodeDate;
+                    dbSeries.NextEpisodeNumber = Media.NextEpisodeNumber;
+                    dbSeries.TotalSeasonsCount = Media.TotalSeasonsCount;
+                    dbSeries.TotalEpisodesCount = Media.TotalEpisodesCount;
+                    
+                    service.CleanTrackerInfoFromOverview(Media);
+                    dbSeries.Overview = Media.Overview;
+                    
+                    await db.SaveChangesAsync();
+                }
+                
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    LoadSeriesTrackerInfo();
+                    OnPropertyChanged(nameof(Media));
+                    ToastService.Instance.ShowSuccess("اطلاعات ردیاب بروزرسانی شد");
+                });
+            }
+            catch (System.Exception ex)
+            {
+                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowError($"خطا: {ex.Message}"));
+            }
+        }
+
+        [RelayCommand]
         private void GoBack()
         {
             WeakReferenceMessenger.Default.Send(new NavigationMessage(_parentViewModel));
