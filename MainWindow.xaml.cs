@@ -31,6 +31,8 @@ namespace MovieManagerDesktop
         public MainWindow()
         {
             InitializeComponent();
+            
+            // Set window max height to working area height so it doesn't cover taskbar when maximized;
             this.SourceInitialized += MainWindow_SourceInitialized;
             this.Closing += MainWindow_Closing;
         }

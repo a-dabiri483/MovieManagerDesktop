@@ -29,6 +29,8 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private string _searchQuery = string.Empty;
         
+        private System.Threading.CancellationTokenSource? _searchCts;
+        
         [ObservableProperty]
         private int _mediaTypeFilterIndex = 0; // 0: All, 1: Movies, 2: Series
         partial void OnMediaTypeFilterIndexChanged(int value) => SaveAndLoad();
@@ -233,30 +235,20 @@ namespace MovieManagerDesktop.ViewModels
 
                 if (!string.IsNullOrWhiteSpace(SearchQuery))
                 {
-                    string FixPersian(string? text) => (text ?? "").ToLowerInvariant().Replace("ي", "ی").Replace("ك", "ک");
-                    
-                    var searchTerms = FixPersian(SearchQuery).Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    var searchTerms = SearchQuery.ToLowerInvariant().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     
                     if (searchTerms.Length > 0)
                     {
-                        var allItems = query.ToList(); // Load into memory for string matching
-                        
-                        query = allItems.Where(v => 
+                        foreach (var term in searchTerms)
                         {
-                            string title = FixPersian(v.FormattedTitle);
-                            string fileName = FixPersian(v.FileName);
-                            string actors = FixPersian(v.Actors);
-                            string director = FixPersian(v.Director);
-                            string collection = FixPersian(v.CollectionName);
-
-                            return searchTerms.All(term => 
-                                title.Contains(term) || 
-                                fileName.Contains(term) ||
-                                actors.Contains(term) ||
-                                director.Contains(term) ||
-                                collection.Contains(term)
+                            string term1 = term.Replace("ی", "ي").Replace("ک", "ك");
+                            string term2 = term.Replace("ي", "ی").Replace("ك", "ک");
+                            
+                            query = query.Where(v => 
+                                (v.FormattedTitle != null && (v.FormattedTitle.ToLower().Contains(term1) || v.FormattedTitle.ToLower().Contains(term2))) ||
+                                (v.CollectionName != null && (v.CollectionName.ToLower().Contains(term1) || v.CollectionName.ToLower().Contains(term2)))
                             );
-                        }).AsQueryable();
+                        }
                     }
                 }
 
@@ -344,7 +336,24 @@ namespace MovieManagerDesktop.ViewModels
             }
         }
 
-        partial void OnSearchQueryChanged(string value) => _ = LoadMoviesAsync();
+        partial void OnSearchQueryChanged(string value)
+        {
+            _searchCts?.Cancel();
+            _searchCts = new System.Threading.CancellationTokenSource();
+            var token = _searchCts.Token;
+
+            Task.Run(async () =>
+            {
+                await Task.Delay(400, token); // 400ms debounce
+                if (!token.IsCancellationRequested)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        _ = LoadMoviesAsync();
+                    });
+                }
+            }, token).ContinueWith(t => { }, TaskContinuationOptions.OnlyOnCanceled);
+        }
 
 
         private void UpdateSelectionState()

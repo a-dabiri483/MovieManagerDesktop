@@ -87,6 +87,7 @@
                                   Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" 
                                   ItemsSource="{Binding SearchHistory}"
                                   materialDesign:HintAssist.Hint="جستجو در کالکشن..." 
+                                  materialDesign:TextFieldAssist.HasClearButton="True"
                                   Foreground="{DynamicResource PrimaryText}" FontSize="14" BorderThickness="0"
                                   VerticalAlignment="Center">
                             <ComboBox.InputBindings>

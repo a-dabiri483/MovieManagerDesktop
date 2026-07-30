@@ -256,9 +256,15 @@ namespace MovieManagerDesktop.ViewModels
             {
                 if (!string.IsNullOrWhiteSpace(Media.FilePath) && System.IO.File.Exists(Media.FilePath))
                 {
-                    // Open in default OS Player (PotPlayer, VLC, etc.)
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Media.FilePath) { UseShellExecute = true });
-                    if (!IsWatched) ToggleWatched(); // Auto mark as watched when played
+                    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        var startInfo = new System.Diagnostics.ProcessStartInfo
+                        {
+                            FileName = Media.FilePath,
+                            UseShellExecute = true
+                        };
+                        System.Diagnostics.Process.Start(startInfo);
+                    });
                 }
             }
             catch (Exception ex)
@@ -406,16 +412,6 @@ namespace MovieManagerDesktop.ViewModels
                 {
                     // Open in default OS Player (PotPlayer, VLC, etc.)
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(episode.FilePath) { UseShellExecute = true });
-                    using var db = new AppDbContext();
-                    var dbEp = db.VideoFiles.FirstOrDefault(v => v.Id == episode.Id);
-                    if (dbEp != null) {
-                        dbEp.IsWatched = true;
-                        db.SaveChanges();
-                        
-                        App.Current.Dispatcher.Invoke(() => {
-                            episode.IsWatched = true;
-                        });
-                    }
                 }
             }
             catch (Exception ex)

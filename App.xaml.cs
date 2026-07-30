@@ -1,9 +1,7 @@
 using System.Configuration;
 using System.Data;
 using System.Windows;
-using System.Configuration;
-using System.Data;
-using System.Windows;
+using FlyleafLib;
 
 namespace MovieManagerDesktop;
 
@@ -17,9 +15,12 @@ public partial class App : Application
         base.OnStartup(e);
         this.DispatcherUnhandledException += App_DispatcherUnhandledException;
 
-
-
-
+        FlyleafLib.Engine.Start(new EngineConfig()
+        {
+            FFmpegPath = ":FFmpeg",
+            UIRefresh = true,
+            UIRefreshInterval = 250
+        });
 
         using (var db = new MovieManagerDesktop.Data.AppDbContext())
         {

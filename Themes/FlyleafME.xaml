@@ -1,0 +1,99 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                    mc:Ignorable="d"
+
+                    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+                    xmlns:fl="clr-namespace:FlyleafLib.Controls.WPF;assembly=FlyleafLib"
+                    xmlns:flwpf="clr-namespace:FlyleafLib.Controls.WPF;assembly=FlyleafLib.Controls.WPF">
+
+    <Style x:Key="FlyleafMEDefault" TargetType="{x:Type flwpf:FlyleafME}" BasedOn="{StaticResource {x:Type fl:FlyleafHost}}">
+        <Setter Property="ActivityTimeout" Value="6000"/>
+        <Setter Property="KeyBindings" Value="Both"/>
+        <Setter Property="OverlayTemplate">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Border BorderThickness="0">
+                        <Border.Resources>
+                            <ResourceDictionary>
+                                <ResourceDictionary.MergedDictionaries>
+                                    <ResourceDictionary Source="pack://application:,,,/FlyleafLib.Controls.WPF;component/Resources/MaterialDesign.xaml"/>
+                                    <ResourceDictionary Source="pack://application:,,,/FlyleafLib.Controls.WPF;component/Resources/Converters.xaml"/>
+                                    <ResourceDictionary Source="PopUpMenu.xaml"/>
+                                </ResourceDictionary.MergedDictionaries>
+                            </ResourceDictionary>
+                        </Border.Resources>
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="#01000000"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Primary}"/>
+                                    </Trigger>
+                                    <DataTrigger Binding="{Binding Player.Host.Surface.IsMouseOver}" Value="True">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Primary}"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Player.Host.IsFullScreen}" Value="True">
+                                        <Setter Property="BorderBrush" Value="#01000000"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Player.Activity.Mode}" Value="Active">
+                                        <Setter Property="BorderBrush" Value="#01000000"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Player.Activity.Mode}" Value="Idle">
+                                        <Setter Property="BorderBrush" Value="#01000000"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Player.Host.IsResizing}" Value="True">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesign.Brush.Primary}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <Border BorderThickness="0" BorderBrush="#01000000">
+                            <Grid x:Name="PART_ContextMenuOwner" ContextMenu="{StaticResource PopUpMenu}">
+                                <!--Pop Up Dialog (Settings/Set Values)-->
+                                <materialDesign:DialogHost x:Name="PART_DialogSettings" OverlayBackground="{x:Null}"/>
+
+                                <!--Debug Info-->
+                                <fl:PlayerDebug VerticalAlignment="Center" HorizontalAlignment="Center" BoxColor="#AA000000" HeaderColor="White" InfoColor="{DynamicResource MaterialDesign.Brush.Primary.Light}" ValueColor="{DynamicResource MaterialDesign.Brush.Secondary.Light}" Visibility="{Binding ShowDebug, Converter={StaticResource BooleanToVisibility}, FallbackValue=Collapsed, TargetNullValue=Collapsed}">
+                                    <fl:PlayerDebug.Style>
+                                        <Style TargetType="fl:PlayerDebug">
+                                            <Setter Property="Player" Value="{x:Null}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Visibility}" Value="Visible">
+                                                    <Setter Property="Player" Value="{Binding Player}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </fl:PlayerDebug.Style>
+                                </fl:PlayerDebug>
+
+                                <!--Subtitles-->
+                                <flwpf:OutlinedTextBlock Stroke="{Binding Player.Config.Video.BackColor, Converter={StaticResource ColorToBrush}}"
+                                    ClipToBounds="False"
+                                    Fill="{Binding UIConfig.SubsFontColor, Converter={StaticResource ColorToBrush}}"
+                                    StrokePosition="Outside"
+                                    StrokeThicknessInitial="{Binding UIConfig.SubsStrokeThickness}"
+                                    Margin="{Binding UIConfig.SubsMargin2}"
+                                    VerticalAlignment="Bottom"
+                                    HorizontalAlignment="Center"
+                                    TextAlignment="Center"
+                                    TextWrapping="Wrap"
+                                    FontFamily="{Binding UIConfig.SubsFontFamily}"
+                                    FontSizeInitial="{Binding UIConfig.SubsFontSize}"
+                                    FontWeight="{Binding UIConfig.SubsFontWeight}"
+                                    FontStyle="{Binding UIConfig.SubsFontStyle}"
+                                    Text="{Binding Player.Subtitles.SubsText}">
+                                </flwpf:OutlinedTextBlock>
+
+                                <!--Flyleaf Bar-->
+                                <flwpf:FlyleafBar Player="{Binding Player}"/>
+                            </Grid>
+                        </Border>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>
