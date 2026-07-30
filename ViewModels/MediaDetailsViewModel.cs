@@ -256,11 +256,8 @@ namespace MovieManagerDesktop.ViewModels
             {
                 if (!string.IsNullOrWhiteSpace(Media.FilePath) && System.IO.File.Exists(Media.FilePath))
                 {
-                    // Open in Flyleaf Video Player Window
-                    App.Current.Dispatcher.Invoke(() => {
-                        var playerWindow = new MovieManagerDesktop.Views.VideoPlayerWindow(Media.FilePath);
-                        playerWindow.Show();
-                    });
+                    // Open in default OS Player (PotPlayer, VLC, etc.)
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Media.FilePath) { UseShellExecute = true });
                     if (!IsWatched) ToggleWatched(); // Auto mark as watched when played
                 }
             }
@@ -407,11 +404,8 @@ namespace MovieManagerDesktop.ViewModels
             {
                 if (episode != null && !string.IsNullOrWhiteSpace(episode.FilePath) && System.IO.File.Exists(episode.FilePath))
                 {
-                    // Open in Flyleaf Video Player Window
-                    App.Current.Dispatcher.Invoke(() => {
-                        var playerWindow = new MovieManagerDesktop.Views.VideoPlayerWindow(episode.FilePath);
-                        playerWindow.Show();
-                    });
+                    // Open in default OS Player (PotPlayer, VLC, etc.)
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(episode.FilePath) { UseShellExecute = true });
                     using var db = new AppDbContext();
                     var dbEp = db.VideoFiles.FirstOrDefault(v => v.Id == episode.Id);
                     if (dbEp != null) {
