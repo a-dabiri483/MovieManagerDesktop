@@ -8,7 +8,7 @@
         Title="مدیریت فیلم و سریال" Height="750" Width="1250"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         WindowStartupLocation="CenterScreen"
-        Icon="Assets/logo.ico"
+        Icon="Assets/logo.png"
         FontFamily="{StaticResource AppFontFamily}"
         FlowDirection="RightToLeft"
         MouseMove="Window_MouseMove">

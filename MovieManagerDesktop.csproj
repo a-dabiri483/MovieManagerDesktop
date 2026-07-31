@@ -15,9 +15,7 @@
     <Resource Include="Assets\bg.png" />
     <Resource Include="Assets\bg_new.png" />
     <Resource Include="Assets\logo.png" />
-    <Content Include="Assets\logo.ico">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+
     <Content Include="Assets\folder_template.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
