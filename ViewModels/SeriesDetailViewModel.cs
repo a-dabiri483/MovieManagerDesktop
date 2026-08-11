@@ -187,7 +187,7 @@ namespace MovieManagerDesktop.ViewModels
                     try
                     {
                         var settings = SettingsManager.LoadSettings();
-                        string apiKey = string.IsNullOrEmpty(settings.TmdbApiKey) ? "3272e27041f0b0ee11dbaf0315ce5b21" : settings.TmdbApiKey;
+                        string apiKey = SettingsManager.GetTmdbApiKey();
                         string language = string.IsNullOrEmpty(settings.TmdbLanguage) ? "fa-IR" : settings.TmdbLanguage;
                         
                         await _mediaService.IdentifySeriesDetailsAsync(_series, apiKey, language);
@@ -367,7 +367,7 @@ namespace MovieManagerDesktop.ViewModels
             {
                 LoggerService.Info($"[صفحه جزییات] بروزرسانی اطلاعات سریال: {_series.FormattedTitle}...");
                 var settings = SettingsManager.LoadSettings();
-                string apiKey = string.IsNullOrEmpty(settings.TmdbApiKey) ? "3272e27041f0b0ee11dbaf0315ce5b21" : settings.TmdbApiKey;
+                string apiKey = SettingsManager.GetTmdbApiKey();
                 string language = string.IsNullOrEmpty(settings.TmdbLanguage) ? "fa-IR" : settings.TmdbLanguage;
                 
                 await _mediaService.IdentifySeriesDetailsAsync(_series, apiKey, language);
@@ -445,7 +445,7 @@ namespace MovieManagerDesktop.ViewModels
             try
             {
                 var settings = SettingsManager.LoadSettings();
-                string apiKey = string.IsNullOrEmpty(settings.TmdbApiKey) ? "3272e27041f0b0ee11dbaf0315ce5b21" : settings.TmdbApiKey;
+                string apiKey = SettingsManager.GetTmdbApiKey();
                 string language = string.IsNullOrEmpty(settings.TmdbLanguage) ? "fa-IR" : settings.TmdbLanguage;
                 
                 LoggerService.Info($"[صفحه جزییات] بروزرسانی اطلاعات ردیاب: {_series.FormattedTitle}...");

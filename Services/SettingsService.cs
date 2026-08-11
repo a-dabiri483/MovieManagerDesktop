@@ -44,7 +44,10 @@ namespace FolderIconManager.WPF.Services
                             Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), 
                             "FolderIcons"
                         );
-                        _currentSettings.TmdbApiKeys ??= new List<string>();
+                        _currentSettings.TmdbApiKeys ??= new List<string> {
+                            "a8a9cd082993b9e77b813263981e408b",
+                            "c0d46b49ab0f16cd8f7101f2d49defc9"
+                        };
                         return;
                     }
                 }

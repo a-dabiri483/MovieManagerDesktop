@@ -4,6 +4,8 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
              xmlns:models="clr-namespace:MovieManagerDesktop.Models"
+             xmlns:converters="clr-namespace:MovieManagerDesktop.Converters"
+             xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
              d:DataContext="{d:DesignInstance Type=viewmodels:FolderIconToolViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -442,7 +444,7 @@
                                     <DataGridTemplateColumn Header="کاور" Width="55">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <Image Source="{Binding PosterPreview}" Width="35" Height="45" Stretch="UniformToFill" HorizontalAlignment="Center"/>
+                                                <Image controls:CachedImage.SourceUrl="{Binding PosterPreview}" Width="35" Height="45" Stretch="UniformToFill" HorizontalAlignment="Center"/>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>

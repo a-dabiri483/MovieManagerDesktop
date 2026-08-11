@@ -20,6 +20,8 @@
             <converters:InverseBooleanConverter x:Key="InverseBooleanConverter" />
             <converters:SeriesStatusConverter x:Key="SeriesStatusConverter" />
             <converters:MultipleSelectionToVisibilityConverter x:Key="MultipleSelectionToVisibilityConverter" />
+            <converters:JalaliDateConverter x:Key="JalaliDateConverter" />
+            <converters:PersianNumberConverter x:Key="PersianNumberConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

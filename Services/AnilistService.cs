@@ -30,7 +30,7 @@ namespace MovieManagerDesktop.Services
 
         static AnilistService()
         {
-            _httpClient = new HttpClient();
+            _httpClient = new HttpClient(new MovieManagerDesktop.Services.Network.ProxyHttpClientHandler());
             _httpClient.Timeout = TimeSpan.FromSeconds(15);
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
         }

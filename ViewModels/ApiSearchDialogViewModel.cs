@@ -42,6 +42,7 @@ namespace MovieManagerDesktop.ViewModels
 
             IsSearching = true;
             SearchResults.Clear();
+            LoggerService.Info($"[Search] Manual search started for '{SearchQuery}'");
 
             System.Collections.Generic.List<TmdbSearchResult> results;
 
@@ -74,6 +75,7 @@ namespace MovieManagerDesktop.ViewModels
                 }
             }
 
+            LoggerService.Info($"[Search] Found {SearchResults.Count} results for '{SearchQuery}'");
             IsSearching = false;
         }
 

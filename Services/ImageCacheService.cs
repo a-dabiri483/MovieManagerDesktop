@@ -24,7 +24,7 @@ namespace MovieManagerDesktop.Services
                 Directory.CreateDirectory(CacheDirectory);
             }
 
-            _httpClient = new HttpClient();
+            _httpClient = new HttpClient(new MovieManagerDesktop.Services.Network.ProxyHttpClientHandler());
             _httpClient.Timeout = TimeSpan.FromSeconds(30);
         }
 
@@ -61,6 +61,7 @@ namespace MovieManagerDesktop.Services
                 }
 
                 var wrappedUrl = SettingsManager.WrapUrlWithProxy(url);
+                LoggerService.Info($"[Network] Fetching image from: {wrappedUrl}");
                 var response = await _httpClient.GetAsync(wrappedUrl);
                 response.EnsureSuccessStatusCode();
                 var imageBytes = await response.Content.ReadAsByteArrayAsync();
@@ -70,12 +71,14 @@ namespace MovieManagerDesktop.Services
                 await File.WriteAllBytesAsync(tempPath, imageBytes);
                 File.Move(tempPath, localPath, true);
 
+                LoggerService.Info($"[Network] ✔ Successfully cached image: {url}");
                 return localPath;
             }
             catch (Exception ex)
             {
                 // Log or ignore, return null if failed
                 System.Diagnostics.Debug.WriteLine($"Failed to cache image {url}: {ex.Message}");
+                LoggerService.Error($"[Network] ❌ Failed to fetch image {url}", ex);
                 return null;
             }
             finally

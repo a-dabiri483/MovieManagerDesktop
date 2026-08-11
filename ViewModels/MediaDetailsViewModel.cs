@@ -609,7 +609,7 @@ namespace MovieManagerDesktop.ViewModels
             try
             {
                 var settings = SettingsManager.LoadSettings();
-                string apiKey = string.IsNullOrEmpty(settings.TmdbApiKey) ? "3272e27041f0b0ee11dbaf0315ce5b21" : settings.TmdbApiKey;
+                string apiKey = SettingsManager.GetTmdbApiKey();
                 string language = string.IsNullOrEmpty(settings.TmdbLanguage) ? "fa-IR" : settings.TmdbLanguage;
                 
                 LoggerService.Info($"[صفحه جزییات] بروزرسانی اطلاعات ردیاب: {Media.FormattedTitle}...");
@@ -654,6 +654,41 @@ namespace MovieManagerDesktop.ViewModels
         private void GoBack()
         {
             WeakReferenceMessenger.Default.Send(new NavigationMessage(_parentViewModel));
+        }
+
+        [RelayCommand]
+        private async Task TranslatePlotAsync()
+        {
+            if (string.IsNullOrWhiteSpace(Media.Overview)) return;
+            
+            try
+            {
+                MovieManagerDesktop.Services.ToastService.Instance.ShowSuccess("در حال ترجمه متن...");
+                string translatedText = await MovieManagerDesktop.Services.TranslationService.TranslateTextAsync(Media.Overview, "fa");
+                
+                if (!string.IsNullOrWhiteSpace(translatedText) && translatedText != Media.Overview)
+                {
+                    using var db = new AppDbContext();
+                    var dbFile = db.VideoFiles.FirstOrDefault(v => v.Id == Media.Id);
+                    if (dbFile != null)
+                    {
+                        dbFile.Overview = translatedText;
+                        await db.SaveChangesAsync();
+                    }
+
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        Media.Overview = translatedText;
+                        OnPropertyChanged(nameof(Media));
+                        MovieManagerDesktop.Services.ToastService.Instance.ShowSuccess("ترجمه با موفقیت انجام شد.");
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                MovieManagerDesktop.Services.LoggerService.Error("Translation error", ex);
+                App.Current.Dispatcher.Invoke(() => MovieManagerDesktop.Services.ToastService.Instance.ShowError("خطا در ترجمه متن."));
+            }
         }
     }
 }

@@ -35,7 +35,7 @@ namespace MovieManagerDesktop.Services
 
         static IdentifyMediaService()
         {
-            _httpClient = new HttpClient();
+            _httpClient = new HttpClient(new MovieManagerDesktop.Services.Network.ProxyHttpClientHandler());
             _httpClient.Timeout = TimeSpan.FromSeconds(25);
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
         }
@@ -87,7 +87,7 @@ namespace MovieManagerDesktop.Services
             try
             {
                 var settings = SettingsManager.LoadSettings();
-                string apiKey = settings.TmdbApiKey ?? "3272e27041f0b0ee11dbaf0315ce5b21";
+                string apiKey = SettingsManager.GetTmdbApiKey();
                 string url = $"https://api.themoviedb.org/3/find/{imdbId}?api_key={apiKey}&external_source=imdb_id";
                 var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 if (response.IsSuccessStatusCode)
@@ -112,7 +112,7 @@ namespace MovieManagerDesktop.Services
             string source = settings.SelectedDataSource ?? "FM_DB";
             
             if (source == "FM_DB")
-                return await SearchFmDbAsync(query);
+                source = "TMDB_ONLY";
             if (source == "OMDB_ONLY")
                 return await SearchOmdbAsync(query, settings.OmdbApiKey);
                 
@@ -231,7 +231,7 @@ namespace MovieManagerDesktop.Services
             try
             {
                 var settings = SettingsManager.LoadSettings();
-                string apiKey = settings.TmdbApiKey ?? "3272e27041f0b0ee11dbaf0315ce5b21";
+                string apiKey = SettingsManager.GetTmdbApiKey();
                 string encodedQuery = Uri.EscapeDataString(query);
                 
                 string url;
@@ -374,7 +374,7 @@ namespace MovieManagerDesktop.Services
                 if (file.TmdbId.HasValue && file.TmdbId > 0)
                 {
                     LoggerService.Info($"[موتور جستجو] آیدی TMDB موجود است. درخواست مستقیم از TMDB...");
-                    await IdentifyWithTmdb(file, settings.TmdbApiKey, language);
+                    await IdentifyWithTmdb(file, SettingsManager.GetTmdbApiKey(), language);
                     configApiSuccess = !string.IsNullOrWhiteSpace(file.PosterUrl) && !string.IsNullOrWhiteSpace(file.Overview);
                 }
                 else if (source == "FM_DB")
@@ -385,14 +385,14 @@ namespace MovieManagerDesktop.Services
                     if (file.TmdbId.HasValue && file.TmdbId > 0)
                     {
                         LoggerService.Info($"[موتور جستجو] اطلاعات پایه از FM_DB دریافت شد. تکمیل اطلاعات از TMDB...");
-                        await IdentifyWithTmdb(file, settings.TmdbApiKey, language);
+                        await IdentifyWithTmdb(file, SettingsManager.GetTmdbApiKey(), language);
                         configApiSuccess = !string.IsNullOrWhiteSpace(file.PosterUrl) && !string.IsNullOrWhiteSpace(file.Overview);
                     }
                 }
                 else if (source == "TMDB_ONLY")
                 {
                     LoggerService.Info($"[موتور جستجو] درخواست مستقیم از سرور اصلی TMDB...");
-                    await IdentifyWithTmdb(file, settings.TmdbApiKey, language);
+                    await IdentifyWithTmdb(file, SettingsManager.GetTmdbApiKey(), language);
                     configApiSuccess = !string.IsNullOrWhiteSpace(file.PosterUrl) && !string.IsNullOrWhiteSpace(file.Overview);
                 }
                 else if (source == "OMDB_ONLY")
@@ -1036,7 +1036,7 @@ namespace MovieManagerDesktop.Services
             try
             {
                 var settings = SettingsManager.LoadSettings();
-                string apiKey = settings.TmdbApiKey ?? "3272e27041f0b0ee11dbaf0315ce5b21";
+                string apiKey = SettingsManager.GetTmdbApiKey();
                 string url = $"https://api.themoviedb.org/3/tv/{file.TmdbId.Value}?api_key={apiKey}&language=fa-IR";
                 
                 LoggerService.Info($"[TMDB] استخراج مجدد وضعیت سریال: {url}");
@@ -1125,7 +1125,7 @@ namespace MovieManagerDesktop.Services
             {
                 using var db = new Data.AppDbContext();
                 var settings = SettingsManager.LoadSettings();
-                string apiKey = string.IsNullOrEmpty(settings.TmdbApiKey) ? "3272e27041f0b0ee11dbaf0315ce5b21" : settings.TmdbApiKey;
+                string apiKey = SettingsManager.GetTmdbApiKey();
                 string language = string.IsNullOrEmpty(settings.TmdbLanguage) ? "fa-IR" : settings.TmdbLanguage;
 
                 // Step 1: Fetch series to get seasons
@@ -1246,7 +1246,7 @@ namespace MovieManagerDesktop.Services
             try
             {
                 var settings = SettingsManager.LoadSettings();
-                string apiKey = settings.TmdbApiKey ?? "3272e27041f0b0ee11dbaf0315ce5b21";
+                string apiKey = SettingsManager.GetTmdbApiKey();
                 string type = mediaType.ToLower() == "series" ? "tv" : "movie";
                 
                 string url = $"https://api.themoviedb.org/3/{type}/{tmdbId}/images?api_key={apiKey}";

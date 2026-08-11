@@ -13,7 +13,7 @@ namespace FolderIconManager.WPF.Services
 
         public TmdbService()
         {
-            _httpClient = new HttpClient();
+            _httpClient = new HttpClient(new MovieManagerDesktop.Services.Network.ProxyHttpClientHandler());
         }
 
         private string? GetNextApiKey()
@@ -37,7 +37,7 @@ namespace FolderIconManager.WPF.Services
 
             string url = $"https://api.themoviedb.org/3/search/tv?api_key={apiKey}&query={Uri.EscapeDataString(query)}";
 
-            var response = await _httpClient.GetAsync(MovieManagerDesktop.Services.SettingsManager.WrapUrlWithProxy(url));
+            var response = await _httpClient.GetAsync(url);
             
             if (!response.IsSuccessStatusCode)
             {
@@ -68,7 +68,7 @@ namespace FolderIconManager.WPF.Services
         public async Task<string> DownloadPosterAsync(string posterPath, string saveDirectory)
         {
             string url = $"https://image.tmdb.org/t/p/w500{posterPath}";
-            var response = await _httpClient.GetAsync(MovieManagerDesktop.Services.SettingsManager.WrapUrlWithProxy(url));
+            var response = await _httpClient.GetAsync(url);
             response.EnsureSuccessStatusCode();
 
             byte[] imageBytes = await response.Content.ReadAsByteArrayAsync();

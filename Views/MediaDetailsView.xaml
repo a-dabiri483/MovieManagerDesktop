@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1000"
              FlowDirection="RightToLeft"
@@ -28,7 +29,7 @@
         </Grid.Resources>
         <!-- Backdrop Image with Gradient Overlay and Vignette -->
         <Grid>
-            <Image x:Name="BackdropImage" Source="{Binding Media.BackdropUrl, Converter={StaticResource ImageUrlToCachedImageConverter}}" Stretch="UniformToFill" Opacity="0.75">
+            <Image x:Name="BackdropImage" controls:CachedImage.SourceUrl="{Binding Media.BackdropUrl}" Stretch="UniformToFill" Opacity="0.75">
                 <Image.RenderTransform>
                     <TranslateTransform x:Name="BackdropTranslate" Y="0"/>
                 </Image.RenderTransform>
@@ -238,7 +239,7 @@
                     
                     <Border CornerRadius="{StaticResource RadiusLg}" Height="480" Background="#20FFFFFF" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1">
                         <Border CornerRadius="{StaticResource RadiusLg}" ClipToBounds="True">
-                            <Image Source="{Binding Media.PosterUrl, Converter={StaticResource ImageUrlToCachedImageConverter}}" Stretch="UniformToFill" />
+                            <Image controls:CachedImage.SourceUrl="{Binding Media.PosterUrl}" Stretch="UniformToFill" />
                         </Border>
                     </Border>
                     
@@ -253,7 +254,7 @@
                                 <GradientStop Color="White" Offset="1"/>
                             </LinearGradientBrush>
                         </Border.OpacityMask>
-                        <Image Source="{Binding Media.PosterUrl, Converter={StaticResource ImageUrlToCachedImageConverter}}" Stretch="UniformToFill" />
+                        <Image controls:CachedImage.SourceUrl="{Binding Media.PosterUrl}" Stretch="UniformToFill" />
                     </Border>
                     
                     <!-- Play Movie Button -->
@@ -276,14 +277,14 @@
                             <Border Background="{DynamicResource CardBackground}" CornerRadius="16" Padding="15,6" Margin="0,0,15,10">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Calendar" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Width="18" Height="18" Margin="0,0,8,0"/>
-                                    <TextBlock Text="{Binding Media.Year}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Media.Year, Converter={StaticResource PersianNumberConverter}}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                             <!-- Rating -->
                             <Border Background="#33FFC107" BorderBrush="#FFFFC107" BorderThickness="1" CornerRadius="16" Padding="15,6" Margin="0,0,15,10">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Star" Foreground="#FFFFC107" VerticalAlignment="Center" Width="18" Height="18" Margin="0,0,8,0"/>
-                                    <TextBlock Text="{Binding Media.Rating}" Foreground="#FFFFC107" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Media.Rating, Converter={StaticResource PersianNumberConverter}}" Foreground="#FFFFC107" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                             <!-- Quality -->
@@ -305,7 +306,23 @@
                             <TextBlock Text="{Binding Media.Genres}" Foreground="{DynamicResource PrimaryColor}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,25" TextWrapping="Wrap"/>
                             
                             <!-- Overview -->
-                            <TextBlock Text="خلاصه داستان" Foreground="{DynamicResource PrimaryText}" FontSize="22" FontWeight="Bold" Margin="0,0,0,15"/>
+                            <Grid Margin="0,0,0,15">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="خلاصه داستان" Foreground="{DynamicResource PrimaryText}" FontSize="22" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <Button Grid.Column="2" Command="{Binding TranslatePlotCommand}" 
+                                        Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                        Foreground="{DynamicResource PrimaryColor}" BorderBrush="{DynamicResource PrimaryColor}" 
+                                        ToolTip="ترجمه داستان به فارسی (با Google Translate)">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Translate" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                        <TextBlock Text="ترجمه" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
                             <TextBlock Text="{Binding Media.Overview}" Foreground="{DynamicResource SecondaryText}" FontSize="16" LineHeight="30" TextWrapping="Wrap" Margin="0,0,0,35" TextAlignment="Justify"/>
 
                             <!-- Director -->
@@ -346,7 +363,7 @@
                                             <materialDesign:PackIcon Kind="CalendarStart" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                             <StackPanel>
                                                 <TextBlock Text="شروع پخش" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
-                                                <TextBlock Text="{Binding FirstAirDateText}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding Media.FirstAirDate, Converter={StaticResource JalaliDateConverter}, TargetNullValue='نامشخص'}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold"/>
                                             </StackPanel>
                                         </StackPanel>
 
@@ -355,7 +372,7 @@
                                             <materialDesign:PackIcon Kind="CalendarEnd" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                             <StackPanel>
                                                 <TextBlock Text="پایان پخش" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
-                                                <TextBlock Text="{Binding LastAirDateText}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding Media.LastAirDate, Converter={StaticResource JalaliDateConverter}, TargetNullValue='نامشخص'}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold"/>
                                             </StackPanel>
                                         </StackPanel>
 
@@ -382,7 +399,7 @@
                                             <materialDesign:PackIcon Kind="Filmstrip" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                             <StackPanel>
                                                 <TextBlock Text="تعداد قسمتها" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
-                                                <TextBlock Text="{Binding EpisodesInfoText}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding EpisodesInfoText, Converter={StaticResource PersianNumberConverter}}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold"/>
                                             </StackPanel>
                                         </StackPanel>
 
@@ -391,7 +408,7 @@
                                             <materialDesign:PackIcon Kind="ArrowRightBold" Width="18" Height="18" Foreground="#FFFF9800" VerticalAlignment="Center" Margin="0,0,8,0"/>
                                             <StackPanel>
                                                 <TextBlock Text="قسمت بعدی" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
-                                                <TextBlock Text="{Binding NextEpisodeText}" Foreground="#FFFF9800" FontSize="14" FontWeight="SemiBold"/>
+                                                <TextBlock Text="{Binding NextEpisodeText, Converter={StaticResource PersianNumberConverter}}" Foreground="#FFFF9800" FontSize="14" FontWeight="SemiBold"/>
                                             </StackPanel>
                                         </StackPanel>
                                     </Grid>
@@ -468,9 +485,9 @@
                                                                         <TextBlock Text="{Binding FormattedTitle}" Foreground="{DynamicResource PrimaryText}" FontSize="18" FontWeight="SemiBold"/>
                                                                         <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
                                                                             <TextBlock Text="فصل" Foreground="{DynamicResource SecondaryText}" FontSize="14" Margin="0,0,5,0"/>
-                                                                            <TextBlock Text="{Binding Season}" Foreground="{DynamicResource PrimaryColor}" FontSize="14" Margin="0,0,15,0"/>
+                                                                            <TextBlock Text="{Binding Season, Converter={StaticResource PersianNumberConverter}}" Foreground="{DynamicResource PrimaryColor}" FontSize="14" Margin="0,0,15,0"/>
                                                                             <TextBlock Text="قسمت" Foreground="{DynamicResource SecondaryText}" FontSize="14" Margin="0,0,5,0"/>
-                                                                            <TextBlock Text="{Binding Episode}" Foreground="{DynamicResource PrimaryColor}" FontSize="14"/>
+                                                                            <TextBlock Text="{Binding Episode, Converter={StaticResource PersianNumberConverter}}" Foreground="{DynamicResource PrimaryColor}" FontSize="14"/>
                                                                             <TextBlock Text="{Binding Quality}" Foreground="{DynamicResource WarningColor}" FontSize="14" Margin="15,0,0,0" FontWeight="Bold"/>
                                                                         </StackPanel>
                                                                     </StackPanel>

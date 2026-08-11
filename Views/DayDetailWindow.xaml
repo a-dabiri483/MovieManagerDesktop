@@ -1,0 +1,153 @@
+<Window x:Class="MovieManagerDesktop.Views.DayDetailWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
+        Title="جزئیات روز" Width="650" Height="700"
+        Icon="pack://application:,,,/Assets/logo.png"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource WindowBackground}"
+        FlowDirection="RightToLeft"
+        Style="{StaticResource MaterialDesignWindow}">
+
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <Grid Margin="0,0,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock x:Name="TitleText" FontSize="22" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
+                <TextBlock x:Name="SubtitleText" FontSize="14" Foreground="{DynamicResource SecondaryText}" Margin="0,5,0,0"/>
+            </StackPanel>
+            <Button Grid.Column="1" Click="CloseButton_Click" Style="{StaticResource MaterialDesignIconButton}" Foreground="{DynamicResource SecondaryText}">
+                <materialDesign:PackIcon Kind="Close" Width="24" Height="24"/>
+            </Button>
+        </Grid>
+
+        <Separator Grid.Row="0" VerticalAlignment="Bottom" Background="{DynamicResource NormalBorder}"/>
+
+        <!-- Release Items List -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+            <ItemsControl x:Name="ReleasesItemsControl">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="#15FFFFFF" CornerRadius="10" Padding="15" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- Poster -->
+                                <Border Width="80" Height="120" CornerRadius="6" Margin="0,0,15,0" Background="#1E293B">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding PosterUrl}" Value="">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Image controls:CachedImage.SourceUrl="{Binding PosterUrl}" Stretch="UniformToFill">
+                                        <Image.Clip>
+                                            <RectangleGeometry Rect="0,0,80,120" RadiusX="6" RadiusY="6"/>
+                                        </Image.Clip>
+                                    </Image>
+                                </Border>
+                                
+                                <!-- Fallback Icon when no poster -->
+                                <materialDesign:PackIcon Grid.Column="0" Width="50" Height="50" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="15,0,15,0">
+                                    <materialDesign:PackIcon.Style>
+                                        <Style TargetType="materialDesign:PackIcon">
+                                            <Setter Property="Kind" Value="Movie"/>
+                                            <Setter Property="Foreground" Value="#FFFFC107"/>
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding PosterUrl}" Value="">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding MediaType}" Value="Series">
+                                                    <Setter Property="Kind" Value="Television"/>
+                                                    <Setter Property="Foreground" Value="#00E5FF"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </materialDesign:PackIcon.Style>
+                                </materialDesign:PackIcon>
+                                
+                                <!-- Info -->
+                                <StackPanel Grid.Column="1" VerticalAlignment="Top">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Title}" FontSize="17" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}" TextWrapping="Wrap"/>
+                                        
+                                        <!-- Media Type Badge -->
+                                        <Border Grid.Column="1" CornerRadius="4" Padding="8,2" VerticalAlignment="Top">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#30FFC107"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding MediaType}" Value="Series">
+                                                            <Setter Property="Background" Value="#3000E5FF"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
+                                            <TextBlock FontSize="11" FontWeight="SemiBold">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="فیلم"/>
+                                                        <Setter Property="Foreground" Value="#FFC107"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding MediaType}" Value="Series">
+                                                                <Setter Property="Text" Value="سریال"/>
+                                                                <Setter Property="Foreground" Value="#00E5FF"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Border>
+                                    </Grid>
+                                    
+                                    <!-- Overview -->
+                                    <TextBlock Text="{Binding Overview}" FontSize="13" Foreground="{DynamicResource SecondaryText}" 
+                                               TextWrapping="Wrap" Margin="0,8,0,0" MaxHeight="80" TextTrimming="CharacterEllipsis"/>
+                                    
+                                    <!-- Translate Button -->
+                                    <Button Click="TranslateButton_Click" Tag="{Binding}" 
+                                            Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                            Foreground="{DynamicResource PrimaryColor}" BorderBrush="{DynamicResource PrimaryColor}"
+                                            Height="30" Padding="10,0" Margin="0,8,0,0" HorizontalAlignment="Left"
+                                            materialDesign:ButtonAssist.CornerRadius="6">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="Translate" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                            <TextBlock Text="ترجمه" FontSize="12" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+        
+        <!-- Empty State -->
+        <TextBlock Grid.Row="1" Text="هیچ عنوانی برای این روز وجود ندارد." 
+                   x:Name="EmptyText" Visibility="Collapsed"
+                   Foreground="{DynamicResource SecondaryText}" FontSize="16" 
+                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    </Grid>
+</Window>

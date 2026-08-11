@@ -5,6 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
+             xmlns:converters="clr-namespace:MovieManagerDesktop.Converters"
+             xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
              xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=viewmodels:CollectionsViewModel}"
@@ -172,7 +174,7 @@
                             <Button Command="{Binding OpenCollectionMoviesCommand}" Style="{StaticResource MaterialDesignFlatButton}" Padding="0" Height="Auto">
                                 <Grid>
                                     <!-- Poster -->
-                                    <Image Source="{Binding PosterUrl, Converter={StaticResource ImageUrlToCachedImageConverter}}" Stretch="UniformToFill" Height="{Binding DataContext.PosterHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                                    <Image controls:CachedImage.SourceUrl="{Binding PosterUrl}" Stretch="UniformToFill" Height="{Binding DataContext.PosterHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" />
                                     
                                     <Border VerticalAlignment="Bottom" Background="#CC000000" Padding="12,10">
                                         <StackPanel>

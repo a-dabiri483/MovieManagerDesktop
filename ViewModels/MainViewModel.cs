@@ -98,5 +98,11 @@ namespace MovieManagerDesktop.ViewModels
             CurrentViewModel = _collectionsViewModel;
             _ = _collectionsViewModel.LoadCollectionsAsync();
         }
+
+        [RelayCommand]
+        private void NavigateToCalendar()
+        {
+            CurrentViewModel = new CalendarViewModel();
+        }
     }
 }

@@ -5,6 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
+             xmlns:converters="clr-namespace:MovieManagerDesktop.Converters"
+             xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
              d:DataContext="{d:DesignInstance Type=viewmodels:EditScannedGroupViewModel}"
              mc:Ignorable="d"
              x:Name="Root"
@@ -151,7 +153,7 @@
                                 </Grid.ColumnDefinitions>
                                 
                                 <Border Grid.Column="0" CornerRadius="4" ClipToBounds="True" Background="#33000000" Height="90">
-                                    <Image Source="{Binding PosterUrl}" Stretch="UniformToFill"/>
+                                    <Image controls:CachedImage.SourceUrl="{Binding PosterUrl}" Stretch="UniformToFill"/>
                                 </Border>
                                 
                                 <StackPanel Grid.Column="1" Margin="15,0">

@@ -84,24 +84,119 @@
                             <StackPanel>
                                 <TextBlock Text="منبع دریافت اطلاعات فیلم‌ها" Foreground="{DynamicResource PrimaryText}" FontSize="20" FontWeight="Bold" Margin="0,0,0,25"/>
                                 
-                                <!-- FM-DB -->
-                                <RadioButton IsChecked="{Binding IsFmDbSelected}" Content="سایت FM-DB (پیشنهادی - کاملا رایگان و بدون نیاز به کلید)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,0,15" GroupName="DataSources"/>
+                                <!-- Removed FM-DB -->
                                 
                                 <!-- TMDB -->
                                 <RadioButton IsChecked="{Binding IsTmdbSelected}" Content="سایت TMDb (نیازمند دریافت کلید از سایت)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,0,10" GroupName="DataSources"/>
-                                <TextBox Text="{Binding TmdbApiKey, UpdateSourceTrigger=PropertyChanged}" 
-                                         materialDesign:HintAssist.Hint="کلید API سایت TMDb" 
-                                         Foreground="{DynamicResource PrimaryText}" FontSize="14" Margin="35,0,0,20"
-                                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                         IsEnabled="{Binding IsTmdbSelected}"/>
+                                <ItemsControl ItemsSource="{Binding TmdbApiKeys}" Margin="35,0,0,10" IsEnabled="{Binding IsTmdbSelected}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#1E293B" CornerRadius="8" Padding="15,8" Margin="0,0,0,10">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding MaskedKey}" 
+                                                               Foreground="{DynamicResource PrimaryText}" FontSize="15" 
+                                                               VerticalAlignment="Center" FlowDirection="LeftToRight" HorizontalAlignment="Left"/>
+                                                    <Button Grid.Column="1" Command="{Binding DataContext.TestTmdbKeyCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" 
+                                                            Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="{DynamicResource PrimaryColor}" BorderBrush="{DynamicResource PrimaryColor}" 
+                                                            Height="32" Width="80" Margin="10,0,0,0" materialDesign:ButtonAssist.CornerRadius="6">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <materialDesign:PackIcon Kind="CheckCircleOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                            <TextBlock Text="تست" FontSize="12" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button Grid.Column="2" Command="{Binding DataContext.RemoveTmdbKeyCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" 
+                                                            Style="{StaticResource MaterialDesignIconButton}" Foreground="{DynamicResource ErrorColor}" Width="35" Height="35" Margin="10,0,0,0">
+                                                        <materialDesign:PackIcon Kind="TrashCanOutline"/>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <!-- Add New TMDB Key -->
+                                <Border Background="#1E293B" CornerRadius="8" Padding="10,5" Margin="35,0,0,25" IsEnabled="{Binding IsTmdbSelected}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Text="{Binding NewTmdbKey, UpdateSourceTrigger=PropertyChanged}" 
+                                                 materialDesign:HintAssist.Hint="کلید جدید TMDB..." 
+                                                 Foreground="{DynamicResource PrimaryText}" FontSize="14" 
+                                                 BorderThickness="0" Background="Transparent"
+                                                 FlowDirection="LeftToRight" HorizontalContentAlignment="Left" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="1" Command="{Binding AddTmdbKeyCommand}" 
+                                                Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                                Foreground="{DynamicResource SuccessColor}" BorderBrush="{DynamicResource SuccessColor}" 
+                                                Height="32" Margin="10,0,0,0" materialDesign:ButtonAssist.CornerRadius="6">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Plus" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                <TextBlock Text="افزودن" FontSize="12" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </Border>
 
                                 <!-- OMDB -->
                                 <RadioButton IsChecked="{Binding IsOmdbSelected}" Content="سایت OMDb (نیازمند دریافت کلید از سایت)" Foreground="{DynamicResource PrimaryText}" FontSize="16" Margin="0,0,0,10" GroupName="DataSources"/>
-                                <TextBox Text="{Binding OmdbApiKey, UpdateSourceTrigger=PropertyChanged}" 
-                                         materialDesign:HintAssist.Hint="کلید API سایت OMDb" 
-                                         Foreground="{DynamicResource PrimaryText}" FontSize="14" Margin="35,0,0,30"
-                                         Style="{StaticResource MaterialDesignFloatingHintTextBox}"
-                                         IsEnabled="{Binding IsOmdbSelected}"/>
+                                <ItemsControl ItemsSource="{Binding OmdbApiKeys}" Margin="35,0,0,10" IsEnabled="{Binding IsOmdbSelected}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#1E293B" CornerRadius="8" Padding="15,8" Margin="0,0,0,10">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding MaskedKey}" 
+                                                               Foreground="{DynamicResource PrimaryText}" FontSize="15" 
+                                                               VerticalAlignment="Center" FlowDirection="LeftToRight" HorizontalAlignment="Left"/>
+                                                    <Button Grid.Column="1" Command="{Binding DataContext.TestOmdbKeyCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" 
+                                                            Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="{DynamicResource PrimaryColor}" BorderBrush="{DynamicResource PrimaryColor}" 
+                                                            Height="32" Width="80" Margin="10,0,0,0" materialDesign:ButtonAssist.CornerRadius="6">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <materialDesign:PackIcon Kind="CheckCircleOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                            <TextBlock Text="تست" FontSize="12" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button Grid.Column="2" Command="{Binding DataContext.RemoveOmdbKeyCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" 
+                                                            Style="{StaticResource MaterialDesignIconButton}" Foreground="{DynamicResource ErrorColor}" Width="35" Height="35" Margin="10,0,0,0">
+                                                        <materialDesign:PackIcon Kind="TrashCanOutline"/>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <!-- Add New OMDB Key -->
+                                <Border Background="#1E293B" CornerRadius="8" Padding="10,5" Margin="35,0,0,30" IsEnabled="{Binding IsOmdbSelected}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Text="{Binding NewOmdbKey, UpdateSourceTrigger=PropertyChanged}" 
+                                                 materialDesign:HintAssist.Hint="کلید جدید OMDB..." 
+                                                 Foreground="{DynamicResource PrimaryText}" FontSize="14" 
+                                                 BorderThickness="0" Background="Transparent"
+                                                 FlowDirection="LeftToRight" HorizontalContentAlignment="Left" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="1" Command="{Binding AddOmdbKeyCommand}" 
+                                                Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                                Foreground="{DynamicResource SuccessColor}" BorderBrush="{DynamicResource SuccessColor}" 
+                                                Height="32" Margin="10,0,0,0" materialDesign:ButtonAssist.CornerRadius="6">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Plus" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                <TextBlock Text="افزودن" FontSize="12" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </Border>
 
                                 <!-- Proxy Server was moved to a new card -->
                                 
@@ -393,25 +488,52 @@
                                 </StackPanel>
 
                                 <StackPanel IsEnabled="{Binding IsApiProxyEnabled}">
-                                    <TextBlock Text="آدرس ورکر Cloudflare خود را وارد کنید (برنامه به‌طور خودکار ?url= را اعمال می‌کند):" Foreground="{DynamicResource SecondaryText}" FontSize="14" Margin="0,0,0,10"/>
+                                    <TextBlock Text="آدرس ورکر Cloudflare خود را وارد کنید (برنامه به‌طور خودکار ?url= را اعمال می‌کند):" Foreground="{DynamicResource SecondaryText}" FontSize="14" Margin="0,0,0,15"/>
                                     
-                                    <Grid Margin="0,0,0,20">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBox Grid.Column="0" Text="{Binding ApiProxyUrl, UpdateSourceTrigger=PropertyChanged}" 
-                                                 materialDesign:HintAssist.Hint="مثال: https://my-proxy.username.workers.dev" 
-                                                 Foreground="{DynamicResource PrimaryText}" FontSize="15"
-                                                 Style="{StaticResource MaterialDesignOutlinedTextBox}" Padding="15,10" Height="45"/>
-                                        
-                                        <Button Grid.Column="1" Command="{Binding TestProxyCommand}" Margin="15,0,0,0" Height="45" Width="140" Style="{StaticResource MaterialDesignRaisedButton}" Background="#1E293B" BorderThickness="1" BorderBrush="{DynamicResource PrimaryColor}" Foreground="{DynamicResource PrimaryText}" materialDesign:ButtonAssist.CornerRadius="6">
-                                            <StackPanel Orientation="Horizontal">
-                                                <materialDesign:PackIcon Kind="CloudCheck" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource PrimaryColor}"/>
-                                                <TextBlock Text="تست اتصال" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                                            </StackPanel>
-                                        </Button>
-                                    </Grid>
+                                    <ItemsControl ItemsSource="{Binding ApiProxyUrls}" Margin="0,0,0,10">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#1E293B" CornerRadius="8" Padding="15,8" Margin="0,0,0,10">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{Binding MaskedKey}" 
+                                                                   Foreground="{DynamicResource PrimaryText}" FontSize="15" 
+                                                                   VerticalAlignment="Center" FlowDirection="LeftToRight" HorizontalAlignment="Left"/>
+                                                        <Button Grid.Column="1" Command="{Binding DataContext.RemoveProxyUrlCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" 
+                                                                Style="{StaticResource MaterialDesignIconButton}" Foreground="{DynamicResource ErrorColor}" Width="35" Height="35" Margin="10,0,0,0">
+                                                            <materialDesign:PackIcon Kind="TrashCanOutline"/>
+                                                        </Button>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <!-- Add New Proxy URL -->
+                                    <Border Background="#1E293B" CornerRadius="8" Padding="10,5" Margin="0,0,0,25">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBox Text="{Binding NewProxyUrl, UpdateSourceTrigger=PropertyChanged}" 
+                                                     materialDesign:HintAssist.Hint="آدرس پروکسی جدید..." 
+                                                     Foreground="{DynamicResource PrimaryText}" FontSize="14" 
+                                                     BorderThickness="0" Background="Transparent"
+                                                     FlowDirection="LeftToRight" HorizontalContentAlignment="Left" VerticalAlignment="Center"/>
+                                            <Button Grid.Column="1" Command="{Binding AddProxyUrlCommand}" 
+                                                    Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                                    Foreground="{DynamicResource SuccessColor}" BorderBrush="{DynamicResource SuccessColor}" 
+                                                    Height="32" Margin="10,0,0,0" materialDesign:ButtonAssist.CornerRadius="6">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="Plus" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                    <TextBlock Text="افزودن" FontSize="12" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                        </Grid>
+                                    </Border>
 
                                     <!-- Guide section -->
                                     <Border Background="#1E293B" CornerRadius="8" Padding="20" Margin="0,0,0,25">

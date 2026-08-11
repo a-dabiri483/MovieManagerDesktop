@@ -8,7 +8,7 @@
              xmlns:converters="clr-namespace:MovieManagerDesktop.Converters"
              xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
              xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
-             mc:Ignorable="d" 
+             mc:Ignorable="d"  
              d:DataContext="{d:DesignInstance Type=viewmodels:MoviesViewModel}"
              d:DesignHeight="700" d:DesignWidth="1000"
              FlowDirection="RightToLeft"
@@ -500,7 +500,7 @@
                                         </Button.Style>
                                         <Grid>
                                             <!-- Full Poster -->
-                                            <Image Source="{Binding File.PosterUrl, Converter={StaticResource ImageUrlToCachedImageConverter}}" Stretch="UniformToFill" Height="{Binding DataContext.PosterHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+                                            <Image controls:CachedImage.SourceUrl="{Binding File.PosterUrl}" Stretch="UniformToFill" Height="{Binding DataContext.PosterHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" />
 
                                             <!-- Sliding Info Overlay -->
                                             <Border x:Name="InfoOverlay" VerticalAlignment="Bottom" Background="#CC000000" Padding="12,10" Panel.ZIndex="2">

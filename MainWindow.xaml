@@ -67,6 +67,9 @@
         <DataTemplate DataType="{x:Type viewmodels:SeriesFileRenamerViewModel}">
             <views:SeriesFileRenamerView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:CalendarViewModel}">
+            <views:CalendarView />
+        </DataTemplate>
 
         <!-- Style for modern sidebar buttons -->
         <Style x:Key="SidebarRadioButtonStyle" TargetType="RadioButton">
@@ -179,6 +182,7 @@
                                     <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="MoviePlayOutline" Content="فیلم‌ها و سریال‌ها" Command="{Binding NavigateToMoviesCommand}" />
 
                                     <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="HeartOutline" Content="علاقه‌مندی‌ها" Command="{Binding NavigateToFavoritesCommand}" />
+                                    <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="CalendarMonth" Content="تقویم پخش" Command="{Binding NavigateToCalendarCommand}" />
 
                                     <!-- Collections -->
                                     <TextBlock Text="دسته‌بندی‌ها" Foreground="{DynamicResource SecondaryText}" FontSize="12" FontWeight="SemiBold" Margin="25,20,0,5"/>

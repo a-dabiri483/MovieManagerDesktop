@@ -27,18 +27,11 @@ namespace MovieManagerDesktop.ViewModels
             set
             {
                 SetProperty(ref _selectedDataSource, value);
-                OnPropertyChanged(nameof(IsFmDbSelected));
                 OnPropertyChanged(nameof(IsTmdbSelected));
                 OnPropertyChanged(nameof(IsOmdbSelected));
             }
         }
-        private string _selectedDataSource = "FM_DB";
-
-        public bool IsFmDbSelected
-        {
-            get => SelectedDataSource == "FM_DB";
-            set { if (value) SelectedDataSource = "FM_DB"; }
-        }
+        private string _selectedDataSource = "TMDB_ONLY";
 
         public bool IsTmdbSelected
         {
@@ -76,17 +69,23 @@ namespace MovieManagerDesktop.ViewModels
             set { if (value) TmdbLanguage = "en-US"; }
         }
 
-        [ObservableProperty]
-        private string _tmdbApiKey;
+        public ObservableCollection<MovieManagerDesktop.Models.ApiKeyItem> TmdbApiKeys { get; } = new();
 
-        [ObservableProperty]
-        private string _omdbApiKey;
+        public ObservableCollection<MovieManagerDesktop.Models.ApiKeyItem> OmdbApiKeys { get; } = new();
 
-        [ObservableProperty]
-        private string _apiProxyUrl;
+        public ObservableCollection<MovieManagerDesktop.Models.ApiKeyItem> ApiProxyUrls { get; } = new();
 
         [ObservableProperty]
         private bool _isApiProxyEnabled;
+
+        [ObservableProperty]
+        private string _newTmdbKey = string.Empty;
+
+        [ObservableProperty]
+        private string _newOmdbKey = string.Empty;
+
+        [ObservableProperty]
+        private string _newProxyUrl = string.Empty;
 
         [ObservableProperty]
         private string _statusMessage;
@@ -192,11 +191,21 @@ namespace MovieManagerDesktop.ViewModels
         public SettingsViewModel()
         {
             var settings = SettingsManager.LoadSettings();
-            SelectedDataSource = settings.SelectedDataSource ?? "FM_DB";
-            TmdbApiKey = settings.TmdbApiKey;
-            OmdbApiKey = settings.OmdbApiKey;
-            ApiProxyUrl = settings.ApiProxyUrl;
-            IsApiProxyEnabled = settings.IsApiProxyEnabled;
+            string loadedSource = settings.SelectedDataSource ?? "TMDB_ONLY";
+            if (loadedSource == "FM_DB") loadedSource = "TMDB_ONLY";
+            SelectedDataSource = loadedSource;
+            
+            var tmdbKeys = string.IsNullOrWhiteSpace(settings.TmdbApiKey) ? new[] { "a8a9cd082993b9e77b813263981e408b", "c0d46b49ab0f16cd8f7101f2d49defc9" } : settings.TmdbApiKey.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var key in tmdbKeys) TmdbApiKeys.Add(new MovieManagerDesktop.Models.ApiKeyItem(key.Trim()));
+            
+            var omdbKeys = string.IsNullOrWhiteSpace(settings.OmdbApiKey) ? new[] { "14722d17", "a3c969fb" } : settings.OmdbApiKey.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var key in omdbKeys) OmdbApiKeys.Add(new MovieManagerDesktop.Models.ApiKeyItem(key.Trim()));
+            
+            var proxyUrls = string.IsNullOrWhiteSpace(settings.ApiProxyUrl) ? SettingsManager.DefaultProxyUrls : settings.ApiProxyUrl.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var url in proxyUrls) ApiProxyUrls.Add(new MovieManagerDesktop.Models.ApiKeyItem(url.Trim()));
+            
+            // Set proxy to enabled by default if it wasn't explicitly saved
+            IsApiProxyEnabled = settings.IsApiProxyEnabled || string.IsNullOrWhiteSpace(settings.ApiProxyUrl);
             TmdbLanguage = settings.TmdbLanguage ?? "fa-IR";
             _isDarkTheme = settings.IsDarkTheme;
             SelectedTheme = settings.Theme ?? "Cyan"; // This calls ApplyTheme
@@ -372,14 +381,95 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
+        private void AddTmdbKey()
+        {
+            if (string.IsNullOrWhiteSpace(NewTmdbKey)) { ToastService.Instance.ShowError("لطفاً کلید TMDB را وارد کنید."); return; }
+            TmdbApiKeys.Add(new MovieManagerDesktop.Models.ApiKeyItem(NewTmdbKey.Trim()));
+            NewTmdbKey = string.Empty;
+        }
+        
+        [RelayCommand]
+        private void RemoveTmdbKey(MovieManagerDesktop.Models.ApiKeyItem item) { if (item != null) TmdbApiKeys.Remove(item); }
+
+        [RelayCommand]
+        private async Task TestTmdbKeyAsync(MovieManagerDesktop.Models.ApiKeyItem item)
+        {
+            if (item == null || string.IsNullOrWhiteSpace(item.Key)) { ToastService.Instance.ShowError("کلید خالی است."); return; }
+            try
+            {
+                ToastService.Instance.ShowInfo("در حال تست کلید TMDB...");
+                using var client = new System.Net.Http.HttpClient(new MovieManagerDesktop.Services.Network.ProxyHttpClientHandler());
+                client.Timeout = TimeSpan.FromSeconds(15);
+                var response = await client.GetAsync($"https://api.themoviedb.org/3/movie/550?api_key={item.Key.Trim()}");
+                if (response.IsSuccessStatusCode)
+                    ToastService.Instance.ShowSuccess("کلید TMDB معتبر است و به درستی کار می‌کند.");
+                else
+                    ToastService.Instance.ShowError($"کلید TMDB نامعتبر است. کد خطا: {(int)response.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                ToastService.Instance.ShowError($"خطا در تست کلید: {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
+        private void AddOmdbKey()
+        {
+            if (string.IsNullOrWhiteSpace(NewOmdbKey)) { ToastService.Instance.ShowError("لطفاً کلید OMDB را وارد کنید."); return; }
+            OmdbApiKeys.Add(new MovieManagerDesktop.Models.ApiKeyItem(NewOmdbKey.Trim()));
+            NewOmdbKey = string.Empty;
+        }
+        
+        [RelayCommand]
+        private void RemoveOmdbKey(MovieManagerDesktop.Models.ApiKeyItem item) { if (item != null) OmdbApiKeys.Remove(item); }
+
+        [RelayCommand]
+        private async Task TestOmdbKeyAsync(MovieManagerDesktop.Models.ApiKeyItem item)
+        {
+            if (item == null || string.IsNullOrWhiteSpace(item.Key)) { ToastService.Instance.ShowError("کلید خالی است."); return; }
+            try
+            {
+                ToastService.Instance.ShowInfo("در حال تست کلید OMDB...");
+                using var client = new System.Net.Http.HttpClient(new MovieManagerDesktop.Services.Network.ProxyHttpClientHandler());
+                client.Timeout = TimeSpan.FromSeconds(15);
+                var response = await client.GetAsync($"https://www.omdbapi.com/?apikey={item.Key.Trim()}&t=inception");
+                if (response.IsSuccessStatusCode)
+                {
+                    var content = await response.Content.ReadAsStringAsync();
+                    if (content.Contains("True", StringComparison.OrdinalIgnoreCase))
+                        ToastService.Instance.ShowSuccess("کلید OMDB معتبر است و به درستی کار می‌کند.");
+                    else
+                        ToastService.Instance.ShowError("کلید OMDB نامعتبر است یا پاسخ صحیحی دریافت نشد.");
+                }
+                else
+                    ToastService.Instance.ShowError($"کلید OMDB نامعتبر است. کد خطا: {(int)response.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                ToastService.Instance.ShowError($"خطا در تست کلید: {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
+        private void AddProxyUrl()
+        {
+            if (string.IsNullOrWhiteSpace(NewProxyUrl)) { ToastService.Instance.ShowError("لطفاً آدرس پروکسی را وارد کنید."); return; }
+            ApiProxyUrls.Add(new MovieManagerDesktop.Models.ApiKeyItem(NewProxyUrl.Trim()));
+            NewProxyUrl = string.Empty;
+        }
+        
+        [RelayCommand]
+        private void RemoveProxyUrl(MovieManagerDesktop.Models.ApiKeyItem item) { if (item != null) ApiProxyUrls.Remove(item); }
+
+        [RelayCommand]
         private void SaveSettings()
         {
             var settings = SettingsManager.LoadSettings();
             
             settings.SelectedDataSource = SelectedDataSource;
-            settings.TmdbApiKey = TmdbApiKey;
-            settings.OmdbApiKey = OmdbApiKey;
-            settings.ApiProxyUrl = ApiProxyUrl;
+            settings.TmdbApiKey = string.Join(",", TmdbApiKeys.Select(k => k.Key).Where(k => !string.IsNullOrWhiteSpace(k)));
+            settings.OmdbApiKey = string.Join(",", OmdbApiKeys.Select(k => k.Key).Where(k => !string.IsNullOrWhiteSpace(k)));
+            settings.ApiProxyUrl = string.Join(",", ApiProxyUrls.Select(k => k.Key).Where(k => !string.IsNullOrWhiteSpace(k)));
             settings.IsApiProxyEnabled = IsApiProxyEnabled;
             settings.TmdbLanguage = TmdbLanguage;
             settings.Theme = SelectedTheme;
@@ -652,9 +742,17 @@ namespace MovieManagerDesktop.ViewModels
                             SettingsManager.SaveSettings(importedSettings);
                             // The settings will take effect on next restart, or we can apply theme immediately
                             SelectedDataSource = importedSettings.SelectedDataSource ?? "FM_DB";
-                            TmdbApiKey = importedSettings.TmdbApiKey;
-                            OmdbApiKey = importedSettings.OmdbApiKey;
-                            ApiProxyUrl = importedSettings.ApiProxyUrl;
+                            TmdbApiKeys.Clear();
+                            var tmdbKeys = string.IsNullOrWhiteSpace(importedSettings.TmdbApiKey) ? new[] { "a8a9cd082993b9e77b813263981e408b", "c0d46b49ab0f16cd8f7101f2d49defc9" } : importedSettings.TmdbApiKey.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                            foreach (var key in tmdbKeys) TmdbApiKeys.Add(new MovieManagerDesktop.Models.ApiKeyItem(key.Trim()));
+                            
+                            OmdbApiKeys.Clear();
+                            var omdbKeys = string.IsNullOrWhiteSpace(importedSettings.OmdbApiKey) ? new[] { "14722d17", "a3c969fb" } : importedSettings.OmdbApiKey.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                            foreach (var key in omdbKeys) OmdbApiKeys.Add(new MovieManagerDesktop.Models.ApiKeyItem(key.Trim()));
+                            
+                            ApiProxyUrls.Clear();
+                            var proxyUrls = string.IsNullOrWhiteSpace(importedSettings.ApiProxyUrl) ? new[] { "https://my-proxyali.ali-dabiri1.workers.dev/" } : importedSettings.ApiProxyUrl.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                            foreach (var url in proxyUrls) ApiProxyUrls.Add(new MovieManagerDesktop.Models.ApiKeyItem(url.Trim()));
                             TmdbLanguage = importedSettings.TmdbLanguage ?? "fa-IR";
                             IsDarkTheme = importedSettings.IsDarkTheme;
                             SelectedTheme = importedSettings.Theme ?? "Cyan";
@@ -679,9 +777,9 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
-        private async Task TestProxyAsync()
+        private async Task TestProxyAsync(MovieManagerDesktop.Models.ApiKeyItem item)
         {
-            if (string.IsNullOrWhiteSpace(ApiProxyUrl))
+            if (item == null || string.IsNullOrWhiteSpace(item.Key))
             {
                 ToastService.Instance.ShowError("ابتدا آدرس ورکر را وارد کنید.");
                 return;
@@ -691,7 +789,7 @@ namespace MovieManagerDesktop.ViewModels
             {
                 ToastService.Instance.ShowInfo("در حال بررسی اتصال به پروکسی...");
                 
-                string proxy = ApiProxyUrl.Trim().TrimEnd('/');
+                string proxy = item.Key.Trim().TrimEnd('/');
                 if (proxy.Contains("?"))
                 {
                     if (!proxy.EndsWith("url=")) proxy += "&url=";

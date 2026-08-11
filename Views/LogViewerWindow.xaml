@@ -2,33 +2,75 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        Title="لاگ‌های ارتباطات (Live Logs)" Height="450" Width="800"
+        Title="لاگ‌های ارتباطات شبکه (Network Logs)" Height="550" Width="900"
         WindowStartupLocation="CenterScreen"
-        Background="#1E1E1E" Foreground="#D4D4D4"
+        Background="#1A1A2E" Foreground="#D4D4D4"
         FontFamily="Consolas, Courier New, Monospace"
         FlowDirection="LeftToRight"
-        Icon="pack://application:,,,/Assets/logo.ico">
+        Icon="pack://application:,,,/Assets/logo.png">
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="#252526" Padding="10">
+        <!-- Header Bar -->
+        <Border Grid.Row="0" Background="#16213E" Padding="12,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <TextBlock Text="📡" FontSize="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="Network Monitor" FontSize="15" FontWeight="Bold" Foreground="#E94560" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
+                    <CheckBox x:Name="AutoScrollCheckBox" Content="Auto-Scroll" IsChecked="True" Foreground="#8899AA" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                    <CheckBox x:Name="NetworkOnlyCheckBox" Content="Network Only" IsChecked="False" Foreground="#8899AA" VerticalAlignment="Center" Margin="0,0,15,0" Checked="FilterChanged" Unchecked="FilterChanged"/>
+                    <Button Content="Clear" Click="ClearLogs_Click" Padding="15,4" 
+                            Background="#0F3460" Foreground="#E94560" BorderThickness="1" BorderBrush="#E94560"
+                            FontFamily="Segoe UI" FontSize="12" Cursor="Hand"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Legend -->
+        <Border Grid.Row="1" Background="#0F3460" Padding="10,6">
             <StackPanel Orientation="Horizontal">
-                <Button Content="پاک کردن لاگ‌ها" Click="ClearLogs_Click" Padding="15,5" Background="#333" Foreground="White" BorderThickness="0" Margin="0,0,10,0"/>
-                <CheckBox x:Name="AutoScrollCheckBox" Content="اسکرول خودکار" IsChecked="True" Foreground="White" VerticalAlignment="Center"/>
+                <TextBlock Text="Legend:" Foreground="#8899AA" Margin="0,0,12,0" VerticalAlignment="Center" FontSize="11"/>
+                <TextBlock Text="●" Foreground="#00D2FF" Margin="0,0,3,0" VerticalAlignment="Center"/>
+                <TextBlock Text="Direct" Foreground="#8899AA" Margin="0,0,12,0" FontSize="11" VerticalAlignment="Center"/>
+                <TextBlock Text="●" Foreground="#4ECB71" Margin="0,0,3,0" VerticalAlignment="Center"/>
+                <TextBlock Text="OK" Foreground="#8899AA" Margin="0,0,12,0" FontSize="11" VerticalAlignment="Center"/>
+                <TextBlock Text="●" Foreground="#FFD93D" Margin="0,0,3,0" VerticalAlignment="Center"/>
+                <TextBlock Text="Warning/Blocked" Foreground="#8899AA" Margin="0,0,12,0" FontSize="11" VerticalAlignment="Center"/>
+                <TextBlock Text="●" Foreground="#FF6B6B" Margin="0,0,3,0" VerticalAlignment="Center"/>
+                <TextBlock Text="Error" Foreground="#8899AA" Margin="0,0,12,0" FontSize="11" VerticalAlignment="Center"/>
+                <TextBlock Text="●" Foreground="#C77DFF" Margin="0,0,3,0" VerticalAlignment="Center"/>
+                <TextBlock Text="Proxy" Foreground="#8899AA" Margin="0,0,12,0" FontSize="11" VerticalAlignment="Center"/>
+                <TextBlock Text="●" Foreground="#FF9E40" Margin="0,0,3,0" VerticalAlignment="Center"/>
+                <TextBlock Text="Route Flip" Foreground="#8899AA" FontSize="11" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 
-        <TextBox x:Name="LogTextBox" Grid.Row="1" 
-                 Background="#1E1E1E" Foreground="#D4D4D4"
-                 BorderThickness="0"
-                 IsReadOnly="True" 
-                 TextWrapping="Wrap" 
-                 VerticalScrollBarVisibility="Auto" 
-                 HorizontalScrollBarVisibility="Auto"
-                 Padding="10"
-                 FontSize="13"/>
+        <!-- Log Content -->
+        <RichTextBox x:Name="LogRichTextBox" Grid.Row="2" 
+                     Background="#1A1A2E" 
+                     BorderThickness="0"
+                     IsReadOnly="True" 
+                     VerticalScrollBarVisibility="Auto" 
+                     HorizontalScrollBarVisibility="Auto"
+                     Padding="10"
+                     FontSize="12.5">
+            <RichTextBox.Document>
+                <FlowDocument PageWidth="5000">
+                </FlowDocument>
+            </RichTextBox.Document>
+        </RichTextBox>
     </Grid>
 </Window>

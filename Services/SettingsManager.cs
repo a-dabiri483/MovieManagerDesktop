@@ -6,7 +6,7 @@ namespace MovieManagerDesktop.Services
 {
     public class SettingsModel
     {
-        public string SelectedDataSource { get; set; } = "FM_DB"; // FM_DB, TMDB_ONLY, OMDB_ONLY
+        public string SelectedDataSource { get; set; } = "TMDB_ONLY"; // TMDB_ONLY, OMDB_ONLY
         public string TmdbApiKey { get; set; } = string.Empty;
         public string OmdbApiKey { get; set; } = string.Empty;
         public string ApiProxyUrl { get; set; } = string.Empty;
@@ -57,6 +57,33 @@ namespace MovieManagerDesktop.Services
                 }
             }
             return new SettingsModel();
+        }
+
+        // Default keys matching Android app
+        public static readonly string[] DefaultTmdbKeys = { "a8a9cd082993b9e77b813263981e408b", "c0d46b49ab0f16cd8f7101f2d49defc9" };
+        public static readonly string[] DefaultOmdbKeys = { "14722d17", "a3c969fb" };
+        public static readonly string[] DefaultProxyUrls = { "https://moviemanager2.ali483.workers.dev/", "https://my-proxyali.ali-dabiri1.workers.dev/" };
+
+        public static string GetTmdbApiKey()
+        {
+            var settings = LoadSettings();
+            var keys = string.IsNullOrWhiteSpace(settings.TmdbApiKey) 
+                ? DefaultTmdbKeys 
+                : settings.TmdbApiKey.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            
+            if (keys.Length == 0) return DefaultTmdbKeys[0];
+            return keys[new Random().Next(keys.Length)].Trim();
+        }
+
+        public static string GetOmdbApiKey()
+        {
+            var settings = LoadSettings();
+            var keys = string.IsNullOrWhiteSpace(settings.OmdbApiKey) 
+                ? DefaultOmdbKeys 
+                : settings.OmdbApiKey.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            
+            if (keys.Length == 0) return DefaultOmdbKeys[0];
+            return keys[new Random().Next(keys.Length)].Trim();
         }
 
         public static void SaveSettings(SettingsModel settings)

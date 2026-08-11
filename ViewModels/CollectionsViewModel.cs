@@ -51,6 +51,7 @@ namespace MovieManagerDesktop.ViewModels
 
                     var groups = allVideos.GroupBy(v => v.CollectionName)
                                           .Select(g => new CollectionItemViewModel(g.Key, g.Count(), g.FirstOrDefault(v => !string.IsNullOrEmpty(v.PosterUrl))?.PosterUrl))
+                                          .Where(c => c.MovieCount > 1)
                                           .OrderByDescending(c => c.MovieCount)
                                           .ToList();
 
