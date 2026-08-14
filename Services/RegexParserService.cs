@@ -7,6 +7,8 @@ namespace MovieManagerDesktop.Services
     {
         public string CleanName { get; set; } = string.Empty;
         public string SeasonEpisode { get; set; } = string.Empty; // e.g. S01E05
+        public int? SeasonNumber { get; set; }
+        public int? EpisodeNumber { get; set; }
         public string Quality { get; set; } = string.Empty;
         public string Source { get; set; } = string.Empty;
         public string Extras { get; set; } = string.Empty; // e.g. Dubbed, HardSub
@@ -25,8 +27,8 @@ namespace MovieManagerDesktop.Services
             // Convert to a working string replacing dots and underscores with spaces for easier word matching
             string workingName = nameWithoutExt.Replace(".", " ").Replace("_", " ");
 
-            // 1. Find Season/Episode (S01E05, S1E5, S01E05-06, etc)
-            var seRegex = new Regex(@"S\d{1,2}E\d{1,2}(?:-E?\d{1,2})?", RegexOptions.IgnoreCase);
+            // 1. Find Season/Episode (S01E05, S1E5, S01E05-06, 1x05, etc)
+            var seRegex = new Regex(@"(?:S\d{1,2}E\d{1,2}(?:-E?\d{1,2})?)|(?:\b\d{1,2}[xX]\d{2,3}\b)", RegexOptions.IgnoreCase);
             var seMatch = seRegex.Match(workingName);
             
             if (seMatch.Success)
@@ -34,6 +36,16 @@ namespace MovieManagerDesktop.Services
                 result.SeasonEpisode = seMatch.Value.ToUpper();
                 // Extract clean name (everything before the Season/Episode)
                 result.CleanName = workingName.Substring(0, seMatch.Index).Trim();
+                
+                var sMatch = Regex.Match(seMatch.Value, @"S(\d{1,2})", RegexOptions.IgnoreCase);
+                var eMatch = Regex.Match(seMatch.Value, @"E(\d{1,2})", RegexOptions.IgnoreCase);
+                var xMatch = Regex.Match(seMatch.Value, @"(\d{1,2})[xX](\d{2,3})", RegexOptions.IgnoreCase);
+
+                if (sMatch.Success && int.TryParse(sMatch.Groups[1].Value, out int s)) result.SeasonNumber = s;
+                else if (xMatch.Success && int.TryParse(xMatch.Groups[1].Value, out int xs)) result.SeasonNumber = xs;
+
+                if (eMatch.Success && int.TryParse(eMatch.Groups[1].Value, out int e)) result.EpisodeNumber = e;
+                else if (xMatch.Success && int.TryParse(xMatch.Groups[2].Value, out int xe)) result.EpisodeNumber = xe;
             }
             else
             {

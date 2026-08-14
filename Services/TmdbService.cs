@@ -81,5 +81,43 @@ namespace FolderIconManager.WPF.Services
 
             return savePath;
         }
+
+        public class TvEpisodeDetails
+        {
+            public string Name { get; set; } = string.Empty;
+            public string Overview { get; set; } = string.Empty;
+        }
+
+        public async Task<TvEpisodeDetails?> GetTvEpisodeDetailsAsync(int tmdbId, int seasonNumber, int episodeNumber)
+        {
+            string? apiKey = GetNextApiKey();
+            if (string.IsNullOrWhiteSpace(apiKey)) return null;
+
+            string url = $"https://api.themoviedb.org/3/tv/{tmdbId}/season/{seasonNumber}/episode/{episodeNumber}?api_key={apiKey}";
+            
+            try
+            {
+                var response = await _httpClient.GetAsync(url);
+                if (response.IsSuccessStatusCode)
+                {
+                    var jsonString = await response.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(jsonString);
+                    var root = doc.RootElement;
+                    
+                    var details = new TvEpisodeDetails();
+                    if (root.TryGetProperty("name", out var n) && n.ValueKind == JsonValueKind.String)
+                    {
+                        details.Name = n.GetString() ?? "";
+                    }
+                    if (root.TryGetProperty("overview", out var o) && o.ValueKind == JsonValueKind.String)
+                    {
+                        details.Overview = o.GetString() ?? "";
+                    }
+                    return details;
+                }
+            }
+            catch { }
+            return null;
+        }
     }
 }

@@ -32,28 +32,20 @@ namespace MovieManagerDesktop.ViewModels
         private bool _isScanning = false;
         
         [ObservableProperty]
-        private RenamerMode _selectedMode = RenamerMode.Auto;
-        
-        public bool IsAutoMode
-        {
-            get => SelectedMode == RenamerMode.Auto;
-            set { if (value) { SelectedMode = RenamerMode.Auto; OnPropertyChanged(nameof(IsAutoMode)); OnPropertyChanged(nameof(IsCustomMode)); OnPropertyChanged(nameof(IsApiMode)); } }
-        }
-        
-        public bool IsCustomMode
-        {
-            get => SelectedMode == RenamerMode.Custom;
-            set { if (value) { SelectedMode = RenamerMode.Custom; OnPropertyChanged(nameof(IsAutoMode)); OnPropertyChanged(nameof(IsCustomMode)); OnPropertyChanged(nameof(IsApiMode)); } }
-        }
-        
-        public bool IsApiMode
-        {
-            get => SelectedMode == RenamerMode.Api;
-            set { if (value) { SelectedMode = RenamerMode.Api; OnPropertyChanged(nameof(IsAutoMode)); OnPropertyChanged(nameof(IsCustomMode)); OnPropertyChanged(nameof(IsApiMode)); } }
-        }
-        
-        [ObservableProperty]
         private string _customBaseName = string.Empty;
+        partial void OnCustomBaseNameChanged(string value) => UpdatePreview();
+
+        [ObservableProperty]
+        private string _customQuality = "1080p";
+        partial void OnCustomQualityChanged(string value) => UpdatePreview();
+
+        [ObservableProperty]
+        private int _customSeason = 1;
+        partial void OnCustomSeasonChanged(int value) => UpdatePreview();
+
+        [ObservableProperty]
+        private int _customStartEpisode = 1;
+        partial void OnCustomStartEpisodeChanged(int value) => UpdatePreview();
 
         [RelayCommand]
         private void CheckSelectedItems(System.Collections.IList selectedItems)
@@ -117,40 +109,39 @@ namespace MovieManagerDesktop.ViewModels
             if (dialog.ShowDialog() == true)
             {
                 SelectedFolderPath = dialog.FolderName;
-                if (SelectedMode == RenamerMode.Auto && string.IsNullOrEmpty(CustomBaseName))
+                if (string.IsNullOrEmpty(CustomBaseName))
                 {
                     CustomBaseName = new DirectoryInfo(dialog.FolderName).Name;
                 }
                 Items.Clear();
+                _ = ScanFolderAsync(); // Automatically trigger scan
             }
-        }
-        
-        [RelayCommand]
-        private void SearchApi()
-        {
-            var searchDialogViewModel = new ApiSearchDialogViewModel(string.IsNullOrEmpty(CustomBaseName) ? (Path.GetFileName(SelectedFolderPath) ?? "") : CustomBaseName);
-            var searchDialog = new MovieManagerDesktop.Views.Dialogs.ApiSearchDialog { DataContext = searchDialogViewModel };
-            
-            searchDialogViewModel.CloseAction = () => searchDialog.Close();
-            searchDialogViewModel.SelectAction = async (result) => 
-            {
-                CustomBaseName = result.Title;
-                // Remove invalid path chars
-                CustomBaseName = string.Join("_", CustomBaseName.Split(Path.GetInvalidFileNameChars()));
-                
-                // Trigger scan if folder is already selected
-                if (!string.IsNullOrEmpty(SelectedFolderPath))
-                {
-                    await ScanFolderAsync();
-                }
-            };
-            
-            searchDialog.Owner = System.Windows.Application.Current.MainWindow;
-            searchDialog.ShowDialog();
         }
 
         [RelayCommand]
-        private async Task ScanFolderAsync()
+        private void SelectFiles()
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "انتخاب فایل‌ها",
+                Multiselect = true,
+                Filter = "Media Files|*.mkv;*.mp4;*.avi;*.srt;*.ass|All Files|*.*"
+            };
+            if (dialog.ShowDialog() == true)
+            {
+                Items.Clear();
+                SelectedFolderPath = Path.GetDirectoryName(dialog.FileNames.First()) ?? string.Empty;
+                if (string.IsNullOrEmpty(CustomBaseName))
+                {
+                    CustomBaseName = new DirectoryInfo(SelectedFolderPath).Name;
+                }
+                
+                LoadFiles(dialog.FileNames);
+            }
+        }
+
+        [RelayCommand]
+        public async Task ScanFolderAsync()
         {
             if (string.IsNullOrEmpty(SelectedFolderPath) || !Directory.Exists(SelectedFolderPath))
             {
@@ -163,65 +154,12 @@ namespace MovieManagerDesktop.ViewModels
 
             try
             {
-                var files = Directory.GetFiles(SelectedFolderPath, "*.*", SearchOption.AllDirectories)
+                var files = Directory.GetFiles(SelectedFolderPath, "*.*", SearchOption.TopDirectoryOnly)
                     .Where(f => IsVideoFile(f) || IsSubtitleFile(f))
-                    .ToList();
+                    .OrderBy(f => f) // مرتب‌سازی الفبایی مهم است
+                    .ToArray();
 
-                var tmdbCache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-                foreach (var filePath in files)
-                {
-                    string originalFileName = Path.GetFileName(filePath);
-                    bool isSubtitle = IsSubtitleFile(filePath);
-                    
-                    var parsedInfo = _regexParserService.ParseVideoFileName(originalFileName);
-                    
-                    string officialSeriesName = parsedInfo.CleanName; // Default
-
-                    if (SelectedMode == RenamerMode.Custom || SelectedMode == RenamerMode.Api)
-                    {
-                        if (!string.IsNullOrWhiteSpace(CustomBaseName))
-                        {
-                            officialSeriesName = CustomBaseName;
-                        }
-                    }
-                    else // Auto mode
-                    {
-                        // Use folder name as the fallback for Auto instead of fetching TMDB for each file silently
-                        officialSeriesName = new DirectoryInfo(SelectedFolderPath).Name;
-                    }
-
-                    // Build new name: [Official Name] - S[Season]E[Episode] - [Quality] [Source] [[Extras]]
-                    string newName = officialSeriesName;
-                    
-                    if (!string.IsNullOrEmpty(parsedInfo.SeasonEpisode))
-                        newName += $" - {parsedInfo.SeasonEpisode}";
-                        
-                    if (!string.IsNullOrEmpty(parsedInfo.Quality))
-                        newName += $" - {parsedInfo.Quality}";
-                        
-                    if (!string.IsNullOrEmpty(parsedInfo.Source))
-                        newName += $" {parsedInfo.Source}";
-                        
-                    if (!string.IsNullOrEmpty(parsedInfo.Extras))
-                        newName += $" [{parsedInfo.Extras}]";
-
-                    // Cleanup multiple spaces
-                    newName = string.Join(" ", newName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
-                    
-                    // Add Extension
-                    newName += Path.GetExtension(filePath);
-
-                    Items.Add(new RenamerItemModel
-                    {
-                        OriginalFilePath = filePath,
-                        OriginalFileName = originalFileName,
-                        NewFileName = newName,
-                        Status = "آماده",
-                        IsSubtitle = isSubtitle,
-                        IsSelected = true
-                    });
-                }
+                LoadFiles(files);
             }
             catch (Exception ex)
             {
@@ -230,6 +168,67 @@ namespace MovieManagerDesktop.ViewModels
             finally
             {
                 IsScanning = false;
+            }
+        }
+
+        private void LoadFiles(string[] files)
+        {
+            var sortedFiles = files.OrderBy(f => f).ToList();
+            
+            foreach (var filePath in sortedFiles)
+            {
+                string originalFileName = Path.GetFileName(filePath);
+                bool isSubtitle = IsSubtitleFile(filePath);
+
+                Items.Add(new RenamerItemModel
+                {
+                    OriginalFilePath = filePath,
+                    OriginalFileName = originalFileName,
+                    Status = "آماده",
+                    IsSubtitle = isSubtitle,
+                    IsSelected = true
+                });
+            }
+            
+            UpdatePreview();
+        }
+
+        private void UpdatePreview()
+        {
+            if (Items.Count == 0) return;
+
+            string baseName = string.IsNullOrWhiteSpace(CustomBaseName) ? "Series" : CustomBaseName.Trim();
+            string quality = string.IsNullOrWhiteSpace(CustomQuality) ? "" : CustomQuality.Trim();
+            string seasonStr = CustomSeason.ToString("D2");
+            
+            int currentEp = CustomStartEpisode;
+
+            foreach (var item in Items)
+            {
+                if (item.IsRenamed) continue;
+
+                string epStr = currentEp.ToString("D2");
+                string ext = Path.GetExtension(item.OriginalFilePath);
+                
+                string newName = baseName;
+                if (!string.IsNullOrEmpty(quality))
+                {
+                    newName += $" - {quality}";
+                }
+                newName += $" - S{seasonStr}E{epStr}{ext}";
+                
+                // Cleanup invalid chars if any (though baseName should be clean already)
+                newName = string.Join("_", newName.Split(Path.GetInvalidFileNameChars()));
+
+                item.NewFileName = newName;
+                
+                // Increment episode number for the next file (subtitles will get the same number as video if they are interleaved, 
+                // but usually they are processed sequentially so we just increment for everything for now).
+                // Actually, if we have a video and a subtitle for the same episode, incrementing blindly might cause S01E01 for video and S01E02 for subtitle.
+                // It's safer to increment for each video file, but if it's a subtitle with the exact same base name, use the same episode.
+                // However, user asked for simple sequential. Let's just increment for each item for now, 
+                // as usually users rename either videos OR subtitles in batch.
+                currentEp++;
             }
         }
 

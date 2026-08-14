@@ -13,6 +13,7 @@ namespace MovieManagerDesktop.Services
     {
         public int Id { get; set; }
         public string Title { get; set; } = string.Empty;
+        public string OriginalTitle { get; set; } = string.Empty;
         public string ReleaseYear { get; set; } = string.Empty;
         public string PosterUrl { get; set; } = string.Empty;
         public string MediaType { get; set; } = string.Empty;
@@ -329,6 +330,9 @@ namespace MovieManagerDesktop.Services
                             
                             if (item.TryGetProperty("title", out var titleProp)) res.Title = titleProp.GetString() ?? "";
                             else if (item.TryGetProperty("name", out var nameProp)) res.Title = nameProp.GetString() ?? "";
+                            
+                            if (item.TryGetProperty("original_title", out var oTitleProp)) res.OriginalTitle = oTitleProp.GetString() ?? "";
+                            else if (item.TryGetProperty("original_name", out var oNameProp)) res.OriginalTitle = oNameProp.GetString() ?? "";
                             
                             if (item.TryGetProperty("media_type", out var typeProp)) res.MediaType = typeProp.GetString() ?? "";
                             if (res.MediaType == "person") continue; // skip actors

@@ -106,7 +106,8 @@
         <!-- Controls (Row 1) -->
         <Border Grid.Row="1" Background="{DynamicResource CardBackground}" 
                 BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" 
-                CornerRadius="8" Padding="15" Margin="0,15,0,15">
+                CornerRadius="8" Padding="15" Margin="0,15,0,15"
+                AllowDrop="True" Drop="Border_Drop">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -118,40 +119,54 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Row 0: Mode Selection & Input -->
+                <!-- Row 0: Custom Input Fields -->
                 <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,15">
-                    <TextBlock Text="منبع نام‌گذاری:" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,15,0" Foreground="{DynamicResource SecondaryText}"/>
-                    <RadioButton Content="نام پوشه (پیش‌فرض)" IsChecked="{Binding IsAutoMode}" Margin="0,0,15,0" Foreground="{DynamicResource PrimaryText}"/>
-                    <RadioButton Content="نام دستی (کاستوم)" IsChecked="{Binding IsCustomMode}" Margin="0,0,15,0" Foreground="{DynamicResource PrimaryText}"/>
-                    <RadioButton Content="دریافت از سرور API" IsChecked="{Binding IsApiMode}" Margin="0,0,25,0" Foreground="{DynamicResource PrimaryText}"/>
+                    <TextBlock Text="تنظیمات تغییر نام:" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,15,0" Foreground="{DynamicResource SecondaryText}"/>
 
                     <!-- Custom Name Input -->
                     <TextBox Text="{Binding CustomBaseName, UpdateSourceTrigger=PropertyChanged}"
-                             Visibility="{Binding IsAutoMode, Converter={StaticResource InverseBooleanConverter}}"
-                             materialDesign:HintAssist.Hint="نام پایه برای اعمال روی همه فایل‌ها..."
+                             materialDesign:HintAssist.Hint="نام سریال..."
                              Foreground="{DynamicResource PrimaryText}" 
                              FontSize="13" 
-                             Width="250"
+                             Width="200"
                              VerticalAlignment="Center"
-                             Margin="0,0,10,0"/>
+                             Margin="0,0,15,0"/>
 
-                    <!-- TMDB Search Button -->
-                    <Button Command="{Binding SearchApiCommand}"
-                            Visibility="{Binding IsApiMode, Converter={StaticResource BooleanToVisibilityConverter}}"
-                            Style="{StaticResource MaterialDesignRaisedButton}" 
-                            Background="{DynamicResource PrimaryColor}" Foreground="#050510" 
-                            Height="32" Padding="15,0" Margin="0,0,10,0">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="CloudSearch" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                            <TextBlock Text="جستجو" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
+                    <!-- Quality Input -->
+                    <TextBox Text="{Binding CustomQuality, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="کیفیت (مثلاً 1080p)..."
+                             Foreground="{DynamicResource PrimaryText}" 
+                             FontSize="13" 
+                             Width="150"
+                             VerticalAlignment="Center"
+                             Margin="0,0,15,0"/>
+
+                    <!-- Season Input -->
+                    <TextBox Text="{Binding CustomSeason, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="فصل"
+                             Foreground="{DynamicResource PrimaryText}" 
+                             FontSize="13" 
+                             Width="50"
+                             TextAlignment="Center"
+                             VerticalAlignment="Center"
+                             Margin="0,0,15,0"/>
+
+                    <!-- Start Episode Input -->
+                    <TextBox Text="{Binding CustomStartEpisode, UpdateSourceTrigger=PropertyChanged}"
+                             materialDesign:HintAssist.Hint="قسمت شروع"
+                             Foreground="{DynamicResource PrimaryText}" 
+                             FontSize="13" 
+                             Width="80"
+                             TextAlignment="Center"
+                             VerticalAlignment="Center"
+                             Margin="0,0,15,0"/>
                 </StackPanel>
 
                 <!-- Row 1: Action Controls -->
                 <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBox Text="{Binding SelectedFolderPath, UpdateSourceTrigger=PropertyChanged}"
-                             materialDesign:HintAssist.Hint="مسیر پوشه سریال..."
+                    <TextBox Text="{Binding SelectedFolderPath, Mode=OneWay}"
+                             IsReadOnly="True"
+                             materialDesign:HintAssist.Hint="مسیر فایل‌ها یا پوشه..."
                              Foreground="{DynamicResource PrimaryText}" 
                              FontSize="13" 
                              Width="350"
@@ -163,6 +178,13 @@
                             ToolTip="انتخاب پوشه"
                             Width="30" Height="30" Padding="0" Margin="0,0,5,0">
                         <materialDesign:PackIcon Kind="FolderOpen"/>
+                    </Button>
+                    <Button Command="{Binding SelectFilesCommand}"
+                            Style="{StaticResource MaterialDesignIconForegroundButton}"
+                            Foreground="{DynamicResource SecondaryText}"
+                            ToolTip="انتخاب فایل‌ها"
+                            Width="30" Height="30" Padding="0" Margin="0,0,5,0">
+                        <materialDesign:PackIcon Kind="FileMultiple"/>
                     </Button>
                 </StackPanel>
 

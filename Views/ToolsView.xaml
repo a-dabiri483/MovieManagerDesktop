@@ -260,7 +260,6 @@
                     </StackPanel>
                 </Grid>
             </Border>
-
         </UniformGrid>
     </Grid>
 </UserControl>
