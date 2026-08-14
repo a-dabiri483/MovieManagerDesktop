@@ -30,5 +30,11 @@ namespace MovieManagerDesktop.ViewModels
         {
             WeakReferenceMessenger.Default.Send(new NavigationMessage(new SeriesFileRenamerViewModel()));
         }
+
+        [RelayCommand]
+        private void OpenAutoRelocator()
+        {
+            WeakReferenceMessenger.Default.Send(new NavigationMessage(new AutoRelocatorViewModel()));
+        }
     }
 }

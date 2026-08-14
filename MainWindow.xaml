@@ -67,6 +67,9 @@
         <DataTemplate DataType="{x:Type viewmodels:SeriesFileRenamerViewModel}">
             <views:SeriesFileRenamerView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:AutoRelocatorViewModel}">
+            <views:AutoRelocatorView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type viewmodels:CalendarViewModel}">
             <views:CalendarView />
         </DataTemplate>

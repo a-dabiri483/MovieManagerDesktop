@@ -27,6 +27,14 @@ namespace MovieManagerDesktop.Services
             // Convert to a working string replacing dots and underscores with spaces for easier word matching
             string workingName = nameWithoutExt.Replace(".", " ").Replace("_", " ");
 
+            // 0. Strip leading numbers (often used for sorting like "01 Iron Man" or "18Black Panther")
+            // Only strip if there are actual letters following it so we don't break movies like "300"
+            string strippedPrefix = Regex.Replace(workingName, @"^\d{1,3}(?!\d)\s*", "");
+            if (Regex.IsMatch(strippedPrefix, @"[a-zA-Z]"))
+            {
+                workingName = strippedPrefix.Trim();
+            }
+
             // 1. Find Season/Episode (S01E05, S1E5, S01E05-06, 1x05, etc)
             var seRegex = new Regex(@"(?:S\d{1,2}E\d{1,2}(?:-E?\d{1,2})?)|(?:\b\d{1,2}[xX]\d{2,3}\b)", RegexOptions.IgnoreCase);
             var seMatch = seRegex.Match(workingName);
@@ -59,16 +67,16 @@ namespace MovieManagerDesktop.Services
             result.CleanName = result.CleanName.TrimEnd('-', ' ');
 
             // 2. Find Quality
-            var qualityRegex = new Regex(@"\b(480p|720p|1080p|1440p|2160p|4K|8K)\b", RegexOptions.IgnoreCase);
+            var qualityRegex = new Regex(@"\b(480|480p|720|720p|1080|1080p|1440|1440p|2160|2160p|4K|8K)\b", RegexOptions.IgnoreCase);
             var qualityMatch = qualityRegex.Match(workingName);
             if (qualityMatch.Success)
             {
-                result.Quality = qualityMatch.Value.ToLower(); // 1080p
+                result.Quality = qualityMatch.Value.ToLower(); // e.g. 1080p or 1080
             }
 
             // 3. Find Source
-            var sourceRegex = new Regex(@"\b(WEB-DL|WEBRip|BluRay|HDTV|BDRip|BRRip|DVD|DVDRip)\b", RegexOptions.IgnoreCase);
-            var sourceMatch = sourceRegex.Match(nameWithoutExt); // Use original to keep dashes (WEB-DL)
+            var sourceRegex = new Regex(@"\b(WEB-DL|WEBRip|BluRay|HDTV|BDRip|BRRip|DVD|DVDRip|WEB DL|WEB)\b", RegexOptions.IgnoreCase);
+            var sourceMatch = sourceRegex.Match(workingName); // Use workingName for easier matching
             if (sourceMatch.Success)
             {
                 result.Source = sourceMatch.Value.ToUpper();
@@ -77,24 +85,40 @@ namespace MovieManagerDesktop.Services
             // 4. Find Extras (Dubbed, Subbed, etc)
             string extras = "";
             
-            if (Regex.IsMatch(nameWithoutExt, @"\b(Dubbed|دوبله|Duble|DUBLE)\b", RegexOptions.IgnoreCase) || nameWithoutExt.Contains("دوبله") || nameWithoutExt.Contains("DUBLE"))
+            if (Regex.IsMatch(workingName, @"\b(Dubbed|دوبله|Duble|DUBLE)\b", RegexOptions.IgnoreCase) || workingName.Contains("دوبله") || workingName.Contains("DUBLE"))
             {
                 extras += "DUBLE";
             }
             
-            if (Regex.IsMatch(nameWithoutExt, @"\b(HardSub|Sub|زیرنویس)\b", RegexOptions.IgnoreCase) || nameWithoutExt.Contains("زیرنویس") || nameWithoutExt.Contains("HardSub"))
+            if (Regex.IsMatch(workingName, @"\b(HardSub|Sub|زیرنویس)\b", RegexOptions.IgnoreCase) || workingName.Contains("زیرنویس") || workingName.Contains("HardSub"))
             {
                 if (extras.Length > 0) extras += " ";
                 extras += "زیرنویس";
             }
             
-            if (Regex.IsMatch(nameWithoutExt, @"\b(x265|HEVC)\b", RegexOptions.IgnoreCase))
+            if (Regex.IsMatch(workingName, @"\b(x265|HEVC|x264|10bit)\b", RegexOptions.IgnoreCase))
             {
                 if (extras.Length > 0) extras += " ";
                 extras += "x265";
             }
 
             result.Extras = extras;
+
+            // Aggressive Cleanup of CleanName
+            // We strip out all the known garbage tags from CleanName to leave only the real movie/series name
+            string badWordsPattern = @"\b(480|480p|720|720p|1080|1080p|1440|1440p|2160|2160p|4K|8K|WEB-DL|WEBRip|BluRay|HDTV|BDRip|BRRip|DVD|DVDRip|WEB DL|WEB|Dubbed|دوبله|Duble|DUBLE|HardSub|Sub|زیرنویس|x265|HEVC|x264|10bit|Golchindl|AvaMovie|Mobomovie|DibaMovie|FilmKio|ZarFilm|SoftSub|S\d{2,3})\b";
+            
+            result.CleanName = Regex.Replace(result.CleanName, badWordsPattern, " ", RegexOptions.IgnoreCase);
+            
+            // Remove Persian text that might have been missed by word boundaries
+            result.CleanName = result.CleanName.Replace("دوبله", "").Replace("زیرنویس", "").Replace("هاردساب", "");
+            
+            // Clean up S050 or similar orphaned season tags
+            result.CleanName = Regex.Replace(result.CleanName, @"\bS\d{2,4}\b", " ", RegexOptions.IgnoreCase);
+            
+            // Final cleanup of extra spaces or dashes left behind
+            result.CleanName = result.CleanName.Replace("-", " ").Trim();
+            result.CleanName = Regex.Replace(result.CleanName, @"\s+", " ").Trim();
 
             return result;
         }

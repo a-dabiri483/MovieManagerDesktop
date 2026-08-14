@@ -239,34 +239,42 @@ namespace MovieManagerDesktop.Services
                 if (query.StartsWith("tt", StringComparison.OrdinalIgnoreCase))
                 {
                     LoggerService.Info($"[موتور جستجو - دستی] جستجو با شناسه IMDB: {query}");
-                    // It's an IMDB ID, find Tmdb ID first
-                    int? tmdbId = await GetTmdbIdFromImdbIdAsync(query);
-                    if (tmdbId.HasValue)
+                    
+                    url = $"https://api.themoviedb.org/3/find/{query}?api_key={apiKey}&external_source=imdb_id&language={language}";
+                    var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
+                    if (response.IsSuccessStatusCode)
                     {
-                        // We need to fetch details to get a TmdbSearchResult, just fetch as movie and tv
-                        // but actually, we can just return one result. Let's do a multi search if it's not tt
-                        url = $"https://api.themoviedb.org/3/movie/{tmdbId}?api_key={apiKey}&language={language}";
-                        var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
-                        if (!response.IsSuccessStatusCode)
+                        var json = await response.Content.ReadAsStringAsync();
+                        using var doc = JsonDocument.Parse(json);
+                        var root = doc.RootElement;
+                        
+                        JsonElement? foundItem = null;
+                        string mediaType = "movie";
+                        if (root.TryGetProperty("movie_results", out var mr) && mr.GetArrayLength() > 0)
                         {
-                            url = $"https://api.themoviedb.org/3/tv/{tmdbId}?api_key={apiKey}&language={language}";
-                            response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
+                            foundItem = mr[0];
+                            mediaType = "movie";
                         }
-                        if (response.IsSuccessStatusCode)
+                        else if (root.TryGetProperty("tv_results", out var tr) && tr.GetArrayLength() > 0)
                         {
-                            var json = await response.Content.ReadAsStringAsync();
-                            using var doc = JsonDocument.Parse(json);
-                            var root = doc.RootElement;
-                            var res = new TmdbSearchResult { Id = tmdbId.Value };
-                            if (root.TryGetProperty("title", out var titleProp)) res.Title = titleProp.GetString() ?? "";
-                            else if (root.TryGetProperty("name", out var nameProp)) res.Title = nameProp.GetString() ?? "";
+                            foundItem = tr[0];
+                            mediaType = "tv";
+                        }
+
+                        if (foundItem.HasValue)
+                        {
+                            var item = foundItem.Value;
+                            var res = new TmdbSearchResult { MediaType = mediaType };
+                            if (item.TryGetProperty("id", out var idProp)) res.Id = idProp.GetInt32();
+                            if (item.TryGetProperty("title", out var titleProp)) res.Title = titleProp.GetString() ?? "";
+                            else if (item.TryGetProperty("name", out var nameProp)) res.Title = nameProp.GetString() ?? "";
                             
-                            if (root.TryGetProperty("release_date", out var rd) && !string.IsNullOrEmpty(rd.GetString()))
+                            if (item.TryGetProperty("release_date", out var rd) && !string.IsNullOrEmpty(rd.GetString()))
                                 res.ReleaseYear = rd.GetString()!.Substring(0, 4);
-                            else if (root.TryGetProperty("first_air_date", out var fad) && !string.IsNullOrEmpty(fad.GetString()))
+                            else if (item.TryGetProperty("first_air_date", out var fad) && !string.IsNullOrEmpty(fad.GetString()))
                                 res.ReleaseYear = fad.GetString()!.Substring(0, 4);
 
-                            if (root.TryGetProperty("poster_path", out var pp) && pp.ValueKind == JsonValueKind.String)
+                            if (item.TryGetProperty("poster_path", out var pp) && pp.ValueKind == JsonValueKind.String)
                                 res.PosterUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/w92{pp.GetString()}");
 
                             results.Add(res);
@@ -632,8 +640,19 @@ namespace MovieManagerDesktop.Services
                 }
                 else if (root.TryGetProperty("results", out results) && results.GetArrayLength() > 0)
                 {
-                    firstMatch = results[0];
-                    hasMatch = true;
+                    var validResults = results.EnumerateArray().Where(res => {
+                        if (res.TryGetProperty("vote_count", out var vc) && vc.ValueKind == JsonValueKind.Number)
+                        {
+                            return vc.GetInt32() >= 2 || !string.IsNullOrWhiteSpace(file.Year);
+                        }
+                        return !string.IsNullOrWhiteSpace(file.Year);
+                    }).ToList();
+
+                    if (validResults.Count > 0)
+                    {
+                        firstMatch = validResults[0];
+                        hasMatch = true;
+                    }
                 }
                 
                 // If still no match and we were using fa-IR, fallback to en-US
@@ -662,9 +681,20 @@ namespace MovieManagerDesktop.Services
                         
                         if (enRoot.TryGetProperty("results", out enRes) && enRes.GetArrayLength() > 0)
                         {
-                            firstMatch = enRes[0];
-                            hasMatch = true;
-                            root = enRoot.Clone(); // update root for following logic
+                            var validEnResults = enRes.EnumerateArray().Where(res => {
+                                if (res.TryGetProperty("vote_count", out var vc) && vc.ValueKind == JsonValueKind.Number)
+                                {
+                                    return vc.GetInt32() >= 2 || !string.IsNullOrWhiteSpace(file.Year);
+                                }
+                                return !string.IsNullOrWhiteSpace(file.Year);
+                            }).ToList();
+
+                            if (validEnResults.Count > 0)
+                            {
+                                firstMatch = validEnResults[0];
+                                hasMatch = true;
+                                root = enRoot.Clone(); // update root for following logic
+                            }
                         }
                     }
                 }
