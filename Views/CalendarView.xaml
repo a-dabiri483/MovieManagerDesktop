@@ -16,7 +16,7 @@
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
-    <Grid Margin="20,50,20,20">
+    <Grid Margin="32,40,32,30">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -24,8 +24,8 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header: Month Navigation + Fetch Button -->
-        <Grid Margin="0,0,0,20">
+        <!-- Header: Month Navigation + Action Buttons -->
+        <Grid Margin="0,0,0,24">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -33,46 +33,50 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <Button Command="{Binding PreviousMonthCommand}" Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}" Margin="0,0,20,0" ToolTip="ماه قبل">
-                <materialDesign:PackIcon Kind="ChevronRight" Width="24" Height="24"/>
-            </Button>
+            <StackPanel Orientation="Horizontal">
+                <Button Command="{Binding PreviousMonthCommand}" Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}" Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource LightBorder}" Foreground="White" Width="40" Height="40" Margin="0,0,12,0" ToolTip="ماه قبل">
+                    <materialDesign:PackIcon Kind="ChevronRight" Width="22" Height="22"/>
+                </Button>
+                <Button Command="{Binding NextMonthCommand}" Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}" Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource LightBorder}" Foreground="White" Width="40" Height="40" ToolTip="ماه بعد">
+                    <materialDesign:PackIcon Kind="ChevronLeft" Width="22" Height="22"/>
+                </Button>
+            </StackPanel>
 
-            <TextBlock Grid.Column="1" Text="{Binding MonthName, Converter={StaticResource PersianNumberConverter}}" FontSize="28" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <TextBlock Grid.Column="1" Text="{Binding MonthName, Converter={StaticResource PersianNumberConverter}}" FontSize="26" FontWeight="Black" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-            <Button Grid.Column="2" Command="{Binding NextMonthCommand}" Style="{StaticResource MaterialDesignFloatingActionMiniSecondaryButton}" Margin="20,0,20,0" ToolTip="ماه بعد">
-                <materialDesign:PackIcon Kind="ChevronLeft" Width="24" Height="24"/>
-            </Button>
-
-            <!-- Fetch Button -->
-            <Button Grid.Column="3" Command="{Binding FetchMonthContentCommand}" 
-                    Style="{StaticResource MaterialDesignRaisedButton}" 
-                    Background="{DynamicResource PrimaryColor}" Foreground="#050510" BorderThickness="0"
-                    Height="40" Padding="15,0" materialDesign:ButtonAssist.CornerRadius="8"
-                    IsEnabled="{Binding IsFetching, Converter={StaticResource InverseBooleanConverter}}">
-                <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="CloudDownload" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBlock Text="دریافت عناوین این ماه" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
-                </StackPanel>
-            </Button>
+            <!-- Action Buttons: Fetch and Add Reminder -->
+            <StackPanel Grid.Column="3" Orientation="Horizontal">
+                <Button Command="{Binding FetchMonthContentCommand}" 
+                        Style="{StaticResource MaterialDesignRaisedButton}" 
+                        Background="{DynamicResource PrimaryColor}" Foreground="White" BorderThickness="0"
+                        Height="40" Padding="18,0" materialDesign:ButtonAssist.CornerRadius="12"
+                        IsEnabled="{Binding IsFetching, Converter={StaticResource InverseBooleanConverter}}">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="CloudDownloadOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="دریافت عناوین این ماه" FontSize="13.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </Grid>
 
         <!-- Fetching indicator -->
         <ProgressBar Grid.Row="1" Style="{StaticResource MaterialDesignLinearProgressBar}" IsIndeterminate="True" 
+                     Foreground="{DynamicResource PrimaryColor}"
                      Visibility="{Binding IsFetching, Converter={StaticResource BoolToVis}}" Margin="0,0,0,10"/>
 
         <!-- Days of Week Header -->
-        <UniformGrid Grid.Row="2" Columns="7" Margin="0,0,0,5" VerticalAlignment="Top">
-            <TextBlock Text="شنبه" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Padding="0,5"/>
-            <TextBlock Text="یکشنبه" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Padding="0,5"/>
-            <TextBlock Text="دوشنبه" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Padding="0,5"/>
-            <TextBlock Text="سه‌شنبه" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Padding="0,5"/>
-            <TextBlock Text="چهارشنبه" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Padding="0,5"/>
-            <TextBlock Text="پنجشنبه" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Padding="0,5"/>
-            <TextBlock Text="جمعه" FontSize="13" FontWeight="Bold" Foreground="#FF5252" HorizontalAlignment="Center" Padding="0,5"/>
+        <UniformGrid Grid.Row="2" Columns="7" Margin="0,0,0,8" VerticalAlignment="Top">
+            <TextBlock Text="شنبه" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Padding="0,6"/>
+            <TextBlock Text="یکشنبه" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Padding="0,6"/>
+            <TextBlock Text="دوشنبه" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Padding="0,6"/>
+            <TextBlock Text="سه‌شنبه" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Padding="0,6"/>
+            <TextBlock Text="چهارشنبه" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Padding="0,6"/>
+            <TextBlock Text="پنج‌شنبه" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Padding="0,6"/>
+            <TextBlock Text="جمعه" FontSize="13" FontWeight="Bold" Foreground="#FF4757" HorizontalAlignment="Center" Padding="0,6"/>
         </UniformGrid>
 
         <!-- Days Grid -->
-        <ItemsControl Grid.Row="3" ItemsSource="{Binding Days}" Margin="0,5,0,0">
+        <ItemsControl Grid.Row="3" ItemsSource="{Binding Days}" Margin="0,4,0,0">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                     <UniformGrid Columns="7" VerticalAlignment="Top"/>
@@ -80,27 +84,28 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Border Margin="2" CornerRadius="8" MinHeight="80" Cursor="Hand"
+                    <Border Margin="3" CornerRadius="12" MinHeight="85" Cursor="Hand"
                             Visibility="{Binding DayNumber, Converter={StaticResource ZeroToVisibilityConverter}, ConverterParameter=Inverse}">
                         <Border.InputBindings>
                             <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.SelectDayCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
                         </Border.InputBindings>
                         <Border.Style>
                             <Style TargetType="Border">
-                                <Setter Property="Background" Value="#10FFFFFF"/>
+                                <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
                                 <Setter Property="BorderThickness" Value="1"/>
-                                <Setter Property="BorderBrush" Value="#20FFFFFF"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource LightBorder}"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding IsToday}" Value="True">
                                         <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
                                         <Setter Property="BorderThickness" Value="2"/>
-                                        <Setter Property="Background" Value="#2000E5FF"/>
+                                        <Setter Property="Background" Value="#25EB3B5A"/>
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding IsFriday}" Value="True">
-                                        <Setter Property="BorderBrush" Value="#40FF5252"/>
+                                        <Setter Property="BorderBrush" Value="#40FF4757"/>
                                     </DataTrigger>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="#20FFFFFF"/>
+                                        <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
+                                        <Setter Property="BorderBrush" Value="#60EB3B5A"/>
                                     </Trigger>
                                 </Style.Triggers>
                             </Style>
@@ -108,22 +113,22 @@
                         
                         <Grid>
                             <!-- Background Poster (semi-transparent) -->
-                            <Image controls:CachedImage.SourceUrl="{Binding FirstPosterUrl}" Stretch="UniformToFill" Opacity="0.2"
+                            <Image controls:CachedImage.SourceUrl="{Binding FirstPosterUrl}" Stretch="UniformToFill" Opacity="0.22"
                                    Visibility="{Binding FirstPosterUrl, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}">
                                 <Image.Clip>
-                                    <RectangleGeometry RadiusX="8" RadiusY="8" Rect="0,0,200,200"/>
+                                    <RectangleGeometry RadiusX="12" RadiusY="12" Rect="0,0,200,200"/>
                                 </Image.Clip>
                             </Image>
                             
-                            <StackPanel Margin="5">
+                            <StackPanel Margin="8">
                                 <!-- Day Number -->
-                                <TextBlock Text="{Binding DayNumber, Converter={StaticResource PersianNumberConverter}}" FontSize="15" FontWeight="SemiBold" HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding DayNumber, Converter={StaticResource PersianNumberConverter}}" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center">
                                     <TextBlock.Style>
                                         <Style TargetType="TextBlock">
                                             <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsFriday}" Value="True">
-                                                    <Setter Property="Foreground" Value="#FF5252"/>
+                                                    <Setter Property="Foreground" Value="#FF4757"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
@@ -131,7 +136,7 @@
                                 </TextBlock>
                                 
                                 <!-- Release Dots -->
-                                <ItemsControl ItemsSource="{Binding Releases}" Margin="0,3,0,0">
+                                <ItemsControl ItemsSource="{Binding Releases}" Margin="0,4,0,0">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate>
                                             <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" />
@@ -139,13 +144,13 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Ellipse Width="6" Height="6" Margin="1">
+                                            <Ellipse Width="7" Height="7" Margin="1.5">
                                                 <Ellipse.Style>
                                                     <Style TargetType="Ellipse">
-                                                        <Setter Property="Fill" Value="#FFFFC107"/>
+                                                        <Setter Property="Fill" Value="{DynamicResource PrimaryColor}"/>
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding MediaType}" Value="Series">
-                                                                <Setter Property="Fill" Value="#00E5FF"/>
+                                                                <Setter Property="Fill" Value="{DynamicResource PurpleAccent}"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>

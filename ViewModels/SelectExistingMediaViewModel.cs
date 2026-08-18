@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using MaterialDesignThemes.Wpf;
 using MovieManagerDesktop.Data;
 using MovieManagerDesktop.Models;
+using MovieManagerDesktop.Services;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -68,6 +69,7 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (selected == null) return;
 
+            ToastService.Instance.ShowSuccess($"انتساب به «{selected.FormattedTitle}» انجام شد.");
             CloseAction?.Invoke();
 
             foreach (var group in _targetGroups)

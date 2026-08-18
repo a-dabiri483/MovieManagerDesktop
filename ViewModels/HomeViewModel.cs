@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using MovieManagerDesktop.Messages;
 using MovieManagerDesktop.Data;
+using MovieManagerDesktop.Models;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -44,6 +46,27 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private bool _hasNewEpisodes = false;
 
+        [ObservableProperty]
+        private string _featuredTitle = "Naruto Shippuden";
+
+        [ObservableProperty]
+        private string? _featuredBackdropUrl;
+
+        [ObservableProperty]
+        private string? _featuredPosterUrl;
+
+        [ObservableProperty]
+        private string _featuredGenres = "انیمیشن • اکشن و ماجراجویی • علمی تخیلی و فانتزی";
+
+        [ObservableProperty]
+        private string _featuredRating = "8.7";
+
+        [ObservableProperty]
+        private string _featuredMediaType = "Series";
+
+        [ObservableProperty]
+        private VideoFile? _featuredVideoFile;
+
         public HomeViewModel()
         {
             MovieCount = 0;
@@ -72,6 +95,29 @@ namespace MovieManagerDesktop.ViewModels
                         SeriesPercentage = Math.Round((double)SeriesCount / totalUnique * 100, 1);
                     }
 
+                    // Set Featured Media
+                    var featuredCandidate = allFiles
+                        .Where(f => !string.IsNullOrEmpty(f.BackdropUrl) || !string.IsNullOrEmpty(f.PosterUrl))
+                        .OrderByDescending(f => f.Rating ?? 0)
+                        .FirstOrDefault() ?? allFiles.FirstOrDefault();
+
+                    if (featuredCandidate != null)
+                    {
+                        FeaturedVideoFile = featuredCandidate;
+                        FeaturedTitle = string.IsNullOrWhiteSpace(featuredCandidate.FormattedTitle) ? featuredCandidate.FileName : featuredCandidate.FormattedTitle;
+                        FeaturedBackdropUrl = featuredCandidate.BackdropUrl ?? featuredCandidate.PosterUrl;
+                        FeaturedPosterUrl = featuredCandidate.PosterUrl;
+                        if (!string.IsNullOrEmpty(featuredCandidate.Genres))
+                        {
+                            FeaturedGenres = featuredCandidate.Genres.Replace(",", " • ");
+                        }
+                        if (featuredCandidate.Rating.HasValue && featuredCandidate.Rating.Value > 0)
+                        {
+                            FeaturedRating = featuredCandidate.Rating.Value.ToString("0.0");
+                        }
+                        FeaturedMediaType = featuredCandidate.MediaType ?? "Movie";
+                    }
+
                     // Calculate Continue Watching
                     App.Current.Dispatcher.Invoke(() => ContinueWatchingMovies.Clear());
                     var continueWatchingList = new System.Collections.Generic.List<GalleryItemViewModel>();
@@ -96,9 +142,24 @@ namespace MovieManagerDesktop.ViewModels
                                 first.NumberOfSeasons = g.Select(x => x.Season).Distinct().Count(s => s != null);
                             }
                             first.WatchProgressPercent = Math.Round(progress, 1);
-                            
                             continueWatchingList.Add(new GalleryItemViewModel(first, () => { }));
                         }
+                    }
+
+                    // If no in-progress items, show latest 6 items as showcase
+                    if (!continueWatchingList.Any())
+                    {
+                        var sampleItems = grouped
+                            .Take(6)
+                            .Select(g => {
+                                var f = g.First();
+                                if (f.WatchProgressPercent <= 0) f.WatchProgressPercent = 45;
+                                if (!f.Season.HasValue) f.Season = 1;
+                                if (!f.Episode.HasValue) f.Episode = 1;
+                                return new GalleryItemViewModel(f, () => { });
+                            })
+                            .ToList();
+                        continueWatchingList.AddRange(sampleItems);
                     }
                     
                     App.Current.Dispatcher.Invoke(() => {
@@ -206,6 +267,71 @@ namespace MovieManagerDesktop.ViewModels
         private void GoToScan()
         {
             WeakReferenceMessenger.Default.Send(new NavigationMessage(new ScanViewModel()));
+        }
+
+        [RelayCommand]
+        private void GoToMovies()
+        {
+            WeakReferenceMessenger.Default.Send(new NavigationMessage(new MoviesViewModel()));
+        }
+
+        [RelayCommand]
+        private void GoToCalendar()
+        {
+            WeakReferenceMessenger.Default.Send(new NavigationMessage(new CalendarViewModel()));
+        }
+
+        [RelayCommand]
+        private void GoToTools()
+        {
+            WeakReferenceMessenger.Default.Send(new NavigationMessage(new ToolsViewModel()));
+        }
+
+        [RelayCommand]
+        private void GoToCollections()
+        {
+            WeakReferenceMessenger.Default.Send(new NavigationMessage(new CollectionsViewModel()));
+        }
+
+        [RelayCommand]
+        private void PlayFeatured()
+        {
+            if (FeaturedVideoFile != null && !string.IsNullOrEmpty(FeaturedVideoFile.FilePath) && System.IO.File.Exists(FeaturedVideoFile.FilePath))
+            {
+                try
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = FeaturedVideoFile.FilePath,
+                        UseShellExecute = true
+                    });
+                }
+                catch { }
+            }
+            else
+            {
+                GoToMovies();
+            }
+        }
+
+        [RelayCommand]
+        private void OpenFeaturedDetails()
+        {
+            if (FeaturedVideoFile != null)
+            {
+                if (FeaturedVideoFile.MediaType == "Series")
+                {
+                    WeakReferenceMessenger.Default.Send(new NavigationMessage(new SeriesDetailViewModel(FeaturedVideoFile)));
+                }
+                else
+                {
+                    WeakReferenceMessenger.Default.Send(new NavigationMessage(new MediaDetailsViewModel(FeaturedVideoFile)));
+                }
+            }
+            else
+            {
+                GoToMovies();
+            }
         }
     }
 }

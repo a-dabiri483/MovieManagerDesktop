@@ -5,7 +5,8 @@
         xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
         xmlns:views="clr-namespace:MovieManagerDesktop.Views"
         xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
-        Title="مدیریت فیلم و سریال" Height="750" Width="1250"
+        Title="MovieManager" Height="820" Width="1280"
+        MinHeight="650" MinWidth="950"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         WindowStartupLocation="CenterScreen"
         Icon="Assets/logo.png"
@@ -18,7 +19,7 @@
     </Window.DataContext>
 
     <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="0" ResizeBorderThickness="6" CornerRadius="16" GlassFrameThickness="0" />
+        <WindowChrome CaptionHeight="0" ResizeBorderThickness="6" CornerRadius="20" GlassFrameThickness="0" />
     </WindowChrome.WindowChrome>
 
     <Window.Resources>
@@ -74,209 +75,171 @@
             <views:CalendarView />
         </DataTemplate>
 
-        <!-- Style for modern sidebar buttons -->
-        <Style x:Key="SidebarRadioButtonStyle" TargetType="RadioButton">
-            <Setter Property="GroupName" Value="SidebarGroup"/>
+        <!-- Android Bottom Nav Item Style -->
+        <Style x:Key="AndroidBottomNavRadioStyle" TargetType="RadioButton">
+            <Setter Property="GroupName" Value="BottomNavGroup"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+            <Setter Property="FontSize" Value="11.5"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Height" Value="50"/>
-            <Setter Property="Margin" Value="10,6"/>
-            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="{StaticResource RadiusMd}" Padding="15,0">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="40" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Active Indicator Line -->
-                                <Border x:Name="ActiveIndicator" Grid.ColumnSpan="3" HorizontalAlignment="Right" Width="3" CornerRadius="1.5" Background="{DynamicResource PrimaryColor}" Margin="0,10,-15,10" Opacity="0">
-                                    <Border.Effect>
-                                        <DropShadowEffect Color="#00B4D8" BlurRadius="8" ShadowDepth="0" Opacity="0.8"/>
-                                    </Border.Effect>
+                        <Border x:Name="ItemContainer" Background="Transparent" CornerRadius="22" Padding="14,6" Margin="4,0">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <!-- Circle Active Icon Wrapper -->
+                                <Border x:Name="IconPill" Width="40" Height="40" CornerRadius="20" Background="Transparent" HorizontalAlignment="Center">
+                                    <materialDesign:PackIcon x:Name="NavIcon" Kind="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" 
+                                                             Width="22" Height="22" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-
-                                <materialDesign:PackIcon x:Name="icon" Grid.Column="0" Kind="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" 
-                                                         Width="22" Height="22" VerticalAlignment="Center" Foreground="{TemplateBinding Foreground}" RenderTransformOrigin="0.5,0.5">
-                                    <materialDesign:PackIcon.RenderTransform>
-                                        <RotateTransform Angle="0"/>
-                                    </materialDesign:PackIcon.RenderTransform>
-                                </materialDesign:PackIcon>
-
-                                <ContentPresenter Grid.Column="1" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="5,0,0,0"/>
-                            </Grid>
+                                <TextBlock x:Name="NavLabel" Text="{TemplateBinding Content}" FontSize="11" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                            </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
-                                <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
-                                <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
-                                <Setter TargetName="ActiveIndicator" Property="Opacity" Value="1"/>
-                                <Setter TargetName="icon" Property="Foreground" Value="{DynamicResource PrimaryColor}"/>
+                                <Setter TargetName="IconPill" Property="Background" Value="{DynamicResource PrimaryGradientBrush}"/>
+                                <Setter TargetName="NavIcon" Property="Foreground" Value="White"/>
+                                <Setter TargetName="NavLabel" Property="Foreground" Value="{DynamicResource PrimaryColor}"/>
+                                <Setter TargetName="NavLabel" Property="FontWeight" Value="Bold"/>
+                                <Setter TargetName="IconPill" Property="Effect">
+                                    <Setter.Value>
+                                        <DropShadowEffect Color="#EB3B5A" BlurRadius="16" ShadowDepth="0" Opacity="0.6"/>
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="icon" Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" To="15" Duration="0:0:0.1" />
-                                            <DoubleAnimation Storyboard.TargetName="icon" Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" To="-10" BeginTime="0:0:0.1" Duration="0:0:0.1" />
-                                            <DoubleAnimation Storyboard.TargetName="icon" Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)" To="0" BeginTime="0:0:0.2" Duration="0:0:0.1" />
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
+                                <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Window Buttons Style -->
+        <Style x:Key="WindowBtnStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" CornerRadius="6" Margin="2">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="WindowCloseBtnStyle" TargetType="Button" BasedOn="{StaticResource WindowBtnStyle}">
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource PrimaryColor}"/>
+                    <Setter Property="Foreground" Value="White"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
     <materialDesign:DialogHost Identifier="RootDialog" DialogBackground="{DynamicResource MainBackground}">
-        <Border CornerRadius="16" ClipToBounds="True">
+        <Border CornerRadius="20" ClipToBounds="True" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Background="{DynamicResource MainBackground}">
             <Grid>
-                <!-- Background Flat Color -->
-                <Border Background="{DynamicResource MainBackground}" />
-
-                <Grid>
+                <!-- TOP WINDOW DRAGGING BAR AND CONTROLS (Floating Minimal) -->
+                <Grid Panel.ZIndex="100" VerticalAlignment="Top" Height="40" WindowChrome.IsHitTestVisibleInChrome="True" MouseLeftButtonDown="Window_MouseLeftButtonDown" Background="Transparent">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="260" />
-                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- LEFT SIDEBAR -->
-                    <Border Grid.Column="0" BorderBrush="{DynamicResource LightBorder}" BorderThickness="0,0,1,0" Background="{DynamicResource SidebarBackground}">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="100" />
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="80" />
-                            </Grid.RowDefinitions>
+                    <!-- Top-Right App Identity (Android style) -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0,0,0">
+                        <Image Source="pack://application:,,,/Assets/logo.png" Width="22" Height="22" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,8,0"/>
+                        <TextBlock Text="MovieManager" Foreground="{DynamicResource SecondaryText}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
 
-                            <!-- App Logo / Title -->
-                            <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="25,0" Cursor="Hand">
-                                <StackPanel.InputBindings>
-                                    <MouseBinding Gesture="LeftClick" Command="{Binding NavigateToHomeCommand}" />
-                                </StackPanel.InputBindings>
-                                <Image x:Name="AppLogo" Source="pack://application:,,,/Assets/logo.png" Width="55" Height="55" RenderOptions.BitmapScalingMode="HighQuality">
-                                    <Image.Effect>
-                                        <DropShadowEffect Color="#FF533483" BlurRadius="10" ShadowDepth="0" Opacity="0.5"/>
-                                    </Image.Effect>
-                                </Image>
-                                <StackPanel Margin="15,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="مدیریت" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
-                                    <TextBlock Text="فیلم و سریال" FontSize="14" Foreground="{DynamicResource SecondaryText}"/>
-                                </StackPanel>
+                    <!-- Top-Left Window Control Buttons -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                        <Button Content="&#xE8D7;" ToolTip="نمایش لاگ‌ها" Style="{StaticResource WindowBtnStyle}" Click="BtnViewLogs_Click"/>
+                        <Button Content="&#xE921;" ToolTip="کوچک‌کردن" Style="{StaticResource WindowBtnStyle}" Click="BtnMinimize_Click"/>
+                        <Button x:Name="BtnMaximize" Content="&#xE922;" ToolTip="تمام‌صفحه" Style="{StaticResource WindowBtnStyle}" Click="BtnMaximize_Click"/>
+                        <Button Content="&#xE8BB;" ToolTip="بستن" Style="{StaticResource WindowCloseBtnStyle}" Click="BtnClose_Click"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- MAIN FULL VIEW CONTENT AREA -->
+                <Grid Margin="0,35,0,0">
+                    <ContentControl Content="{Binding CurrentViewModel, NotifyOnTargetUpdated=True}" Margin="0,0,0,85">
+                        <ContentControl.Style>
+                            <Style TargetType="ContentControl">
+                                <Style.Triggers>
+                                    <EventTrigger RoutedEvent="Binding.TargetUpdated">
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.2"/>
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </EventTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ContentControl.Style>
+                    </ContentControl>
+                </Grid>
+
+                <!-- ANDROID FLOATING BOTTOM NAVIGATION BAR (دقیقاً مثل اسکرین‌شات اندروید) -->
+                <Border VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,14" Panel.ZIndex="90">
+                    <Border Background="#E615182E" CornerRadius="36" BorderBrush="#35EB3B5A" BorderThickness="1" Padding="14,4" Height="68">
+                        <Border.Effect>
+                            <DropShadowEffect Color="#000000" BlurRadius="28" ShadowDepth="4" Opacity="0.6"/>
+                        </Border.Effect>
+                        <Grid VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <!-- 1. تنظیمات (Settings) -->
+                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="CogOutline" Content="تنظیمات" Command="{Binding NavigateToSettingsCommand}"/>
+
+                                <!-- 2. ابزارها (Tools) -->
+                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="WrenchOutline" Content="ابزارها" Command="{Binding NavigateToToolsCommand}"/>
+
+                                <!-- 3. تقویم (Calendar) -->
+                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="CalendarMonthOutline" Content="تقویم" Command="{Binding NavigateToCalendarCommand}"/>
+
+                                <!-- 4. CENTER FLOATING FAB BUTTON (پویش و جستجو 🔍) -->
+                                <Button Command="{Binding NavigateToScanCommand}" Width="52" Height="52" Margin="10,-12,10,0" materialDesign:ButtonAssist.CornerRadius="26" BorderThickness="0" Background="{DynamicResource FabGradientBrush}" Cursor="Hand">
+                                    <Button.Effect>
+                                        <DropShadowEffect Color="#8854D0" BlurRadius="18" ShadowDepth="2" Opacity="0.75"/>
+                                    </Button.Effect>
+                                    <materialDesign:PackIcon Kind="Magnify" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Button>
+
+                                <!-- 5. مجموعه‌ها (Collections) -->
+                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="AnimationPlayOutline" Content="مجموعه‌ها" Command="{Binding NavigateToCollectionsCommand}"/>
+
+                                <!-- 6. کتابخانه (Library) -->
+                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="MovieOpenPlayOutline" Content="کتابخانه" Command="{Binding NavigateToMoviesCommand}"/>
+
+                                <!-- 7. خانه (Home) -->
+                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="HomeVariantOutline" Content="خانه" Command="{Binding NavigateToHomeCommand}" IsChecked="True"/>
                             </StackPanel>
-
-                            <!-- Navigation Items -->
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Hidden" Margin="0,10">
-                                <StackPanel>
-                                    <!-- Categories -->
-                                    <TextBlock Text="کتابخانه من" Foreground="{DynamicResource SecondaryText}" FontSize="12" FontWeight="SemiBold" Margin="25,20,0,5"/>
-                                    <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="HomeOutline" Content="داشبورد" Command="{Binding NavigateToHomeCommand}" IsChecked="True"/>
-                                    <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="MoviePlayOutline" Content="فیلم‌ها و سریال‌ها" Command="{Binding NavigateToMoviesCommand}" />
-
-                                    <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="HeartOutline" Content="علاقه‌مندی‌ها" Command="{Binding NavigateToFavoritesCommand}" />
-                                    <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="CalendarMonth" Content="تقویم پخش" Command="{Binding NavigateToCalendarCommand}" />
-
-                                    <!-- Collections -->
-                                    <TextBlock Text="دسته‌بندی‌ها" Foreground="{DynamicResource SecondaryText}" FontSize="12" FontWeight="SemiBold" Margin="25,20,0,5"/>
-                                    <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="AnimationPlayOutline" Content="مجموعه‌ها" Command="{Binding NavigateToCollectionsCommand}" />
-
-                                    <!-- System -->
-                                    <TextBlock Text="سیستم" Foreground="{DynamicResource SecondaryText}" FontSize="12" FontWeight="SemiBold" Margin="25,20,0,5"/>
-                                    <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="Harddisk" Content="اسکن خودکار درایوها" Command="{Binding NavigateToScanCommand}" />
-                                    <RadioButton Style="{StaticResource SidebarRadioButtonStyle}" Tag="Tools" Content="ابزارهای سازمان‌دهی" Command="{Binding NavigateToToolsCommand}" />
-                                </StackPanel>
-                            </ScrollViewer>
-
-                            <!-- Bottom Settings -->
-                            <RadioButton Grid.Row="2" Style="{StaticResource SidebarRadioButtonStyle}" Tag="CogOutline" Content="تنظیمات" Command="{Binding NavigateToSettingsCommand}"/>
                         </Grid>
                     </Border>
+                </Border>
 
-                    <!-- RIGHT MAIN CONTENT AREA -->
-                    <Grid Grid.Column="1">
+                <!-- Global Toasts overlay -->
+                <controls:ToastControl VerticalAlignment="Top" HorizontalAlignment="Center" Panel.ZIndex="9999" Margin="0,40,0,0" />
 
-                        <!-- Content Control connecting to ViewModels (Full Screen without Margins) -->
-                        <ContentControl Content="{Binding CurrentViewModel, NotifyOnTargetUpdated=True}" Margin="0" Foreground="Black">
-                            <ContentControl.Style>
-                                <Style TargetType="ContentControl">
-                                    <Style.Triggers>
-                                        <EventTrigger RoutedEvent="Binding.TargetUpdated">
-                                            <BeginStoryboard>
-                                                <Storyboard>
-                                                    <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.25"/>
-                                                    <ThicknessAnimation Storyboard.TargetProperty="Margin" From="0,30,0,0" To="0" Duration="0:0:0.25">
-                                                        <ThicknessAnimation.EasingFunction>
-                                                            <QuadraticEase EasingMode="EaseOut"/>
-                                                        </ThicknessAnimation.EasingFunction>
-                                                    </ThicknessAnimation>
-                                                </Storyboard>
-                                            </BeginStoryboard>
-                                        </EventTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ContentControl.Style>
-                        </ContentControl>
-
-                        <!-- Custom Window Title Bar for Dragging and Controls -->
-                        <Border Panel.ZIndex="10" VerticalAlignment="Top" MouseLeftButtonDown="Window_MouseLeftButtonDown" Height="40" WindowChrome.IsHitTestVisibleInChrome="True" Background="{DynamicResource SidebarBackground}" BorderBrush="{DynamicResource LightBorder}">
-                            <Border.Resources>
-                                <Style x:Key="WindowBtnStyle" TargetType="Button">
-                                    <Setter Property="Background" Value="Transparent"/>
-                                    <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
-                                    <Setter Property="BorderThickness" Value="0"/>
-                                    <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
-                                    <Setter Property="FontSize" Value="10"/>
-                                    <Setter Property="Width" Value="45"/>
-                                    <Setter Property="Height" Value="30"/>
-                                    <Setter Property="Template">
-                                        <Setter.Value>
-                                            <ControlTemplate TargetType="Button">
-                                                <Border Background="{TemplateBinding Background}">
-                                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Setter.Value>
-                                    </Setter>
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
-                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                                <Style x:Key="WindowCloseBtnStyle" TargetType="Button" BasedOn="{StaticResource WindowBtnStyle}">
-                                    <Style.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource ErrorColor}"/>
-                                            <Setter Property="Foreground" Value="White"/>
-                                        </Trigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </Border.Resources>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
-                                <Button Content="&#xE8D7;" ToolTip="نمایش لاگ‌ها" Style="{StaticResource WindowBtnStyle}" Click="BtnViewLogs_Click"/>
-                                <Button Content="&#xE921;" Style="{StaticResource WindowBtnStyle}" Click="BtnMinimize_Click"/>
-                                <Button x:Name="BtnMaximize" Content="&#xE922;" Style="{StaticResource WindowBtnStyle}" Click="BtnMaximize_Click"/>
-                                <Button Content="&#xE8BB;" Style="{StaticResource WindowCloseBtnStyle}" Click="BtnClose_Click"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-
-                    <!-- Global Toasts overlay -->
-                    <controls:ToastControl Grid.ColumnSpan="2" VerticalAlignment="Top" HorizontalAlignment="Center" Panel.ZIndex="9999" Margin="0,30,0,0" />
-
-                </Grid>
             </Grid>
         </Border>
     </materialDesign:DialogHost>

@@ -304,17 +304,29 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (Series.TmdbId == null || Series.TmdbId == 0)
             {
-                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowError("شناسه TMDB یافت نشد، امکان واکشی پوستر وجود ندارد"));
+                ToastService.Instance.ShowWarning("شناسه TMDB برای این سریال ثبت نشده است. ابتدا سریال را شناسایی یا جستجو کنید.");
                 return;
             }
 
+            ToastService.Instance.ShowInfo("در حال جستجوی پوسترهای باکیفیت در سرور...");
             var service = new IdentifyMediaService();
             LoggerService.Info($"[صفحه جزییات] جستجوی پوسترهای جایگزین برای: {_series.FormattedTitle}...");
-            var posters = await service.GetMediaPostersAsync(Series.TmdbId.Value, "Series");
+            
+            List<string>? posters = null;
+            try
+            {
+                posters = await service.GetMediaPostersAsync(Series.TmdbId.Value, "Series");
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Error($"[صفحه جزییات] خطا در دریافت پوسترهای سریال: {ex.Message}", ex);
+                ToastService.Instance.ShowError("عدم برقراری ارتباط با سرور پوسترها. اتصال اینترنت یا قندشکن را بررسی کنید.");
+                return;
+            }
             
             if (posters == null || posters.Count == 0)
             {
-                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowError("پوستر جایگزینی یافت نشد"));
+                ToastService.Instance.ShowWarning("هیچ پوستر جایگزینی برای این سریال در سرور یافت نشد.");
                 return;
             }
 
@@ -334,6 +346,7 @@ namespace MovieManagerDesktop.ViewModels
 
             if (posterChanged)
             {
+                ToastService.Instance.ShowInfo("در حال دانلود و ذخیره پوستر انتخابی...");
                 var savedPath = await service.DownloadAndSaveImageAsync(vm.SelectedPosterUrl, Series.FormattedTitle);
                 if (savedPath != null)
                 {
@@ -352,8 +365,12 @@ namespace MovieManagerDesktop.ViewModels
                         temp.PosterUrl = savedPath;
                         Series = temp;
                         WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
-                        ToastService.Instance.ShowSuccess("پوستر با موفقیت تغییر کرد");
+                        ToastService.Instance.ShowSuccess("پوستر جدید با موفقیت اعمال و ذخیره شد.");
                     });
+                }
+                else
+                {
+                    ToastService.Instance.ShowError("خطا در دانلود پوستر جدید.");
                 }
             }
         }
@@ -361,8 +378,14 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private async Task RefreshSeriesAsync()
         {
-            if (_series.TmdbId == null) return;
+            if (_series.TmdbId == null || _series.TmdbId == 0)
+            {
+                ToastService.Instance.ShowWarning("شناسه TMDB برای این سریال ثبت نشده است. ابتدا سریال را از جستجوی دستی مشخص کنید.");
+                return;
+            }
+
             IsLoading = true;
+            ToastService.Instance.ShowInfo("در حال بروزرسانی اطلاعات کامل و قسمت‌های سریال از سرور...");
             try
             {
                 LoggerService.Info($"[صفحه جزییات] بروزرسانی اطلاعات سریال: {_series.FormattedTitle}...");
@@ -424,12 +447,16 @@ namespace MovieManagerDesktop.ViewModels
                         Seasons.Add(group);
                     }
                     OnPropertyChanged(nameof(Series));
-                    ToastService.Instance.ShowSuccess("اطلاعات سریال با موفقیت بروزرسانی شد");
+                    ToastService.Instance.ShowSuccess($"اطلاعات سریال، {fetchedSeasons.Count} فصل و {fetchedEpisodes.Count} قسمت با موفقیت بروزرسانی شد.");
                 });
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowError($"خطا: {ex.Message}"));
+                LoggerService.Error($"[صفحه جزییات] خطا در بروزرسانی سریال: {ex.Message}", ex);
+                string errMessage = ex.Message.ToLower().Contains("socket") || ex.Message.ToLower().Contains("network") || ex.Message.ToLower().Contains("timeout") || ex.Message.ToLower().Contains("task was canceled")
+                    ? "عدم برقراری ارتباط با سرور. لطفاً وضعیت اتصال یا قندشکن را بررسی کنید."
+                    : $"خطا در بروزرسانی: {ex.Message}";
+                ToastService.Instance.ShowError(errMessage);
             }
             finally
             {
@@ -440,8 +467,14 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private async Task RefreshTrackerAsync()
         {
-            if (_series.TmdbId == null) return;
+            if (_series.TmdbId == null || _series.TmdbId == 0)
+            {
+                ToastService.Instance.ShowWarning("شناسه TMDB برای این سریال ثبت نشده است.");
+                return;
+            }
+
             IsLoading = true;
+            ToastService.Instance.ShowInfo("در حال دریافت آخرین اطلاعات ردیاب و تاریخ پخش...");
             try
             {
                 var settings = SettingsManager.LoadSettings();
@@ -477,12 +510,16 @@ namespace MovieManagerDesktop.ViewModels
                 {
                     LoadSeriesTrackerInfo();
                     OnPropertyChanged(nameof(Series));
-                    ToastService.Instance.ShowSuccess("اطلاعات ردیاب بروزرسانی شد");
+                    ToastService.Instance.ShowSuccess($"اطلاعات ردیاب با موفقیت بروزرسانی شد: {SeriesStatusText}");
                 });
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
-                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowError($"خطا: {ex.Message}"));
+                LoggerService.Error($"[صفحه جزییات] خطا در بروزرسانی ردیاب: {ex.Message}", ex);
+                string errMessage = ex.Message.ToLower().Contains("socket") || ex.Message.ToLower().Contains("network") || ex.Message.ToLower().Contains("timeout") || ex.Message.ToLower().Contains("task was canceled")
+                    ? "عدم برقراری ارتباط با سرور ردیاب. اتصال اینترنت را بررسی کنید."
+                    : $"خطا در بروزرسانی ردیاب: {ex.Message}";
+                ToastService.Instance.ShowError(errMessage);
             }
             finally
             {

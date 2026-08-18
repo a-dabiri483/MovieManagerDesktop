@@ -3,59 +3,82 @@
                     xmlns:system="clr-namespace:System;assembly=mscorlib">
 
     <!-- ========================================== -->
-    <!-- NEW DESIGN SYSTEM COLORS (CineTrack 2.0)   -->
+    <!-- ANDROID DESIGN SYSTEM COLORS (Dark Indigo & Coral Pink) -->
     <!-- ========================================== -->
     
-    <!-- Primary Colors -->
-    <SolidColorBrush x:Key="PrimaryColor" Color="#00B4D8"/>
-    <SolidColorBrush x:Key="SecondaryColor" Color="#3A86FF"/>
-    <SolidColorBrush x:Key="AccentColor" Color="#FF6B6B"/>
+    <!-- Primary Colors (Coral Pink & Magenta Neon) -->
+    <SolidColorBrush x:Key="PrimaryColor" Color="#EB3B5A"/>
+    <SolidColorBrush x:Key="PrimaryColorDark" Color="#D63031"/>
+    <SolidColorBrush x:Key="SecondaryColor" Color="#FF3366"/>
+    <SolidColorBrush x:Key="AccentColor" Color="#EB3B5A"/>
+    <SolidColorBrush x:Key="GoldColor" Color="#FFB800"/>
+    <SolidColorBrush x:Key="PurpleAccent" Color="#8854D0"/>
+    <SolidColorBrush x:Key="NetworkBlue" Color="#3867D6"/>
+    <SolidColorBrush x:Key="OrangeAccent" Color="#FA8231"/>
+    <SolidColorBrush x:Key="EmeraldAccent" Color="#26DE81"/>
+    <SolidColorBrush x:Key="TealAccent" Color="#0FB9B1"/>
     
     <!-- Status Colors -->
-    <SolidColorBrush x:Key="SuccessColor" Color="#06D6A0"/>
-    <SolidColorBrush x:Key="WarningColor" Color="#FFD166"/>
-    <SolidColorBrush x:Key="ErrorColor" Color="#EF476F"/>
-    <SolidColorBrush x:Key="InfoColor" Color="#118AB2"/>
+    <SolidColorBrush x:Key="SuccessColor" Color="#20BF6B"/>
+    <SolidColorBrush x:Key="WarningColor" Color="#FFB800"/>
+    <SolidColorBrush x:Key="ErrorColor" Color="#EB3B5A"/>
+    <SolidColorBrush x:Key="InfoColor" Color="#3867D6"/>
     
-    <!-- Background Colors -->
-    <SolidColorBrush x:Key="MainBackground" Color="#1A1A2E"/>
-    <SolidColorBrush x:Key="CardBackground" Color="#16213E"/>
-    <SolidColorBrush x:Key="SidebarBackground" Color="#0F3460"/>
-    <SolidColorBrush x:Key="HoverBackground" Color="#1E3A8A"/>
+    <!-- Background Colors (Dark Navy Indigo & Cards) -->
+    <SolidColorBrush x:Key="MainBackground" Color="#0A0B16"/>
+    <SolidColorBrush x:Key="CardBackground" Color="#15182E"/>
+    <SolidColorBrush x:Key="CardBackgroundLight" Color="#1C203C"/>
+    <SolidColorBrush x:Key="SidebarBackground" Color="#0E1020"/>
+    <SolidColorBrush x:Key="NavBarBackground" Color="#131629"/>
+    <SolidColorBrush x:Key="HoverBackground" Color="#241E34"/>
+    <SolidColorBrush x:Key="ActiveItemBackground" Color="#351828"/>
     
     <!-- Text Colors -->
     <SolidColorBrush x:Key="PrimaryText" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="SecondaryText" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="DisabledText" Color="#6C757D"/>
+    <SolidColorBrush x:Key="SecondaryText" Color="#A0A5C0"/>
+    <SolidColorBrush x:Key="DisabledText" Color="#6C7393"/>
+    <SolidColorBrush x:Key="MutedText" Color="#8B92B2"/>
     
     <!-- Border Colors -->
-    <SolidColorBrush x:Key="PrimaryBorder" Color="#00B4D8"/>
-    <SolidColorBrush x:Key="NormalBorder" Color="#4A5568"/>
-    <SolidColorBrush x:Key="LightBorder" Color="#2D3748"/>
+    <SolidColorBrush x:Key="PrimaryBorder" Color="#EB3B5A"/>
+    <SolidColorBrush x:Key="NormalBorder" Color="#222644"/>
+    <SolidColorBrush x:Key="LightBorder" Color="#1B1E36"/>
+    <SolidColorBrush x:Key="GlassBorder" Color="#25FFFFFF"/>
+
+    <!-- Gradients -->
+    <LinearGradientBrush x:Key="PrimaryGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FF3366" Offset="0"/>
+        <GradientStop Color="#EB3B5A" Offset="1"/>
+    </LinearGradientBrush>
+    
+    <LinearGradientBrush x:Key="FabGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#A55EEA" Offset="0"/>
+        <GradientStop Color="#EB3B5A" Offset="1"/>
+    </LinearGradientBrush>
 
     <!-- ========================================== -->
     <!-- LEGACY ALIASES (Prevents existing UI from breaking) -->
     <!-- ========================================== -->
-    <SolidColorBrush x:Key="ColorPrimary" Color="#00B4D8"/>
-    <SolidColorBrush x:Key="ColorPrimaryDark" Color="#0092B0"/>
-    <SolidColorBrush x:Key="ColorSecondary" Color="#3A86FF"/>
-    <SolidColorBrush x:Key="ColorAccent" Color="#FF6B6B"/>
-    <SolidColorBrush x:Key="ColorSuccess" Color="#06D6A0"/>
-    <SolidColorBrush x:Key="ColorWarning" Color="#FFD166"/>
-    <SolidColorBrush x:Key="ColorError" Color="#EF476F"/>
-    <SolidColorBrush x:Key="ColorInfo" Color="#118AB2"/>
-    <SolidColorBrush x:Key="ColorBackground" Color="#1A1A2E"/>
-    <SolidColorBrush x:Key="ColorSurface" Color="#16213E"/>
-    <SolidColorBrush x:Key="ColorSurfaceLight" Color="#0F3460"/>
-    <SolidColorBrush x:Key="ColorSurfaceGlass" Color="#2516213E"/>
+    <SolidColorBrush x:Key="ColorPrimary" Color="#EB3B5A"/>
+    <SolidColorBrush x:Key="ColorPrimaryDark" Color="#D63031"/>
+    <SolidColorBrush x:Key="ColorSecondary" Color="#FF3366"/>
+    <SolidColorBrush x:Key="ColorAccent" Color="#EB3B5A"/>
+    <SolidColorBrush x:Key="ColorSuccess" Color="#20BF6B"/>
+    <SolidColorBrush x:Key="ColorWarning" Color="#FFB800"/>
+    <SolidColorBrush x:Key="ColorError" Color="#EB3B5A"/>
+    <SolidColorBrush x:Key="ColorInfo" Color="#3867D6"/>
+    <SolidColorBrush x:Key="ColorBackground" Color="#0A0B16"/>
+    <SolidColorBrush x:Key="ColorSurface" Color="#15182E"/>
+    <SolidColorBrush x:Key="ColorSurfaceLight" Color="#0E1020"/>
+    <SolidColorBrush x:Key="ColorSurfaceGlass" Color="#3015182E"/>
     <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="TextSecondary" Color="#FFFFFF"/>
-    <SolidColorBrush x:Key="TextDisabled" Color="#6C757D"/>
+    <SolidColorBrush x:Key="TextSecondary" Color="#A0A5C0"/>
+    <SolidColorBrush x:Key="TextDisabled" Color="#6C7393"/>
 
     <!-- ========================================== -->
     <!-- TYPOGRAPHY -->
     <!-- ========================================== -->
-    <FontFamily x:Key="AppFontFamily">Segoe UI, Vazirmatn, IRANSans</FontFamily>
+    <FontFamily x:Key="AppFontFamily">Vazirmatn, Segoe UI, IRANSans</FontFamily>
     
     <!-- H1 (32px, Bold) -->
     <Style x:Key="TextH1" TargetType="TextBlock">
@@ -122,7 +145,7 @@
     
     <!-- Legacy shadows just in case -->
     <DropShadowEffect x:Key="ShadowXl" BlurRadius="32" ShadowDepth="8" Opacity="0.3" Color="Black"/>
-    <DropShadowEffect x:Key="GlowPrimary" BlurRadius="20" ShadowDepth="0" Opacity="0.6" Color="#00B4D8"/>
+    <DropShadowEffect x:Key="GlowPrimary" BlurRadius="20" ShadowDepth="0" Opacity="0.6" Color="#E50914"/>
 
     <!-- ========================================== -->
     <!-- CORNER RADII -->
@@ -141,7 +164,7 @@
         <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource NormalBorder}"/>
         <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="CornerRadius" Value="10"/>
         <Setter Property="Padding" Value="16"/>
         <Setter Property="Margin" Value="8"/>
     </Style>
@@ -159,7 +182,7 @@
     <!-- Custom ScrollBar Style -->
     <Style TargetType="ScrollBar">
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Foreground" Value="#3300B4D8"/>
+        <Setter Property="Foreground" Value="#33E50914"/>
         <Setter Property="Width" Value="6"/>
         <Setter Property="Template">
             <Setter.Value>

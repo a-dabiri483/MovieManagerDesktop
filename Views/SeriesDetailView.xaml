@@ -31,9 +31,9 @@
                     <Border>
                         <Border.Background>
                             <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                                <GradientStop Color="#22000000" Offset="0"/>
-                                <GradientStop Color="#DD000000" Offset="0.7"/>
-                                <GradientStop Color="#FF000000" Offset="1"/>
+                                <GradientStop Color="#400A0B16" Offset="0"/>
+                                <GradientStop Color="#D00A0B16" Offset="0.65"/>
+                                <GradientStop Color="#FF0A0B16" Offset="1"/>
                             </LinearGradientBrush>
                         </Border.Background>
                     </Border>

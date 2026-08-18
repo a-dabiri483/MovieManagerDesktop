@@ -53,38 +53,55 @@ namespace MovieManagerDesktop.ViewModels
             
             LoggerService.Info($"[جستجوی دستی] شروع جستجو برای: {SearchQuery} (انیمه: {IsSearchTypeAnime})");
 
-            System.Collections.Generic.List<TmdbSearchResult> results;
+            try
+            {
+                System.Collections.Generic.List<TmdbSearchResult>? results = null;
 
-            if (IsSearchTypeAnime)
-            {
-                results = await _identifyService.SearchAnimeManualAsync(SearchQuery);
-            }
-            else
-            {
-                results = await _identifyService.SearchMediaAsync(SearchQuery);
-                if (results != null)
+                if (IsSearchTypeAnime)
                 {
-                    if (IsSearchTypeMovie)
+                    results = await _identifyService.SearchAnimeManualAsync(SearchQuery);
+                }
+                else
+                {
+                    results = await _identifyService.SearchMediaAsync(SearchQuery);
+                    if (results != null)
                     {
-                        results = results.FindAll(r => (r.MediaType ?? "").ToLower() != "tv" && (r.MediaType ?? "").ToLower() != "series");
-                    }
-                    else if (IsSearchTypeSeries)
-                    {
-                        results = results.FindAll(r => (r.MediaType ?? "").ToLower() == "tv" || (r.MediaType ?? "").ToLower() == "series");
+                        if (IsSearchTypeMovie)
+                        {
+                            results = results.FindAll(r => (r.MediaType ?? "").ToLower() != "tv" && (r.MediaType ?? "").ToLower() != "series");
+                        }
+                        else if (IsSearchTypeSeries)
+                        {
+                            results = results.FindAll(r => (r.MediaType ?? "").ToLower() == "tv" || (r.MediaType ?? "").ToLower() == "series");
+                        }
                     }
                 }
-            }
 
-            if (results != null)
-            {
-                LoggerService.Info($"[جستجوی دستی] تعداد نتایج یافت شده: {results.Count}");
-                foreach (var r in results)
+                if (results != null && results.Count > 0)
                 {
-                    SearchResults.Add(r);
+                    LoggerService.Info($"[جستجوی دستی] تعداد نتایج یافت شده: {results.Count}");
+                    foreach (var r in results)
+                    {
+                        SearchResults.Add(r);
+                    }
+                }
+                else
+                {
+                    ToastService.Instance.ShowWarning($"موردی برای «{SearchQuery}» یافت نشد. املای عنوان یا نوع جستجو را بررسی کنید.");
                 }
             }
-
-            IsSearching = false;
+            catch (System.Exception ex)
+            {
+                LoggerService.Error($"[جستجوی دستی] خطا در جستجو: {ex.Message}", ex);
+                string errMessage = ex.Message.ToLower().Contains("socket") || ex.Message.ToLower().Contains("network") || ex.Message.ToLower().Contains("timeout") || ex.Message.ToLower().Contains("task was canceled")
+                    ? "عدم برقراری ارتباط با سرور. لطفاً وضعیت اینترنت یا قندشکن را بررسی کنید."
+                    : $"خطا در جستجو: {ex.Message}";
+                ToastService.Instance.ShowError(errMessage);
+            }
+            finally
+            {
+                IsSearching = false;
+            }
         }
 
         [RelayCommand]

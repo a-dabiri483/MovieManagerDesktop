@@ -19,6 +19,9 @@ public partial class App : Application
         {
             db.Database.EnsureCreated();
         }
+
+        // Sync encrypted proxies in background on launch
+        _ = MovieManagerDesktop.Services.SettingsManager.SyncEncryptedProxiesAsync();
     }
 
     private void ApplyTheme(string themeName, bool isDarkTheme)

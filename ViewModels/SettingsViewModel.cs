@@ -201,11 +201,10 @@ namespace MovieManagerDesktop.ViewModels
             var omdbKeys = string.IsNullOrWhiteSpace(settings.OmdbApiKey) ? new[] { "14722d17", "a3c969fb" } : settings.OmdbApiKey.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var key in omdbKeys) OmdbApiKeys.Add(new MovieManagerDesktop.Models.ApiKeyItem(key.Trim()));
             
-            var proxyUrls = string.IsNullOrWhiteSpace(settings.ApiProxyUrl) ? SettingsManager.DefaultProxyUrls : settings.ApiProxyUrl.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            var proxyUrls = (settings.ApiProxyUrl ?? string.Empty).Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var url in proxyUrls) ApiProxyUrls.Add(new MovieManagerDesktop.Models.ApiKeyItem(url.Trim()));
             
-            // Set proxy to enabled by default if it wasn't explicitly saved
-            IsApiProxyEnabled = settings.IsApiProxyEnabled || string.IsNullOrWhiteSpace(settings.ApiProxyUrl);
+            IsApiProxyEnabled = settings.IsApiProxyEnabled && ApiProxyUrls.Count > 0;
             TmdbLanguage = settings.TmdbLanguage ?? "fa-IR";
             _isDarkTheme = settings.IsDarkTheme;
             SelectedTheme = settings.Theme ?? "Cyan"; // This calls ApplyTheme
@@ -460,6 +459,38 @@ namespace MovieManagerDesktop.ViewModels
         
         [RelayCommand]
         private void RemoveProxyUrl(MovieManagerDesktop.Models.ApiKeyItem item) { if (item != null) ApiProxyUrls.Remove(item); }
+
+        [RelayCommand]
+        public async Task SyncProxiesFromCloudAsync(bool showToast = true)
+        {
+            if (showToast) ToastService.Instance.ShowInfo("در حال بررسی و دریافت سرورها از گیت‌هاب...");
+            var (success, count, message) = await SettingsManager.SyncEncryptedProxiesAsync();
+            
+            var settings = SettingsManager.LoadSettings();
+            ApiProxyUrls.Clear();
+            var proxies = (settings.ApiProxyUrl ?? string.Empty).Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var p in proxies) ApiProxyUrls.Add(new MovieManagerDesktop.Models.ApiKeyItem(p.Trim()));
+            IsApiProxyEnabled = settings.IsApiProxyEnabled && ApiProxyUrls.Count > 0;
+
+            if (showToast)
+            {
+                if (success)
+                {
+                    if (count > 0)
+                    {
+                        ToastService.Instance.ShowSuccess(message);
+                    }
+                    else
+                    {
+                        ToastService.Instance.ShowWarning(message);
+                    }
+                }
+                else
+                {
+                    ToastService.Instance.ShowError(message);
+                }
+            }
+        }
 
         [RelayCommand]
         private void SaveSettings()
@@ -751,7 +782,7 @@ namespace MovieManagerDesktop.ViewModels
                             foreach (var key in omdbKeys) OmdbApiKeys.Add(new MovieManagerDesktop.Models.ApiKeyItem(key.Trim()));
                             
                             ApiProxyUrls.Clear();
-                            var proxyUrls = string.IsNullOrWhiteSpace(importedSettings.ApiProxyUrl) ? new[] { "https://my-proxyali.ali-dabiri1.workers.dev/" } : importedSettings.ApiProxyUrl.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                            var proxyUrls = (importedSettings.ApiProxyUrl ?? string.Empty).Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
                             foreach (var url in proxyUrls) ApiProxyUrls.Add(new MovieManagerDesktop.Models.ApiKeyItem(url.Trim()));
                             TmdbLanguage = importedSettings.TmdbLanguage ?? "fa-IR";
                             IsDarkTheme = importedSettings.IsDarkTheme;

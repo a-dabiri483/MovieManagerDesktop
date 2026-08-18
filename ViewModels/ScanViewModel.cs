@@ -211,9 +211,10 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (IsScanning || IsRegistering) return;
             
-            if (!Directory.Exists(SelectedDirectory))
+            if (string.IsNullOrWhiteSpace(SelectedDirectory) || !Directory.Exists(SelectedDirectory))
             {
                 StatusMessage = "مسیر نامعتبر است!";
+                ToastService.Instance.ShowError("مسیر انتخاب شده برای اسکن نامعتبر است یا در دسترس نیست.");
                 return;
             }
             
@@ -236,6 +237,13 @@ namespace MovieManagerDesktop.ViewModels
                 
                 var groupedFileLists = MovieManagerDesktop.Services.SmartGroupingService.SmartGroupFiles(files);
                 
+                if (groupedFileLists.Count == 0)
+                {
+                    StatusMessage = "هیچ فایل ویدیویی یافت نشد.";
+                    ToastService.Instance.ShowWarning("هیچ فایل ویدیویی پشتیبانی‌شده‌ای در این پوشه یافت نشد.");
+                    return;
+                }
+
                 // Load existing series
                 List<string> existingSeriesCache;
                 using (var db = new AppDbContext())
@@ -247,7 +255,7 @@ namespace MovieManagerDesktop.ViewModels
                         .ToList();
                 }
                 
-                foreach(var fileList in groupedFileLists)
+                foreach (var fileList in groupedFileLists)
                 {
                     var vm = new ScannedGroupViewModel(fileList, existingSeriesCache);
                     _allGroups.Add(vm);
@@ -256,21 +264,24 @@ namespace MovieManagerDesktop.ViewModels
                 SearchQuery = string.Empty;
                 IsFilterAll = true; // This will call ApplyFilters
                 
-                // تمام آیتم‌ها به صورت پیش‌فرض تیک خورده هستند، پس تیکِ هدر هم باید فعال باشد
                 _isAllSelected = true;
                 OnPropertyChanged(nameof(IsAllSelected));
                 
                 ScanProgressText = $"{_allGroups.Count} گروه یافت شد";
                 IsScanningIndeterminate = false;
                 ScanProgressValue = 100;
+                StatusMessage = $"اسکن با موفقیت انجام شد ({_allGroups.Count} عنوان یافت شد).";
+                ToastService.Instance.ShowSuccess($"{_allGroups.Count} عنوان ویدیویی جهت بررسی و ثبت آماده شد.");
             }
             catch (OperationCanceledException)
             {
-                StatusMessage = "اسکن متوقف شد.";
+                StatusMessage = "اسکن توسط کاربر متوقف شد.";
+                ToastService.Instance.ShowInfo("اسکن متوقف شد.");
             }
             catch (Exception ex)
             {
                 StatusMessage = $"خطای سیستمی: {ex.Message}";
+                ToastService.Instance.ShowError($"خطا در اسکن پوشه: {ex.Message}");
             }
             finally
             {
@@ -378,9 +389,7 @@ namespace MovieManagerDesktop.ViewModels
                     group.IsChecked = false;
                     ApplyFilters();
                     string mediaTypeDisplay = representative.MediaType == "Series" ? "سریال" : "فیلم";
-                    Application.Current.Dispatcher.Invoke(() => {
-                        _ = MaterialDesignThemes.Wpf.DialogHost.Show(new MovieManagerDesktop.Controls.AlertDialog($"{mediaTypeDisplay} مورد نظر پیدا نشد.\n\nنام جستجو شده: {representative.FormattedTitle}"), "RootDialog");
-                    });
+                    ToastService.Instance.ShowWarning($"{mediaTypeDisplay} «{representative.FormattedTitle}» در سرور یافت نشد. می‌توانید با «جستجوی دستی» آن را انتخاب کنید.");
                     return;
                 }
                 
@@ -463,6 +472,8 @@ namespace MovieManagerDesktop.ViewModels
                 group.IsChecked = false;
                 ApplyFilters();
                 
+                ToastService.Instance.ShowSuccess($"«{group.TitleOverride}» با موفقیت در دیتابیس ثبت شد.");
+
                 // Notify other ViewModels (Home, Movies, Series Tracker) to refresh
                 WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
             }
@@ -472,9 +483,7 @@ namespace MovieManagerDesktop.ViewModels
                 group.IsError = true;
                 ApplyFilters();
                 string mediaTypeDisplay = group.Representative.MediaType == "Series" ? "سریال" : "فیلم";
-                Application.Current.Dispatcher.Invoke(() => {
-                    _ = MaterialDesignThemes.Wpf.DialogHost.Show(new MovieManagerDesktop.Controls.ConfirmDialog($"{mediaTypeDisplay} مورد نظر در مسیر دیگری موجود است یا تکراری می‌باشد."), "RootDialog");
-                });
+                ToastService.Instance.ShowWarning($"{mediaTypeDisplay} مورد نظر در مسیر دیگری موجود است یا تکراری می‌باشد.");
             }
             catch (Exception ex)
             {
@@ -485,11 +494,9 @@ namespace MovieManagerDesktop.ViewModels
                 string errMessage = ex is InvalidOperationException ? ex.Message :
                     (ex.Message.ToLower().Contains("socket") || ex.Message.ToLower().Contains("network") || ex.Message.ToLower().Contains("timeout") || ex.Message.ToLower().Contains("task was canceled")
                     ? "عدم ارتباط با سرور. لطفاً وضعیت اینترنت یا قندشکن خود را بررسی کنید." 
-                    : $"خطای سیستمی:\n{ex.Message}");
+                    : $"خطای سیستمی: {ex.Message}");
                     
-                Application.Current.Dispatcher.Invoke(() => {
-                    _ = MaterialDesignThemes.Wpf.DialogHost.Show(new MovieManagerDesktop.Controls.AlertDialog(errMessage), "RootDialog");
-                });
+                ToastService.Instance.ShowError(errMessage);
             }
         }
 
@@ -499,7 +506,11 @@ namespace MovieManagerDesktop.ViewModels
             if (IsRegistering || IsScanning) return;
             
             var selectedGroups = _allGroups.Where(x => x.IsChecked && !x.IsRegistered).ToList();
-            if(!selectedGroups.Any()) return;
+            if (!selectedGroups.Any())
+            {
+                ToastService.Instance.ShowWarning("لطفاً حداقل یک عنوان را جهت ثبت انتخاب کنید.");
+                return;
+            }
             
             LoggerService.Info($"[اسکنر] شروع ثبت گروهی برای {selectedGroups.Count} گروه...");
 
@@ -514,8 +525,8 @@ namespace MovieManagerDesktop.ViewModels
             {
                 await Task.Run(async () =>
                 {
-                    using var db = new AppDbContext();
                     int successCount = 0;
+                    int failedCount = 0;
                     int processedGroups = 0;
                     int totalGroups = selectedGroups.Count;
                     
@@ -543,18 +554,12 @@ namespace MovieManagerDesktop.ViewModels
                             
                             if (!hasData)
                             {
+                                Interlocked.Increment(ref failedCount);
                                 LoggerService.Warning($"[اسکنر] دیتایی برای '{representative.FormattedTitle}' یافت نشد.");
                                 Application.Current.Dispatcher.Invoke(() => {
                                     group.Status = "خطا در پیدا کردن";
                                     group.IsError = true;
                                     group.IsChecked = false;
-                                    
-                                    // Show dialog if it's the only item being processed or we want to notify
-                                    if (totalGroups == 1)
-                                    {
-                                        string mediaTypeDisplay = representative.MediaType == "Series" ? "سریال" : "فیلم";
-                                        _ = MaterialDesignThemes.Wpf.DialogHost.Show(new MovieManagerDesktop.Controls.AlertDialog($"{mediaTypeDisplay} مورد نظر پیدا نشد.\n\nنام: {representative.FormattedTitle}"), "RootDialog");
-                                    }
                                 });
                                 return;
                             }
@@ -630,7 +635,7 @@ namespace MovieManagerDesktop.ViewModels
                                 dbSemaphore.Release();
                             }
                             
-                            successCount += group.Files.Count;
+                            Interlocked.Add(ref successCount, group.Files.Count);
                             
                             Application.Current.Dispatcher.Invoke(() => {
                                 group.TitleOverride = group.Files.First().FormattedTitle;
@@ -649,14 +654,11 @@ namespace MovieManagerDesktop.ViewModels
                         }
                         catch (Exception ex)
                         {
+                            Interlocked.Increment(ref failedCount);
                             LoggerService.Error($"[اسکنر] خطا در پردازش '{group.Representative.FormattedTitle}': {ex.Message}", ex);
                             Application.Current.Dispatcher.Invoke(() => {
                                 group.Status = ex is InvalidOperationException ? ex.Message : "خطای سیستمی";
                                 group.IsError = true;
-                                if (ex is InvalidOperationException && totalGroups == 1)
-                                {
-                                    _ = MaterialDesignThemes.Wpf.DialogHost.Show(new MovieManagerDesktop.Controls.AlertDialog(ex.Message), "RootDialog");
-                                }
                             });
                         }
                         finally
@@ -669,10 +671,24 @@ namespace MovieManagerDesktop.ViewModels
                     
                     if (!_cancellationTokenSource.Token.IsCancellationRequested)
                     {
-                        LoggerService.Info($"[اسکنر] عملیات ثبت گروهی پایان یافت. کل فایل‌های اضافه شده: {successCount}");
-                        StatusMessage = $"ثبت با موفقیت تمام شد. {successCount} فایل ثبت شد.";
+                        LoggerService.Info($"[اسکنر] عملیات ثبت گروهی پایان یافت. کل فایل‌های اضافه شده: {successCount}, ناموفق: {failedCount}");
+                        StatusMessage = $"ثبت پایان یافت ({successCount} فایل با موفقیت ثبت شد).";
+
+                        if (successCount > 0)
+                        {
+                            ToastService.Instance.ShowSuccess($"عملیات ثبت پایان یافت: {successCount} فایل با موفقیت در برنامه ثبت شد.");
+                        }
+
+                        if (failedCount > 0)
+                        {
+                            ToastService.Instance.ShowWarning($"{failedCount} عنوان ثبت نشد. می‌توانید با فیلتر «خطا در ثبت» آن‌ها را به صورت دستی جستجو و ثبت کنید.");
+                        }
                     }
-                    
+                    else
+                    {
+                        StatusMessage = "ثبت توسط کاربر لغو شد.";
+                        ToastService.Instance.ShowInfo("عملیات ثبت لغو شد.");
+                    }
                     
                     Application.Current.Dispatcher.Invoke(() => ApplyFilters());
                     WeakReferenceMessenger.Default.Send(new MovieManagerDesktop.Messages.MediaUpdatedMessage());
@@ -681,12 +697,10 @@ namespace MovieManagerDesktop.ViewModels
             catch (Exception ex)
             {
                 StatusMessage = $"خطا در ثبت: {ex.Message}";
-                Application.Current.Dispatcher.Invoke(() => {
-                    string errMessage = ex.Message.ToLower().Contains("socket") || ex.Message.ToLower().Contains("network") || ex.Message.ToLower().Contains("timeout") || ex.Message.ToLower().Contains("task was canceled")
-                        ? "عدم ارتباط با سرور در حین ثبت گروهی. لطفاً اینترنت خود را بررسی کنید." 
-                        : $"خطا در ثبت گروهی:\n{ex.Message}";
-                    _ = MaterialDesignThemes.Wpf.DialogHost.Show(new MovieManagerDesktop.Controls.ConfirmDialog(errMessage), "RootDialog");
-                });
+                string errMessage = ex.Message.ToLower().Contains("socket") || ex.Message.ToLower().Contains("network") || ex.Message.ToLower().Contains("timeout") || ex.Message.ToLower().Contains("task was canceled")
+                    ? "عدم ارتباط با سرور در حین ثبت گروهی. لطفاً اینترنت یا قندشکن خود را بررسی کنید." 
+                    : $"خطا در ثبت گروهی: {ex.Message}";
+                ToastService.Instance.ShowError(errMessage);
             }
             finally
             {

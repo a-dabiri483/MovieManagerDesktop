@@ -3,203 +3,508 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
+             xmlns:converters="clr-namespace:MovieManagerDesktop.Converters"
              d:DataContext="{d:DesignInstance Type=viewmodels:AutoRelocatorViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="800" d:DesignWidth="1200"
+             d:DesignHeight="900" d:DesignWidth="1280"
              Background="{DynamicResource MainBackground}">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-
-        <Style TargetType="DataGrid">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource NormalBorder}"/>
-            <Setter Property="RowBackground" Value="Transparent"/>
-            <Setter Property="AlternatingRowBackground" Value="Transparent"/>
-            <Setter Property="HeadersVisibility" Value="Column"/>
-            <Setter Property="GridLinesVisibility" Value="All"/>
-            <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource NormalBorder}"/>
-            <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource NormalBorder}"/>
-            <Setter Property="AutoGenerateColumns" Value="False"/>
-            <Setter Property="CanUserAddRows" Value="False"/>
-            <Setter Property="SelectionMode" Value="Extended"/>
-            <Setter Property="SelectionUnit" Value="FullRow"/>
-            <Setter Property="RowHeight" Value="38"/>
-            <Setter Property="FontSize" Value="13"/>
-        </Style>
-
-        <Style TargetType="DataGridColumnHeader">
-            <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
-            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="BorderThickness" Value="0,0,1,1"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource NormalBorder}"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-        </Style>
-
-        <Style TargetType="DataGridCell">
-            <Setter Property="Padding" Value="8,4"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="DataGridCell">
-                        <Border Background="Transparent" 
-                                BorderThickness="{TemplateBinding BorderThickness}" 
-                                BorderBrush="{TemplateBinding BorderBrush}" 
-                                SnapsToDevicePixels="True">
-                            <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" 
-                                              VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
+        <converters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
+        <converters:ImageUrlToCachedImageConverter x:Key="ImageUrlToCachedImageConverter"/>
+        <converters:StringNullOrEmptyToVisibilityConverter x:Key="StringNullOrEmptyToVisibilityConverter"/>
+        <converters:EqualityToVisibilityConverter x:Key="EqualityToVisibilityConverter"/>
+        <converters:ZeroToVisibilityConverter x:Key="ZeroToVisibilityConverter"/>
     </UserControl.Resources>
 
-    <Grid Margin="20,60,20,20">
+    <Grid Margin="25,50,25,20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <!-- Header -->
-            <RowDefinition Height="Auto"/> <!-- Controls -->
-            <RowDefinition Height="Auto"/> <!-- Progress -->
-            <RowDefinition Height="*"/>    <!-- DataGrid -->
+            <RowDefinition Height="Auto"/> <!-- Header & Back Button -->
+            <RowDefinition Height="Auto"/> <!-- Tabs & Stats Bar -->
+            <RowDefinition Height="Auto"/> <!-- Action / Directory Controls -->
+            <RowDefinition Height="Auto"/> <!-- Progress / Status -->
+            <RowDefinition Height="*"/>    <!-- Main Content List -->
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <Grid Grid.Row="0" Margin="0,0,0,10">
+        <Grid Grid.Row="0" Margin="0,0,0,15">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center">
+
+            <!-- Back Button -->
+            <Button Grid.Column="0" Command="{Binding GoBackCommand}"
+                    Style="{StaticResource MaterialDesignIconButton}"
+                    Foreground="{DynamicResource PrimaryText}"
+                    Width="40" Height="40" Margin="0,0,15,0"
+                    ToolTip="بازگشت به ابزارها">
+                <materialDesign:PackIcon Kind="ArrowRight" Width="24" Height="24"/>
+            </Button>
+
+            <StackPanel Grid.Column="1" VerticalAlignment="Center">
                 <StackPanel Orientation="Horizontal">
-                    <materialDesign:PackIcon Kind="LinkVariantPlus" Width="28" Height="28" Foreground="{DynamicResource InfoColor}" Margin="0,0,10,0"/>
-                    <TextBlock Text="ترمیم مسیرهای گمشده" Style="{StaticResource TextH2}" VerticalAlignment="Center"/>
+                    <materialDesign:PackIcon Kind="LinkVariantPlus" Width="28" Height="28" Foreground="{DynamicResource InfoColor}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="ترمیم و بازنشانی هوشمند مسیرهای گمشده" Style="{StaticResource TextH2}" VerticalAlignment="Center"/>
                 </StackPanel>
-                <TextBlock Margin="38,5,0,0"
-                           Text="اگر فایل‌های شما جابجا شده‌اند، در اینجا می‌توانید مسیر جدید را به برنامه معرفی کنید تا بدون از دست رفتن اطلاعات، وصله شوند."
+                <TextBlock Margin="38,4,0,0"
+                           Text="فایل‌هایی که در درایوها یا پوشه‌های دیگر جابجا شده‌اند را شناسایی کرده و بدون از دست رفتن اطلاعات یا وضعیت تماشا، مسیرشان را وصله کنید."
                            Foreground="{DynamicResource SecondaryText}" FontSize="13" TextWrapping="Wrap"/>
             </StackPanel>
         </Grid>
 
-        <!-- Controls (Row 1) -->
+        <!-- Tabs & Statistics Bar (Row 1) -->
         <Border Grid.Row="1" Background="{DynamicResource CardBackground}" 
                 BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" 
-                CornerRadius="8" Padding="15" Margin="0,15,0,15">
+                CornerRadius="12" Padding="12,8" Margin="0,0,0,12">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBox Text="{Binding TargetDirectory, Mode=OneWay}"
-                             IsReadOnly="True"
-                             materialDesign:HintAssist.Hint="پوشه یا درایو مقصد (جایی که فایل‌ها به آنجا منتقل شده‌اند)..."
-                             Foreground="{DynamicResource PrimaryText}" 
-                             FontSize="13" 
-                             Width="450"
-                             VerticalAlignment="Center"
-                             Margin="0,0,10,0"/>
-                    <Button Command="{Binding SelectTargetDirectoryCommand}"
-                            Style="{StaticResource MaterialDesignIconForegroundButton}"
-                            Foreground="{DynamicResource SecondaryText}"
-                            ToolTip="انتخاب پوشه یا درایو جدید"
-                            Width="30" Height="30" Padding="0" Margin="0,0,5,0">
-                        <materialDesign:PackIcon Kind="FolderSearch"/>
-                    </Button>
+                <!-- Segmented Tab Controls -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal">
+                    <Border CornerRadius="8" Background="#0F172A" Padding="4">
+                        <StackPanel Orientation="Horizontal">
+                            <!-- Tab: Broken Links -->
+                            <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                    Padding="15,6" Height="38" materialDesign:ButtonAssist.CornerRadius="6"
+                                    Click="TabBroken_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="AlertCircleOutline" Foreground="{DynamicResource WarningColor}" Width="18" Height="18" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="فایل‌های گمشده" Foreground="{DynamicResource PrimaryText}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <Border Background="{DynamicResource ErrorColor}" CornerRadius="10" Padding="6,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding TotalBroken}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                    </Border>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Tab: Trash -->
+                            <Button Style="{StaticResource MaterialDesignFlatButton}"
+                                    Padding="15,6" Height="38" materialDesign:ButtonAssist.CornerRadius="6"
+                                    Margin="4,0,0,0"
+                                    Click="TabTrash_Click">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="TrashCanOutline" Foreground="{DynamicResource SecondaryText}" Width="18" Height="18" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="سطل زباله (نادیده‌گرفته)" Foreground="{DynamicResource SecondaryText}" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <Border Background="#475569" CornerRadius="10" Padding="6,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding TotalTrashed}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                    </Border>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
-                <Button Grid.Column="1" Command="{Binding ScanAndRelocateCommand}"
-                        IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBooleanConverter}}"
-                        Style="{StaticResource MaterialDesignRaisedButton}" Background="{DynamicResource SuccessColor}" Foreground="#050510" Margin="15,0,0,0" Width="140">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="DatabaseSearch" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="شروع ترمیم" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
+                <!-- Stats summary -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Background="#102A43" BorderBrush="{DynamicResource InfoColor}" BorderThickness="1" CornerRadius="8" Padding="12,6" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="CheckCircleOutline" Foreground="{DynamicResource SuccessColor}" Width="18" Height="18" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="ترمیم‌شده: " Foreground="{DynamicResource SecondaryText}" FontSize="12" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding TotalResolved}" Foreground="{DynamicResource SuccessColor}" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
 
-                <Button Grid.Column="2" Command="{Binding ApplyFixesCommand}" 
-                        IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBooleanConverter}}"
-                        Style="{StaticResource MaterialDesignRaisedButton}" Background="{DynamicResource InfoColor}" Foreground="#050510" Margin="15,0,0,0" Width="140">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="CheckAll" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="اعمال و ذخیره" VerticalAlignment="Center" FontWeight="Bold"/>
-                    </StackPanel>
-                </Button>
+                    <Button Command="{Binding LoadBrokenLinksCommand}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Foreground="{DynamicResource SecondaryText}"
+                            BorderBrush="{DynamicResource NormalBorder}"
+                            Height="34" Padding="10,0" materialDesign:ButtonAssist.CornerRadius="6"
+                            ToolTip="بررسی مجدد فایل‌ها">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Refresh" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                            <TextBlock Text="بروزرسانی" FontSize="12" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Progress (Row 2) -->
-        <ProgressBar Grid.Row="2" IsIndeterminate="{Binding IsScanning}" 
-                     Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}"
-                     Height="4" Margin="0,0,0,10" Foreground="{DynamicResource SuccessColor}"/>
+        <!-- Action / Directory Controls (Row 2) -->
+        <Border Grid.Row="2" Background="{DynamicResource CardBackground}" 
+                BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" 
+                CornerRadius="12" Padding="15" Margin="0,0,0,12">
+            <Grid>
+                <!-- Controls for Tab 0 (Broken Links) -->
+                <Grid Visibility="{Binding SelectedTabIndex, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=0}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-        <!-- DataGrid (Row 3) -->
-        <DataGrid Grid.Row="3" ItemsSource="{Binding BrokenItems}" 
-                  HeadersVisibility="Column" 
-                  GridLinesVisibility="All"
-                  BorderThickness="1"
-                  Foreground="{DynamicResource PrimaryText}">
-            <DataGrid.Columns>
-                <!-- Title -->
-                <DataGridTextColumn Header="نام مدیا" Binding="{Binding Title}" Width="250" IsReadOnly="True">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="VerticalAlignment" Value="Center"/>
-                            <Setter Property="Margin" Value="10,0"/>
-                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
+                    <!-- Target Directory Input -->
+                    <Grid Grid.Column="0" Margin="0,0,15,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding TargetDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 materialDesign:HintAssist.Hint="پوشه یا درایو مقصد (جایی که فایل‌ها به آنجا منتقل شده‌اند)..."
+                                 Foreground="{DynamicResource PrimaryText}" 
+                                 FontSize="13" 
+                                 VerticalAlignment="Center"
+                                 FlowDirection="LeftToRight"
+                                 HorizontalContentAlignment="Left"
+                                 Margin="0,0,8,0"/>
+                        <Button Grid.Column="1" Command="{Binding SelectTargetDirectoryCommand}"
+                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                Foreground="{DynamicResource PrimaryText}"
+                                BorderBrush="{DynamicResource NormalBorder}"
+                                Height="34" Padding="10,0" materialDesign:ButtonAssist.CornerRadius="6"
+                                ToolTip="انتخاب پوشه یا درایو">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FolderSearchOutline" Width="16" Height="16" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="انتخاب پوشه" FontSize="12" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
 
-                <!-- Type -->
-                <DataGridTextColumn Header="نوع" Binding="{Binding MediaType}" Width="80" IsReadOnly="True">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="VerticalAlignment" Value="Center"/>
-                            <Setter Property="HorizontalAlignment" Value="Center"/>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
+                    <!-- Move Selected to Trash Button -->
+                    <Button Grid.Column="1" Command="{Binding MoveSelectedToTrashCommand}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Foreground="{DynamicResource WarningColor}"
+                            BorderBrush="{DynamicResource WarningColor}"
+                            Height="38" Padding="12,0" Margin="0,0,10,0" materialDesign:ButtonAssist.CornerRadius="8"
+                            ToolTip="انتقال موارد تیک‌خورده به سطل زباله">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="TrashCanOutline" Width="18" Height="18" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="انتقال به زباله‌دان" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
 
-                <!-- Old Path -->
-                <DataGridTextColumn Header="مسیر قبلی (گمشده)" Binding="{Binding OldFilePath}" Width="*" IsReadOnly="True">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="VerticalAlignment" Value="Center"/>
-                            <Setter Property="Margin" Value="10,0"/>
-                            <Setter Property="Foreground" Value="{DynamicResource ErrorColor}"/>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-                
-                <!-- New Path -->
-                <DataGridTextColumn Header="مسیر جدید (پیدا شده)" Binding="{Binding NewFilePath}" Width="*" IsReadOnly="True">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="VerticalAlignment" Value="Center"/>
-                            <Setter Property="Margin" Value="10,0"/>
-                            <Setter Property="Foreground" Value="{DynamicResource SuccessColor}"/>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
+                    <!-- Scan & Match Button -->
+                    <Button Grid.Column="2" Command="{Binding ScanAndRelocateCommand}"
+                            IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBooleanConverter}}"
+                            Style="{StaticResource MaterialDesignRaisedButton}" 
+                            Background="{DynamicResource SuccessColor}" Foreground="#050510" 
+                            Height="38" Padding="16,0" Margin="0,0,10,0" materialDesign:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="DatabaseSearch" Width="18" Height="18" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="شروع اسکن و تطبیق" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
 
-                <!-- Status -->
-                <DataGridTextColumn Header="وضعیت" Binding="{Binding Status}" Width="150" IsReadOnly="True">
-                    <DataGridTextColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="VerticalAlignment" Value="Center"/>
-                            <Setter Property="HorizontalAlignment" Value="Center"/>
-                            <Setter Property="FontWeight" Value="SemiBold"/>
-                        </Style>
-                    </DataGridTextColumn.ElementStyle>
-                </DataGridTextColumn>
-            </DataGrid.Columns>
-        </DataGrid>
+                    <!-- Apply & Save Button -->
+                    <Button Grid.Column="3" Command="{Binding ApplyFixesCommand}" 
+                            IsEnabled="{Binding IsScanning, Converter={StaticResource InverseBooleanConverter}}"
+                            Style="{StaticResource MaterialDesignRaisedButton}" 
+                            Background="{DynamicResource InfoColor}" Foreground="#050510" 
+                            Height="38" Padding="16,0" materialDesign:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="CheckAll" Width="18" Height="18" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="اعمال و ذخیره نهایی" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+
+                <!-- Controls for Tab 1 (Trash) -->
+                <Grid Visibility="{Binding SelectedTabIndex, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=1}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0" Text="فایل‌های موجود در این بخش از لیست اسکن مخفی شده‌اند و جستجو نمی‌شوند." 
+                               Foreground="{DynamicResource SecondaryText}" FontSize="13" VerticalAlignment="Center"/>
+
+                    <!-- Restore Selected Button -->
+                    <Button Grid.Column="1" Command="{Binding RestoreSelectedFromTrashCommand}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Foreground="{DynamicResource SuccessColor}"
+                            BorderBrush="{DynamicResource SuccessColor}"
+                            Height="38" Padding="14,0" Margin="0,0,10,0" materialDesign:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Restore" Width="18" Height="18" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="بازگردانی موارد انتخابی" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Delete Selected Permanently -->
+                    <Button Grid.Column="2" Command="{Binding DeleteSelectedPermanentlyCommand}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Foreground="{DynamicResource ErrorColor}"
+                            BorderBrush="{DynamicResource ErrorColor}"
+                            Height="38" Padding="14,0" Margin="0,0,10,0" materialDesign:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="DeleteForever" Width="18" Height="18" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="حذف دائم انتخابی" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Empty Trash Button -->
+                    <Button Grid.Column="3" Command="{Binding EmptyTrashCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Background="{DynamicResource ErrorColor}" Foreground="White"
+                            Height="38" Padding="16,0" materialDesign:ButtonAssist.CornerRadius="8">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="TrashCan" Width="18" Height="18" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <TextBlock Text="تخلیه کامل سطل زباله" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- Progress / Status Bar (Row 3) -->
+        <StackPanel Grid.Row="3" Margin="0,0,0,10"
+                    Visibility="{Binding IsScanning, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <ProgressBar IsIndeterminate="True" Height="4" Foreground="{DynamicResource SuccessColor}" Margin="0,0,0,6"/>
+            <TextBlock Text="{Binding ScanProgressText}" Foreground="{DynamicResource InfoColor}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+        </StackPanel>
+
+        <!-- Main Items List (Row 4) -->
+        <Grid Grid.Row="4">
+            <!-- Tab 0: Broken Items View -->
+            <Grid Visibility="{Binding SelectedTabIndex, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=0}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/> <!-- Batch Select Bar -->
+                    <RowDefinition Height="*"/>    <!-- Scrollable Items -->
+                </Grid.RowDefinitions>
+
+                <!-- Select All Bar -->
+                <Border Grid.Row="0" Background="#111827" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" CornerRadius="8" Padding="12,6" Margin="0,0,0,8">
+                    <Grid>
+                        <CheckBox Content="انتخاب همه فایل‌های گمشده" 
+                                  IsChecked="{Binding IsAllSelected, Mode=TwoWay}"
+                                  Command="{Binding ToggleSelectAllCommand}"
+                                  Foreground="{DynamicResource PrimaryText}" FontSize="13" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding BrokenItems.Count, StringFormat='تعداد: {0} فایل'}" 
+                                   Foreground="{DynamicResource SecondaryText}" FontSize="12" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Empty State -->
+                <Border Grid.Row="1" Background="{DynamicResource CardBackground}" CornerRadius="12" Padding="40"
+                        Visibility="{Binding BrokenItems.Count, Converter={StaticResource ZeroToVisibilityConverter}}">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="CheckCircleOutline" Foreground="{DynamicResource SuccessColor}" Width="64" Height="64" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+                        <TextBlock Text="عالی است! هیچ مسیر شکسته‌ای در پایگاه داده وجود ندارد." Style="{StaticResource TextH3}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                        <TextBlock Text="تمام فایل‌های فیلم و سریال‌های شما در مسیرهای تعریف‌شده قرار دارند." Foreground="{DynamicResource SecondaryText}" FontSize="13" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Broken Items List -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding BrokenItems}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource CardBackground}" 
+                                        BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" 
+                                        CornerRadius="10" Padding="14,10" Margin="0,0,0,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/> <!-- Checkbox -->
+                                            <ColumnDefinition Width="Auto"/> <!-- Poster / Icon -->
+                                            <ColumnDefinition Width="*"/>    <!-- Details -->
+                                            <ColumnDefinition Width="Auto"/> <!-- Quick Actions -->
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Checkbox -->
+                                        <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+
+                                        <!-- Poster / Thumbnail -->
+                                        <Border Grid.Column="1" Width="55" Height="78" CornerRadius="6" Background="#0F172A" Margin="0,0,15,0" ClipToBounds="True" VerticalAlignment="Center">
+                                            <Grid>
+                                                <materialDesign:PackIcon Kind="MoviePlayOutline" Width="28" Height="28" Foreground="#475569" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <Image Source="{Binding PosterUrl, Converter={StaticResource ImageUrlToCachedImageConverter}}" Stretch="UniformToFill"/>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Details -->
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                <TextBlock Text="{Binding Title}" Foreground="{DynamicResource PrimaryText}" FontWeight="Bold" FontSize="15" VerticalAlignment="Center"/>
+                                                
+                                                <!-- Season / Episode Badge -->
+                                                <Border Background="#1E3A8A" CornerRadius="4" Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center"
+                                                        Visibility="{Binding SeasonEpisodeInfo, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}">
+                                                    <TextBlock Text="{Binding SeasonEpisodeInfo}" Foreground="#93C5FD" FontSize="11" FontWeight="SemiBold"/>
+                                                </Border>
+
+                                                <!-- Status Badge -->
+                                                <Border Background="#334155" CornerRadius="4" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Status}" Foreground="{DynamicResource PrimaryText}" FontSize="11" FontWeight="SemiBold"/>
+                                                </Border>
+                                            </StackPanel>
+
+                                            <!-- Old Path & Size -->
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                <materialDesign:PackIcon Kind="LinkVariantOff" Foreground="{DynamicResource ErrorColor}" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                <TextBlock Text="مسیر گمشده: " Foreground="{DynamicResource SecondaryText}" FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding OldFilePath}" Foreground="{DynamicResource ErrorColor}" FontSize="12" FlowDirection="LeftToRight" TextTrimming="CharacterEllipsis" MaxWidth="600" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding FileSizeFormatted, StringFormat=' ({0})'}" Foreground="{DynamicResource SecondaryText}" FontSize="11" VerticalAlignment="Center"/>
+                                            </StackPanel>
+
+                                            <!-- Resolved New Path -->
+                                            <Border Background="#064E3B" BorderBrush="{DynamicResource SuccessColor}" BorderThickness="1" CornerRadius="6" Padding="8,4" Margin="0,4,0,0"
+                                                    Visibility="{Binding IsResolved, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="CheckCircle" Foreground="{DynamicResource SuccessColor}" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                    <TextBlock Text="مسیر جدید یافت‌شده: " Foreground="{DynamicResource SuccessColor}" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding NewFilePath}" Foreground="White" FontSize="12" FlowDirection="LeftToRight" TextTrimming="CharacterEllipsis" MaxWidth="600" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <!-- Quick Action Buttons -->
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <!-- Manual File Picker -->
+                                            <Button Command="{Binding DataContext.ManualRelocateCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                    Foreground="{DynamicResource InfoColor}"
+                                                    BorderBrush="{DynamicResource InfoColor}"
+                                                    Height="34" Padding="10,0" Margin="0,0,8,0" materialDesign:ButtonAssist.CornerRadius="6"
+                                                    ToolTip="انتخاب دستی فایل از روی سیستم">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="FolderOpenOutline" Width="16" Height="16" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="انتخاب دستی" FontSize="12" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+
+                                            <!-- Move to Trash -->
+                                            <Button Command="{Binding DataContext.MoveToTrashCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource MaterialDesignIconButton}"
+                                                    Foreground="{DynamicResource ErrorColor}"
+                                                    Width="34" Height="34"
+                                                    ToolTip="انتقال به سطل زباله (مخفی‌سازی)">
+                                                <materialDesign:PackIcon Kind="TrashCanOutline" Width="18" Height="18"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- Tab 1: Trash Items View -->
+            <Grid Visibility="{Binding SelectedTabIndex, Converter={StaticResource EqualityToVisibilityConverter}, ConverterParameter=1}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/> <!-- Batch Select Bar -->
+                    <RowDefinition Height="*"/>    <!-- Scrollable Items -->
+                </Grid.RowDefinitions>
+
+                <!-- Select All Bar -->
+                <Border Grid.Row="0" Background="#111827" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" CornerRadius="8" Padding="12,6" Margin="0,0,0,8">
+                    <Grid>
+                        <CheckBox Content="انتخاب همه موارد سطل زباله" 
+                                  IsChecked="{Binding IsAllSelected, Mode=TwoWay}"
+                                  Command="{Binding ToggleSelectAllCommand}"
+                                  Foreground="{DynamicResource PrimaryText}" FontSize="13" VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding TrashedItems.Count, StringFormat='تعداد: {0} فایل در زباله‌دان'}" 
+                                   Foreground="{DynamicResource SecondaryText}" FontSize="12" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Empty State -->
+                <Border Grid.Row="1" Background="{DynamicResource CardBackground}" CornerRadius="12" Padding="40"
+                        Visibility="{Binding TrashedItems.Count, Converter={StaticResource ZeroToVisibilityConverter}}">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="TrashCanOutline" Foreground="{DynamicResource SecondaryText}" Width="64" Height="64" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+                        <TextBlock Text="سطل زباله خالی است." Style="{StaticResource TextH3}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                        <TextBlock Text="هیچ فایلی برای نادیده‌گرفتن به سطل زباله منتقل نشده است." Foreground="{DynamicResource SecondaryText}" FontSize="13" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Trashed Items List -->
+                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding TrashedItems}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="{DynamicResource CardBackground}" 
+                                        BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" 
+                                        CornerRadius="10" Padding="14,10" Margin="0,0,0,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/> <!-- Checkbox -->
+                                            <ColumnDefinition Width="Auto"/> <!-- Poster / Icon -->
+                                            <ColumnDefinition Width="*"/>    <!-- Details -->
+                                            <ColumnDefinition Width="Auto"/> <!-- Quick Actions -->
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Checkbox -->
+                                        <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+
+                                        <!-- Poster / Thumbnail -->
+                                        <Border Grid.Column="1" Width="55" Height="78" CornerRadius="6" Background="#0F172A" Margin="0,0,15,0" ClipToBounds="True" VerticalAlignment="Center">
+                                            <Grid>
+                                                <materialDesign:PackIcon Kind="MoviePlayOutline" Width="28" Height="28" Foreground="#475569" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <Image Source="{Binding PosterUrl, Converter={StaticResource ImageUrlToCachedImageConverter}}" Stretch="UniformToFill"/>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Details -->
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                <TextBlock Text="{Binding Title}" Foreground="{DynamicResource PrimaryText}" FontWeight="Bold" FontSize="15" VerticalAlignment="Center"/>
+                                                
+                                                <!-- Season / Episode Badge -->
+                                                <Border Background="#1E3A8A" CornerRadius="4" Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center"
+                                                        Visibility="{Binding SeasonEpisodeInfo, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}">
+                                                    <TextBlock Text="{Binding SeasonEpisodeInfo}" Foreground="#93C5FD" FontSize="11" FontWeight="SemiBold"/>
+                                                </Border>
+
+                                                <!-- Trashed Status Badge -->
+                                                <Border Background="#475569" CornerRadius="4" Padding="8,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="در سطل زباله 🗑️" Foreground="White" FontSize="11" FontWeight="SemiBold"/>
+                                                </Border>
+                                            </StackPanel>
+
+                                            <!-- Old Path & Size -->
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="FileDocumentOutline" Foreground="{DynamicResource SecondaryText}" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                <TextBlock Text="مسیر قبلی: " Foreground="{DynamicResource SecondaryText}" FontSize="12" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding OldFilePath}" Foreground="{DynamicResource SecondaryText}" FontSize="12" FlowDirection="LeftToRight" TextTrimming="CharacterEllipsis" MaxWidth="600" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding FileSizeFormatted, StringFormat=' ({0})'}" Foreground="{DynamicResource SecondaryText}" FontSize="11" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <!-- Quick Action Buttons -->
+                                        <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <!-- Restore Button -->
+                                            <Button Command="{Binding DataContext.RestoreFromTrashCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource MaterialDesignOutlinedButton}"
+                                                    Foreground="{DynamicResource SuccessColor}"
+                                                    BorderBrush="{DynamicResource SuccessColor}"
+                                                    Height="34" Padding="10,0" Margin="0,0,8,0" materialDesign:ButtonAssist.CornerRadius="6"
+                                                    ToolTip="بازگردانی به لیست ترمیم">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="Restore" Width="16" Height="16" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="بازگردانی" FontSize="12" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+
+                                            <!-- Permanent Delete Button -->
+                                            <Button Command="{Binding DataContext.DeletePermanentlyCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                    CommandParameter="{Binding}"
+                                                    Style="{StaticResource MaterialDesignIconButton}"
+                                                    Foreground="{DynamicResource ErrorColor}"
+                                                    Width="34" Height="34"
+                                                    ToolTip="حذف همیشگی از دیتابیس">
+                                                <materialDesign:PackIcon Kind="DeleteForeverOutline" Width="18" Height="18"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Grid>
     </Grid>
 </UserControl>
