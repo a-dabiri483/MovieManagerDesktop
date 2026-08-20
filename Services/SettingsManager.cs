@@ -81,23 +81,25 @@ namespace MovieManagerDesktop.Services
         public static string GetTmdbApiKey()
         {
             var settings = LoadSettings();
-            var keys = string.IsNullOrWhiteSpace(settings.TmdbApiKey) 
-                ? DefaultTmdbKeys 
-                : settings.TmdbApiKey.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            var savedKeys = string.IsNullOrWhiteSpace(settings.TmdbApiKey) 
+                ? Array.Empty<string>() 
+                : settings.TmdbApiKey.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(k => k.Trim()).ToArray();
             
-            if (keys.Length == 0) return DefaultTmdbKeys[0];
-            return keys[new Random().Next(keys.Length)].Trim();
+            var allKeys = DefaultTmdbKeys.Union(savedKeys).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct().ToArray();
+            if (allKeys.Length == 0) return DefaultTmdbKeys[0];
+            return allKeys[new Random().Next(allKeys.Length)].Trim();
         }
 
         public static string GetOmdbApiKey()
         {
             var settings = LoadSettings();
-            var keys = string.IsNullOrWhiteSpace(settings.OmdbApiKey) 
-                ? DefaultOmdbKeys 
-                : settings.OmdbApiKey.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+            var savedKeys = string.IsNullOrWhiteSpace(settings.OmdbApiKey) 
+                ? Array.Empty<string>() 
+                : settings.OmdbApiKey.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(k => k.Trim()).ToArray();
             
-            if (keys.Length == 0) return DefaultOmdbKeys[0];
-            return keys[new Random().Next(keys.Length)].Trim();
+            var allKeys = DefaultOmdbKeys.Union(savedKeys).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct().ToArray();
+            if (allKeys.Length == 0) return DefaultOmdbKeys[0];
+            return allKeys[new Random().Next(allKeys.Length)].Trim();
         }
 
         public static List<string> GetEffectiveProxies()

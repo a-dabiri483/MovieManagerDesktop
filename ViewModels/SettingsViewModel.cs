@@ -308,11 +308,15 @@ namespace MovieManagerDesktop.ViewModels
             if (loadedSource == "FM_DB") loadedSource = "TMDB_ONLY";
             SelectedDataSource = loadedSource;
             
-            var tmdbKeys = string.IsNullOrWhiteSpace(settings.TmdbApiKey) ? new[] { "a8a9cd082993b9e77b813263981e408b", "c0d46b49ab0f16cd8f7101f2d49defc9" } : settings.TmdbApiKey.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var key in tmdbKeys) TmdbApiKeys.Add(new MovieManagerDesktop.Models.ApiKeyItem(key.Trim()));
+            var defaultTmdb = SettingsManager.DefaultTmdbKeys;
+            var savedTmdb = (settings.TmdbApiKey ?? "").Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(k => k.Trim());
+            var tmdbKeys = defaultTmdb.Union(savedTmdb).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct().ToList();
+            foreach (var key in tmdbKeys) TmdbApiKeys.Add(new MovieManagerDesktop.Models.ApiKeyItem(key));
             
-            var omdbKeys = string.IsNullOrWhiteSpace(settings.OmdbApiKey) ? new[] { "14722d17", "a3c969fb" } : settings.OmdbApiKey.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var key in omdbKeys) OmdbApiKeys.Add(new MovieManagerDesktop.Models.ApiKeyItem(key.Trim()));
+            var defaultOmdb = SettingsManager.DefaultOmdbKeys;
+            var savedOmdb = (settings.OmdbApiKey ?? "").Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(k => k.Trim());
+            var omdbKeys = defaultOmdb.Union(savedOmdb).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct().ToList();
+            foreach (var key in omdbKeys) OmdbApiKeys.Add(new MovieManagerDesktop.Models.ApiKeyItem(key));
             
             var proxyUrls = (settings.ApiProxyUrl ?? string.Empty).Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var url in proxyUrls) ApiProxyUrls.Add(new MovieManagerDesktop.Models.ApiKeyItem(url.Trim()));
