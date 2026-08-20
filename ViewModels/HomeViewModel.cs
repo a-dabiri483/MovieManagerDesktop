@@ -47,7 +47,7 @@ namespace MovieManagerDesktop.ViewModels
         private bool _hasNewEpisodes = false;
 
         [ObservableProperty]
-        private string _featuredTitle = "Naruto Shippuden";
+        private string _featuredTitle = "";
 
         [ObservableProperty]
         private string? _featuredBackdropUrl;
@@ -56,13 +56,13 @@ namespace MovieManagerDesktop.ViewModels
         private string? _featuredPosterUrl;
 
         [ObservableProperty]
-        private string _featuredGenres = "انیمیشن • اکشن و ماجراجویی • علمی تخیلی و فانتزی";
+        private string _featuredGenres = "";
 
         [ObservableProperty]
-        private string _featuredRating = "8.7";
+        private string _featuredRating = "";
 
         [ObservableProperty]
-        private string _featuredMediaType = "Series";
+        private string _featuredMediaType = "Movie";
 
         [ObservableProperty]
         private VideoFile? _featuredVideoFile;
@@ -95,30 +95,54 @@ namespace MovieManagerDesktop.ViewModels
                         SeriesPercentage = Math.Round((double)SeriesCount / totalUnique * 100, 1);
                     }
 
-                    // Set Featured Media
-                    var featuredCandidate = allFiles
-                        .Where(f => !string.IsNullOrEmpty(f.BackdropUrl) || !string.IsNullOrEmpty(f.PosterUrl))
-                        .OrderByDescending(f => f.Rating ?? 0)
-                        .FirstOrDefault() ?? allFiles.FirstOrDefault();
+                    // Set Featured Media (Pick a RANDOM movie or series with a backdrop/poster)
+                    var withBackdrop = allFiles
+                        .Where(f => !string.IsNullOrEmpty(f.BackdropUrl))
+                        .ToList();
+
+                    var rand = new Random();
+                    var featuredCandidate = (withBackdrop.Count > 0 ? withBackdrop[rand.Next(withBackdrop.Count)] : null)
+                        ?? allFiles.Where(f => !string.IsNullOrEmpty(f.PosterUrl)).OrderBy(_ => rand.Next()).FirstOrDefault()
+                        ?? allFiles.FirstOrDefault();
 
                     if (featuredCandidate != null)
                     {
                         FeaturedVideoFile = featuredCandidate;
                         FeaturedTitle = string.IsNullOrWhiteSpace(featuredCandidate.FormattedTitle) ? featuredCandidate.FileName : featuredCandidate.FormattedTitle;
-                        FeaturedBackdropUrl = featuredCandidate.BackdropUrl ?? featuredCandidate.PosterUrl;
+                        
+                        // Upgrade TMDb image quality for ultra crisp desktop displays
+                        string? backdrop = featuredCandidate.BackdropUrl;
+                        if (!string.IsNullOrEmpty(backdrop))
+                        {
+                            if (backdrop.Contains("/w500/")) backdrop = backdrop.Replace("/w500/", "/w1280/");
+                            else if (backdrop.Contains("/w300/")) backdrop = backdrop.Replace("/w300/", "/w1280/");
+                            else if (backdrop.Contains("/w780/")) backdrop = backdrop.Replace("/w780/", "/w1280/");
+                        }
+                        else
+                        {
+                            backdrop = featuredCandidate.PosterUrl;
+                            if (!string.IsNullOrEmpty(backdrop))
+                            {
+                                if (backdrop.Contains("/w500/")) backdrop = backdrop.Replace("/w500/", "/w1280/");
+                                else if (backdrop.Contains("/w342/")) backdrop = backdrop.Replace("/w342/", "/w780/");
+                                else if (backdrop.Contains("/w185/")) backdrop = backdrop.Replace("/w185/", "/w500/");
+                            }
+                        }
+
+                        FeaturedBackdropUrl = backdrop;
                         FeaturedPosterUrl = featuredCandidate.PosterUrl;
-                        if (!string.IsNullOrEmpty(featuredCandidate.Genres))
-                        {
-                            FeaturedGenres = featuredCandidate.Genres.Replace(",", " • ");
-                        }
-                        if (featuredCandidate.Rating.HasValue && featuredCandidate.Rating.Value > 0)
-                        {
-                            FeaturedRating = featuredCandidate.Rating.Value.ToString("0.0");
-                        }
+                        FeaturedGenres = !string.IsNullOrEmpty(featuredCandidate.Genres)
+                            ? featuredCandidate.Genres.Replace(",", " • ")
+                            : (featuredCandidate.MediaType == "Series" ? "سریال" : "فیلم سینمایی");
+
+                        FeaturedRating = (featuredCandidate.Rating.HasValue && featuredCandidate.Rating.Value > 0)
+                            ? featuredCandidate.Rating.Value.ToString("0.0")
+                            : "";
+
                         FeaturedMediaType = featuredCandidate.MediaType ?? "Movie";
                     }
 
-                    // Calculate Continue Watching
+                    // Calculate Continue Watching (فقط آیتم‌های با پیشرفت واقعی تماشا)
                     App.Current.Dispatcher.Invoke(() => ContinueWatchingMovies.Clear());
                     var continueWatchingList = new System.Collections.Generic.List<GalleryItemViewModel>();
                     
@@ -146,22 +170,6 @@ namespace MovieManagerDesktop.ViewModels
                         }
                     }
 
-                    // If no in-progress items, show latest 6 items as showcase
-                    if (!continueWatchingList.Any())
-                    {
-                        var sampleItems = grouped
-                            .Take(6)
-                            .Select(g => {
-                                var f = g.First();
-                                if (f.WatchProgressPercent <= 0) f.WatchProgressPercent = 45;
-                                if (!f.Season.HasValue) f.Season = 1;
-                                if (!f.Episode.HasValue) f.Episode = 1;
-                                return new GalleryItemViewModel(f, () => { });
-                            })
-                            .ToList();
-                        continueWatchingList.AddRange(sampleItems);
-                    }
-                    
                     App.Current.Dispatcher.Invoke(() => {
                         foreach(var item in continueWatchingList) ContinueWatchingMovies.Add(item);
                         HasContinueWatching = ContinueWatchingMovies.Count > 0;
@@ -294,6 +302,24 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
+        private void GoToActors()
+        {
+            WeakReferenceMessenger.Default.Send(new NavigationMessage(new PeopleViewModel("Actor")));
+        }
+
+        [RelayCommand]
+        private void GoToDirectors()
+        {
+            WeakReferenceMessenger.Default.Send(new NavigationMessage(new PeopleViewModel("Director")));
+        }
+
+        [RelayCommand]
+        private void GoToCinemaHub()
+        {
+            WeakReferenceMessenger.Default.Send(new NavigationMessage(new MoviesViewModel()));
+        }
+
+        [RelayCommand]
         private void PlayFeatured()
         {
             if (FeaturedVideoFile != null && !string.IsNullOrEmpty(FeaturedVideoFile.FilePath) && System.IO.File.Exists(FeaturedVideoFile.FilePath))
@@ -319,14 +345,7 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (FeaturedVideoFile != null)
             {
-                if (FeaturedVideoFile.MediaType == "Series")
-                {
-                    WeakReferenceMessenger.Default.Send(new NavigationMessage(new SeriesDetailViewModel(FeaturedVideoFile)));
-                }
-                else
-                {
-                    WeakReferenceMessenger.Default.Send(new NavigationMessage(new MediaDetailsViewModel(FeaturedVideoFile)));
-                }
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(new MediaDetailsViewModel(FeaturedVideoFile)));
             }
             else
             {

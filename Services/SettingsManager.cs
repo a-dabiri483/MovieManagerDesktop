@@ -38,6 +38,10 @@ namespace MovieManagerDesktop.Services
         public int BackupFrequencyIndex { get; set; } = 0; // 0: Always on exit, 1: Daily, 2: Weekly
         public DateTime LastBackupTime { get; set; } = DateTime.MinValue;
 
+        // Internal Encrypted Proxies (Silent background anti-sanction sync)
+        public string InternalEncryptedProxies { get; set; } = string.Empty;
+        public DateTime InternalProxiesLastSyncTime { get; set; } = DateTime.MinValue;
+
         // Trashed Broken Items (AutoRelocator)
         public List<int> TrashedBrokenDbIds { get; set; } = new();
     }
@@ -96,6 +100,26 @@ namespace MovieManagerDesktop.Services
             return keys[new Random().Next(keys.Length)].Trim();
         }
 
+        public static List<string> GetEffectiveProxies()
+        {
+            var settings = LoadSettings();
+            var proxies = new List<string>();
+
+            // 1. User manual proxies if enabled
+            if (settings.IsApiProxyEnabled && !string.IsNullOrWhiteSpace(settings.ApiProxyUrl))
+            {
+                proxies.AddRange(settings.ApiProxyUrl.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+            }
+
+            // 2. Internal background proxies (from 24h cloud sync)
+            if (!string.IsNullOrWhiteSpace(settings.InternalEncryptedProxies))
+            {
+                proxies.AddRange(settings.InternalEncryptedProxies.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
+            }
+
+            return proxies.Where(p => !string.IsNullOrWhiteSpace(p) && p.StartsWith("http", StringComparison.OrdinalIgnoreCase)).Distinct().ToList();
+        }
+
         public static void SaveSettings(SettingsModel settings)
         {
             var options = new JsonSerializerOptions 
@@ -108,14 +132,22 @@ namespace MovieManagerDesktop.Services
         }
 
         /// <summary>
-        /// Fetches the encrypted proxy list from remote repository, decrypts it in-memory using AES-256,
-        /// and updates the settings with the active proxies.
+        /// Fetches the encrypted proxy list from remote repository every 24h or on failure,
+        /// decrypts it in-memory using AES-256, and stores it in InternalEncryptedProxies.
         /// </summary>
-        public static async Task<(bool success, int count, string message)> SyncEncryptedProxiesAsync(string? customUrl = null)
+        public static async Task<(bool success, int count, string message)> SyncEncryptedProxiesAsync(bool force = false, string? customUrl = null)
         {
             try
             {
                 var settings = LoadSettings();
+
+                // Check 24-hour cache if not forced
+                if (!force && !string.IsNullOrWhiteSpace(settings.InternalEncryptedProxies) && (DateTime.UtcNow - settings.InternalProxiesLastSyncTime).TotalHours < 24)
+                {
+                    var count = settings.InternalEncryptedProxies.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Length;
+                    return (true, count, "پروکسی‌های ضدتحریم قبلاً در ۲۴ ساعت گذشته به‌روزرسانی شده‌اند.");
+                }
+
                 string targetUrl = !string.IsNullOrWhiteSpace(customUrl) 
                     ? customUrl 
                     : (!string.IsNullOrWhiteSpace(settings.DynamicProxySourceUrl) 
@@ -138,23 +170,17 @@ namespace MovieManagerDesktop.Services
                 string encryptedText = (await response.Content.ReadAsStringAsync()).Trim();
                 if (string.IsNullOrWhiteSpace(encryptedText))
                 {
-                    // Remote list is empty -> Clear local saved proxies
-                    settings.ApiProxyUrl = string.Empty;
-                    settings.IsApiProxyEnabled = false;
+                    settings.InternalEncryptedProxies = string.Empty;
+                    settings.InternalProxiesLastSyncTime = DateTime.UtcNow;
                     SaveSettings(settings);
                     Network.ProxyHttpClientHandler.ClearCache();
-                    LoggerService.Info("[ProxySync] Remote proxy list is empty. Cleared all local proxies.");
-                    return (true, 0, "لیست پروکسی‌ها در سرور گیت‌هاب خالی است. تمامی سرورها از برنامه حذف و غیرفعال شدند.");
+                    return (true, 0, "لیست پروکسی‌ها در سرور گیت‌هاب خالی است.");
                 }
 
                 string? decrypted = CryptoUtils.Decrypt(encryptedText);
                 if (string.IsNullOrWhiteSpace(decrypted))
                 {
-                    settings.ApiProxyUrl = string.Empty;
-                    settings.IsApiProxyEnabled = false;
-                    SaveSettings(settings);
-                    Network.ProxyHttpClientHandler.ClearCache();
-                    return (true, 0, "داده‌های پروکسی در سرور نامعتبر یا خالی بودند؛ سرورها پاکسازی شدند.");
+                    return (false, 0, "رمزگشایی داده‌های پروکسی با خطا مواجه شد.");
                 }
 
                 var proxyList = decrypted.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries)
@@ -165,21 +191,17 @@ namespace MovieManagerDesktop.Services
 
                 if (proxyList.Count == 0)
                 {
-                    settings.ApiProxyUrl = string.Empty;
-                    settings.IsApiProxyEnabled = false;
-                    SaveSettings(settings);
-                    Network.ProxyHttpClientHandler.ClearCache();
-                    return (true, 0, "هیچ سرور پروکسی فعالی در گیت‌هاب یافت نشد. لیست پروکسی‌ها خالی شد.");
+                    return (true, 0, "هیچ سرور پروکسی فعالی در منبع یافت نشد.");
                 }
 
-                settings.ApiProxyUrl = string.Join(",", proxyList);
-                settings.IsApiProxyEnabled = true;
+                settings.InternalEncryptedProxies = string.Join(",", proxyList);
+                settings.InternalProxiesLastSyncTime = DateTime.UtcNow;
                 SaveSettings(settings);
 
                 Network.ProxyHttpClientHandler.ClearCache();
-                LoggerService.Info($"[ProxySync] Successfully synced {proxyList.Count} proxies from cloud.");
+                LoggerService.Info($"[ProxySync] Successfully synced and cached {proxyList.Count} internal proxies for 24 hours.");
 
-                return (true, proxyList.Count, $"{proxyList.Count} سرور پروکسی ضدتحریم با موفقیت دریافت و فعال شد.");
+                return (true, proxyList.Count, $"{proxyList.Count} سرور پروکسی ضدتحریم با موفقیت همگام‌سازی شد.");
             }
             catch (Exception ex)
             {

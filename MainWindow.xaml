@@ -41,6 +41,9 @@
         <DataTemplate DataType="{x:Type viewmodels:PersonMoviesViewModel}">
             <views:MoviesView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:PeopleViewModel}">
+            <views:PeopleView />
+        </DataTemplate>
         <DataTemplate DataType="{x:Type viewmodels:MoviesViewModel}">
             <views:MoviesView />
         </DataTemplate>
@@ -81,20 +84,20 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
-            <Setter Property="FontSize" Value="11.5"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
-                        <Border x:Name="ItemContainer" Background="Transparent" CornerRadius="22" Padding="14,6" Margin="4,0">
+                        <Border x:Name="ItemContainer" Background="Transparent" CornerRadius="18" Padding="12,2" Margin="3,0">
                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                                 <!-- Circle Active Icon Wrapper -->
-                                <Border x:Name="IconPill" Width="40" Height="40" CornerRadius="20" Background="Transparent" HorizontalAlignment="Center">
+                                <Border x:Name="IconPill" Width="38" Height="32" CornerRadius="16" Background="Transparent" HorizontalAlignment="Center">
                                     <materialDesign:PackIcon x:Name="NavIcon" Kind="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}" 
-                                                             Width="22" Height="22" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                             Width="21" Height="21" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <TextBlock x:Name="NavLabel" Text="{TemplateBinding Content}" FontSize="11" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                                <TextBlock x:Name="NavLabel" Text="{TemplateBinding Content}" FontSize="11" FontWeight="Bold" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" Margin="0,3,0,0" TextTrimming="None"/>
                             </StackPanel>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -102,15 +105,17 @@
                                 <Setter TargetName="IconPill" Property="Background" Value="{DynamicResource PrimaryGradientBrush}"/>
                                 <Setter TargetName="NavIcon" Property="Foreground" Value="White"/>
                                 <Setter TargetName="NavLabel" Property="Foreground" Value="{DynamicResource PrimaryColor}"/>
-                                <Setter TargetName="NavLabel" Property="FontWeight" Value="Bold"/>
+                                <Setter TargetName="NavLabel" Property="FontWeight" Value="Black"/>
                                 <Setter TargetName="IconPill" Property="Effect">
                                     <Setter.Value>
-                                        <DropShadowEffect Color="#EB3B5A" BlurRadius="16" ShadowDepth="0" Opacity="0.6"/>
+                                        <DropShadowEffect Color="#EB3B5A" BlurRadius="12" ShadowDepth="0" Opacity="0.7"/>
                                     </Setter.Value>
                                 </Setter>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter Property="Foreground" Value="White"/>
+                                <Setter TargetName="NavIcon" Property="Foreground" Value="White"/>
+                                <Setter TargetName="NavLabel" Property="Foreground" Value="White"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -200,38 +205,42 @@
                 </Grid>
 
                 <!-- ANDROID FLOATING BOTTOM NAVIGATION BAR (دقیقاً مثل اسکرین‌شات اندروید) -->
-                <Border VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,14" Panel.ZIndex="90">
-                    <Border Background="#E615182E" CornerRadius="36" BorderBrush="#35EB3B5A" BorderThickness="1" Padding="14,4" Height="68">
+                <Border VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,16" Panel.ZIndex="90"
+                        TextOptions.TextFormattingMode="Display"
+                        TextOptions.TextRenderingMode="ClearType"
+                        UseLayoutRounding="True"
+                        SnapsToDevicePixels="True">
+                    <Border Background="#F2101222" CornerRadius="37" BorderBrush="#40EB3B5A" BorderThickness="1.5" Padding="14,4" Height="74">
                         <Border.Effect>
-                            <DropShadowEffect Color="#000000" BlurRadius="28" ShadowDepth="4" Opacity="0.6"/>
+                            <DropShadowEffect Color="#000000" BlurRadius="30" ShadowDepth="4" Opacity="0.7"/>
                         </Border.Effect>
                         <Grid VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <!-- 1. تنظیمات (Settings) -->
-                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="CogOutline" Content="تنظیمات" Command="{Binding NavigateToSettingsCommand}"/>
+                                <!-- 1. خانه (Home) - قرارگیری در سمت راست در RTL -->
+                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="HomeVariantOutline" Content="خانه" Command="{Binding NavigateToHomeCommand}" IsChecked="True"/>
 
-                                <!-- 2. ابزارها (Tools) -->
-                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="WrenchOutline" Content="ابزارها" Command="{Binding NavigateToToolsCommand}"/>
+                                <!-- 2. کتابخانه (Library) -->
+                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="MovieOpenPlayOutline" Content="کتابخانه" Command="{Binding NavigateToMoviesCommand}"/>
 
-                                <!-- 3. تقویم (Calendar) -->
-                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="CalendarMonthOutline" Content="تقویم" Command="{Binding NavigateToCalendarCommand}"/>
+                                <!-- 3. مجموعه‌ها (Collections) -->
+                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="AnimationPlayOutline" Content="مجموعه‌ها" Command="{Binding NavigateToCollectionsCommand}"/>
 
                                 <!-- 4. CENTER FLOATING FAB BUTTON (پویش و جستجو 🔍) -->
-                                <Button Command="{Binding NavigateToScanCommand}" Width="52" Height="52" Margin="10,-12,10,0" materialDesign:ButtonAssist.CornerRadius="26" BorderThickness="0" Background="{DynamicResource FabGradientBrush}" Cursor="Hand">
+                                <Button Command="{Binding NavigateToScanCommand}" Width="52" Height="52" Margin="8,-16,8,0" materialDesign:ButtonAssist.CornerRadius="26" BorderThickness="0" Background="{DynamicResource FabGradientBrush}" Cursor="Hand">
                                     <Button.Effect>
-                                        <DropShadowEffect Color="#8854D0" BlurRadius="18" ShadowDepth="2" Opacity="0.75"/>
+                                        <DropShadowEffect Color="#8854D0" BlurRadius="20" ShadowDepth="2" Opacity="0.8"/>
                                     </Button.Effect>
                                     <materialDesign:PackIcon Kind="Magnify" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Button>
 
-                                <!-- 5. مجموعه‌ها (Collections) -->
-                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="AnimationPlayOutline" Content="مجموعه‌ها" Command="{Binding NavigateToCollectionsCommand}"/>
+                                <!-- 5. تقویم (Calendar) -->
+                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="CalendarMonthOutline" Content="تقویم" Command="{Binding NavigateToCalendarCommand}"/>
 
-                                <!-- 6. کتابخانه (Library) -->
-                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="MovieOpenPlayOutline" Content="کتابخانه" Command="{Binding NavigateToMoviesCommand}"/>
+                                <!-- 6. ابزارها (Tools) -->
+                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="WrenchOutline" Content="ابزارها" Command="{Binding NavigateToToolsCommand}"/>
 
-                                <!-- 7. خانه (Home) -->
-                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="HomeVariantOutline" Content="خانه" Command="{Binding NavigateToHomeCommand}" IsChecked="True"/>
+                                <!-- 7. تنظیمات (Settings) - قرارگیری در سمت چپ در RTL -->
+                                <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="CogOutline" Content="تنظیمات" Command="{Binding NavigateToSettingsCommand}"/>
                             </StackPanel>
                         </Grid>
                     </Border>

@@ -2,9 +2,12 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,25 +23,74 @@ namespace MovieManagerDesktop.Services.Network
         public int ConsecutiveFailures { get; set; }
     }
 
+    /// <summary>
+    /// Advanced Anti-Censorship & Anti-Filter HTTP DelegatingHandler for Desktop.
+    /// Incorporates DNS-over-HTTPS (DoH), Anti-DPI TCP Fragmentation, VPN Detection,
+    /// and Smart Cloud Proxy Failover matching the Android engine.
+    /// </summary>
     public class ProxyHttpClientHandler : DelegatingHandler
     {
         private static readonly long TTL_MS = 15 * 60 * 1000L; // 15 minutes
-        private static readonly ConcurrentDictionary<string, RouteDecision> Cache = new();
+        private static readonly ConcurrentDictionary<string, RouteDecision> Cache = new(StringComparer.OrdinalIgnoreCase);
         private static readonly SemaphoreSlim _semaphore = new(1, 1);
         private static bool _hasShownWarningInSession = false;
 
         public static void ClearCache()
         {
             Cache.Clear();
-            LoggerService.Info("[Network] Route cache cleared");
+            LoggerService.Info("[Network] Anti-censorship route cache cleared");
         }
 
-        public ProxyHttpClientHandler() : this(new HttpClientHandler())
+        public ProxyHttpClientHandler() : this(CreateAntiCensorshipSocketsHandler())
         {
         }
 
         public ProxyHttpClientHandler(HttpMessageHandler innerHandler) : base(innerHandler)
         {
+        }
+
+        /// <summary>
+        /// Creates a high-performance SocketsHttpHandler configured with DoH and Anti-DPI TLS fragmentation.
+        /// </summary>
+        public static SocketsHttpHandler CreateAntiCensorshipSocketsHandler()
+        {
+            return new SocketsHttpHandler
+            {
+                ConnectTimeout = TimeSpan.FromSeconds(8),
+                PooledConnectionLifetime = TimeSpan.FromMinutes(15),
+                EnableMultipleHttp2Connections = true,
+                ConnectCallback = async (context, cancellationToken) =>
+                {
+                    string host = context.DnsEndPoint.Host;
+                    int port = context.DnsEndPoint.Port;
+
+                    // 1. Resolve host using RealDoHDns (bypasses DNS poisoning)
+                    var ips = await RealDoHDns.ResolveAsync(host, cancellationToken);
+                    var ip = ips.Length > 0 ? ips[0] : (await Dns.GetHostAddressesAsync(host, cancellationToken))[0];
+
+                    // 2. Open TCP socket
+                    var socket = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
+                    {
+                        NoDelay = true
+                    };
+
+                    try
+                    {
+                        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                        cts.CancelAfter(TimeSpan.FromSeconds(6));
+                        await socket.ConnectAsync(new IPEndPoint(ip, port), cts.Token);
+                    }
+                    catch
+                    {
+                        socket.Dispose();
+                        throw;
+                    }
+
+                    // 3. Wrap network stream with Anti-DPI packet fragmenter
+                    var networkStream = new NetworkStream(socket, ownsSocket: true);
+                    return new AntiDpiStream(networkStream);
+                }
+            };
         }
 
         /// <summary>
@@ -48,8 +100,8 @@ namespace MovieManagerDesktop.Services.Network
         {
             try
             {
-                // 1. Check system web proxy (used by Clash, v2rayN, Sing-box, etc.)
-                var defaultProxy = System.Net.WebRequest.DefaultWebProxy;
+                // 1. Check system web proxy (used by Clash, v2rayN, Sing-box, Nekoray, etc.)
+                var defaultProxy = WebRequest.DefaultWebProxy;
                 if (defaultProxy != null)
                 {
                     var testUri = new Uri("https://api.themoviedb.org");
@@ -111,12 +163,28 @@ namespace MovieManagerDesktop.Services.Network
             return false;
         }
 
-        private bool IsNetworkException(Exception e)
+        private static string GetCacheKey(string host)
         {
-            return e is HttpRequestException || e is TaskCanceledException || e is System.Net.Sockets.SocketException || e is System.IO.IOException;
+            if (host.Contains("themoviedb.org", StringComparison.OrdinalIgnoreCase) || host.Contains("tmdb.org", StringComparison.OrdinalIgnoreCase))
+                return "tmdb";
+            if (host.Contains("omdbapi.com", StringComparison.OrdinalIgnoreCase))
+                return "omdb";
+            if (host.Contains("tvmaze.com", StringComparison.OrdinalIgnoreCase))
+                return "tvmaze";
+            if (host.Contains("youtube.com", StringComparison.OrdinalIgnoreCase) || host.Contains("ytimg.com", StringComparison.OrdinalIgnoreCase))
+                return "youtube";
+            if (host.Contains("deadline.com", StringComparison.OrdinalIgnoreCase) || host.Contains("collider.com", StringComparison.OrdinalIgnoreCase) || host.Contains("variety.com", StringComparison.OrdinalIgnoreCase) || host.Contains("boxofficemojo.com", StringComparison.OrdinalIgnoreCase))
+                return "cinemanews";
+
+            return host.ToLowerInvariant();
         }
 
-        private bool IsBlockedResponse(HttpResponseMessage response)
+        private static bool IsNetworkException(Exception e)
+        {
+            return e is HttpRequestException || e is TaskCanceledException || e is SocketException || e is IOException || e is WebException;
+        }
+
+        private static bool IsBlockedResponse(HttpResponseMessage response)
         {
             if (response.Content.Headers.ContentType?.MediaType?.Contains("html", StringComparison.OrdinalIgnoreCase) == true)
             {
@@ -125,7 +193,7 @@ namespace MovieManagerDesktop.Services.Network
             return false;
         }
 
-        private string SafeUrl(Uri? uri)
+        private static string SafeUrl(Uri? uri)
         {
             if (uri == null) return "(null)";
             string url = uri.GetLeftPart(UriPartial.Path);
@@ -140,7 +208,7 @@ namespace MovieManagerDesktop.Services.Network
             return url;
         }
 
-        private string ProxyLabel(string proxyUrl)
+        private static string ProxyLabel(string proxyUrl)
         {
             try
             {
@@ -166,12 +234,18 @@ namespace MovieManagerDesktop.Services.Network
 
             string host = originalUri.Host;
             string urlString = originalUri.ToString();
+            string cacheKey = GetCacheKey(host);
 
             bool shouldProxy = urlString.Contains("themoviedb.org", StringComparison.OrdinalIgnoreCase) || 
                                urlString.Contains("tmdb.org", StringComparison.OrdinalIgnoreCase) || 
                                urlString.Contains("omdbapi.com", StringComparison.OrdinalIgnoreCase) ||
                                urlString.Contains("tvmaze.com", StringComparison.OrdinalIgnoreCase) ||
-                               urlString.Contains("anilist.co", StringComparison.OrdinalIgnoreCase);
+                               urlString.Contains("youtube.com", StringComparison.OrdinalIgnoreCase) ||
+                               urlString.Contains("ytimg.com", StringComparison.OrdinalIgnoreCase) ||
+                               urlString.Contains("deadline.com", StringComparison.OrdinalIgnoreCase) ||
+                               urlString.Contains("collider.com", StringComparison.OrdinalIgnoreCase) ||
+                               urlString.Contains("variety.com", StringComparison.OrdinalIgnoreCase) ||
+                               urlString.Contains("boxofficemojo.com", StringComparison.OrdinalIgnoreCase);
 
             if (!shouldProxy)
             {
@@ -179,21 +253,26 @@ namespace MovieManagerDesktop.Services.Network
             }
 
             bool vpnActive = IsVpnActive();
+            bool isPermanentlyBlockedInIran = cacheKey == "youtube" || cacheKey == "cinemanews";
 
             RouteDecision decision;
             await _semaphore.WaitAsync(cancellationToken);
             try
             {
                 long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                if (Cache.TryGetValue(host, out var currentDecision) && currentDecision.ExpirationTime > now && !vpnActive)
+                if (Cache.TryGetValue(cacheKey, out var currentDecision) && currentDecision.ExpirationTime > now && !vpnActive)
                 {
                     decision = currentDecision;
                 }
                 else
                 {
-                    // If VPN is active or cache expired, always try direct connection first
-                    decision = new RouteDecision { UseProxy = false, ExpirationTime = now + TTL_MS };
-                    Cache[host] = decision;
+                    bool initialUseProxy = isPermanentlyBlockedInIran && !vpnActive;
+                    decision = new RouteDecision 
+                    { 
+                        UseProxy = initialUseProxy, 
+                        ExpirationTime = now + TTL_MS 
+                    };
+                    Cache[cacheKey] = decision;
                 }
             }
             finally
@@ -205,15 +284,14 @@ namespace MovieManagerDesktop.Services.Network
 
             if (!decision.UseProxy || vpnActive)
             {
-                // ── Step 1: Try direct connection with smart timeout ──
-                LoggerService.Info($"[Network] ➜ Direct request {(vpnActive ? "[VPN Active]" : "")}: {safeUrl}");
+                // ── Step 1: Direct request with DoH & Anti-DPI ──
+                LoggerService.Info($"[Network] ➜ Direct DoH/Anti-DPI request {(vpnActive ? "[VPN Active]" : "")}: {safeUrl}");
                 var sw = Stopwatch.StartNew();
                 try
                 {
-                    // Clone request for direct attempt
                     var directRequest = await CloneHttpRequestAsync(request);
 
-                    // 4-second timeout for direct check so user doesn't get stuck for 21 seconds if filtered
+                    // 4-second timeout for quick direct attempt
                     using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                     cts.CancelAfter(TimeSpan.FromSeconds(4));
 
@@ -224,13 +302,17 @@ namespace MovieManagerDesktop.Services.Network
                     {
                         LoggerService.Warning($"[Network] ✖ BLOCKED (403/HTML) from {host} — Status: {(int)response.StatusCode} — {sw.ElapsedMilliseconds}ms — Switching to proxy...");
                         response.Dispose();
-                        if (!vpnActive) RecordFailureAndFlip(host);
-                        return await ExecuteWithProxyAsync(request, decision.SuccessfulWorkerUrl, cancellationToken);
+                        if (!vpnActive) RecordFailureAndFlip(cacheKey);
+                        return await ExecuteWithProxyAsync(request, decision.SuccessfulWorkerUrl, cacheKey, cancellationToken);
                     }
 
-                    // Direct connection succeeded (e.g. VPN active or clean connection)
+                    // Direct connection succeeded
                     LoggerService.Info($"[Network] ✔ Direct OK — {host} — Status: {(int)response.StatusCode} — {sw.ElapsedMilliseconds}ms");
-                    Cache[host] = new RouteDecision { UseProxy = false, ExpirationTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + TTL_MS };
+                    Cache[cacheKey] = new RouteDecision 
+                    { 
+                        UseProxy = false, 
+                        ExpirationTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + TTL_MS 
+                    };
                     return response;
                 }
                 catch (Exception e) when (IsNetworkException(e) || e is OperationCanceledException)
@@ -239,8 +321,8 @@ namespace MovieManagerDesktop.Services.Network
                     string errorType = e.GetType().Name;
                     string errorMsg = e.InnerException?.Message ?? e.Message;
                     LoggerService.Warning($"[Network] ✖ Direct FAILED — {host} — {errorType}: {errorMsg} — {sw.ElapsedMilliseconds}ms — Switching to proxy...");
-                    if (!vpnActive) RecordFailureAndFlip(host);
-                    return await ExecuteWithProxyAsync(request, decision.SuccessfulWorkerUrl, cancellationToken);
+                    if (!vpnActive) RecordFailureAndFlip(cacheKey);
+                    return await ExecuteWithProxyAsync(request, decision.SuccessfulWorkerUrl, cacheKey, cancellationToken);
                 }
             }
             else
@@ -248,7 +330,7 @@ namespace MovieManagerDesktop.Services.Network
                 // ── Route cache says: use proxy directly ──
                 string cachedProxy = decision.SuccessfulWorkerUrl != null ? ProxyLabel(decision.SuccessfulWorkerUrl) : "auto";
                 LoggerService.Info($"[Network] ➜ Cached route → proxy ({cachedProxy}) for {host}");
-                return await ExecuteWithProxyAsync(request, decision.SuccessfulWorkerUrl, cancellationToken);
+                return await ExecuteWithProxyAsync(request, decision.SuccessfulWorkerUrl, cacheKey, cancellationToken);
             }
         }
 
@@ -258,7 +340,7 @@ namespace MovieManagerDesktop.Services.Network
             foreach (var header in req.Headers) clone.Headers.TryAddWithoutValidation(header.Key, header.Value);
             if (req.Content != null)
             {
-                var ms = new System.IO.MemoryStream();
+                var ms = new MemoryStream();
                 await req.Content.CopyToAsync(ms);
                 ms.Position = 0;
                 clone.Content = new StreamContent(ms);
@@ -267,15 +349,15 @@ namespace MovieManagerDesktop.Services.Network
             return clone;
         }
 
-        private void RecordFailureAndFlip(string host)
+        private static void RecordFailureAndFlip(string cacheKey)
         {
-            if (Cache.TryGetValue(host, out var current))
+            if (Cache.TryGetValue(cacheKey, out var current))
             {
                 int failures = current.ConsecutiveFailures + 1;
                 if (failures >= 2)
                 {
-                    LoggerService.Info($"[Network] ⚑ Route flipped: {host} → PROXY (after {failures} consecutive failures, TTL=15min)");
-                    Cache[host] = new RouteDecision
+                    LoggerService.Info($"[Network] ⚑ Route flipped: {cacheKey} → PROXY (after {failures} consecutive failures, TTL=15min)");
+                    Cache[cacheKey] = new RouteDecision
                     {
                         UseProxy = true,
                         SuccessfulWorkerUrl = current.SuccessfulWorkerUrl,
@@ -285,14 +367,14 @@ namespace MovieManagerDesktop.Services.Network
                 }
                 else
                 {
-                    LoggerService.Info($"[Network] ⚠ Failure #{failures} for {host} (need 2 to flip to proxy)");
+                    LoggerService.Info($"[Network] ⚠ Failure #{failures} for {cacheKey} (need 2 to flip to proxy)");
                     current.ConsecutiveFailures = failures;
                 }
             }
             else
             {
-                LoggerService.Info($"[Network] ⚑ Route flipped: {host} → PROXY (first failure, no prior cache)");
-                Cache[host] = new RouteDecision
+                LoggerService.Info($"[Network] ⚑ Route flipped: {cacheKey} → PROXY (first failure, no prior cache)");
+                Cache[cacheKey] = new RouteDecision
                 {
                     UseProxy = true,
                     ExpirationTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + TTL_MS,
@@ -301,28 +383,17 @@ namespace MovieManagerDesktop.Services.Network
             }
         }
 
-        private async Task<HttpResponseMessage> ExecuteWithProxyAsync(HttpRequestMessage request, string? knownGoodUrl, CancellationToken cancellationToken)
+        private async Task<HttpResponseMessage> ExecuteWithProxyAsync(HttpRequestMessage request, string? knownGoodUrl, string cacheKey, CancellationToken cancellationToken)
         {
             string originalUrlStr = request.RequestUri!.ToString();
-            string safeOriginal = SafeUrl(request.RequestUri);
-            
-            var settings = SettingsManager.LoadSettings();
-            List<string> proxyUrls = new();
-            if (settings.IsApiProxyEnabled && !string.IsNullOrWhiteSpace(settings.ApiProxyUrl))
-            {
-                proxyUrls.AddRange(settings.ApiProxyUrl.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()));
-            }
+            List<string> proxyUrls = SettingsManager.GetEffectiveProxies();
 
             // If no proxies available, try syncing from GitHub dynamically
             if (proxyUrls.Count == 0)
             {
-                LoggerService.Info("[Network] No proxies in settings. Attempting dynamic sync from GitHub...");
-                await SettingsManager.SyncEncryptedProxiesAsync();
-                settings = SettingsManager.LoadSettings();
-                if (!string.IsNullOrWhiteSpace(settings.ApiProxyUrl))
-                {
-                    proxyUrls.AddRange(settings.ApiProxyUrl.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim()));
-                }
+                LoggerService.Info("[Network] No proxies in cache. Attempting dynamic 24h sync from cloud...");
+                await SettingsManager.SyncEncryptedProxiesAsync(force: true);
+                proxyUrls = SettingsManager.GetEffectiveProxies();
             }
 
             if (proxyUrls.Count == 0)
@@ -343,7 +414,7 @@ namespace MovieManagerDesktop.Services.Network
             }
 
             var distinctUrls = urlsToTry.Distinct().ToList();
-            LoggerService.Info($"[Network] 🔄 Trying {distinctUrls.Count} proxy(s) for: {safeOriginal}");
+            LoggerService.Info($"[Network] 🔄 Trying {distinctUrls.Count} proxy(s) for: {SafeUrl(request.RequestUri)}");
 
             async Task<HttpResponseMessage?> TryProxyListAsync(List<string> urls)
             {
@@ -358,24 +429,42 @@ namespace MovieManagerDesktop.Services.Network
 
                     string proxyUrlBase;
                     if (trimmedProxy.Contains("?"))
+                        proxyUrlBase = trimmedProxy.EndsWith("&") ? trimmedProxy : trimmedProxy + "&";
+                    else
+                        proxyUrlBase = trimmedProxy.EndsWith("/") ? trimmedProxy + "?url=" : trimmedProxy + "/?url=";
+
+                    string finalProxyUrl;
+                    if (proxyUrlBase.Contains("url="))
                     {
-                        proxyUrlBase = trimmedProxy.EndsWith("url=") ? trimmedProxy : trimmedProxy + "&url=";
+                        finalProxyUrl = proxyUrlBase.Substring(0, proxyUrlBase.IndexOf("url=") + 4) + Uri.EscapeDataString(originalUrlStr);
                     }
                     else
                     {
-                        proxyUrlBase = trimmedProxy.EndsWith("/") ? trimmedProxy + "?url=" : trimmedProxy + "/?url=";
+                        finalProxyUrl = proxyUrlBase + "url=" + Uri.EscapeDataString(originalUrlStr);
                     }
 
-                    string encodedOriginalUrl = Uri.EscapeDataString(originalUrlStr);
-                    string newUrl = proxyUrlBase + encodedOriginalUrl;
+                    var newRequest = new HttpRequestMessage(request.Method, finalProxyUrl);
+                    foreach (var header in request.Headers)
+                    {
+                        if (header.Key.Equals("Host", StringComparison.OrdinalIgnoreCase)) continue;
+                        newRequest.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                    }
 
-                    var newRequest = await CloneHttpRequestAsync(request);
-                    newRequest.RequestUri = new Uri(newUrl);
+                    if (request.Content != null)
+                    {
+                        var ms = new MemoryStream();
+                        await request.Content.CopyToAsync(ms);
+                        ms.Position = 0;
+                        newRequest.Content = new StreamContent(ms);
+                        foreach (var header in request.Content.Headers)
+                        {
+                            newRequest.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                        }
+                    }
+
                     newRequest.Options.Set(new HttpRequestOptionsKey<bool>("Proxied"), true);
 
-                    LoggerService.Info($"[Network]   Proxy [{proxyIndex}/{urls.Count}]: {proxyLabel}...");
                     var sw = Stopwatch.StartNew();
-
                     try
                     {
                         var response = await base.SendAsync(newRequest, cancellationToken);
@@ -384,7 +473,7 @@ namespace MovieManagerDesktop.Services.Network
                         if (response.IsSuccessStatusCode && !IsBlockedResponse(response))
                         {
                             LoggerService.Info($"[Network]   ✔ Proxy OK — {proxyLabel} — Status: {(int)response.StatusCode} — {sw.ElapsedMilliseconds}ms");
-                            Cache[request.RequestUri.Host] = new RouteDecision
+                            Cache[cacheKey] = new RouteDecision
                             {
                                 UseProxy = true,
                                 SuccessfulWorkerUrl = proxySetting,
@@ -413,14 +502,10 @@ namespace MovieManagerDesktop.Services.Network
             var resultResponse = await TryProxyListAsync(distinctUrls);
             if (resultResponse != null) return resultResponse;
 
-            // All local proxies failed -> Try dynamic sync from GitHub to fetch fresh proxies
-            LoggerService.Info("[Network] All local proxies failed. Fetching fresh proxies from GitHub...");
-            await SettingsManager.SyncEncryptedProxiesAsync();
-            settings = SettingsManager.LoadSettings();
-            var refreshedUrls = (settings.ApiProxyUrl ?? string.Empty).Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(s => s.Trim())
-                .Except(distinctUrls)
-                .ToList();
+            // All local proxies failed -> Trigger immediate emergency re-sync from cloud (force=true)
+            LoggerService.Info("[Network] All active proxies failed. Immediately re-syncing from cloud...");
+            await SettingsManager.SyncEncryptedProxiesAsync(force: true);
+            var refreshedUrls = SettingsManager.GetEffectiveProxies().Except(distinctUrls).ToList();
 
             if (refreshedUrls.Count > 0)
             {
@@ -431,7 +516,7 @@ namespace MovieManagerDesktop.Services.Network
             if (!_hasShownWarningInSession)
             {
                 _hasShownWarningInSession = true;
-                ToastService.Instance.ShowWarning("عدم دسترسی به سرورهای ضدتحریم؛ اتصال مستقیم در حال تلاش است...");
+                ToastService.Instance.ShowWarning("عدم دسترسی به سرورهای ضدتحریم؛ تلاش از طریق اتصال مستقیم...");
             }
 
             LoggerService.Error($"[Network] ✖✖ ALL proxies failed for {request.RequestUri.Host} — falling back to direct request");

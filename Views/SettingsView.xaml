@@ -5,20 +5,28 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
+             xmlns:helpers="clr-namespace:MovieManagerDesktop.Helpers"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=viewmodels:SettingsViewModel}"
-             d:DesignHeight="850" d:DesignWidth="1000"
+             d:DesignHeight="1200" d:DesignWidth="1100"
+             FontFamily="{DynamicResource AppFontFamily}"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
              FlowDirection="RightToLeft">
 
     <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
         <!-- Android Settings Group Card Style -->
         <Style x:Key="SettingsGroupCard" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
             <Setter Property="BorderBrush" Value="{DynamicResource LightBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="20"/>
-            <Setter Property="Padding" Value="20"/>
-            <Setter Property="Margin" Value="0,0,0,24"/>
+            <Setter Property="Padding" Value="18,16"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
             <Setter Property="Effect">
                 <Setter.Value>
                     <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.35" Color="#000000"/>
@@ -26,241 +34,1048 @@
             </Setter>
         </Style>
 
-        <!-- Settings Row Style -->
-        <Style x:Key="SettingsRowBorder" TargetType="Border">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Padding" Value="12,14"/>
-            <Setter Property="CornerRadius" Value="12"/>
+        <!-- Clickable Action Setting Card Style -->
+        <Style x:Key="SettingsActionCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource LightBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="18"/>
+            <Setter Property="Padding" Value="16,14"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.3" Color="#000000"/>
+                </Setter.Value>
+            </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
+                    <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
+                    <Setter Property="BorderBrush" Value="#40EB3B5A"/>
                 </Trigger>
             </Style.Triggers>
+        </Style>
+
+        <!-- Section Header Style -->
+        <Style x:Key="SettingsSectionHeader" TargetType="StackPanel">
+            <Setter Property="Orientation" Value="Horizontal"/>
+            <Setter Property="Margin" Value="4,10,0,10"/>
         </Style>
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Margin="32,20,32,40" MaxWidth="880">
+        <StackPanel Margin="36,20,36,60" HorizontalAlignment="Stretch">
 
-            <!-- Top Header (Android Back + Title) -->
+            <!-- ======================================================== -->
+            <!-- TOP APP BAR / HEADER -->
+            <!-- ======================================================== -->
             <Grid Margin="0,0,0,24">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 
-                <Button Command="{Binding GoBackCommand}" 
+                <Button Command="{Binding BackToMainCommand}" 
                         Background="{DynamicResource CardBackground}" BorderThickness="1" BorderBrush="{DynamicResource LightBorder}"
-                        Foreground="White" Width="44" Height="44" Margin="0,0,16,0" 
-                        ToolTip="بازگشت" materialDesign:ButtonAssist.CornerRadius="22" VerticalAlignment="Center">
+                        Foreground="White" Width="44" Height="44" Margin="0,0,18,0" 
+                        ToolTip="بازگشت" materialDesign:ButtonAssist.CornerRadius="22" VerticalAlignment="Center" Cursor="Hand">
                     <materialDesign:PackIcon Kind="ArrowRight" Width="24" Height="24"/>
                 </Button>
                 
-                <TextBlock Grid.Column="1" Text="شخصی‌سازی و تنظیمات" FontSize="22" FontWeight="Black" Foreground="White" VerticalAlignment="Center">
-                    <TextBlock.Effect>
-                        <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.5" Color="Black"/>
-                    </TextBlock.Effect>
-                </TextBlock>
+                <!-- Dynamic Header Titles -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="تنظیمات" Visibility="{Binding IsMainView, Converter={StaticResource BooleanToVisibilityConverter}}" FontSize="26" FontWeight="Black" Foreground="White"/>
+                    <TextBlock Text="منابع داده و وب سرویس API" Visibility="{Binding IsDataSourcesView, Converter={StaticResource BooleanToVisibilityConverter}}" FontSize="24" FontWeight="Black" Foreground="White"/>
+                    <TextBlock Text="پشتیبان‌گیری و بازیابی" Visibility="{Binding IsBackupView, Converter={StaticResource BooleanToVisibilityConverter}}" FontSize="24" FontWeight="Black" Foreground="White"/>
+                    <TextBlock Text="سیستم چند پراکسی (ضد تحریم)" Visibility="{Binding IsProxyView, Converter={StaticResource BooleanToVisibilityConverter}}" FontSize="24" FontWeight="Black" Foreground="White"/>
+                    <TextBlock Text="شخصی‌سازی" Visibility="{Binding IsPersonalizationView, Converter={StaticResource BooleanToVisibilityConverter}}" FontSize="24" FontWeight="Black" Foreground="White"/>
+                    <TextBlock Text="آموزش و نکات مهم" Visibility="{Binding IsEducationView, Converter={StaticResource BooleanToVisibilityConverter}}" FontSize="24" FontWeight="Black" Foreground="White"/>
+                    <TextBlock Text="درباره نرم‌افزار" Visibility="{Binding IsAboutView, Converter={StaticResource BooleanToVisibilityConverter}}" FontSize="24" FontWeight="Black" Foreground="White"/>
+                </StackPanel>
             </Grid>
 
-            <!-- 1. بخش ظاهر برنامه (Android Theme Settings) -->
-            <StackPanel Margin="0,0,0,4">
-                <!-- Section Header with Vertical Bar -->
-                <StackPanel Orientation="Horizontal" Margin="6,0,0,12">
-                    <Border Width="4" Height="18" Background="{DynamicResource PrimaryColor}" CornerRadius="2" Margin="0,0,8,0"/>
-                    <TextBlock Text="ظاهر برنامه" FontSize="16.5" FontWeight="Bold" Foreground="White"/>
+            <!-- ================================================================= -->
+            <!-- VIEW 1: MAIN SETTINGS MENU (صفحه اصلی تنظیمات - دسکتاپ چند ستونه) -->
+            <!-- ================================================================= -->
+            <Grid Visibility="{Binding IsMainView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- ================= LEFT COLUMN (عملیات و سرویس‌ها) ================= -->
+                <StackPanel Grid.Column="0">
+                    
+                    <!-- Section: عملیات -->
+                    <StackPanel Style="{StaticResource SettingsSectionHeader}">
+                        <Border Width="4" Height="18" Background="{DynamicResource PurpleAccent}" CornerRadius="2" Margin="0,0,8,0"/>
+                        <TextBlock Text="عملیات و سرویس‌های آنلاین" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                    </StackPanel>
+
+                    <!-- Card 1: منابع داده و وب سرویس API -->
+                    <Border Style="{StaticResource SettingsActionCard}">
+                        <Grid Background="Transparent">
+                            <Grid.InputBindings>
+                                <MouseBinding MouseAction="LeftClick" Command="{Binding OpenDataSourcesCommand}"/>
+                            </Grid.InputBindings>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- Pink Icon -->
+                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#25EB3B5A" Margin="0,0,16,0">
+                                <materialDesign:PackIcon Kind="FolderSettingsOutline" Width="26" Height="26" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="منابع داده و وب سرویس API" FontSize="15.5" FontWeight="Black" Foreground="White"/>
+                                <TextBlock Text="مدیریت کلیدهای TMDb/OMDb، تست اتصال و انتخاب سرور اصلی" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Card 2: سیستم چند پراکسی (ضد تحریم) -->
+                    <Border Style="{StaticResource SettingsActionCard}">
+                        <Grid Background="Transparent">
+                            <Grid.InputBindings>
+                                <MouseBinding MouseAction="LeftClick" Command="{Binding OpenProxyCommand}"/>
+                            </Grid.InputBindings>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- Teal Icon -->
+                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#250FB9B1" Margin="0,0,16,0">
+                                <materialDesign:PackIcon Kind="Earth" Width="26" Height="26" Foreground="{DynamicResource TealAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="سیستم چند پراکسی (ضد تحریم)" FontSize="15.5" FontWeight="Black" Foreground="White"/>
+                                <TextBlock Text="فعال‌سازی سرویس ضد تحریم، مدیریت ورکر کلودفلر و تست پینگ" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Card 3: پشتیبان‌گیری و بازیابی -->
+                    <Border Style="{StaticResource SettingsActionCard}">
+                        <Grid Background="Transparent">
+                            <Grid.InputBindings>
+                                <MouseBinding MouseAction="LeftClick" Command="{Binding OpenBackupCommand}"/>
+                            </Grid.InputBindings>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- Blue Icon -->
+                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#253867D6" Margin="0,0,16,0">
+                                <materialDesign:PackIcon Kind="CloudUploadOutline" Width="26" Height="26" Foreground="{DynamicResource NetworkBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="پشتیبان‌گیری و بازیابی" FontSize="15.5" FontWeight="Black" Foreground="White"/>
+                                <TextBlock Text="پشتیبان‌گیری آفلاین JSON، همگام‌سازی ابری با گوگل درایو و بکاپ خودکار" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
                 </StackPanel>
 
-                <Border Style="{StaticResource SettingsGroupCard}">
-                    <StackPanel>
-                        <!-- تم برنامه (تاریک / روشن) -->
-                        <Border Style="{StaticResource SettingsRowBorder}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <!-- Purple Moon Icon on Right -->
-                                <Border Grid.Column="0" Width="44" Height="44" CornerRadius="14" Background="#258854D0" Margin="0,0,14,0">
-                                    <materialDesign:PackIcon Kind="MoonWaxingCrescent" Width="22" Height="22" Foreground="{DynamicResource PurpleAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="تم برنامه" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
-                                    <TextBlock Text="حالت نمایش تاریک (Dark Mode) یا روشن" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,3,0,0"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                    <RadioButton Content="تاریک" IsChecked="{Binding IsDarkTheme}" Foreground="White" Margin="0,0,12,0"/>
-                                    <RadioButton Content="روشن" IsChecked="{Binding IsLightTheme}" Foreground="White"/>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <Separator Background="{DynamicResource LightBorder}" Margin="0,4"/>
-
-                        <!-- زبان برنامه -->
-                        <Border Style="{StaticResource SettingsRowBorder}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <!-- Blue Globe Icon -->
-                                <Border Grid.Column="0" Width="44" Height="44" CornerRadius="14" Background="#253867D6" Margin="0,0,14,0">
-                                    <materialDesign:PackIcon Kind="Web" Width="22" Height="22" Foreground="{DynamicResource NetworkBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="زبان (Language)" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
-                                    <TextBlock Text="زبان رابط کاربری نرم‌افزار" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,3,0,0"/>
-                                </StackPanel>
-                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                    <RadioButton Content="فارسی" IsChecked="{Binding IsPersianLanguage}" Foreground="White" Margin="0,0,12,0"/>
-                                    <RadioButton Content="English" IsChecked="{Binding IsEnglishLanguage}" Foreground="White"/>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <Separator Background="{DynamicResource LightBorder}" Margin="0,4"/>
-
-                        <!-- فرمت تقویم -->
-                        <Border Style="{StaticResource SettingsRowBorder}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <!-- Red Calendar Icon -->
-                                <Border Grid.Column="0" Width="44" Height="44" CornerRadius="14" Background="#25EB3B5A" Margin="0,0,14,0">
-                                    <materialDesign:PackIcon Kind="CalendarMonth" Width="22" Height="22" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="فرمت تقویم و تاریخ" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
-                                    <TextBlock Text="نمایش تاریخ‌ها به صورت شمسی یا میلادی" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,3,0,0"/>
-                                </StackPanel>
-                                <TextBlock Grid.Column="2" Text="هجری شمسی (جلالی)" Foreground="{DynamicResource PrimaryColor}" FontWeight="Bold" VerticalAlignment="Center"/>
-                            </Grid>
-                        </Border>
+                <!-- ================= RIGHT COLUMN (شخصی‌سازی، آموزش و دیتابیس) ================= -->
+                <StackPanel Grid.Column="2">
+                    
+                    <!-- Section: تنظیمات ظاهری و اطلاعات -->
+                    <StackPanel Style="{StaticResource SettingsSectionHeader}">
+                        <Border Width="4" Height="18" Background="{DynamicResource PurpleAccent}" CornerRadius="2" Margin="0,0,8,0"/>
+                        <TextBlock Text="شخصی‌سازی و راهنما" FontSize="16" FontWeight="Bold" Foreground="White"/>
                     </StackPanel>
+
+                    <!-- Card 4: شخصی‌سازی -->
+                    <Border Style="{StaticResource SettingsActionCard}">
+                        <Grid Background="Transparent">
+                            <Grid.InputBindings>
+                                <MouseBinding MouseAction="LeftClick" Command="{Binding OpenPersonalizationCommand}"/>
+                            </Grid.InputBindings>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- Magenta Icon -->
+                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#258854D0" Margin="0,0,16,0">
+                                <materialDesign:PackIcon Kind="PaletteOutline" Width="26" Height="26" Foreground="{DynamicResource PurpleAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="شخصی‌سازی" FontSize="15.5" FontWeight="Black" Foreground="White"/>
+                                <TextBlock Text="تم تاریک/روشن، ترجمه، تقویم شمسی جلالی و فیلترهای نمایش" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Card 5: آموزش -->
+                    <Border Style="{StaticResource SettingsActionCard}">
+                        <Grid Background="Transparent">
+                            <Grid.InputBindings>
+                                <MouseBinding MouseAction="LeftClick" Command="{Binding OpenEducationCommand}"/>
+                            </Grid.InputBindings>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- Indigo Icon -->
+                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#25575FCF" Margin="0,0,16,0">
+                                <materialDesign:PackIcon Kind="School" Width="26" Height="26" Foreground="#7D88F5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="آموزش و نکات مهم" FontSize="15.5" FontWeight="Black" Foreground="White"/>
+                                <TextBlock Text="راهنمای جامع کار با نرم‌افزار: اسکن، سازماندهی، ردیاب، ترجمه و ترفندها" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Card 6: درباره -->
+                    <Border Style="{StaticResource SettingsActionCard}">
+                        <Grid Background="Transparent">
+                            <Grid.InputBindings>
+                                <MouseBinding MouseAction="LeftClick" Command="{Binding OpenAboutCommand}"/>
+                            </Grid.InputBindings>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- Blue Icon -->
+                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#253867D6" Margin="0,0,16,0">
+                                <materialDesign:PackIcon Kind="InformationOutline" Width="26" Height="26" Foreground="{DynamicResource NetworkBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="درباره نرم‌افزار" FontSize="15.5" FontWeight="Black" Foreground="White"/>
+                                <TextBlock Text="نسخه ۲.۰.۰ پرو، مشخصات پلتفرم دسکتاپ و تیم توسعه" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Database Management Card -->
+                    <Border Style="{StaticResource SettingsGroupCard}" Margin="0,4,0,0">
+                        <StackPanel>
+                            <Grid Margin="4,0,4,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="حجم فعلی پایگاه داده:" FontSize="14.5" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                <TextBlock Grid.Column="2" Text="{Binding DatabaseSizeText}" FontSize="15.5" FontWeight="Black" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <!-- Delete All Data Button -->
+                            <Button Command="{Binding ClearAllDatabaseDataCommand}" 
+                                    Height="42" Background="{DynamicResource PrimaryGradientBrush}" BorderThickness="0" 
+                                    materialDesign:ButtonAssist.CornerRadius="12" Cursor="Hand">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="DeleteOutline" Width="20" Height="20" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="حذف تمام اطلاعات دیتابیس" Foreground="White" FontSize="13.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </Grid>
+
+
+            <!-- ================================================================= -->
+            <!-- VIEW 2: DATA SOURCES & API (صفحه اختصاصی منابع داده - ۲ ستونه) -->
+            <!-- ================================================================= -->
+            <StackPanel Visibility="{Binding IsDataSourcesView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                
+                <!-- Info Banner (Photo 8/9) -->
+                <Border Background="#203867D6" BorderBrush="#503867D6" BorderThickness="1" CornerRadius="16" Padding="16,14" Margin="0,0,0,20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <materialDesign:PackIcon Kind="InformationOutline" Width="24" Height="24" Foreground="{DynamicResource NetworkBlue}" VerticalAlignment="Top" Margin="0,2,12,0"/>
+                        <TextBlock Grid.Column="1" Text="توجه: بخش «ردیاب سریال» به دلیل نیاز به اطلاعات دقیق قسمت‌ها و فصل‌ها، همیشه از دیتابیس کامل TMDb استفاده می‌کند (حتی اگر منبع دیگری را انتخاب کنید). منابع انتخابی شما فقط در جستجوی دسته‌ای و کتابخانه اعمال می‌شوند." 
+                                   FontSize="12.5" Foreground="#E2E8F0" LineHeight="20"/>
+                    </Grid>
                 </Border>
+
+                <!-- 2 Wide Side-by-Side Columns for TMDb and OMDb -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Column 1: TMDb API (Photo 9) -->
+                    <Border Grid.Column="0" Style="{StaticResource SettingsGroupCard}" BorderBrush="{Binding IsTmdbSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <RadioButton Grid.Column="0" IsChecked="{Binding IsTmdbSelected}" GroupName="DataSourceGroup" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="TMDb API (نیاز به API Key)" FontSize="15" FontWeight="Black" Foreground="{DynamicResource PrimaryColor}"/>
+                                    <TextBlock Text="نیاز به فیلترشکن، اما کامل‌ترین دیتابیس با جستجوی هوشمند (پیشنهاد می‌شود)" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <materialDesign:PackIcon Grid.Column="2" Kind="HelpCircleOutline" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <!-- TMDb Keys List -->
+                            <ItemsControl ItemsSource="{Binding TmdbApiKeys}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#0CFFFFFF" CornerRadius="12" Padding="14,10" Margin="0,0,0,10">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <!-- Delete Red Trash Icon on Right -->
+                                                <Button Grid.Column="0" Command="{Binding DataContext.DeleteTmdbKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                        Background="Transparent" BorderThickness="0" Padding="4" Height="32" Width="32" Margin="0,0,10,0">
+                                                    <materialDesign:PackIcon Kind="Delete" Width="20" Height="20" Foreground="#EB3B5A"/>
+                                                </Button>
+
+                                                <!-- Test Button -->
+                                                <Button Grid.Column="1" Command="{Binding DataContext.TestTmdbKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                        Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="White" BorderBrush="#40FFFFFF" Height="32" Padding="16,0" HorizontalAlignment="Left" materialDesign:ButtonAssist.CornerRadius="8">
+                                                    <TextBlock Text="تست" FontSize="12" FontWeight="Bold"/>
+                                                </Button>
+
+                                                <!-- Masked Key text (e.g. a8a***08b) on Left -->
+                                                <TextBlock Grid.Column="2" Text="{Binding MaskedKey}" Foreground="White" FontSize="13.5" FontWeight="Bold" FlowDirection="LeftToRight" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Add TMDb Key Input Box -->
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Command="{Binding AddTmdbKeyCommand}" 
+                                        Background="#25FFFFFF" Foreground="White" BorderThickness="0"
+                                        Height="42" Padding="20,0" materialDesign:ButtonAssist.CornerRadius="10">
+                                    <TextBlock Text="افزودن" FontSize="13" FontWeight="Bold"/>
+                                </Button>
+                                <Border Grid.Column="2" Background="#12FFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,0">
+                                    <TextBox Text="{Binding NewTmdbKey, UpdateSourceTrigger=PropertyChanged}" 
+                                             materialDesign:HintAssist.Hint="کلید API را وارد کنید" 
+                                             Foreground="White" FontSize="13" BorderThickness="0" Background="Transparent"
+                                             FlowDirection="LeftToRight" HorizontalContentAlignment="Left" VerticalAlignment="Center"/>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Column 2: OMDb API (Photo 8) -->
+                    <Border Grid.Column="2" Style="{StaticResource SettingsGroupCard}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <RadioButton Grid.Column="0" IsChecked="{Binding IsOmdbSelected}" GroupName="DataSourceGroup" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="OMDb API (نیاز به API Key)" FontSize="15" FontWeight="Black" Foreground="{DynamicResource GoldColor}"/>
+                                    <TextBlock Text="بدون نیاز به فیلترشکن، اما عدم دریافت توضیحات کامل برای برخی فیلم‌ها" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,3,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <materialDesign:PackIcon Grid.Column="2" Kind="HelpCircleOutline" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                            </Grid>
+
+                            <!-- OMDb Keys List -->
+                            <ItemsControl ItemsSource="{Binding OmdbApiKeys}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#0CFFFFFF" CornerRadius="12" Padding="14,10" Margin="0,0,0,10">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <!-- Delete Red Trash Icon on Right -->
+                                                <Button Grid.Column="0" Command="{Binding DataContext.DeleteOmdbKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                        Background="Transparent" BorderThickness="0" Padding="4" Height="32" Width="32" Margin="0,0,10,0">
+                                                    <materialDesign:PackIcon Kind="Delete" Width="20" Height="20" Foreground="#EB3B5A"/>
+                                                </Button>
+
+                                                <!-- Test Button -->
+                                                <Button Grid.Column="1" Command="{Binding DataContext.TestOmdbKeyCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                        Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="White" BorderBrush="#40FFFFFF" Height="32" Padding="16,0" HorizontalAlignment="Left" materialDesign:ButtonAssist.CornerRadius="8">
+                                                    <TextBlock Text="تست" FontSize="12" FontWeight="Bold"/>
+                                                </Button>
+
+                                                <!-- Masked Key text on Left -->
+                                                <TextBlock Grid.Column="2" Text="{Binding MaskedKey}" Foreground="White" FontSize="13.5" FontWeight="Bold" FlowDirection="LeftToRight" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Add OMDb Key Input Box -->
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Command="{Binding AddOmdbKeyCommand}" 
+                                        Background="#25FFFFFF" Foreground="White" BorderThickness="0"
+                                        Height="42" Padding="20,0" materialDesign:ButtonAssist.CornerRadius="10">
+                                    <TextBlock Text="افزودن" FontSize="13" FontWeight="Bold"/>
+                                </Button>
+                                <Border Grid.Column="2" Background="#12FFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,0">
+                                    <TextBox Text="{Binding NewOmdbKey, UpdateSourceTrigger=PropertyChanged}" 
+                                             materialDesign:HintAssist.Hint="کلید API را وارد کنید" 
+                                             Foreground="White" FontSize="13" BorderThickness="0" Background="Transparent"
+                                             FlowDirection="LeftToRight" HorizontalContentAlignment="Left" VerticalAlignment="Center"/>
+                                </Border>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
             </StackPanel>
 
-            <!-- 2. بخش محتوا و ترجمه (Android Content Settings) -->
-            <StackPanel Margin="0,0,0,4">
-                <StackPanel Orientation="Horizontal" Margin="6,0,0,12">
-                    <Border Width="4" Height="18" Background="{DynamicResource PurpleAccent}" CornerRadius="2" Margin="0,0,8,0"/>
-                    <TextBlock Text="محتوا و متادیتا" FontSize="16.5" FontWeight="Bold" Foreground="White"/>
+
+            <!-- ================================================================= -->
+            <!-- VIEW 3: PROXY & ANTI-SANCTION (سیستم چند پراکسی - دسکتاپ ۲ ستونه) -->
+            <!-- ================================================================= -->
+            <Grid Visibility="{Binding IsProxyView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Column: فعال‌سازی و لیست سرورها (Photo 7) -->
+                <StackPanel Grid.Column="0">
+                    
+                    <!-- Toggle Card -->
+                    <Border Style="{StaticResource SettingsGroupCard}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <ToggleButton Grid.Column="0" IsChecked="{Binding IsApiProxyEnabled}" Style="{StaticResource MaterialDesignSwitchToggleButton}" Margin="0,0,14,0"/>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="فعال‌سازی سیستم ضد تحریم دستی" FontSize="15" FontWeight="Black" Foreground="White"/>
+                                <TextBlock Text="در صورت بروز خطا، سیستم خودکار پراکسی بعدی یا اتصال مستقیم را تست می‌کند." FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,3,0,0" LineHeight="18"/>
+                            </StackPanel>
+                            <Border Grid.Column="2" Width="40" Height="40" CornerRadius="12" Background="#20EB3B5A">
+                                <materialDesign:PackIcon Kind="WifiOff" Width="22" Height="22" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Border>
+
+                    <!-- Registered Proxies Card -->
+                    <StackPanel Style="{StaticResource SettingsSectionHeader}">
+                        <Border Width="4" Height="18" Background="{DynamicResource PurpleAccent}" CornerRadius="2" Margin="0,0,8,0"/>
+                        <TextBlock Text="آدرس‌های ثبت شده دستی" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                    </StackPanel>
+
+                    <!-- Add New Proxy Box -->
+                    <Border Style="{StaticResource SettingsGroupCard}">
+                        <StackPanel>
+                            <TextBlock Text="افزودن پراکسی جدید" FontSize="14" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+                            <Grid Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Command="{Binding AddProxyUrlCommand}" 
+                                        Background="{DynamicResource PrimaryColor}" Foreground="White" BorderThickness="0"
+                                        Height="42" Width="44" Padding="0" materialDesign:ButtonAssist.CornerRadius="12">
+                                    <materialDesign:PackIcon Kind="Plus" Width="22" Height="22"/>
+                                </Button>
+                                <Border Grid.Column="2" Background="#12FFFFFF" BorderBrush="#20FFFFFF" BorderThickness="1" CornerRadius="12" Padding="14,0">
+                                    <TextBox Text="{Binding NewProxyUrl, UpdateSourceTrigger=PropertyChanged}" 
+                                             materialDesign:HintAssist.Hint="آدرس Cloudflare Worker..." 
+                                             Foreground="White" FontSize="13" BorderThickness="0" Background="Transparent"
+                                             FlowDirection="LeftToRight" HorizontalContentAlignment="Left" VerticalAlignment="Center"/>
+                                </Border>
+                            </Grid>
+
+                            <!-- Proxies List -->
+                            <ItemsControl ItemsSource="{Binding ApiProxyUrls}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#0CFFFFFF" CornerRadius="10" Padding="12,10" Margin="0,0,0,8">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Button Grid.Column="0" Command="{Binding DataContext.DeleteProxyUrlCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                        Background="Transparent" BorderThickness="0" Padding="4" Height="30" Width="30" Margin="0,0,8,0">
+                                                    <materialDesign:PackIcon Kind="Delete" Width="18" Height="18" Foreground="#EB3B5A"/>
+                                                </Button>
+
+                                                <Button Grid.Column="1" Command="{Binding DataContext.TestProxyUrlCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                        Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="{DynamicResource TealAccent}" BorderBrush="{DynamicResource TealAccent}" Height="28" Padding="10,0" HorizontalAlignment="Left" materialDesign:ButtonAssist.CornerRadius="6">
+                                                    <TextBlock Text="تست اتصال" FontSize="11" FontWeight="Bold"/>
+                                                </Button>
+
+                                                <TextBlock Grid.Column="2" Text="{Binding Key}" Foreground="White" FontSize="12.5" FlowDirection="LeftToRight" VerticalAlignment="Center"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
 
-                <Border Style="{StaticResource SettingsGroupCard}">
-                    <StackPanel>
-                        <!-- منبع دیتابیس TMDb / OMDb -->
-                        <Border Style="{StaticResource SettingsRowBorder}">
-                            <StackPanel>
+                <!-- Right Column: راهنمای ساخت کلودفلر ورکر (Photo 7) -->
+                <StackPanel Grid.Column="2">
+                    <StackPanel Style="{StaticResource SettingsSectionHeader}">
+                        <Border Width="4" Height="18" Background="{DynamicResource PurpleAccent}" CornerRadius="2" Margin="0,0,8,0"/>
+                        <TextBlock Text="راهنمای ساخت کلودفلر ورکر" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                    </StackPanel>
+
+                    <Border Style="{StaticResource SettingsGroupCard}">
+                        <StackPanel>
+                            <TextBlock Text="۱. وارد اکانت کلودفلر (Cloudflare) خود شوید." FontSize="13" Foreground="#E2E8F0" Margin="0,0,0,8"/>
+                            <TextBlock Text="۲. از منوی سمت چپ به بخش Workers &amp; Pages بروید." FontSize="13" Foreground="#E2E8F0" Margin="0,0,0,8"/>
+                            <TextBlock Text="۳. روی Create Worker کلیک کرده و نامی انتخاب کنید و Deploy را بزنید." FontSize="13" Foreground="#E2E8F0" Margin="0,0,0,8"/>
+                            <TextBlock Text="۴. روی Edit Code کلیک کنید و کد زیر را جایگزین کنید:" FontSize="13" Foreground="#E2E8F0" Margin="0,0,0,12"/>
+
+                            <!-- Code Box with Copy Icon -->
+                            <Border Background="#12FFFFFF" BorderBrush="#30FFFFFF" BorderThickness="1" CornerRadius="12" Padding="14,12" Margin="0,0,0,14">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <Border Grid.Column="0" Width="44" Height="44" CornerRadius="14" Background="#25FA8231" Margin="0,0,14,0">
-                                        <materialDesign:PackIcon Kind="CloudDownloadOutline" Width="22" Height="22" Foreground="{DynamicResource OrangeAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBlock Text="منبع دریافت اطلاعات فیلم و سریال" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
-                                        <TextBlock Text="انتخاب سرور دریافت اطلاعات و پوسترها" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,3,0,0"/>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                                        <RadioButton Content="TMDb" IsChecked="{Binding IsTmdbSelected}" Foreground="White" Margin="0,0,10,0"/>
-                                        <RadioButton Content="OMDb" IsChecked="{Binding IsOmdbSelected}" Foreground="White"/>
-                                    </StackPanel>
+                                    <Button Grid.Column="0" Command="{Binding CopyWorkerCodeCommand}" Background="Transparent" BorderThickness="0" Padding="0" Height="30" Width="30" VerticalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="ContentCopy" Width="20" Height="20" Foreground="{DynamicResource TealAccent}"/>
+                                    </Button>
+                                    <TextBlock Grid.Column="1" Text="{}{ ... } export default" Foreground="{DynamicResource PrimaryColor}" FontFamily="Consolas" FontSize="13" FontWeight="Bold" FlowDirection="LeftToRight" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                                 </Grid>
+                            </Border>
 
-                                <!-- TMDB API Key Input -->
-                                <Border Background="#10FFFFFF" CornerRadius="12" Padding="14,8" Margin="0,14,0,0">
-                                    <Grid>
+                            <TextBlock Text="۵. دکمه Save and Deploy را کلیک کنید و آدرس داده شده را در بخش افزودن پراکسی ثبت کنید." FontSize="13" Foreground="#E2E8F0" LineHeight="20" Margin="0,0,0,16"/>
+
+                            <Button Command="{Binding CopyWorkerCodeCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                    Foreground="{DynamicResource TealAccent}" BorderBrush="{DynamicResource TealAccent}" 
+                                    materialDesign:ButtonAssist.CornerRadius="10" Height="40" HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ContentCopy" Width="18" Height="18" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="کپی اسکریپت کامل ورکر کلودفلر" FontSize="12.5" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+
+            <!-- ================================================================= -->
+            <!-- VIEW 4: PERSONALIZATION (شخصی‌سازی - دسکتاپ ۲ ستونه متعادل) -->
+            <!-- ================================================================= -->
+            <Grid Visibility="{Binding IsPersonalizationView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Column 1: ظاهر برنامه -->
+                <StackPanel Grid.Column="0">
+                    
+                    <!-- Section: ظاهر برنامه (Photo 5) -->
+                    <StackPanel Style="{StaticResource SettingsSectionHeader}">
+                        <Border Width="4" Height="18" Background="{DynamicResource PurpleAccent}" CornerRadius="2" Margin="0,0,8,0"/>
+                        <TextBlock Text="ظاهر برنامه" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                    </StackPanel>
+
+                    <Border Style="{StaticResource SettingsGroupCard}">
+                        <StackPanel>
+                            <!-- تم برنامه -->
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="12" Background="#208854D0" Margin="0,0,12,0">
+                                    <materialDesign:PackIcon Kind="MoonWaningCrescent" Width="20" Height="20" Foreground="{DynamicResource PurpleAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="تم برنامه" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="تغییر تم بین حالت تاریک و روشن" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <RadioButton Content="تاریک" IsChecked="{Binding IsDarkTheme}" Foreground="White" Margin="0,0,10,0"/>
+                                    <RadioButton Content="روشن" IsChecked="{Binding IsLightTheme}" Foreground="White"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Separator Background="{DynamicResource LightBorder}" Margin="0,0,0,14"/>
+
+                            <!-- زبان (Language) -->
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="12" Background="#203867D6" Margin="0,0,12,0">
+                                    <materialDesign:PackIcon Kind="Earth" Width="20" Height="20" Foreground="{DynamicResource NetworkBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="زبان (Language)" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="فارسی (Persian) / English" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <RadioButton Content="فارسی" IsChecked="{Binding IsPersianLanguage}" Foreground="White" Margin="0,0,10,0"/>
+                                    <RadioButton Content="English" IsChecked="{Binding IsEnglishLanguage}" Foreground="White"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <Separator Background="{DynamicResource LightBorder}" Margin="0,0,0,14"/>
+
+                            <!-- فرمت تقویم و تاریخ -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="12" Background="#20EB3B5A" Margin="0,0,12,0">
+                                    <materialDesign:PackIcon Kind="CalendarOutline" Width="20" Height="20" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="فرمت تقویم و تاریخ" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="خودکار (بر اساس زبان برنامه)" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <TextBlock Grid.Column="2" Text="هجری شمسی (جلالی)" Foreground="{DynamicResource PrimaryColor}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Column 2: محتوا و ترجمه (Photo 4) -->
+                <StackPanel Grid.Column="2">
+                    
+                    <StackPanel Style="{StaticResource SettingsSectionHeader}">
+                        <Border Width="4" Height="18" Background="{DynamicResource PurpleAccent}" CornerRadius="2" Margin="0,0,8,0"/>
+                        <TextBlock Text="محتوا و ترجمه" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                    </StackPanel>
+
+                    <Border Style="{StaticResource SettingsGroupCard}">
+                        <StackPanel>
+                            <!-- زبان ژانرها -->
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="12" Background="#208854D0" Margin="0,0,12,0">
+                                    <materialDesign:PackIcon Kind="MovieOutline" Width="20" Height="20" Foreground="{DynamicResource PurpleAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="زبان ژانرها" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="خودکار / فارسی / انگلیسی" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <ComboBox Grid.Column="2" SelectedValue="{Binding GenreLanguageOverride}" SelectedValuePath="Tag" Width="130" Foreground="White" Background="#15FFFFFF">
+                                    <ComboBoxItem Content="خودکار" Tag="auto"/>
+                                    <ComboBoxItem Content="همیشه فارسی" Tag="fa"/>
+                                    <ComboBoxItem Content="همیشه انگلیسی" Tag="en"/>
+                                </ComboBox>
+                            </Grid>
+
+                            <Separator Background="{DynamicResource LightBorder}" Margin="0,0,0,14"/>
+
+                            <!-- زبان ترجمه متن‌ها -->
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="12" Background="#203867D6" Margin="0,0,12,0">
+                                    <materialDesign:PackIcon Kind="Translate" Width="20" Height="20" Foreground="{DynamicResource NetworkBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="زبان ترجمه متن‌ها" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="موتور ترجمه هوشمند گوگل" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <ComboBox Grid.Column="2" SelectedValue="{Binding TranslateToLanguage}" SelectedValuePath="Tag" Width="130" Foreground="White" Background="#15FFFFFF">
+                                    <ComboBoxItem Content="به فارسی" Tag="fa"/>
+                                    <ComboBoxItem Content="به انگلیسی" Tag="en"/>
+                                    <ComboBoxItem Content="خودکار" Tag="auto"/>
+                                </ComboBox>
+                            </Grid>
+
+                            <Separator Background="{DynamicResource LightBorder}" Margin="0,0,0,14"/>
+
+                            <!-- زبان دریافت اطلاعات TMDB/OMDB -->
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="12" Background="#20EB3B5A" Margin="0,0,12,0">
+                                    <materialDesign:PackIcon Kind="CloudDownloadOutline" Width="20" Height="20" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="زبان دریافت اطلاعات TMDB/OMDB" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="فارسی (با جایگزین انگلیسی)" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <ComboBox Grid.Column="2" SelectedValue="{Binding FetchInfoLanguage}" SelectedValuePath="Tag" Width="130" Foreground="White" Background="#15FFFFFF">
+                                    <ComboBoxItem Content="خودکار" Tag="auto"/>
+                                    <ComboBoxItem Content="فارسی" Tag="fa"/>
+                                    <ComboBoxItem Content="فقط انگلیسی" Tag="en"/>
+                                </ComboBox>
+                            </Grid>
+
+                            <Separator Background="{DynamicResource LightBorder}" Margin="0,0,0,14"/>
+
+                            <!-- تصاویر بازیگران و عوامل -->
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="12" Background="#208854D0" Margin="0,0,12,0">
+                                    <materialDesign:PackIcon Kind="AccountOutline" Width="20" Height="20" Foreground="{DynamicResource PurpleAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="تصاویر بازیگران و عوامل" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="نمایش تصویر واقعی بازیگران و کارگردان‌ها در دسته‌بندی و جزئیات" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <ToggleButton Grid.Column="2" IsChecked="{Binding ShowActorImages}" Style="{StaticResource MaterialDesignSwitchToggleButton}"/>
+                            </Grid>
+
+                            <Separator Background="{DynamicResource LightBorder}" Margin="0,0,0,14"/>
+
+                            <!-- نمایش محتوای +18 در لیست -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="12" Background="#20EB3B5A" Margin="0,0,12,0">
+                                    <materialDesign:PackIcon Kind="EyeOutline" Width="20" Height="20" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="نمایش محتوای +18 در لیست" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="نمایش یا مخفی‌سازی فیلم‌ها و سریال‌های بزرگسال در آرشیو" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <ToggleButton Grid.Column="2" IsChecked="{Binding HideAdultContent}" Style="{StaticResource MaterialDesignSwitchToggleButton}"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+
+            <!-- ================================================================= -->
+            <!-- VIEW 5: EDUCATION (آموزش - گرید دسکتاپ و جستجو) -->
+            <!-- ================================================================= -->
+            <StackPanel Visibility="{Binding IsEducationView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                
+                <!-- Search Bar (Photo 3) -->
+                <Border Background="#15FFFFFF" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" CornerRadius="16" Padding="16,10" Margin="0,0,0,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <materialDesign:PackIcon Kind="Search" Width="22" Height="22" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBox Grid.Column="1" Text="{Binding EducationSearchQuery, UpdateSourceTrigger=PropertyChanged}" 
+                                 materialDesign:HintAssist.Hint="جستجو در آموزش‌ها..." 
+                                 Foreground="White" FontSize="14" BorderThickness="0" Background="Transparent" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Info Banner (Photo 1) -->
+                <Border Background="#183867D6" BorderBrush="#403867D6" BorderThickness="1" CornerRadius="16" Padding="16,12" Margin="0,0,0,18">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <materialDesign:PackIcon Kind="InformationOutline" Width="22" Height="22" Foreground="{DynamicResource NetworkBlue}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBlock Grid.Column="1" Text="نکات مهم و راهنمای کامل استفاده از تمامی بخش‌های نرم‌افزار 🎓" FontSize="13.5" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
+                <!-- Educational Topics Grid with independent height wrapping -->
+                <ItemsControl ItemsSource="{Binding EducationTopics}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Width="450" VerticalAlignment="Top" Style="{StaticResource SettingsGroupCard}" Padding="16,14" Margin="0,0,16,14" Visibility="{Binding IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel>
+                                    <Grid Background="Transparent" Cursor="Hand">
+                                        <Grid.InputBindings>
+                                            <MouseBinding MouseAction="LeftClick" Command="{Binding DataContext.ToggleTopicExpandedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                        </Grid.InputBindings>
                                         <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBox Text="{Binding NewTmdbKey, UpdateSourceTrigger=PropertyChanged}" 
-                                                 materialDesign:HintAssist.Hint="کلید اختصاصی TMDb API..." 
-                                                 Foreground="White" FontSize="13" BorderThickness="0" Background="Transparent"
-                                                 FlowDirection="LeftToRight" HorizontalContentAlignment="Left" VerticalAlignment="Center"/>
-                                        <Button Grid.Column="1" Command="{Binding AddTmdbKeyCommand}" 
-                                                Background="{DynamicResource PrimaryColor}" Foreground="White" BorderThickness="0"
-                                                Height="32" Padding="14,0" materialDesign:ButtonAssist.CornerRadius="8">
-                                            <TextBlock Text="ثبت کلید" FontSize="12" FontWeight="Bold"/>
-                                        </Button>
+                                        <materialDesign:PackIcon Grid.Column="0" Kind="ChevronDown" Width="22" Height="22" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Title}" FontSize="14.5" FontWeight="Black" Foreground="White"/>
+                                            <TextBlock Text="{Binding Description}" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,3,0,0" LineHeight="18" TextWrapping="Wrap"/>
+                                        </StackPanel>
+                                        <Border Grid.Column="2" Width="42" Height="42" CornerRadius="14" Background="#20FFFFFF" Margin="10,0,0,0">
+                                            <materialDesign:PackIcon Kind="{Binding IconKind}" Width="22" Height="22" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
                                     </Grid>
-                                </Border>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </Border>
+
+                                    <!-- Expandable Content -->
+                                    <StackPanel Visibility="{Binding IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,12,0,0">
+                                        <Separator Background="{DynamicResource LightBorder}" Margin="0,0,0,10"/>
+                                        <TextBlock Text="{Binding Content}" FontSize="12.5" Foreground="#E2E8F0" LineHeight="22" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
             </StackPanel>
 
-            <!-- 3. بخش ضد فیلتر و پروکسی (Android Anti-Filter) -->
-            <StackPanel Margin="0,0,0,4">
-                <StackPanel Orientation="Horizontal" Margin="6,0,0,12">
-                    <Border Width="4" Height="18" Background="{DynamicResource TealAccent}" CornerRadius="2" Margin="0,0,8,0"/>
-                    <TextBlock Text="ضد تحریم و پروکسی" FontSize="16.5" FontWeight="Bold" Foreground="White"/>
-                </StackPanel>
 
-                <Border Style="{StaticResource SettingsGroupCard}">
-                    <StackPanel>
-                        <Border Style="{StaticResource SettingsRowBorder}">
-                            <Grid>
+            <!-- ================================================================= -->
+            <!-- VIEW 6: BACKUP & RESTORE (پشتیبان‌گیری - دسکتاپ ۲ ستونه) -->
+            <!-- ================================================================= -->
+            <Grid Visibility="{Binding IsBackupView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="20"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Column: بکاپ محلی و خودکار -->
+                <StackPanel Grid.Column="0">
+                    <Border Style="{StaticResource SettingsGroupCard}">
+                        <StackPanel>
+                            <TextBlock Text="پشتیبان‌گیری آفلاین محلی (JSON)" FontSize="15.5" FontWeight="Bold" Foreground="White"/>
+                            <TextBlock Text="خروجی گرفتن از تمام فیلم‌ها، سریال‌ها، پوشه‌ها و وضعیت‌های تماشا در قالب فایل سبک JSON" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,16" LineHeight="18"/>
+
+                            <Grid Margin="0,0,0,16">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Width="44" Height="44" CornerRadius="14" Background="#250FB9B1" Margin="0,0,14,0">
-                                    <materialDesign:PackIcon Kind="ShieldCheckOutline" Width="22" Height="22" Foreground="{DynamicResource TealAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="سرویس ضد تحریم TMDb" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
-                                    <TextBlock Text="دور زدن فیلترینگ و تحریم‌های ارتباط با TMDb" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,3,0,0"/>
-                                </StackPanel>
-                                <ToggleButton Grid.Column="2" IsChecked="{Binding IsApiProxyEnabled}" Style="{StaticResource MaterialDesignSwitchToggleButton}"/>
-                            </Grid>
-                        </Border>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-
-            <!-- 4. پایگاه داده و پشتیبان‌گیری -->
-            <StackPanel Margin="0,0,0,4">
-                <StackPanel Orientation="Horizontal" Margin="6,0,0,12">
-                    <Border Width="4" Height="18" Background="{DynamicResource EmeraldAccent}" CornerRadius="2" Margin="0,0,8,0"/>
-                    <TextBlock Text="پایگاه داده و پشتیبان‌گیری" FontSize="16.5" FontWeight="Bold" Foreground="White"/>
-                </StackPanel>
-
-                <Border Style="{StaticResource SettingsGroupCard}">
-                    <StackPanel>
-                        <Border Style="{StaticResource SettingsRowBorder}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="12"/>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Width="44" Height="44" CornerRadius="14" Background="#2526DE81" Margin="0,0,14,0">
-                                    <materialDesign:PackIcon Kind="DatabaseOutline" Width="22" Height="22" Foreground="{DynamicResource EmeraldAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="پشتیبان‌گیری از کتابخانه" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
-                                    <TextBlock Text="ایجاد فایل پشتیبان از تمام اطلاعات و تاریخچه" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,3,0,0"/>
+                                
+                                <Button Grid.Column="0" Command="{Binding BackupDatabaseCommand}" 
+                                        Height="42" Background="{DynamicResource PrimaryGradientBrush}" BorderThickness="0" materialDesign:ButtonAssist.CornerRadius="12">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Export" Width="18" Height="18" Foreground="White" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="ایجاد فایل پشتیبان" Foreground="White" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <Button Grid.Column="2" Command="{Binding BackupDatabaseCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="{DynamicResource EmeraldAccent}" BorderBrush="{DynamicResource EmeraldAccent}" materialDesign:ButtonAssist.CornerRadius="10" Height="36">
-                                    <TextBlock Text="بکاپ‌گیری" FontSize="12.5" FontWeight="Bold"/>
+                                </Button>
+
+                                <Button Grid.Column="2" Command="{Binding RestoreDatabaseCommand}" 
+                                        Height="42" Background="#183867D6" BorderBrush="{DynamicResource NetworkBlue}" BorderThickness="1.5" materialDesign:ButtonAssist.CornerRadius="12">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="Import" Width="18" Height="18" Foreground="{DynamicResource NetworkBlue}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="بازیابی از فایل" Foreground="{DynamicResource NetworkBlue}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
                                 </Button>
                             </Grid>
+
+                            <Separator Background="{DynamicResource LightBorder}" Margin="0,0,0,14"/>
+
+                            <!-- Auto-backup -->
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="پشتیبان‌گیری خودکار محلی" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="تهیه خودکار نسخه پشتیبان در حافظه سیستم" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                <ToggleButton Grid.Column="1" IsChecked="{Binding IsLocalAutoBackupEnabled}" Style="{StaticResource MaterialDesignSwitchToggleButton}"/>
+                            </Grid>
+
+                            <StackPanel Visibility="{Binding IsLocalAutoBackupEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="مسیر ذخیره‌سازی خودکار:" FontSize="12.5" FontWeight="Bold" Foreground="White" Margin="0,0,0,6"/>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Background="#12FFFFFF" CornerRadius="10" Padding="12,8" Margin="0,0,8,0">
+                                        <TextBlock Text="{Binding LocalAutoBackupPath}" Foreground="#E2E8F0" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    </Border>
+                                    <Button Grid.Column="1" Command="{Binding BrowseBackupPathCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                            BorderBrush="{DynamicResource PrimaryColor}" Foreground="{DynamicResource PrimaryColor}" Height="34" materialDesign:ButtonAssist.CornerRadius="8">
+                                        <TextBlock Text="انتخاب مسیر" FontSize="11.5" FontWeight="Bold"/>
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- Right Column: گوگل درایو ابری -->
+                <StackPanel Grid.Column="2">
+                    <Border Style="{StaticResource SettingsGroupCard}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="بکاپ ابری Google Drive" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="همگام‌سازی و ذخیره ایمن دیتابیس در فضای ابری گوگل" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
+                                </StackPanel>
+                                
+                                <Button Grid.Column="1" Command="{Binding ConnectToGoogleDriveCommand}" Visibility="{Binding IsNotGoogleDriveConnected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Background="#2026DE81" Foreground="{DynamicResource EmeraldAccent}" BorderThickness="0" Height="36" Padding="14,0" materialDesign:ButtonAssist.CornerRadius="10">
+                                    <TextBlock Text="اتصال به گوگل درایو" FontSize="12" FontWeight="Bold"/>
+                                </Button>
+
+                                <Button Grid.Column="1" Command="{Binding DisconnectGoogleDriveCommand}" Visibility="{Binding IsGoogleDriveConnected, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Background="#20EB3B5A" Foreground="{DynamicResource PrimaryColor}" BorderThickness="0" Height="36" Padding="14,0" materialDesign:ButtonAssist.CornerRadius="10">
+                                    <TextBlock Text="قطع اتصال" FontSize="12" FontWeight="Bold"/>
+                                </Button>
+                            </Grid>
+
+                            <StackPanel Visibility="{Binding IsGoogleDriveConnected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Separator Background="{DynamicResource LightBorder}" Margin="0,0,0,14"/>
+                                
+                                <Button Command="{Binding UploadToGoogleDriveCommand}" Height="40" Background="{DynamicResource EmeraldAccent}" Foreground="Black" BorderThickness="0" materialDesign:ButtonAssist.CornerRadius="10" Margin="0,0,0,14">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="CloudUpload" Width="18" Height="18" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="ایجاد نسخه پشتیبان ابری جدید" FontSize="12.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- Cloud Backups List -->
+                                <TextBlock Text="نسخه‌های موجود در گوگل درایو:" FontSize="13" FontWeight="Bold" Foreground="White" Margin="0,0,0,8"/>
+                                <ItemsControl ItemsSource="{Binding CloudBackups}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="#0CFFFFFF" CornerRadius="10" Padding="12,8" Margin="0,0,0,8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <materialDesign:PackIcon Kind="GoogleDrive" Width="18" Height="18" Foreground="{DynamicResource EmeraldAccent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Name}" Foreground="White" FontSize="12.5" FontWeight="Bold"/>
+                                                        <TextBlock Text="{Binding FormattedDate}" Foreground="{DynamicResource SecondaryText}" FontSize="10.5" Margin="0,1,0,0"/>
+                                                    </StackPanel>
+
+                                                    <Button Grid.Column="2" Command="{Binding DataContext.RestoreFromGoogleDriveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                            Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="{DynamicResource NetworkBlue}" BorderBrush="{DynamicResource NetworkBlue}" Height="26" Padding="8,0" Margin="0,0,6,0" materialDesign:ButtonAssist.CornerRadius="6">
+                                                        <TextBlock Text="بازیابی" FontSize="10.5" FontWeight="Bold"/>
+                                                    </Button>
+
+                                                    <Button Grid.Column="3" Command="{Binding DataContext.DeleteCloudBackupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                                            Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="#EB3B5A" BorderBrush="#EB3B5A" Height="26" Padding="6,0" materialDesign:ButtonAssist.CornerRadius="6">
+                                                        <materialDesign:PackIcon Kind="Delete" Width="14" Height="14"/>
+                                                    </Button>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+
+            <!-- ================================================================= -->
+            <!-- VIEW 7: ABOUT (درباره نرم‌افزار) -->
+            <!-- ================================================================= -->
+            <StackPanel Visibility="{Binding IsAboutView, Converter={StaticResource BooleanToVisibilityConverter}}" HorizontalAlignment="Center">
+                
+                <Border Style="{StaticResource SettingsGroupCard}" Padding="40,32" MaxWidth="750">
+                    <StackPanel HorizontalAlignment="Center">
+                        <!-- Big App Icon -->
+                        <Border Width="96" Height="96" CornerRadius="28" Background="{DynamicResource PrimaryGradientBrush}" HorizontalAlignment="Center" Margin="0,0,0,18">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#EB3B5A" BlurRadius="30" ShadowDepth="0" Opacity="0.6"/>
+                            </Border.Effect>
+                            <materialDesign:PackIcon Kind="MoviePlayOutline" Width="52" Height="52" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
+
+                        <TextBlock Text="MovieManager Desktop" FontSize="24" FontWeight="Black" Foreground="White" HorizontalAlignment="Center"/>
+                        <TextBlock Text="نسخه ۲.۰.۰ (Professional Edition)" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" Margin="0,4,0,16"/>
+
+                        <TextBlock Text="سامانه هوشمند و پیشرفته مدیریت، سازماندهی و تماشای آرشیو فیلم و سریال با معماری متریال ۳ نیتیو، هوش مصنوعی جستجو، سیستم ضد تحریم یکپارچه و پشتیبانی کامل از زبان فارسی و چینش راست‌چین (RTL)."
+                                   FontSize="13" Foreground="#CBD5E1" LineHeight="24" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="600" Margin="0,0,0,24"/>
+
+                        <Separator Background="{DynamicResource LightBorder}" Margin="0,0,0,20"/>
+
+                        <!-- Details Grid -->
+                        <Grid MaxWidth="500" HorizontalAlignment="Center">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="تکنولوژی رابط کاربری:" FontSize="13" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,10"/>
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="WPF .NET 8 + MaterialDesign 3" FontSize="13" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="پایگاه داده محلی:" FontSize="13" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,10"/>
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="SQLite + Entity Framework Core" FontSize="13" FontWeight="Bold" Foreground="White" Margin="0,0,0,10"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="پشتیبانی از پلتفرم:" FontSize="13" Foreground="{DynamicResource SecondaryText}"/>
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="Windows 10 / Windows 11 (x64)" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource EmeraldAccent}"/>
+                        </Grid>
                     </StackPanel>
                 </Border>
+
             </StackPanel>
 
         </StackPanel>
