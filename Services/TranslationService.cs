@@ -9,12 +9,23 @@ namespace MovieManagerDesktop.Services
     {
         private static readonly HttpClient _httpClient = new HttpClient(new MovieManagerDesktop.Services.Network.ProxyHttpClientHandler());
         
-        public static async Task<string> TranslateTextAsync(string text, string targetLanguage = "fa")
+        public static async Task<string> TranslateTextAsync(string text, string? targetLanguage = null)
         {
             if (string.IsNullOrWhiteSpace(text)) return text;
             
             try
             {
+                if (string.IsNullOrWhiteSpace(targetLanguage))
+                {
+                    var settings = SettingsManager.LoadSettings();
+                    targetLanguage = settings.TranslateToLanguage;
+                }
+
+                if (string.IsNullOrWhiteSpace(targetLanguage) || targetLanguage == "auto")
+                {
+                    targetLanguage = "fa";
+                }
+
                 string encodedQuery = Uri.EscapeDataString(text);
                 string url = $"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={targetLanguage}&dt=t&q={encodedQuery}";
                 

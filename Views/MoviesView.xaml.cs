@@ -15,11 +15,34 @@ namespace MovieManagerDesktop.Views
         }
 
         private bool _isRestoringScroll = false;
+        private bool _isHookedVm = false;
 
         private void MoviesView_Loaded(object sender, System.Windows.RoutedEventArgs e)
         {
             if (DataContext is ViewModels.MoviesViewModel vm)
             {
+                if (!_isHookedVm)
+                {
+                    _isHookedVm = true;
+                    vm.PropertyChanged += (s, args) =>
+                    {
+                        if (args.PropertyName == nameof(ViewModels.MoviesViewModel.PosterSize))
+                        {
+                            Dispatcher.InvokeAsync(() =>
+                            {
+                                var panel = FindVisualChild<WpfToolkit.Controls.VirtualizingWrapPanel>(MoviesItemsControl);
+                                if (panel != null)
+                                {
+                                    panel.InvalidateMeasure();
+                                    panel.InvalidateVisual();
+                                }
+                                MoviesItemsControl?.InvalidateMeasure();
+                                MoviesItemsControl?.UpdateLayout();
+                            }, DispatcherPriority.Render);
+                        }
+                    };
+                }
+
                 if (vm.LastClickedIndex >= 0 && vm.LastClickedIndex < vm.Movies.Count)
                 {
                     // Hide list instantly to prevent visible jump

@@ -1,0 +1,431 @@
+<UserControl x:Class="MovieManagerDesktop.Views.AnalyticsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
+             xmlns:converters="clr-namespace:MovieManagerDesktop.Converters"
+             mc:Ignorable="d" 
+             d:DataContext="{d:DesignInstance Type=viewmodels:AnalyticsViewModel}"
+             d:DesignHeight="1200" d:DesignWidth="1100"
+             FlowDirection="RightToLeft"
+             FontFamily="{DynamicResource AppFontFamily}">
+
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <converters:PersianNumberConverter x:Key="PersianNumberConverter"/>
+
+        <!-- Stat Card Style -->
+        <Style x:Key="AnalyticsStatCard" TargetType="Border">
+            <Setter Property="Background" Value="#1A1828"/>
+            <Setter Property="BorderBrush" Value="#25FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="18"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Margin" Value="6"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.25" Color="Black"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,0,40">
+        <StackPanel Margin="32,24,32,20">
+
+            <!-- Top App Bar / Header -->
+            <Grid Margin="0,0,0,24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Back Button -->
+                <Button Grid.Column="0" Command="{Binding GoBackCommand}"
+                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                        Background="#20FFFFFF" BorderBrush="#35FFFFFF" Foreground="White"
+                        Width="42" Height="42" Margin="0,0,16,0" Cursor="Hand" ToolTip="بازگشت به خانه">
+                    <materialDesign:PackIcon Kind="ArrowRight" Width="22" Height="22"/>
+                </Button>
+
+                <!-- Title & Description -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal">
+                        <materialDesign:PackIcon Kind="ChartBar" Width="26" Height="26" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="آمار و تحلیل جامع آرشیو" FontSize="24" FontWeight="Black" Foreground="White"/>
+                    </StackPanel>
+                    <TextBlock Text="تحلیل کاملاً واقعی و لحظه‌ای از فایل‌ها، وضعیت تماشا، زمان، کیفیت‌ها و هنرمندان موجود در سیستم شما" FontSize="13" Foreground="{DynamicResource SecondaryText}" Margin="34,4,0,0"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Row 1: 4 Key Indicator Cards -->
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Card 1: زمان کل تماشا -->
+                <Border Grid.Column="0" Style="{StaticResource AnalyticsStatCard}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Border HorizontalAlignment="Left" Width="40" Height="40" CornerRadius="12" Background="#2000D2D3">
+                                <materialDesign:PackIcon Kind="ClockOutline" Width="22" Height="22" Foreground="#00D2D3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="زمان تماشا" FontSize="12.5" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                        <TextBlock Text="{Binding TotalWatchTimeText, Converter={StaticResource PersianNumberConverter}}" FontSize="17" FontWeight="Black" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <TextBlock Text="{Binding OverallWatchPercentage, Converter={StaticResource PersianNumberConverter}, StringFormat='{}{0}%'}" FontSize="12" FontWeight="Bold" Foreground="#00D2D3"/>
+                            <TextBlock Text=" پیشرفت کل آرشیو" FontSize="11" Foreground="{DynamicResource SecondaryText}" Margin="4,0,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Card 2: فیلم‌های دیده‌شده -->
+                <Border Grid.Column="1" Style="{StaticResource AnalyticsStatCard}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Border HorizontalAlignment="Left" Width="40" Height="40" CornerRadius="12" Background="#20EB3B5A">
+                                <materialDesign:PackIcon Kind="MovieCheck" Width="22" Height="22" Foreground="#EB3B5A" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="فیلم‌های دیده شده" FontSize="12.5" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding TotalMoviesWatched, Converter={StaticResource PersianNumberConverter}}" FontSize="22" FontWeight="Black" Foreground="#EB3B5A"/>
+                            <TextBlock Text=" از " FontSize="13" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Bottom" Margin="4,0,4,3"/>
+                            <TextBlock Text="{Binding TotalMoviesCount, Converter={StaticResource PersianNumberConverter}}" FontSize="15" FontWeight="Bold" Foreground="White" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                        </StackPanel>
+                        <TextBlock Text="فیلم سینمایی دیده‌شده" FontSize="11" Foreground="{DynamicResource SecondaryText}" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Card 3: قسمت‌های سریال دیده شده -->
+                <Border Grid.Column="2" Style="{StaticResource AnalyticsStatCard}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Border HorizontalAlignment="Left" Width="40" Height="40" CornerRadius="12" Background="#208854D0">
+                                <materialDesign:PackIcon Kind="TelevisionClassic" Width="22" Height="22" Foreground="#A55EEA" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="قسمت‌های تماشا شده" FontSize="12.5" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding TotalEpisodesWatched, Converter={StaticResource PersianNumberConverter}}" FontSize="22" FontWeight="Black" Foreground="#A55EEA"/>
+                            <TextBlock Text=" از " FontSize="13" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Bottom" Margin="4,0,4,3"/>
+                            <TextBlock Text="{Binding TotalEpisodesCount, Converter={StaticResource PersianNumberConverter}}" FontSize="15" FontWeight="Bold" Foreground="White" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                        </StackPanel>
+                        <TextBlock Text="اپیزود کامل شده روی سیستم" FontSize="11" Foreground="{DynamicResource SecondaryText}" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Card 4: سریال‌های تکمیل‌شده -->
+                <Border Grid.Column="3" Style="{StaticResource AnalyticsStatCard}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Border HorizontalAlignment="Left" Width="40" Height="40" CornerRadius="12" Background="#2020BF6B">
+                                <materialDesign:PackIcon Kind="CheckAll" Width="22" Height="22" Foreground="#20BF6B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="سریال‌های پایان‌یافته" FontSize="12.5" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding CompletedSeriesCount, Converter={StaticResource PersianNumberConverter}}" FontSize="22" FontWeight="Black" Foreground="#20BF6B"/>
+                            <TextBlock Text=" از " FontSize="13" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Bottom" Margin="4,0,4,3"/>
+                            <TextBlock Text="{Binding TotalSeriesCount, Converter={StaticResource PersianNumberConverter}}" FontSize="15" FontWeight="Bold" Foreground="White" VerticalAlignment="Bottom" Margin="0,0,0,2"/>
+                        </StackPanel>
+                        <TextBlock Text="سریال‌های تماماً دیده شده" FontSize="11" Foreground="{DynamicResource SecondaryText}" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Row 2: Secondary Quick Stats (4 Pills) -->
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Stat 1: حجم کل آرشیو -->
+                <Border Grid.Column="0" Margin="6,0" Height="68" CornerRadius="14" Background="#14172B" BorderBrush="#20FFFFFF" BorderThickness="1" Padding="14,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Harddisk" Width="22" Height="22" Foreground="#FFA502" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="حجم کل رسانه‌ها" FontSize="11.5" Foreground="{DynamicResource SecondaryText}"/>
+                            <TextBlock Text="{Binding TotalStorageSize, Converter={StaticResource PersianNumberConverter}}" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Stat 2: مدت کل آرشیو -->
+                <Border Grid.Column="1" Margin="6,0" Height="68" CornerRadius="14" Background="#14172B" BorderBrush="#20FFFFFF" BorderThickness="1" Padding="14,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="TimerSand" Width="22" Height="22" Foreground="#00D2D3" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="مجموع زمان کل آرشیو" FontSize="11.5" Foreground="{DynamicResource SecondaryText}"/>
+                            <TextBlock Text="{Binding TotalArchiveDurationText, Converter={StaticResource PersianNumberConverter}}" FontSize="13.5" FontWeight="Bold" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Stat 3: میانگین امتیاز -->
+                <Border Grid.Column="2" Margin="6,0" Height="68" CornerRadius="14" Background="#14172B" BorderBrush="#20FFFFFF" BorderThickness="1" Padding="14,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Star" Width="22" Height="22" Foreground="#FFD32A" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="میانگین امتیازات" FontSize="11.5" Foreground="{DynamicResource SecondaryText}"/>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding AverageRating, Converter={StaticResource PersianNumberConverter}}" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
+                                <TextBlock Text="{Binding TopRatedCount, Converter={StaticResource PersianNumberConverter}, StringFormat=' ({0} شاهکار +۸)'}" FontSize="10.5" Foreground="#FFD32A" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Stat 4: علاقه‌مندی‌ها -->
+                <Border Grid.Column="3" Margin="6,0" Height="68" CornerRadius="14" Background="#14172B" BorderBrush="#20FFFFFF" BorderThickness="1" Padding="14,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Heart" Width="22" Height="22" Foreground="#FF4757" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="علاقه‌مندی‌ها و نشان‌ها" FontSize="11.5" Foreground="{DynamicResource SecondaryText}"/>
+                            <TextBlock Text="{Binding TotalFavoritesCount, Converter={StaticResource PersianNumberConverter}, StringFormat='{}{0} اثر علاقه‌مندی'}" FontSize="13.5" FontWeight="Bold" Foreground="White"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Row 3: Two Major Columns: Ratio Bar & Top Genres -->
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.1*"/>
+                    <ColumnDefinition Width="1.5*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left Column: Media Ratio Card -->
+                <Border Grid.Column="0" Style="{StaticResource AnalyticsStatCard}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <materialDesign:PackIcon Kind="ChartPie" Width="20" Height="20" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="نسبت فیلم به سریال در سیستم" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                        </StackPanel>
+
+                        <!-- Visual Ratio Bar -->
+                        <Grid Height="24" Margin="0,8,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="{Binding MoviePercentage, StringFormat='{}{0}*'}"/>
+                                <ColumnDefinition Width="{Binding SeriesPercentage, StringFormat='{}{0}*'}"/>
+                            </Grid.ColumnDefinitions>
+                            
+                            <!-- Movies Bar -->
+                            <Border Grid.Column="0" Background="#EB3B5A" CornerRadius="8,0,0,8" ToolTip="{Binding MoviePercentage, StringFormat='فیلم‌ها: {0}%'}"/>
+                            <!-- Series Bar -->
+                            <Border Grid.Column="1" Background="#8854D0" CornerRadius="0,8,8,0" ToolTip="{Binding SeriesPercentage, StringFormat='سریال‌ها: {0}%'}"/>
+                        </Grid>
+
+                        <!-- Legend Items -->
+                        <Grid Margin="0,4,0,12">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Border Width="12" Height="12" CornerRadius="6" Background="#EB3B5A" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="فیلم‌ها: " FontSize="13" Foreground="White" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding MoviePercentage, Converter={StaticResource PersianNumberConverter}, StringFormat='{}{0}%'}" FontSize="13" Foreground="#EB3B5A" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding TotalMoviesCount, Converter={StaticResource PersianNumberConverter}, StringFormat=' ({0} اثر)'}" FontSize="12" Foreground="{DynamicResource SecondaryText}"/>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Border Width="12" Height="12" CornerRadius="6" Background="#8854D0" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="سریال‌ها: " FontSize="13" Foreground="White" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding SeriesPercentage, Converter={StaticResource PersianNumberConverter}, StringFormat='{}{0}%'}" FontSize="13" Foreground="#A55EEA" FontWeight="Bold"/>
+                                <TextBlock Text="{Binding TotalSeriesCount, Converter={StaticResource PersianNumberConverter}, StringFormat=' ({0} اثر)'}" FontSize="12" Foreground="{DynamicResource SecondaryText}"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <Separator Background="#15FFFFFF" Margin="0,8,0,12"/>
+
+                        <!-- Total Files Info -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="FolderMultipleOutline" Width="16" Height="16" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="{Binding TotalFilesCount, Converter={StaticResource PersianNumberConverter}, StringFormat='مجموع {0} فایل ویدیویی ثبت شده در دیتابیس'}" FontSize="12" Foreground="{DynamicResource SecondaryText}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Right Column: Top Genres Breakdown -->
+                <Border Grid.Column="1" Style="{StaticResource AnalyticsStatCard}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <materialDesign:PackIcon Kind="TagMultiple" Width="20" Height="20" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="محبوب‌ترین ژانرهای موجود در آرشیو" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                        </StackPanel>
+
+                        <!-- Genre Items -->
+                        <ItemsControl ItemsSource="{Binding TopGenres}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0" Text="{Binding GenreName}" FontSize="12" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                        
+                                        <!-- Progress Bar with Dynamic Color -->
+                                        <Border Grid.Column="1" Height="8" CornerRadius="4" Background="#20FFFFFF" Margin="8,0" ClipToBounds="True">
+                                            <ProgressBar Value="{Binding Percentage}" Maximum="100" Height="8"
+                                                         Foreground="{Binding BarColor}" Background="Transparent" BorderThickness="0"/>
+                                        </Border>
+
+                                        <TextBlock Grid.Column="2" Text="{Binding Count, Converter={StaticResource PersianNumberConverter}, StringFormat='{}{0} اثر'}" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Row 4: Quality & Decades Breakdown -->
+            <Grid Margin="0,0,0,16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Quality / Resolution Distribution -->
+                <Border Grid.Column="0" Style="{StaticResource AnalyticsStatCard}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                            <materialDesign:PackIcon Kind="HighDefinition" Width="20" Height="20" Foreground="#00D2D3" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="توزیع کیفیت و رزولوشن‌ها" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                        </StackPanel>
+
+                        <ItemsControl ItemsSource="{Binding QualityBreakdown}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="110"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+
+                                        <Border Grid.Column="1" Height="8" CornerRadius="4" Background="#20FFFFFF" Margin="8,0" ClipToBounds="True">
+                                            <ProgressBar Value="{Binding Percentage}" Maximum="100" Height="8"
+                                                         Foreground="{Binding Color}" Background="Transparent" BorderThickness="0"/>
+                                        </Border>
+
+                                        <TextBlock Grid.Column="2" Text="{Binding Count, Converter={StaticResource PersianNumberConverter}, StringFormat='{}{0} فایل'}" FontSize="11" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Right: Decades Breakdown -->
+                <Border Grid.Column="1" Style="{StaticResource AnalyticsStatCard}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                            <materialDesign:PackIcon Kind="CalendarClock" Width="20" Height="20" Foreground="#10AC84" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="توزیع سال ساخت و دهه‌ها" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                        </StackPanel>
+
+                        <ItemsControl ItemsSource="{Binding DecadeBreakdown}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="150"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="60"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+
+                                        <Border Grid.Column="1" Height="8" CornerRadius="4" Background="#20FFFFFF" Margin="8,0" ClipToBounds="True">
+                                            <ProgressBar Value="{Binding Percentage}" Maximum="100" Height="8"
+                                                         Foreground="{Binding Color}" Background="Transparent" BorderThickness="0"/>
+                                        </Border>
+
+                                        <TextBlock Grid.Column="2" Text="{Binding Count, Converter={StaticResource PersianNumberConverter}, StringFormat='{}{0} فایل'}" FontSize="11" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Row 5: Top Directors & Top Actors in Library -->
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Top Directors -->
+                <Border Grid.Column="0" Style="{StaticResource AnalyticsStatCard}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                            <materialDesign:PackIcon Kind="MovieEdit" Width="20" Height="20" Foreground="#FFA502" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="بیشترین کارگردانان در آرشیو" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                        </StackPanel>
+
+                        <ItemsControl ItemsSource="{Binding TopDirectors}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,3" Padding="10,8" Background="#14172B" CornerRadius="10" BorderBrush="#15FFFFFF" BorderThickness="1">
+                                        <Grid>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                                <Border Width="28" Height="28" CornerRadius="14" Background="#20FFA502" Margin="0,0,8,0">
+                                                    <materialDesign:PackIcon Kind="AccountTie" Width="16" Height="16" Foreground="#FFA502" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding Name}" FontSize="12.5" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding WorksCount, Converter={StaticResource PersianNumberConverter}, StringFormat='{}{0} اثر'}" FontSize="12" Foreground="{DynamicResource SecondaryText}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- Top Actors -->
+                <Border Grid.Column="1" Style="{StaticResource AnalyticsStatCard}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                            <materialDesign:PackIcon Kind="AccountStar" Width="20" Height="20" Foreground="#2ED573" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="بیشترین بازیگران در آرشیو" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                        </StackPanel>
+
+                        <ItemsControl ItemsSource="{Binding TopActors}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,3" Padding="10,8" Background="#14172B" CornerRadius="10" BorderBrush="#15FFFFFF" BorderThickness="1">
+                                        <Grid>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                                <Border Width="28" Height="28" CornerRadius="14" Background="#202ED573" Margin="0,0,8,0">
+                                                    <materialDesign:PackIcon Kind="Account" Width="16" Height="16" Foreground="#2ED573" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <TextBlock Text="{Binding Name}" FontSize="12.5" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding WorksCount, Converter={StaticResource PersianNumberConverter}, StringFormat='{}{0} اثر'}" FontSize="12" Foreground="{DynamicResource SecondaryText}" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

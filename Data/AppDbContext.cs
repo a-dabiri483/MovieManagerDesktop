@@ -61,6 +61,36 @@ namespace MovieManagerDesktop.Data
             catch { }
             try
             {
+                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN IsHidden INTEGER NOT NULL DEFAULT 0;");
+            }
+            catch { }
+            try
+            {
+                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN CustomTags TEXT;");
+            }
+            catch { }
+            try
+            {
+                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN HasDubbing INTEGER NOT NULL DEFAULT 0;");
+            }
+            catch { }
+            try
+            {
+                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN HasSubtitle INTEGER NOT NULL DEFAULT 0;");
+            }
+            catch { }
+            try
+            {
+                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN ContentRating TEXT;");
+            }
+            catch { }
+            try
+            {
+                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN LastPlayedEpisode INTEGER;");
+            }
+            catch { }
+            try
+            {
                 Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN IsTracked INTEGER NOT NULL DEFAULT 0;");
             }
             catch { }

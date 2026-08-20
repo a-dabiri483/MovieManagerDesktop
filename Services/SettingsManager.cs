@@ -30,6 +30,7 @@ namespace MovieManagerDesktop.Services
         public bool IsQuickFilterMovies { get; set; } = false;
         public bool IsQuickFilterSeries { get; set; } = false;
         public bool IsQuickFilterUnwatched { get; set; } = false;
+        public bool IsGridView { get; set; } = true;
         
         // Auto Backup Settings
         public bool IsLocalAutoBackupEnabled { get; set; } = false;
@@ -42,6 +43,14 @@ namespace MovieManagerDesktop.Services
         public string InternalEncryptedProxies { get; set; } = string.Empty;
         public DateTime InternalProxiesLastSyncTime { get; set; } = DateTime.MinValue;
 
+        // Personalization & Localization Settings
+        public string DateFormatOverride { get; set; } = "jalali"; // "jalali" (شمسی) or "gregorian" (میلادی)
+        public string GenreLanguageOverride { get; set; } = "fa"; // "fa", "en", "auto"
+        public string TranslateToLanguage { get; set; } = "fa"; // "fa", "en", "auto", "fr", "de", "es", "it", "tr", "ar", "ru", "zh", "ja", "ko", "hi", "pt"
+        public string FetchInfoLanguage { get; set; } = "fa-IR";
+        public bool ShowActorImages { get; set; } = true;
+        public bool HideAdultContent { get; set; } = false;
+
         // Trashed Broken Items (AutoRelocator)
         public List<int> TrashedBrokenDbIds { get; set; } = new();
     }
@@ -50,25 +59,53 @@ namespace MovieManagerDesktop.Services
     {
         private static readonly string SettingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
 
+        private static readonly object _fileLock = new();
+        private static volatile SettingsModel? _cachedSettings = null;
+
         public static SettingsModel LoadSettings()
         {
-            if (File.Exists(SettingsFilePath))
+            if (_cachedSettings != null)
             {
-                try
-                {
-                    var json = File.ReadAllText(SettingsFilePath);
-                    var options = new JsonSerializerOptions 
-                    { 
-                        NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
-                    };
-                    return JsonSerializer.Deserialize<SettingsModel>(json, options) ?? new SettingsModel();
-                }
-                catch
-                {
-                    return new SettingsModel();
-                }
+                return _cachedSettings;
             }
-            return new SettingsModel();
+
+            lock (_fileLock)
+            {
+                if (_cachedSettings != null)
+                {
+                    return _cachedSettings;
+                }
+
+                if (File.Exists(SettingsFilePath))
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        try
+                        {
+                            using var fs = new FileStream(SettingsFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                            using var reader = new StreamReader(fs);
+                            var json = reader.ReadToEnd();
+                            var options = new JsonSerializerOptions 
+                            { 
+                                NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
+                            };
+                            _cachedSettings = JsonSerializer.Deserialize<SettingsModel>(json, options) ?? new SettingsModel();
+                            return _cachedSettings;
+                        }
+                        catch (IOException)
+                        {
+                            System.Threading.Thread.Sleep(50);
+                        }
+                        catch
+                        {
+                            _cachedSettings = new SettingsModel();
+                            return _cachedSettings;
+                        }
+                    }
+                }
+                _cachedSettings = new SettingsModel();
+                return _cachedSettings;
+            }
         }
 
         // Default API keys matching Android app
@@ -124,13 +161,31 @@ namespace MovieManagerDesktop.Services
 
         public static void SaveSettings(SettingsModel settings)
         {
-            var options = new JsonSerializerOptions 
-            { 
-                WriteIndented = true,
-                NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
-            };
-            var json = JsonSerializer.Serialize(settings, options);
-            File.WriteAllText(SettingsFilePath, json);
+            _cachedSettings = settings;
+            lock (_fileLock)
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    try
+                    {
+                        var options = new JsonSerializerOptions 
+                        { 
+                            WriteIndented = true,
+                            NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
+                        };
+                        var json = JsonSerializer.Serialize(settings, options);
+                        using var fs = new FileStream(SettingsFilePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+                        using var writer = new StreamWriter(fs);
+                        writer.Write(json);
+                        break;
+                    }
+                    catch (IOException)
+                    {
+                        System.Threading.Thread.Sleep(50);
+                    }
+                    catch { }
+                }
+            }
         }
 
         /// <summary>

@@ -173,12 +173,12 @@ namespace MovieManagerDesktop.ViewModels
 
             if (Media.FirstAirDate.HasValue)
             {
-                FirstAirDateText = Media.FirstAirDate.Value.ToString("yyyy/MM/dd");
+                FirstAirDateText = DateTimeFormatterService.FormatShortDate(Media.FirstAirDate.Value);
             }
 
             if (Media.LastAirDate.HasValue)
             {
-                LastAirDateText = Media.LastAirDate.Value.ToString("yyyy/MM/dd");
+                LastAirDateText = DateTimeFormatterService.FormatShortDate(Media.LastAirDate.Value);
             }
 
             if (!string.IsNullOrEmpty(Media.NetworkName))
@@ -210,15 +210,19 @@ namespace MovieManagerDesktop.ViewModels
 
             if (!string.IsNullOrEmpty(Media.NextEpisodeDate))
             {
-                // In VideoFile.cs NextEpisodeDate is string
                 string dateStr = Media.NextEpisodeDate ?? "";
-                NextEpisodeText = $"قسمت {Media.NextEpisodeNumber} - {dateStr}";
+                NextEpisodeText = $"قسمت {Media.NextEpisodeNumber} - {DateTimeFormatterService.FormatDate(dateStr)}";
             }
             else if (Media.SeriesStatus == "Currently Airing")
             {
                 NextEpisodeText = "به زودی اعلام میشود";
             }
         }
+
+        public string FormattedGenres => GenreTranslatorService.TranslateList(Media.Genres);
+        public string FormattedYear => DateTimeFormatterService.FormatYear(Media.Year);
+
+
 
         [RelayCommand]
         private void ToggleFavorite()
@@ -664,7 +668,7 @@ namespace MovieManagerDesktop.ViewModels
             try
             {
                 MovieManagerDesktop.Services.ToastService.Instance.ShowSuccess("در حال ترجمه متن...");
-                string translatedText = await MovieManagerDesktop.Services.TranslationService.TranslateTextAsync(Media.Overview, "fa");
+                string translatedText = await MovieManagerDesktop.Services.TranslationService.TranslateTextAsync(Media.Overview);
                 
                 if (!string.IsNullOrWhiteSpace(translatedText) && translatedText != Media.Overview)
                 {

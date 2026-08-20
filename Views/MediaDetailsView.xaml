@@ -277,14 +277,14 @@
                             <Border Background="{DynamicResource CardBackground}" CornerRadius="16" Padding="15,6" Margin="0,0,15,10">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Calendar" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Width="18" Height="18" Margin="0,0,8,0"/>
-                                    <TextBlock Text="{Binding Media.Year, Converter={StaticResource PersianNumberConverter}}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding FormattedYear}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                             <!-- Rating -->
                             <Border Background="#33FFC107" BorderBrush="#FFFFC107" BorderThickness="1" CornerRadius="16" Padding="15,6" Margin="0,0,15,10">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="Star" Foreground="#FFFFC107" VerticalAlignment="Center" Width="18" Height="18" Margin="0,0,8,0"/>
-                                    <TextBlock Text="{Binding Media.Rating, Converter={StaticResource PersianNumberConverter}}" Foreground="#FFFFC107" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Media.Rating, StringFormat={}{0:0.0}}" Foreground="#FFFFC107" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                             <!-- Quality -->
@@ -303,7 +303,7 @@
                             </Border>
                         </WrapPanel>
                         <!-- Genres -->
-                            <TextBlock Text="{Binding Media.Genres}" Foreground="{DynamicResource PrimaryColor}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,25" TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding FormattedGenres}" Foreground="{DynamicResource PrimaryColor}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,25" TextWrapping="Wrap"/>
                             
                             <!-- Overview -->
                             <Grid Margin="0,0,0,15">

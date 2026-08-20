@@ -45,6 +45,17 @@ namespace MovieManagerDesktop.Models
         private bool _isWatchlist = false;
 
         [ObservableProperty]
+        private bool _isHidden = false;
+
+        [ObservableProperty]
+        private string? _customTags;
+
+        public bool HasDubbing { get; set; } = false;
+        public bool HasSubtitle { get; set; } = false;
+        public string? ContentRating { get; set; }
+        public int? LastPlayedEpisode { get; set; }
+
+        [ObservableProperty]
         private double _watchProgressPercent = 0; // 0 to 100
 
         [ObservableProperty]

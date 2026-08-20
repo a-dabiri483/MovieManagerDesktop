@@ -10,15 +10,92 @@
              xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
              mc:Ignorable="d"  
              d:DataContext="{d:DesignInstance Type=viewmodels:MoviesViewModel}"
-             d:DesignHeight="700" d:DesignWidth="1000"
+             d:DesignHeight="900" d:DesignWidth="1200"
              FlowDirection="RightToLeft"
              Loaded="MoviesView_Loaded">
 
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <converters:SeriesStatusConverter x:Key="SeriesStatusConverter"/>
-        <converters:SeriesStatusColorConverter x:Key="SeriesStatusColorConverter"/>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <converters:RadioIntEqualsConverter x:Key="RadioIntEqualsConverter"/>
+
+        <!-- Segmented Tab Pill RadioButton Style -->
+        <Style x:Key="AndroidTabPillRadioStyle" TargetType="RadioButton">
+            <Setter Property="GroupName" Value="CategoryTabGroup"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Padding" Value="16,0"/>
+            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="pillBorder" Background="{TemplateBinding Background}" 
+                                CornerRadius="19" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="pillBorder" Property="Background" Value="{DynamicResource PrimaryGradientBrush}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="pillBorder" Property="Background" Value="#25FFFFFF"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsChecked" Value="True"/>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="pillBorder" Property="Background" Value="{DynamicResource PrimaryGradientBrush}"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Sub-filter Watch Status Pill Style -->
+        <Style x:Key="AndroidSubFilterPillStyle" TargetType="RadioButton">
+            <Setter Property="GroupName" Value="WatchSubFilterGroup"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+            <Setter Property="Background" Value="#12FFFFFF"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource LightBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="subBorder" Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="16" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="subBorder" Property="Background" Value="{DynamicResource PrimaryGradientBrush}"/>
+                                <Setter TargetName="subBorder" Property="BorderThickness" Value="0"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="subBorder" Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
     <UserControl.InputBindings>
@@ -28,190 +105,140 @@
         <KeyBinding Key="F5" Command="{Binding RefreshSelectedCommand}" />
     </UserControl.InputBindings>
 
-    <Grid Margin="30,45,30,0" PreviewMouseWheel="Grid_PreviewMouseWheel">
+    <Grid Margin="32,20,32,0" PreviewMouseWheel="Grid_PreviewMouseWheel">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Header, Search, Action Bar, and Filters -->
-        <Grid Grid.Row="0" Margin="0,0,0,15" Height="45">
-            <!-- Normal Mode -->
-            <Grid>
-                <Grid.Style>
-                    <Style TargetType="Grid">
-                        <Setter Property="Opacity" Value="1"/>
-                        <Setter Property="IsHitTestVisible" Value="True"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsInSelectionMode}" Value="True">
-                                <Setter Property="IsHitTestVisible" Value="False"/>
-                                <DataTrigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </DataTrigger.EnterActions>
-                                <DataTrigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </DataTrigger.ExitActions>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Grid.Style>
+        <!-- ======================================================== -->
+        <!-- ROW 0: TOP APP BAR & HEADER -->
+        <!-- ======================================================== -->
+        <Grid Grid.Row="0" Margin="0,0,0,12" Height="46">
+            
+            <!-- Normal Header State -->
+            <Grid Visibility="{Binding IsInSelectionMode, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Text="{Binding PageTitle}" Style="{StaticResource TextH2}" VerticalAlignment="Center" Margin="0,0,20,0">
-                    <TextBlock.Effect>
-                        <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.5" Color="Black"/>
-                    </TextBlock.Effect>
-                </TextBlock>
-                
-                <!-- Search Box (Android Cinema Style) -->
-                <Border Grid.Column="1" Background="{DynamicResource CardBackground}" CornerRadius="12" Padding="14,0" MaxWidth="380" HorizontalAlignment="Left" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" VerticalAlignment="Center" Height="40">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <ComboBox IsEditable="True"
-                                  Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" 
-                                  ItemsSource="{Binding SearchHistory}"
-                                  materialDesign:HintAssist.Hint="جستجو در فیلم‌ها، سریال‌ها و بازیگران..." 
-                                  materialDesign:TextFieldAssist.HasClearButton="True"
-                                  Foreground="{DynamicResource PrimaryText}" FontSize="13.5" BorderThickness="0"
-                                  VerticalAlignment="Center">
-                            <ComboBox.InputBindings>
-                                <KeyBinding Key="Return" Command="{Binding SaveSearchHistoryCommand}"/>
-                                <KeyBinding Key="Enter" Command="{Binding SaveSearchHistoryCommand}"/>
-                            </ComboBox.InputBindings>
-                        </ComboBox>
-                        <materialDesign:PackIcon Grid.Column="1" Kind="Magnify" Width="20" Height="20" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center"/>
-                    </Grid>
-                </Border>
+                <!-- Page Title / Selected Tag Header -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Command="{Binding ClearCustomTagFilterCommand}"
+                            Visibility="{Binding HasBackButton, Converter={StaticResource BoolToVisibilityConverter}}"
+                            Background="Transparent" BorderThickness="0" Width="36" Height="36" Padding="0" Margin="0,0,8,0"
+                            ToolTip="بازگشت" Cursor="Hand">
+                        <materialDesign:PackIcon Kind="ArrowRight" Width="24" Height="24" Foreground="{DynamicResource PrimaryColor}"/>
+                    </Button>
 
-                <!-- Action buttons: Sort, Filter, Size reset -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    <ToggleButton x:Name="FilterButton" Visibility="{Binding ShowFilters, Converter={StaticResource BooleanToVisibilityConverter}}" Style="{StaticResource MaterialDesignFlatButton}" Foreground="{DynamicResource PrimaryColor}" ToolTip="فیلترها" Padding="12,0" Height="36" materialDesign:ButtonAssist.CornerRadius="10">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="FilterVariant" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                            <TextBlock Text="فیلترها" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                        </StackPanel>
-                    </ToggleButton>
+                    <TextBlock Text="{Binding PageTitle}" FontSize="24" FontWeight="Black" Foreground="White" VerticalAlignment="Center"
+                               Visibility="{Binding SelectedCustomTag, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Inverse}"/>
                     
-                    <Popup IsOpen="{Binding IsChecked, ElementName=FilterButton}" StaysOpen="False" PlacementTarget="{Binding ElementName=FilterButton}" Placement="Bottom">
-                        <Border Background="{DynamicResource CardBackground}" CornerRadius="12" Padding="18" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Margin="0,8,0,0">
+                    <TextBlock Text="{Binding SelectedCustomTag, StringFormat='{}برچسب: {0}'}" FontSize="22" FontWeight="Black" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center"
+                               Visibility="{Binding SelectedCustomTag, Converter={StaticResource NullToVisibilityConverter}}"/>
+                </StackPanel>
+
+                <!-- Top Left Action Icons -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    
+                    <!-- 1. Eye / Show Hidden Toggle Button -->
+                    <Button Command="{Binding ToggleShowHiddenCommand}" 
+                            Background="Transparent" BorderThickness="0" Width="40" Height="40" Padding="0" Margin="0,0,8,0"
+                            ToolTip="حالت مخفی (نمایش موارد قفل‌شده)" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="Transparent" CornerRadius="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <Grid>
+                                        <materialDesign:PackIcon Kind="Eye" Width="24" Height="24" Foreground="{DynamicResource PrimaryColor}" 
+                                                                 Visibility="{Binding DataContext.ShowHiddenItems, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                        <materialDesign:PackIcon Kind="EyeOffOutline" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" 
+                                                                 Visibility="{Binding DataContext.ShowHiddenItems, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+
+                    <!-- 2. Poster Size Button (Clean flat icon button) -->
+                    <ToggleButton x:Name="PosterSizeButton" Width="40" Height="40" Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,8,0"
+                                  ToolTip="تنظیم اندازه پوسترها" Cursor="Hand">
+                        <ToggleButton.Template>
+                            <ControlTemplate TargetType="ToggleButton">
+                                <Border Background="Transparent" CornerRadius="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="FormatSize" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}"/>
+                                </Border>
+                            </ControlTemplate>
+                        </ToggleButton.Template>
+                    </ToggleButton>
+
+                    <!-- Poster Size Slider Dropdown Popup -->
+                    <Popup IsOpen="{Binding IsChecked, ElementName=PosterSizeButton}" StaysOpen="False" PlacementTarget="{Binding ElementName=PosterSizeButton}" Placement="Bottom">
+                        <Border Background="{DynamicResource CardBackground}" CornerRadius="16" Padding="18" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Margin="0,8,0,0" Width="250">
                             <Border.Effect>
-                                <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.5" Color="Black"/>
+                                <DropShadowEffect BlurRadius="22" ShadowDepth="4" Opacity="0.6" Color="Black"/>
                             </Border.Effect>
-                            <StackPanel MinWidth="170">
-                                <TextBlock Text="ترتیب نمایش:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,4" FontSize="11" FontWeight="Bold"/>
-                                <ComboBox SelectedIndex="{Binding SortIndex}" Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,10">
-                                    <ComboBoxItem Content="تاریخ افزودن"/>
-                                    <ComboBoxItem Content="نام"/>
-                                    <ComboBoxItem Content="سال تولید"/>
-                                    <ComboBoxItem Content="امتیاز"/>
-                                </ComboBox>
-
-                                <TextBlock Text="جهت مرتب‌سازی:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,4" FontSize="11" FontWeight="Bold"/>
-                                <ComboBox SelectedIndex="{Binding SortDirectionIndex}" Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,10">
-                                    <ComboBoxItem Content="نزولی"/>
-                                    <ComboBoxItem Content="صعودی"/>
-                                </ComboBox>
-                                
-                                <TextBlock Text="ژانر:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,4" FontSize="11" FontWeight="Bold"/>
-                                <ComboBox ItemsSource="{Binding Genres}" SelectedIndex="{Binding SelectedGenreIndex}" Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,10" />
-
-                                <TextBlock Text="نوع محتوا:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,4" FontSize="11" FontWeight="Bold"/>
-                                <ComboBox SelectedIndex="{Binding MediaTypeFilterIndex}" Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,10">
-                                    <ComboBoxItem Content="همه" />
-                                    <ComboBoxItem Content="فیلم‌ها" />
-                                    <ComboBoxItem Content="سریال‌ها" />
-                                </ComboBox>
-
-                                <TextBlock Text="وضعیت تماشا:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,4" FontSize="11" FontWeight="Bold"/>
-                                <ComboBox SelectedIndex="{Binding WatchedFilterIndex}" Foreground="{DynamicResource PrimaryText}" Margin="0,0,0,10">
-                                    <ComboBoxItem Content="همه" />
-                                    <ComboBoxItem Content="دیده شده" />
-                                    <ComboBoxItem Content="دیده نشده" />
-                                </ComboBox>
-
-                                <TextBlock Text="لیست و دسته‌بندی:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,4" FontSize="11" FontWeight="Bold"/>
-                                <ComboBox SelectedIndex="{Binding ListFilterIndex}" Foreground="{DynamicResource PrimaryText}">
-                                    <ComboBoxItem Content="همه" />
-                                    <ComboBoxItem Content="علاقه‌مندی‌ها" />
-                                    <ComboBoxItem Content="لیست تماشا" />
-                                </ComboBox>
+                            <StackPanel>
+                                <Grid Margin="0,0,0,8">
+                                    <TextBlock Text="اندازه نمایش پوستر:" Foreground="{DynamicResource SecondaryText}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="{Binding PosterSize, StringFormat='{}{0}px'}" Foreground="{DynamicResource PrimaryColor}" FontSize="12" FontWeight="Black" HorizontalAlignment="Left"/>
+                                </Grid>
+                                <Slider Minimum="150" Maximum="350" Value="{Binding PosterSize}" Foreground="{DynamicResource PrimaryColor}"/>
                             </StackPanel>
                         </Border>
                     </Popup>
 
-                    <ToggleButton x:Name="SizeButton" Style="{StaticResource MaterialDesignFlatButton}" Foreground="{DynamicResource SecondaryText}" ToolTip="تغییر سایز پوستر" Padding="10,0" Height="36" Margin="8,0,0,0" materialDesign:ButtonAssist.CornerRadius="10">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="ImageSizeSelectActual" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                            <TextBlock Text="اندازه" VerticalAlignment="Center" FontWeight="SemiBold"/>
-                        </StackPanel>
+                    <!-- 3. Sort & Filter Button (Clean flat icon button) -->
+                    <ToggleButton x:Name="FilterButton" Width="40" Height="40" Background="Transparent" BorderThickness="0" Padding="0"
+                                  ToolTip="مرتب‌سازی و فیلترها" Cursor="Hand">
+                        <ToggleButton.Template>
+                            <ControlTemplate TargetType="ToggleButton">
+                                <Border Background="Transparent" CornerRadius="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="SortVariant" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}"/>
+                                </Border>
+                            </ControlTemplate>
+                        </ToggleButton.Template>
                     </ToggleButton>
-                    
-                    <Popup IsOpen="{Binding IsChecked, ElementName=SizeButton}" StaysOpen="False" PlacementTarget="{Binding ElementName=SizeButton}" Placement="Bottom">
-                        <Border Background="{DynamicResource CardBackground}" CornerRadius="12" Padding="16" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Margin="0,8,0,0">
+
+                    <!-- Sort & Filter Dropdown Popup -->
+                    <Popup IsOpen="{Binding IsChecked, ElementName=FilterButton}" StaysOpen="False" PlacementTarget="{Binding ElementName=FilterButton}" Placement="Bottom">
+                        <Border Background="{DynamicResource CardBackground}" CornerRadius="16" Padding="18" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Margin="0,8,0,0" MinWidth="220">
                             <Border.Effect>
-                                <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.5" Color="Black"/>
+                                <DropShadowEffect BlurRadius="22" ShadowDepth="4" Opacity="0.6" Color="Black"/>
                             </Border.Effect>
                             <StackPanel>
-                                <TextBlock Text="تنظیم اندازه پوسترها:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,8" FontSize="11" FontWeight="Bold"/>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="ImageSizeSelectSmall" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <Slider Minimum="150" Maximum="350" Value="{Binding PosterSize}" Width="150" VerticalAlignment="Center" Foreground="{DynamicResource PrimaryColor}"/>
-                                    <materialDesign:PackIcon Kind="ImageSizeSelectLarge" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                                </StackPanel>
-                                <Button Command="{Binding ResetSizeCommand}" Content="اندازه پیش‌فرض" Style="{StaticResource MaterialDesignFlatButton}" Foreground="{DynamicResource PrimaryColor}" Margin="0,12,0,0" FontSize="12" materialDesign:ButtonAssist.CornerRadius="8"/>
+                                <TextBlock Text="مرتب‌سازی بر اساس:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,6" FontSize="11.5" FontWeight="Bold"/>
+                                <ComboBox SelectedIndex="{Binding SortIndex}" Foreground="White" Margin="0,0,0,12" Background="#15FFFFFF">
+                                    <ComboBoxItem Content="تاریخ افزودن"/>
+                                    <ComboBoxItem Content="نام فیلم/سریال"/>
+                                    <ComboBoxItem Content="سال ساخت"/>
+                                    <ComboBoxItem Content="امتیاز"/>
+                                </ComboBox>
+
+                                <TextBlock Text="جهت مرتب‌سازی:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,6" FontSize="11.5" FontWeight="Bold"/>
+                                <ComboBox SelectedIndex="{Binding SortDirectionIndex}" Foreground="White" Margin="0,0,0,12" Background="#15FFFFFF">
+                                    <ComboBoxItem Content="نزولی"/>
+                                    <ComboBoxItem Content="صعودی"/>
+                                </ComboBox>
+                                
+                                <TextBlock Text="ژانر:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,6" FontSize="11.5" FontWeight="Bold"/>
+                                <ComboBox ItemsSource="{Binding Genres}" SelectedIndex="{Binding SelectedGenreIndex}" Foreground="White" Background="#15FFFFFF"/>
                             </StackPanel>
                         </Border>
                     </Popup>
                 </StackPanel>
             </Grid>
 
-            <!-- Selection Action Bar Layer (Android Batch Bar) -->
-            <Border Background="{DynamicResource CardBackground}" CornerRadius="14" Padding="18,0" BorderBrush="{DynamicResource PrimaryColor}" BorderThickness="1.5">
+            <!-- Selection Mode Action Bar (Top Bulk Bar activated on right-click) -->
+            <Border Background="{DynamicResource CardBackground}" CornerRadius="16" Padding="14,0" BorderBrush="{DynamicResource PrimaryColor}" BorderThickness="1.5"
+                    Visibility="{Binding IsInSelectionMode, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Border.Effect>
-                    <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.6" Color="#E50914"/>
+                    <DropShadowEffect BlurRadius="22" ShadowDepth="2" Opacity="0.6" Color="#EB3B5A"/>
                 </Border.Effect>
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Opacity" Value="0"/>
-                        <Setter Property="IsHitTestVisible" Value="False"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsInSelectionMode}" Value="True">
-                                <Setter Property="IsHitTestVisible" Value="True"/>
-                                <DataTrigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="1" Duration="0:0:0.2"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </DataTrigger.EnterActions>
-                                <DataTrigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.2"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </DataTrigger.ExitActions>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-                <Grid Height="48">
+                <Grid Height="52">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
@@ -219,363 +246,518 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <Button Grid.Column="0" Command="{Binding ExitSelectionModeCommand}" Style="{StaticResource MaterialDesignIconForegroundButton}" Foreground="{DynamicResource SecondaryText}" Width="32" Height="32" ToolTip="خروج (Esc)">
-                        <materialDesign:PackIcon Kind="Close"/>
+                    <Button Grid.Column="0" Command="{Binding ExitSelectionModeCommand}" 
+                            Background="#20FFFFFF" BorderThickness="0" Width="38" Height="38" Padding="0" 
+                            materialDesign:ButtonAssist.CornerRadius="19" Foreground="White" ToolTip="خروج از حالت انتخاب (Esc)" Cursor="Hand">
+                        <materialDesign:PackIcon Kind="Close" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Button>
 
-                    <TextBlock Grid.Column="1" Text="{Binding SelectedCount, StringFormat='{}{0} مورد انتخاب شد'}" Foreground="White" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    <TextBlock Grid.Column="1" Text="{Binding SelectedCount, StringFormat='{}{0} مورد انتخاب شد'}" Foreground="White" FontSize="15" FontWeight="Black" VerticalAlignment="Center" Margin="14,0,0,0"/>
 
                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Command="{Binding SelectAllCommand}" Style="{StaticResource MaterialDesignFlatButton}" Foreground="{DynamicResource PrimaryColor}" Content="انتخاب همه" ToolTip="انتخاب همه (Ctrl+A)" Margin="0,0,8,0" FontWeight="Bold"/>
+                        <!-- انتخاب همه -->
+                        <Button Command="{Binding SelectAllCommand}" 
+                                Background="#25EB3B5A" BorderThickness="0" Foreground="{DynamicResource PrimaryColor}"
+                                Height="38" Padding="16,0" materialDesign:ButtonAssist.CornerRadius="12"
+                                Content="انتخاب همه" Margin="0,0,10,0" FontWeight="Black" FontSize="13" Cursor="Hand"/>
                         
-                        <Button Command="{Binding ToggleFavoritesSelectedCommand}" Style="{StaticResource MaterialDesignFlatButton}" Foreground="#FF3B47" ToolTip="تغییر وضعیت علاقه‌مندی‌ها" Margin="0,0,6,0">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="HeartOutline" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBlock Text="علاقه‌مندی" VerticalAlignment="Center"/>
-                            </StackPanel>
+                        <!-- برچسب‌ها -->
+                        <Button Command="{Binding OpenManageTagsForSelectedCommand}" 
+                                Background="#2000B894" BorderThickness="0" Foreground="{DynamicResource TealAccent}"
+                                Width="40" Height="40" Padding="0" materialDesign:ButtonAssist.CornerRadius="12"
+                                ToolTip="مدیریت برچسب‌ها" Margin="0,0,8,0" Cursor="Hand">
+                            <materialDesign:PackIcon Kind="TagOutline" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
 
-                        <Button Command="{Binding ToggleWatchedSelectedCommand}" Style="{StaticResource MaterialDesignFlatButton}" Foreground="{DynamicResource SuccessColor}" ToolTip="تغییر وضعیت مشاهده" Margin="0,0,6,0">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="EyeCheckOutline" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBlock Text="مشاهده شده" VerticalAlignment="Center"/>
-                            </StackPanel>
+                        <!-- علاقه‌مندی -->
+                        <Button Command="{Binding ToggleFavoritesSelectedCommand}" 
+                                Background="#20FF3B47" BorderThickness="0" Foreground="#FF3B47"
+                                Width="40" Height="40" Padding="0" materialDesign:ButtonAssist.CornerRadius="12"
+                                ToolTip="افزودن به علاقه‌مندی‌ها" Margin="0,0,8,0" Cursor="Hand">
+                            <materialDesign:PackIcon Kind="HeartOutline" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
 
-                        <Button Command="{Binding RefreshSelectedCommand}" Style="{StaticResource MaterialDesignFlatButton}" Foreground="{DynamicResource WarningColor}" ToolTip="بروزرسانی متادیتا (F5)" Margin="0,0,6,0">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Refresh" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBlock Text="به‌روزرسانی" VerticalAlignment="Center"/>
-                            </StackPanel>
+                        <!-- مشاهده شده -->
+                        <Button Command="{Binding ToggleWatchedSelectedCommand}" 
+                                Background="#2026DE81" BorderThickness="0" Foreground="{DynamicResource EmeraldAccent}"
+                                Width="40" Height="40" Padding="0" materialDesign:ButtonAssist.CornerRadius="12"
+                                ToolTip="تغییر وضعیت مشاهده" Margin="0,0,8,0" Cursor="Hand">
+                            <materialDesign:PackIcon Kind="EyeCheckOutline" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
 
-                        <Button Command="{Binding DeleteSelectedCommand}" Style="{StaticResource MaterialDesignFlatButton}" Foreground="{DynamicResource ErrorColor}" ToolTip="حذف از آرشیو (Delete)">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="DeleteOutline" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBlock Text="حذف" VerticalAlignment="Center"/>
-                            </StackPanel>
+                        <!-- مخفی‌سازی -->
+                        <Button Command="{Binding ToggleHiddenSelectedCommand}" 
+                                Background="#208854D0" BorderThickness="0" Foreground="{DynamicResource PurpleAccent}"
+                                Width="40" Height="40" Padding="0" materialDesign:ButtonAssist.CornerRadius="12"
+                                ToolTip="مخفی‌سازی / قفل" Margin="0,0,8,0" Cursor="Hand">
+                            <materialDesign:PackIcon Kind="LockOutline" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+
+                        <!-- بروزرسانی (F5) -->
+                        <Button Command="{Binding RefreshSelectedCommand}" 
+                                Background="#20FFD32A" BorderThickness="0" Foreground="{DynamicResource GoldColor}"
+                                Width="40" Height="40" Padding="0" materialDesign:ButtonAssist.CornerRadius="12"
+                                ToolTip="به‌روزرسانی آنلاین (F5)" Margin="0,0,8,0" Cursor="Hand">
+                            <materialDesign:PackIcon Kind="Refresh" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Button>
+
+                        <!-- حذف -->
+                        <Button Command="{Binding DeleteSelectedCommand}" 
+                                Background="#30EB3B5A" BorderThickness="0" Foreground="{DynamicResource PrimaryColor}"
+                                Width="40" Height="40" Padding="0" materialDesign:ButtonAssist.CornerRadius="12"
+                                ToolTip="حذف از آرشیو" Cursor="Hand">
+                            <materialDesign:PackIcon Kind="DeleteOutline" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
                     </StackPanel>
                 </Grid>
             </Border>
         </Grid>
 
-        <!-- Quick Filters Chips (Android Cinema Style with Counts) -->
-        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,16" Visibility="{Binding ShowFilters, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <StackPanel Orientation="Horizontal">
-                <StackPanel.Resources>
-                    <Style x:Key="AndroidFilterChipStyle" TargetType="RadioButton">
-                        <Setter Property="GroupName" Value="QuickFilterGroup"/>
-                        <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
-                        <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
-                        <Setter Property="BorderBrush" Value="{DynamicResource LightBorder}"/>
-                        <Setter Property="BorderThickness" Value="1"/>
-                        <Setter Property="Margin" Value="0,0,10,0"/>
-                        <Setter Property="Height" Value="36"/>
-                        <Setter Property="Padding" Value="16,0"/>
-                        <Setter Property="FontSize" Value="13"/>
-                        <Setter Property="FontWeight" Value="SemiBold"/>
-                        <Setter Property="Cursor" Value="Hand"/>
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="RadioButton">
-                                    <Border Background="{TemplateBinding Background}" 
-                                            BorderBrush="{TemplateBinding BorderBrush}" 
-                                            BorderThickness="{TemplateBinding BorderThickness}" 
-                                            CornerRadius="18" 
-                                            Padding="{TemplateBinding Padding}">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsChecked" Value="True">
-                                            <Setter Property="Background" Value="{DynamicResource PrimaryColor}"/>
-                                            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
-                                            <Setter Property="Foreground" Value="White"/>
-                                        </Trigger>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </StackPanel.Resources>
-
-                <!-- 1. همه -->
-                <RadioButton Style="{StaticResource AndroidFilterChipStyle}" IsChecked="True">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="همه" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <Border Background="#30000000" CornerRadius="10" Padding="7,1">
-                            <TextBlock Text="{Binding Movies.Count}" FontSize="11" FontWeight="Bold" Foreground="White"/>
-                        </Border>
-                    </StackPanel>
-                </RadioButton>
-
-                <!-- 2. فیلم‌ها -->
-                <RadioButton Style="{StaticResource AndroidFilterChipStyle}" IsChecked="{Binding IsQuickFilterMovies}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="فیلم‌ها" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </RadioButton>
+        <!-- ======================================================== -->
+        <!-- ROW 1: CATEGORY TABS & SEARCH CARD -->
+        <!-- ======================================================== -->
+        <Border Grid.Row="1" Background="{DynamicResource CardBackground}" CornerRadius="22" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Padding="16,12" Margin="0,0,0,12">
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.35" Color="Black"/>
+            </Border.Effect>
+            <StackPanel>
                 
-                <!-- 3. سریال‌ها -->
-                <RadioButton Style="{StaticResource AndroidFilterChipStyle}" IsChecked="{Binding IsQuickFilterSeries}">
+                <!-- Category Segmented Tabs Row -->
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,10">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="سریال‌ها" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </RadioButton>
+                        
+                        <!-- 1. همه -->
+                        <RadioButton Style="{StaticResource AndroidTabPillRadioStyle}" 
+                                     IsChecked="{Binding SelectedCategoryTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=0}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="همه" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <Border Background="#30000000" CornerRadius="10" Padding="8,2">
+                                    <TextBlock Text="{Binding AllCount}" FontSize="11" FontWeight="Black" Foreground="White"/>
+                                </Border>
+                            </StackPanel>
+                        </RadioButton>
 
-                <!-- 4. تماشا نشده -->
-                <RadioButton Style="{StaticResource AndroidFilterChipStyle}" IsChecked="{Binding IsQuickFilterUnwatched}">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="تماشا نشده" VerticalAlignment="Center"/>
+                        <!-- 2. فیلم‌ها -->
+                        <RadioButton Style="{StaticResource AndroidTabPillRadioStyle}"
+                                     IsChecked="{Binding SelectedCategoryTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=1}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="فیلم‌ها" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <Border Background="#30000000" CornerRadius="10" Padding="8,2">
+                                    <TextBlock Text="{Binding MoviesCount}" FontSize="11" FontWeight="Black" Foreground="White"/>
+                                </Border>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- 3. سریال‌ها -->
+                        <RadioButton Style="{StaticResource AndroidTabPillRadioStyle}"
+                                     IsChecked="{Binding SelectedCategoryTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=2}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="سریال‌ها" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <Border Background="#30000000" CornerRadius="10" Padding="8,2">
+                                    <TextBlock Text="{Binding SeriesCount}" FontSize="11" FontWeight="Black" Foreground="White"/>
+                                </Border>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- 4. علاقه‌مندی‌ها -->
+                        <RadioButton Style="{StaticResource AndroidTabPillRadioStyle}"
+                                     IsChecked="{Binding SelectedCategoryTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=3}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="علاقه‌مندی‌ها" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <Border Background="#30000000" CornerRadius="10" Padding="8,2">
+                                    <TextBlock Text="{Binding FavoritesCount}" FontSize="11" FontWeight="Black" Foreground="White"/>
+                                </Border>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- 5. دسته‌بندی‌ها (برچسب‌های سفارشی) -->
+                        <RadioButton Style="{StaticResource AndroidTabPillRadioStyle}"
+                                     IsChecked="{Binding SelectedCategoryTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=4}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="دسته‌بندی‌ها" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <Border Background="#30000000" CornerRadius="10" Padding="8,2">
+                                    <TextBlock Text="{Binding CategoriesCount}" FontSize="11" FontWeight="Black" Foreground="White"/>
+                                </Border>
+                            </StackPanel>
+                        </RadioButton>
+
                     </StackPanel>
-                </RadioButton>
+                </ScrollViewer>
+
+                <!-- Search Input Box -->
+                <Border Background="#10FFFFFF" CornerRadius="16" BorderBrush="#20FFFFFF" BorderThickness="1" Padding="14,0" Height="44">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <materialDesign:PackIcon Grid.Column="0" Kind="Magnify" Width="22" Height="22" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                        <TextBox Grid.Column="1" Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" 
+                                 materialDesign:HintAssist.Hint="جستجو..." 
+                                 Foreground="White" FontSize="14" BorderThickness="0" Background="Transparent" VerticalAlignment="Center"/>
+                    </Grid>
+                </Border>
+
             </StackPanel>
-        </ScrollViewer>
+        </Border>
 
-        <!-- Progress bar for batch refresh -->
-        <ProgressBar Grid.Row="1" IsIndeterminate="True" Height="4" VerticalAlignment="Bottom" Background="Transparent" Foreground="{DynamicResource PrimaryColor}" Visibility="{Binding IsRefreshing, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+        <!-- ======================================================== -->
+        <!-- ROW 2: SUB-FILTER WATCH PILLS (For Non-Categories Tab) -->
+        <!-- ======================================================== -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="4,0,0,14"
+                    Visibility="{Binding IsWatchSubFilterVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+            
+            <!-- 1. همه -->
+            <RadioButton Style="{StaticResource AndroidSubFilterPillStyle}"
+                         IsChecked="{Binding SelectedWatchTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=0}">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <materialDesign:PackIcon Kind="Check" Width="15" Height="15" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="همه" VerticalAlignment="Center"/>
+                </StackPanel>
+            </RadioButton>
 
-        <!-- Movies Grid -->
-        <Grid Grid.Row="2">
-            <!-- Skeleton Loading Placeholders -->
-            <ScrollViewer VerticalScrollBarVisibility="Auto" Style="{DynamicResource {x:Type ScrollViewer}}" Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <WrapPanel Margin="0,0,-20,0">
-                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="10,10,20,30" CornerRadius="16"/>
-                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="10,10,20,30" CornerRadius="16"/>
-                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="10,10,20,30" CornerRadius="16"/>
-                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="10,10,20,30" CornerRadius="16"/>
-                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="10,10,20,30" CornerRadius="16"/>
-                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="10,10,20,30" CornerRadius="16"/>
+            <!-- 2. تماشا شده -->
+            <RadioButton Style="{StaticResource AndroidSubFilterPillStyle}"
+                         IsChecked="{Binding SelectedWatchTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=1}">
+                <TextBlock Text="تماشا شده" VerticalAlignment="Center"/>
+            </RadioButton>
+
+            <!-- 3. تماشا نشده -->
+            <RadioButton Style="{StaticResource AndroidSubFilterPillStyle}"
+                         IsChecked="{Binding SelectedWatchTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=2}">
+                <TextBlock Text="تماشا نشده" VerticalAlignment="Center"/>
+            </RadioButton>
+
+        </StackPanel>
+
+        <!-- ======================================================== -->
+        <!-- ROW 3: CONTENT AREA -->
+        <!-- ======================================================== -->
+        <Grid Grid.Row="3">
+            
+            <!-- Skeleton Shimmer Loading -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
+                <WrapPanel Margin="0,0,-16,0">
+                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="8,8,16,18" CornerRadius="18"/>
+                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="8,8,16,18" CornerRadius="18"/>
+                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="8,8,16,18" CornerRadius="18"/>
+                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="8,8,16,18" CornerRadius="18"/>
                 </WrapPanel>
             </ScrollViewer>
 
-            <!-- Empty State -->
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,50,0,0">
-                <StackPanel.Style>
-                    <Style TargetType="StackPanel">
-                        <Setter Property="Visibility" Value="Collapsed" />
+            <!-- ======================================================== -->
+            <!-- CATEGORIES / CUSTOM TAGS VIEW (When Tab 4 is selected & No Tag Filter) -->
+            <!-- ======================================================== -->
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Collapsed"/>
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding HasNoMovies}" Value="True">
-                                <Setter Property="Visibility" Value="Visible" />
-                            </DataTrigger>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding SelectedCategoryTabIndex}" Value="4"/>
+                                    <Condition Binding="{Binding SelectedCustomTag}" Value="{x:Null}"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </MultiDataTrigger>
                         </Style.Triggers>
                     </Style>
-                </StackPanel.Style>
-                
-                <materialDesign:PackIcon Kind="FilmstripBoxMultiple" Width="100" Height="100" Foreground="{DynamicResource DisabledText}" HorizontalAlignment="Center" Margin="0,0,0,20"/>
-                <TextBlock Text="هنوز فیلمی اضافه نکرده‌اید!" FontSize="22" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                <TextBlock Text="برای شروع، پوشه فیلم‌های خود را اسکن کنید" FontSize="14" Foreground="{DynamicResource DisabledText}" HorizontalAlignment="Center" Margin="0,0,0,24"/>
-                
-                <Button Content="شروع اسکن" Command="{Binding GoToScanCommand}"
-                        Style="{StaticResource MaterialDesignRaisedButton}"
-                        Background="{DynamicResource PrimaryColor}" Foreground="White" 
-                        Width="180" Height="42" FontSize="15" materialDesign:ButtonAssist.CornerRadius="12"
-                        HorizontalAlignment="Center">
-                    <Button.Effect>
-                        <DropShadowEffect Color="#EB3B5A" BlurRadius="15" ShadowDepth="0" Opacity="0.4"/>
-                    </Button.Effect>
-                </Button>
-            </StackPanel>
+                </Grid.Style>
 
-            <!-- Actual Content ListBox -->
-            <ListBox x:Name="MoviesItemsControl" ItemsSource="{Binding Movies}" SelectionMode="Extended" SelectionChanged="MoviesItemsControl_SelectionChanged" VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Standard" ScrollViewer.CanContentScroll="True" Background="Transparent" BorderThickness="0" PreviewKeyDown="MoviesItemsControl_PreviewKeyDown" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                <ListBox.Style>
-                    <Style TargetType="ListBox">
-                        <Setter Property="Visibility" Value="Visible"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding IsLoading}" Value="True">
-                                <Setter Property="Visibility" Value="Collapsed"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </ListBox.Style>
-                
-                <ListBox.ItemContainerStyle>
-                    <Style TargetType="ListBoxItem">
-                        <Setter Property="Background" Value="Transparent"/>
-                        <Setter Property="BorderThickness" Value="0"/>
-                        <Setter Property="Padding" Value="0"/>
-                        <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
-                        <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="ListBoxItem">
-                                    <Border x:Name="FocusBorder" BorderThickness="2" BorderBrush="Transparent" CornerRadius="18" Margin="2" Padding="0">
-                                        <ContentPresenter />
-                                    </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
-                                            <Setter TargetName="FocusBorder" Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
-                                            <Setter TargetName="FocusBorder" Property="Effect">
-                                                <Setter.Value>
-                                                    <DropShadowEffect BlurRadius="15" ShadowDepth="0" Color="#EB3B5A" Opacity="0.5"/>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Setter.Value>
-                        </Setter>
-                    </Style>
-                </ListBox.ItemContainerStyle>
-                
-                <ListBox.Template>
-                    <ControlTemplate TargetType="ListBox">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
-                            <ItemsPresenter />
-                        </ScrollViewer>
-                    </ControlTemplate>
-                </ListBox.Template>
-                
-                <ListBox.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <vwp:VirtualizingWrapPanel Orientation="Horizontal" SpacingMode="StartAndEndOnly" />
-                    </ItemsPanelTemplate>
-                </ListBox.ItemsPanel>
+                <!-- Empty State for Categories -->
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,30,0,0">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding CustomTags.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    
+                    <materialDesign:PackIcon Kind="TagMultipleOutline" Width="80" Height="80" Foreground="{DynamicResource DisabledText}" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                    <TextBlock Text="هنوز برچسبی ایجاد نشده است" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                    <TextBlock Text="روی فیلم‌ها یا سریال‌ها کلیک راست کنید تا برچسب دلخواه بسازید و اینجا دسته‌بندی شوند." 
+                               FontSize="13.5" Foreground="{DynamicResource DisabledText}" HorizontalAlignment="Center" TextAlignment="Center" MaxWidth="450"/>
+                </StackPanel>
 
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Grid Width="{Binding DataContext.PosterSize, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="8,8,8,18" CacheMode="BitmapCache">
-                            
-                            <!-- Main Poster Card (Android Cinema Style with Always-Visible Title and Badges) -->
-                            <Border x:Name="posterCard" Background="{DynamicResource CardBackground}" CornerRadius="18" ClipToBounds="True" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Cursor="Hand">
+                <!-- Tags Grid -->
+                <ListBox ItemsSource="{Binding CustomTags}" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <vwp:VirtualizingWrapPanel Orientation="Horizontal" SpacingMode="StartAndEndOnly"/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{DynamicResource CardBackground}" CornerRadius="18" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" 
+                                    Width="260" Height="120" Margin="8,8,8,16" Padding="14" Cursor="Hand">
                                 <Border.InputBindings>
-                                    <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.OpenDetailsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                    <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.SelectCustomTagCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding Name}"/>
                                 </Border.InputBindings>
                                 <Border.Effect>
-                                    <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.35" Color="Black"/>
+                                    <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.4" Color="Black"/>
                                 </Border.Effect>
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
-                                                <Setter Property="BorderThickness" Value="2"/>
-                                            </DataTrigger>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
-                                                <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
 
                                 <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
 
-                                    <!-- Top: Poster Image Container -->
-                                    <Grid Grid.Row="0" Height="{Binding DataContext.PosterHeight, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                        <!-- Poster Image -->
-                                        <Border Background="#1A1D36">
-                                            <Image controls:CachedImage.SourceUrl="{Binding File.PosterUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
-                                        </Border>
-
-                                        <!-- Top-Left Gold Rating Pill (★ 8.3) -->
-                                        <Border VerticalAlignment="Top" HorizontalAlignment="Left" Background="#CC0A0B16" CornerRadius="8" Padding="6,3" Margin="8" Panel.ZIndex="3">
-                                            <StackPanel Orientation="Horizontal">
-                                                <TextBlock Text="{Binding File.Rating, TargetNullValue='0.0'}" Foreground="#FFD700" FontWeight="Black" FontSize="11.5" Margin="0,0,4,0"/>
-                                                <materialDesign:PackIcon Kind="Star" Foreground="#FFD700" VerticalAlignment="Center" Width="12" Height="12"/>
-                                            </StackPanel>
-                                        </Border>
-
-                                        <!-- Top-Right Actions (Favorite & 3-Dots Menu) -->
-                                        <Border VerticalAlignment="Top" HorizontalAlignment="Right" Margin="8" Panel.ZIndex="5">
-                                            <StackPanel Orientation="Horizontal">
-                                                <!-- Favorite Button -->
-                                                <Border Background="#B00A0B16" CornerRadius="12" Width="26" Height="26" Margin="0,0,4,0">
-                                                    <Button Command="{Binding ToggleFavoriteCommand}" Style="{StaticResource MaterialDesignIconForegroundButton}" Width="26" Height="26" Padding="0">
-                                                        <materialDesign:PackIcon Kind="Heart" Foreground="{Binding FavoriteIconForeground}" Width="14" Height="14"/>
-                                                    </Button>
-                                                </Border>
-
-                                                <!-- 3-Dots Menu -->
-                                                <Border Background="#B00A0B16" CornerRadius="12" Width="26" Height="26">
-                                                    <materialDesign:PackIcon Kind="DotsVertical" Foreground="White" Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
-                                            </StackPanel>
-                                        </Border>
-                                    </Grid>
-
-                                    <!-- Bottom: Card Details Area (ALWAYS VISIBLE - Android Layout) -->
-                                    <Border Grid.Row="1" Padding="10,10,10,12" Background="{DynamicResource CardBackground}">
-                                        <StackPanel>
-                                            <!-- Title (Bold White) -->
-                                            <TextBlock Text="{Binding File.FormattedTitle, TargetNullValue='عنوان فیلم/سریال'}" Foreground="White" FontSize="13.5" FontWeight="Bold" TextTrimming="CharacterEllipsis" Margin="0,0,0,6"/>
-
-                                            <!-- Badges Row: Year, Dubbed/Sub, Type -->
-                                            <WrapPanel Orientation="Horizontal">
-                                                <!-- Media Type Pill (Series / Movie) -->
-                                                <Border CornerRadius="5" Padding="6,2" Margin="0,0,4,0">
-                                                    <Border.Style>
-                                                        <Style TargetType="Border">
-                                                            <Setter Property="Background" Value="#253867D6"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding File.MediaType}" Value="Series">
-                                                                    <Setter Property="Background" Value="#258854D0"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Border.Style>
-                                                    <TextBlock Text="{Binding File.MediaType, Converter={StaticResource SeriesStatusConverter}}" FontSize="11" FontWeight="Bold">
-                                                        <TextBlock.Style>
-                                                            <Style TargetType="TextBlock">
-                                                                <Setter Property="Foreground" Value="#3867D6"/>
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding File.MediaType}" Value="Series">
-                                                                        <Setter Property="Foreground" Value="#A55EEA"/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </TextBlock.Style>
-                                                    </TextBlock>
-                                                </Border>
-
-                                                <!-- Dubbed Pill -->
-                                                <Border Background="#250FB9B1" CornerRadius="5" Padding="6,2" Margin="0,0,4,0">
-                                                    <TextBlock Text="دوبله" Foreground="#0FB9B1" FontSize="11" FontWeight="Bold"/>
-                                                </Border>
-
-                                                <!-- Year Badge -->
-                                                <Border Background="#15FFFFFF" CornerRadius="5" Padding="6,2">
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="{Binding File.Year, TargetNullValue='1400'}" Foreground="{DynamicResource SecondaryText}" FontSize="11" Margin="0,0,3,0"/>
-                                                        <materialDesign:PackIcon Kind="CalendarBlankOutline" Foreground="{DynamicResource SecondaryText}" Width="10" Height="10" VerticalAlignment="Center"/>
-                                                    </StackPanel>
-                                                </Border>
-                                            </WrapPanel>
+                                    <!-- Tag Info -->
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                            <materialDesign:PackIcon Kind="TagOutline" Width="20" Height="20" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="Black" Foreground="White" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
+                                        <Border Background="#25EB3B5A" CornerRadius="8" Padding="8,3" HorizontalAlignment="Right">
+                                            <TextBlock Text="{Binding Count, StringFormat='{}{0} مورد'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource PrimaryColor}"/>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- Poster Backdrop Thumbnail -->
+                                    <Border Grid.Column="1" Width="70" Height="90" CornerRadius="12" ClipToBounds="True" Background="#15FFFFFF" Margin="10,0,0,0">
+                                        <Image Source="{Binding PosterUrl}" Stretch="UniformToFill"/>
                                     </Border>
                                 </Grid>
                             </Border>
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-            <!-- Bulk Action Progress Overlay -->
-            <Border Background="#CC000000" VerticalAlignment="Bottom" Padding="20" Visibility="{Binding IsBulkActionRunning, Converter={StaticResource BooleanToVisibilityConverter}}" Panel.ZIndex="50">
-                <Grid MaxWidth="400" HorizontalAlignment="Center">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    
-                    <StackPanel Grid.Column="0" Margin="0,0,16,0">
-                        <TextBlock Text="{Binding BulkActionText}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                        <ProgressBar Value="{Binding BulkActionProgress}" Height="8" Minimum="0" Maximum="100" 
-                                     Foreground="{DynamicResource PrimaryColor}" Background="{DynamicResource MainBackground}" BorderThickness="0"/>
-                    </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
 
-                    <Button Grid.Column="1" Command="{Binding CancelBulkActionCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="#FF5252" BorderBrush="#FF5252" Content="لغو" VerticalAlignment="Bottom"/>
-                </Grid>
-            </Border>
+            <!-- ======================================================== -->
+            <!-- MAIN POSTER GRID VIEW -->
+            <!-- ======================================================== -->
+            <Grid>
+                <Grid.Style>
+                    <Style TargetType="Grid">
+                        <Setter Property="Visibility" Value="Visible"/>
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding SelectedCategoryTabIndex}" Value="4"/>
+                                    <Condition Binding="{Binding SelectedCustomTag}" Value="{x:Null}"/>
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Style>
+
+                <!-- Empty State for Media -->
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,40,0,0">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasNoMovies}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    
+                    <materialDesign:PackIcon Kind="MovieFilterOutline" Width="90" Height="90" Foreground="{DynamicResource DisabledText}" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                    <TextBlock Text="هیچ فیلم یا سریالی یافت نشد!" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                    <TextBlock Text="برای شروع، پوشه فیلم‌ها و سریال‌های خود را پویش کنید" FontSize="13.5" Foreground="{DynamicResource DisabledText}" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                    
+                    <Button Content="شروع پویش و اسکن" Command="{Binding GoToScanCommand}"
+                            Background="{DynamicResource PrimaryGradientBrush}" Foreground="White" BorderThickness="0"
+                            Width="190" Height="42" FontSize="14.5" FontWeight="Bold" materialDesign:ButtonAssist.CornerRadius="12"
+                            HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Main Poster Grid with Dynamic VirtualizingWrapPanel Item Dimensions -->
+                <ListBox x:Name="MoviesItemsControl" ItemsSource="{Binding Movies}" 
+                         SelectionMode="Extended" SelectionChanged="MoviesItemsControl_SelectionChanged" 
+                         VirtualizingPanel.IsVirtualizing="True" VirtualizingPanel.VirtualizationMode="Recycling" 
+                         ScrollViewer.CanContentScroll="True" Background="Transparent" BorderThickness="0" 
+                         PreviewKeyDown="MoviesItemsControl_PreviewKeyDown" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="Padding" Value="0"/>
+                            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <vwp:VirtualizingWrapPanel Orientation="Horizontal" SpacingMode="StartAndEndOnly"/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+
+                    <!-- Poster Card Template (No 3-dot buttons, Left click selects in selection mode or opens details, Right click enters selection mode) -->
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Width="{Binding DataContext.PosterSize, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="8,8,8,12">
+                                
+                                <!-- Card Container -->
+                                <Border CornerRadius="18" Padding="8" Cursor="Hand">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource LightBorder}"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                                                    <Setter Property="BorderThickness" Value="2"/>
+                                                    <Setter Property="Background" Value="#25EB3B5A"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Border.InputBindings>
+                                        <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.CardClickedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                        <MouseBinding Gesture="RightClick" Command="{Binding DataContext.ToggleSelectionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                    </Border.InputBindings>
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.4" Color="Black"/>
+                                    </Border.Effect>
+
+                                    <StackPanel>
+                                        
+                                        <!-- Poster Image Box -->
+                                        <Grid Height="{Binding DataContext.PosterHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" ClipToBounds="True">
+                                            
+                                            <!-- Actual Poster Image -->
+                                            <Border CornerRadius="14" ClipToBounds="True" Background="#15FFFFFF">
+                                                <Image Source="{Binding File.PosterUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                            </Border>
+
+                                            <!-- Top-Left Large Star Rating Capsule -->
+                                            <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8,8,0,0"
+                                                    Background="#95000000" CornerRadius="14" Padding="10,5" BorderBrush="#35FFFFFF" BorderThickness="0.8"
+                                                    Visibility="{Binding HasRating, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <materialDesign:PackIcon Kind="Star" Width="16" Height="16" Foreground="{DynamicResource GoldColor}" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                    <TextBlock Text="{Binding RatingFormatted}" Foreground="White" FontSize="13.5" FontWeight="Black" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Top-Right Hidden Lock Badge (Only if marked hidden) -->
+                                            <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0"
+                                                    Background="#95000000" CornerRadius="10" Padding="8,4" BorderBrush="#40EB3B5A" BorderThickness="0.8"
+                                                    Visibility="{Binding IsHidden, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <materialDesign:PackIcon Kind="Lock" Width="13" Height="13" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                    <TextBlock Text="مخفی" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Bottom-Left Age Rating Badge (Only if real age rating exists) -->
+                                            <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="8,0,0,8"
+                                                    Background="#B0000000" CornerRadius="6" Padding="6,2.5" BorderBrush="#40FFFFFF" BorderThickness="0.8"
+                                                    Visibility="{Binding HasAgeRating, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <TextBlock Text="{Binding AgeRating}" Foreground="White" FontSize="9.5" FontWeight="Black"/>
+                                            </Border>
+
+                                            <!-- Selection Checkbox Overlay -->
+                                            <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8"
+                                                    Background="{DynamicResource PrimaryColor}" CornerRadius="13" Width="26" Height="26"
+                                                    Visibility="{Binding IsSelected, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <materialDesign:PackIcon Kind="Check" Width="18" Height="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+
+                                        </Grid>
+
+                                        <!-- Bottom Details -->
+                                        <StackPanel Margin="2,8,2,2">
+                                            
+                                            <!-- Title -->
+                                            <TextBlock Text="{Binding File.FormattedTitle}" FontSize="13.5" FontWeight="Bold" Foreground="White" 
+                                                       TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" TextAlignment="Right"/>
+
+                                            <!-- 3 Persistent Badges Row (Always present for every Movie and Series: نوع + صوت/ترجمه + سال ساخت) -->
+                                            <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center">
+                                                
+                                                <!-- 1. Type Badge (فیلم / سریال) -->
+                                                <Border Background="{Binding TypeBadgeBg}" BorderBrush="{Binding TypeBadgeBorder}" BorderThickness="0.8" CornerRadius="6" Padding="6,2" Margin="0,0,4,3">
+                                                    <TextBlock Text="{Binding TypeBadgeText}" FontSize="9.5" FontWeight="Bold" Foreground="{Binding TypeBadgeFg}"/>
+                                                </Border>
+
+                                                <!-- 2. Audio/Subtitle Badge (دوبله / زیرنویس / زبان اصلی) -->
+                                                <Border Background="{Binding AudioBadgeBg}" BorderBrush="{Binding AudioBadgeBorder}" BorderThickness="0.8" CornerRadius="6" Padding="6,2" Margin="0,0,4,3">
+                                                    <TextBlock Text="{Binding AudioBadgeText}" FontSize="9.5" FontWeight="Bold" Foreground="{Binding AudioBadgeFg}"/>
+                                                </Border>
+
+                                                <!-- 3. Year Badge (سال ساخت) -->
+                                                <Border Background="#18FFFFFF" BorderBrush="#25FFFFFF" BorderThickness="0.8" CornerRadius="6" Padding="6,2" Margin="0,0,0,3">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding DisplayYear}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" Margin="0,0,3,0"/>
+                                                        <materialDesign:PackIcon Kind="CalendarOutline" Width="11" Height="11" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Border>
+
+                                            </WrapPanel>
+
+                                            <!-- Last Played Progress (For series) -->
+                                            <TextBlock Text="{Binding LastPlayedText}" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource PrimaryColor}" Margin="0,3,0,0" 
+                                                       Visibility="{Binding LastPlayedText, Converter={StaticResource NullToVisibilityConverter}}"/>
+
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+            </Grid>
 
         </Grid>
+
+        <!-- ======================================================== -->
+        <!-- MODAL DIALOG: MANAGE TAGS / CATEGORIES -->
+        <!-- ======================================================== -->
+        <Grid Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsManageTagsDialogOpen, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border Background="{DynamicResource CardBackground}" CornerRadius="20" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1.5"
+                    Width="440" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="30" ShadowDepth="6" Opacity="0.7" Color="Black"/>
+                </Border.Effect>
+                <StackPanel>
+                    <Grid Margin="0,0,0,16">
+                        <TextBlock Text="🏷️ مدیریت برچسب‌ها و دسته‌بندی‌ها" FontSize="16" FontWeight="Black" Foreground="White" HorizontalAlignment="Right"/>
+                        <Button Command="{Binding CloseTagsDialogCommand}" Background="Transparent" BorderThickness="0" Width="28" Height="28" Padding="0" HorizontalAlignment="Left">
+                            <materialDesign:PackIcon Kind="Close" Foreground="{DynamicResource SecondaryText}"/>
+                        </Button>
+                    </Grid>
+
+                    <TextBlock Text="{Binding CurrentMediaForTags.File.FormattedTitle, StringFormat='{}فیلم/سریال: {0}'}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource PrimaryColor}" Margin="0,0,0,14"/>
+
+                    <TextBlock Text="برچسب‌ها را با کاما (,) از هم جدا کنید:" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,6"/>
+                    <TextBox Text="{Binding TagsInputText, UpdateSourceTrigger=PropertyChanged}" 
+                             materialDesign:HintAssist.Hint="مثال: فیلم‌های برتر، خانوادگی، مهیج..."
+                             Foreground="White" FontSize="14" Padding="12,10" Background="#15FFFFFF" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Margin="0,0,0,20"/>
+
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                        <Button Content="ذخیره برچسب‌ها" Command="{Binding SaveTagsCommand}"
+                                Background="{DynamicResource PrimaryGradientBrush}" Foreground="White" BorderThickness="0"
+                                Height="38" Padding="20,0" FontWeight="Bold" materialDesign:ButtonAssist.CornerRadius="10" Margin="0,0,10,0"/>
+                        <Button Content="انصراف" Command="{Binding CloseTagsDialogCommand}"
+                                Background="#15FFFFFF" Foreground="{DynamicResource SecondaryText}" BorderThickness="0"
+                                Height="38" Padding="16,0" materialDesign:ButtonAssist.CornerRadius="10"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
     </Grid>
 </UserControl>
-

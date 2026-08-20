@@ -193,70 +193,7 @@
                 </Border>
             </Grid>
 
-            <!-- 3. CONTINUE WATCHING (🍿 ادامه تماشا | - نمایش در صورت وجود داده واقعی) -->
-            <StackPanel Margin="0,0,0,26" Visibility="{Binding HasContinueWatching, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <!-- Section Header with Vertical Bar -->
-                <StackPanel Orientation="Horizontal" Margin="6,0,0,12">
-                    <Border Width="4" Height="18" Background="{DynamicResource PurpleAccent}" CornerRadius="2" Margin="0,0,8,0"/>
-                    <TextBlock Text="ادامه تماشا 🍿" FontSize="17" FontWeight="Bold" Foreground="White"/>
-                </StackPanel>
 
-                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled"
-                              helpers:ScrollViewerHelper.BubbleMouseWheel="True">
-                    <ItemsControl ItemsSource="{Binding ContinueWatchingMovies}">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal"/>
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Style="{StaticResource AndroidActionCard}" Width="190" Height="275" Margin="6" Padding="0" ClipToBounds="True">
-                                    <Border.InputBindings>
-                                        <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.GoToMoviesCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                                    </Border.InputBindings>
-                                    <Grid>
-                                        <!-- Poster Image with Fallback -->
-                                        <Border Background="#1C203C">
-                                            <Image Source="{Binding File.PosterUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
-                                        </Border>
-
-                                        <!-- Top Badge (e.g. S5 E10) -->
-                                        <Border VerticalAlignment="Top" HorizontalAlignment="Right" Background="#CC8854D0" CornerRadius="6" Padding="8,3" Margin="8">
-                                            <TextBlock Text="{Binding SeasonEpisodeText, TargetNullValue='S1 E1', FallbackValue='S1 E1'}" Foreground="White" FontSize="11" FontWeight="Bold"/>
-                                        </Border>
-
-                                        <!-- Center Translucent Play Icon -->
-                                        <Border Width="46" Height="46" CornerRadius="23" Background="#85000000" BorderBrush="#40FFFFFF" BorderThickness="1" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <materialDesign:PackIcon Kind="Play" Width="24" Height="24" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="2,0,0,0"/>
-                                        </Border>
-
-                                        <!-- Bottom Gradient Details -->
-                                        <Border VerticalAlignment="Bottom" Padding="12,12,12,10">
-                                            <Border.Background>
-                                                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                                                    <GradientStop Color="#000A0B16" Offset="0"/>
-                                                    <GradientStop Color="#DD0A0B16" Offset="0.35"/>
-                                                    <GradientStop Color="#FA0A0B16" Offset="1"/>
-                                                </LinearGradientBrush>
-                                            </Border.Background>
-                                            <StackPanel>
-                                                <TextBlock Text="{Binding File.FormattedTitle, TargetNullValue='عنوان فیلم/سریال'}" FontSize="13" FontWeight="Bold" Foreground="White" TextTrimming="CharacterEllipsis"/>
-                                                <Grid Margin="0,4,0,0">
-                                                    <TextBlock Text="{Binding File.MediaType, TargetNullValue='سریال'}" FontSize="11" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Right"/>
-                                                    <TextBlock Text="{Binding File.WatchProgressPercent, StringFormat='{}{0}%', FallbackValue='45%'}" FontSize="11" Foreground="{DynamicResource PrimaryColor}" FontWeight="Bold" HorizontalAlignment="Left"/>
-                                                </Grid>
-                                                <!-- Progress Bar -->
-                                                <ProgressBar Value="{Binding File.WatchProgressPercent, FallbackValue=45}" Maximum="100" Height="3.5" Margin="0,6,0,0" Foreground="{DynamicResource PrimaryColor}" Background="#30FFFFFF" BorderThickness="0"/>
-                                            </StackPanel>
-                                        </Border>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </StackPanel>
 
             <!-- 4. OPERATIONS SECTION (عملیات | 4-Card 2x2 Grid) -->
             <StackPanel Margin="0,0,0,26">
@@ -295,7 +232,7 @@
                     <!-- 2. جستجوی دستی (Purple Icon) -->
                     <Border Style="{StaticResource AndroidActionCard}">
                         <Border.InputBindings>
-                            <MouseBinding Gesture="LeftClick" Command="{Binding GoToMoviesCommand}"/>
+                            <MouseBinding Gesture="LeftClick" Command="{Binding GoToManualSearchCommand}"/>
                         </Border.InputBindings>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -320,7 +257,7 @@
                     <!-- 3. آمار و تحلیل (Teal Icon) -->
                     <Border Style="{StaticResource AndroidActionCard}">
                         <Border.InputBindings>
-                            <MouseBinding Gesture="LeftClick" Command="{Binding GoToMoviesCommand}"/>
+                            <MouseBinding Gesture="LeftClick" Command="{Binding GoToAnalyticsCommand}"/>
                         </Border.InputBindings>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -345,7 +282,7 @@
                     <!-- 4. ردیاب سریال (Blue Icon) -->
                     <Border Style="{StaticResource AndroidActionCard}">
                         <Border.InputBindings>
-                            <MouseBinding Gesture="LeftClick" Command="{Binding GoToCalendarCommand}"/>
+                            <MouseBinding Gesture="LeftClick" Command="{Binding GoToTrackerCommand}"/>
                         </Border.InputBindings>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -499,6 +436,9 @@
 
                             <!-- Button 1: اخبار سینما -->
                             <Border Grid.Column="0" Height="38" CornerRadius="12" Background="#20EB3B5A" BorderBrush="#50EB3B5A" BorderThickness="1" Margin="4,0" Cursor="Hand">
+                                <Border.InputBindings>
+                                    <MouseBinding Gesture="LeftClick" Command="{Binding GoToCinemaNewsCommand}"/>
+                                </Border.InputBindings>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <materialDesign:PackIcon Kind="NewspaperVariantOutline" Width="16" Height="16" Foreground="#EB3B5A" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                     <TextBlock Text="اخبار سینما" FontSize="12.5" FontWeight="Bold" Foreground="#EB3B5A"/>
@@ -507,6 +447,9 @@
 
                             <!-- Button 2: باکس آفیس -->
                             <Border Grid.Column="1" Height="38" CornerRadius="12" Background="#20FFB800" BorderBrush="#50FFB800" BorderThickness="1" Margin="4,0" Cursor="Hand">
+                                <Border.InputBindings>
+                                    <MouseBinding Gesture="LeftClick" Command="{Binding GoToBoxOfficeCommand}"/>
+                                </Border.InputBindings>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <materialDesign:PackIcon Kind="TrophyOutline" Width="16" Height="16" Foreground="#FFB800" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                     <TextBlock Text="باکس آفیس" FontSize="12.5" FontWeight="Bold" Foreground="#FFB800"/>
@@ -515,6 +458,9 @@
 
                             <!-- Button 3: اکران‌ها -->
                             <Border Grid.Column="2" Height="38" CornerRadius="12" Background="#200FB9B1" BorderBrush="#500FB9B1" BorderThickness="1" Margin="4,0" Cursor="Hand">
+                                <Border.InputBindings>
+                                    <MouseBinding Gesture="LeftClick" Command="{Binding GoToReleasesCommand}"/>
+                                </Border.InputBindings>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
                                     <materialDesign:PackIcon Kind="TimerSand" Width="16" Height="16" Foreground="#0FB9B1" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                     <TextBlock Text="اکران‌ها" FontSize="12.5" FontWeight="Bold" Foreground="#0FB9B1"/>

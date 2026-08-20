@@ -1,52 +1,45 @@
 using System;
 using System.Globalization;
 using System.Windows.Data;
+using MovieManagerDesktop.Services;
 
 namespace MovieManagerDesktop.Converters
 {
     public class JalaliDateConverter : IValueConverter
     {
-        private static readonly string[] PersianMonths = { "", "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند" };
-        
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value is DateTime dt)
             {
-                if (dt == DateTime.MinValue || dt.Year < 1900) return "نامشخص";
-                
-                var pc = new PersianCalendar();
-                int year = pc.GetYear(dt);
-                int month = pc.GetMonth(dt);
-                int day = pc.GetDayOfMonth(dt);
+                if (dt == DateTime.MinValue || dt.Year < 1800) return "نامشخص";
                 
                 string param = parameter as string;
                 if (param == "Short")
                 {
-                    return $"{year}/{month:D2}/{day:D2}";
+                    return DateTimeFormatterService.FormatShortDate(dt);
                 }
                 
-                return $"{day} {PersianMonths[month]} {year}";
+                return DateTimeFormatterService.FormatDateTime(dt);
             }
             
-            if (value is string strDate && DateTime.TryParse(strDate, out DateTime parsedDt))
+            if (value is string strDate && !string.IsNullOrWhiteSpace(strDate))
             {
-                if (parsedDt == DateTime.MinValue || parsedDt.Year < 1900) return "نامشخص";
-                
-                var pc = new PersianCalendar();
-                int year = pc.GetYear(parsedDt);
-                int month = pc.GetMonth(parsedDt);
-                int day = pc.GetDayOfMonth(parsedDt);
-                
-                string param = parameter as string;
-                if (param == "Short")
+                if (DateTime.TryParse(strDate, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime parsedDt))
                 {
-                    return $"{year}/{month:D2}/{day:D2}";
+                    if (parsedDt == DateTime.MinValue || parsedDt.Year < 1800) return "نامشخص";
+                    
+                    string param = parameter as string;
+                    if (param == "Short")
+                    {
+                        return DateTimeFormatterService.FormatShortDate(parsedDt);
+                    }
+                    
+                    return DateTimeFormatterService.FormatDateTime(parsedDt);
                 }
-                
-                return $"{day} {PersianMonths[month]} {year}";
+                return DateTimeFormatterService.FormatDate(strDate);
             }
             
-            return value;
+            return value ?? string.Empty;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

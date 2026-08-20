@@ -48,9 +48,15 @@ namespace MovieManagerDesktop.ViewModels
                     using var db = new AppDbContext();
                     var allVideos = db.VideoFiles.ToList();
 
+                    // Group by Title and MediaType to treat every Series as 1 work and every Movie as 1 work
+                    var uniqueWorks = allVideos
+                        .GroupBy(v => new { Title = (v.FormattedTitle ?? v.FileName ?? "").Trim().ToLowerInvariant(), Type = v.MediaType })
+                        .Select(g => g.First())
+                        .ToList();
+
                     var dict = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-                    foreach (var video in allVideos)
+                    foreach (var video in uniqueWorks)
                     {
                         string data = "";
                         if (_personType == "All")
@@ -64,7 +70,7 @@ namespace MovieManagerDesktop.ViewModels
 
                         if (string.IsNullOrWhiteSpace(data)) continue;
 
-                        var persons = data.Split(new[] { ',', '،' }, StringSplitOptions.RemoveEmptyEntries)
+                        var persons = data.Split(new[] { ',', '،', ';', '|' }, StringSplitOptions.RemoveEmptyEntries)
                                           .Select(p => p.Trim())
                                           .Where(p => !string.IsNullOrEmpty(p));
 

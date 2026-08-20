@@ -11,28 +11,35 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private ObservableObject _currentViewModel;
 
-        private readonly MoviesViewModel _moviesViewModel = new MoviesViewModel();
-        private readonly FavoritesViewModel _favoritesViewModel = new FavoritesViewModel();
+        private HomeViewModel? _homeViewModel;
+        private MoviesViewModel? _moviesViewModel;
+        private FavoritesViewModel? _favoritesViewModel;
+        private CollectionsViewModel? _collectionsViewModel;
 
-        private readonly CollectionsViewModel _collectionsViewModel = new CollectionsViewModel();
-
+        private HomeViewModel GetHomeViewModel() => _homeViewModel ??= new HomeViewModel();
+        private MoviesViewModel GetMoviesViewModel() => _moviesViewModel ??= new MoviesViewModel();
+        private FavoritesViewModel GetFavoritesViewModel() => _favoritesViewModel ??= new FavoritesViewModel();
+        private CollectionsViewModel GetCollectionsViewModel() => _collectionsViewModel ??= new CollectionsViewModel();
 
         public MainViewModel()
         {
-            CurrentViewModel = new HomeViewModel();
+            CurrentViewModel = GetHomeViewModel();
 
             // Register for navigation messages
             WeakReferenceMessenger.Default.Register<NavigationMessage>(this, (r, m) =>
             {
                 if (m.ViewModel != null && m.ViewModel.GetType() == typeof(MoviesViewModel))
                 {
-                    CurrentViewModel = _moviesViewModel;
+                    CurrentViewModel = GetMoviesViewModel();
                 }
                 else if (m.ViewModel != null && m.ViewModel.GetType() == typeof(FavoritesViewModel))
                 {
-                    CurrentViewModel = _favoritesViewModel;
+                    CurrentViewModel = GetFavoritesViewModel();
                 }
-
+                else if (m.ViewModel != null && m.ViewModel.GetType() == typeof(HomeViewModel))
+                {
+                    CurrentViewModel = GetHomeViewModel();
+                }
                 else
                 {
                     CurrentViewModel = m.ViewModel;
@@ -41,13 +48,10 @@ namespace MovieManagerDesktop.ViewModels
 
             WeakReferenceMessenger.Default.Register<MediaUpdatedMessage>(this, (r, m) =>
             {
-                if (CurrentViewModel is HomeViewModel)
+                Application.Current.Dispatcher.Invoke(() =>
                 {
-                    Application.Current.Dispatcher.Invoke(() =>
-                    {
-                        CurrentViewModel = new HomeViewModel();
-                    });
-                }
+                    _homeViewModel?.LoadHomeDataDirect();
+                });
             });
         }
 
@@ -66,7 +70,7 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void NavigateToMovies()
         {
-            CurrentViewModel = _moviesViewModel;
+            CurrentViewModel = GetMoviesViewModel();
         }
 
         [RelayCommand]
@@ -78,25 +82,21 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void NavigateToHome()
         {
-            CurrentViewModel = new HomeViewModel();
+            CurrentViewModel = GetHomeViewModel();
         }
 
         [RelayCommand]
         private void NavigateToFavorites()
         {
-            CurrentViewModel = _favoritesViewModel;
-            _ = _favoritesViewModel.LoadMoviesAsync();
+            CurrentViewModel = GetFavoritesViewModel();
+            _ = _favoritesViewModel?.LoadMoviesAsync();
         }
-
-
-
-
 
         [RelayCommand]
         private void NavigateToCollections()
         {
-            CurrentViewModel = _collectionsViewModel;
-            _ = _collectionsViewModel.LoadCollectionsAsync();
+            CurrentViewModel = GetCollectionsViewModel();
+            _ = _collectionsViewModel?.LoadCollectionsAsync();
         }
 
         [RelayCommand]

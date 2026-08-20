@@ -8,20 +8,26 @@ using MovieManagerDesktop.Services;
 using MovieManagerDesktop.Controls;
 using MaterialDesignThemes.Wpf;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
-using FuzzySharp;
-using MovieManagerDesktop.Services;
 using System.Threading.Tasks;
 using System.Windows;
 
 namespace MovieManagerDesktop.ViewModels
 {
+    public class CustomTagItem
+    {
+        public string Name { get; set; } = string.Empty;
+        public int Count { get; set; }
+        public string? PosterUrl { get; set; }
+    }
+
     public partial class MoviesViewModel : ObservableObject
     {
         [ObservableProperty]
-        private string _pageTitle = "کالکشن رسانه";
+        private string _pageTitle = "فیلم و سریال ها";
 
         [ObservableProperty]
         private bool _showFilters = true;
@@ -32,16 +38,112 @@ namespace MovieManagerDesktop.ViewModels
         private System.Threading.CancellationTokenSource? _searchCts;
         
         [ObservableProperty]
-        private int _mediaTypeFilterIndex = 0; // 0: All, 1: Movies, 2: Series
-        partial void OnMediaTypeFilterIndexChanged(int value) => SaveAndLoad();
-        
+        private bool _isGridView = true;
+
+        public bool IsListView => !IsGridView;
+
+        partial void OnIsGridViewChanged(bool value)
+        {
+            OnPropertyChanged(nameof(IsListView));
+            var settings = SettingsManager.LoadSettings();
+            settings.IsGridView = value;
+            SettingsManager.SaveSettings(settings);
+        }
+
+        [RelayCommand]
+        private void ToggleViewMode()
+        {
+            IsGridView = !IsGridView;
+        }
+
+        // Hidden Items Toggle (Eye Button)
         [ObservableProperty]
-        private int _watchedFilterIndex = 0; // 0: All, 1: Watched, 2: Unwatched
-        partial void OnWatchedFilterIndexChanged(int value) => SaveAndLoad();
-        
+        private bool _showHiddenItems = false;
+
+        partial void OnShowHiddenItemsChanged(bool value)
+        {
+            _ = LoadMoviesAsync();
+        }
+
+        [RelayCommand]
+        private void ToggleShowHidden()
+        {
+            ShowHiddenItems = !ShowHiddenItems;
+        }
+
+        // Category Tabs: 0: همه, 1: فیلم‌ها, 2: سریال‌ها, 3: علاقه‌مندی‌ها, 4: دسته‌بندی‌ها
+        [ObservableProperty]
+        private int _selectedCategoryTabIndex = 0;
+
+        public bool IsWatchSubFilterVisible => SelectedCategoryTabIndex != 4;
+
+        partial void OnSelectedCategoryTabIndexChanged(int value)
+        {
+            OnPropertyChanged(nameof(IsWatchSubFilterVisible));
+            SelectedCustomTag = null;
+            SaveAndLoad();
+        }
+
+        // Custom Tag Filter inside Category Tab
+        [ObservableProperty]
+        private string? _selectedCustomTag;
+
+        partial void OnSelectedCustomTagChanged(string? value)
+        {
+            _ = LoadMoviesAsync();
+        }
+
+        [RelayCommand]
+        private void SelectCustomTag(string tag)
+        {
+            SelectedCustomTag = tag;
+        }
+
+        public bool HasBackButton => !string.IsNullOrEmpty(SelectedCustomTag) || !string.IsNullOrEmpty(PersonFilterName) || !string.IsNullOrEmpty(CollectionFilter);
+
+        [RelayCommand]
+        private void ClearCustomTagFilter()
+        {
+            if (!string.IsNullOrEmpty(PersonFilterName))
+            {
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(new PeopleViewModel(PersonFilterType ?? "Actor")));
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(CollectionFilter))
+            {
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(new CollectionsViewModel()));
+                return;
+            }
+
+            SelectedCustomTag = null;
+            OnPropertyChanged(nameof(HasBackButton));
+        }
+
+        // Watch Sub-Filter Tabs: 0: همه, 1: تماشا شده, 2: تماشا نشده
+        [ObservableProperty]
+        private int _selectedWatchTabIndex = 0;
+
+        partial void OnSelectedWatchTabIndexChanged(int value) => SaveAndLoad();
+
+        // Dynamic Counts
+        [ObservableProperty]
+        private int _allCount = 0;
+
+        [ObservableProperty]
+        private int _moviesCount = 0;
+
+        [ObservableProperty]
+        private int _seriesCount = 0;
+
+        [ObservableProperty]
+        private int _favoritesCount = 0;
+
+        [ObservableProperty]
+        private int _categoriesCount = 0;
+
         [ObservableProperty]
         private int _listFilterIndex = 0; // 0: All, 1: Favorites, 2: Watchlist
-        partial void OnListFilterIndexChanged(int value) => SaveAndLoad();
 
         [ObservableProperty]
         private int _sortIndex = 0; // 0: Date Added, 1: Name, 2: Year, 3: Rating
@@ -59,22 +161,9 @@ namespace MovieManagerDesktop.ViewModels
         partial void OnSelectedGenreIndexChanged(int value) => SaveAndLoad();
 
         [ObservableProperty]
-        private bool _isQuickFilterMovies = false;
-        partial void OnIsQuickFilterMoviesChanged(bool value) => SaveAndLoad();
-
-        [ObservableProperty]
         private double _scrollPosition = 0;
 
-        // Index of the last item clicked to open details, used for scroll restoration
         public int LastClickedIndex { get; set; } = -1;
-
-        [ObservableProperty]
-        private bool _isQuickFilterSeries = false;
-        partial void OnIsQuickFilterSeriesChanged(bool value) => SaveAndLoad();
-
-        [ObservableProperty]
-        private bool _isQuickFilterUnwatched = false;
-        partial void OnIsQuickFilterUnwatchedChanged(bool value) => SaveAndLoad();
 
         protected bool _disableSaveSettings = false;
 
@@ -83,15 +172,10 @@ namespace MovieManagerDesktop.ViewModels
             if (!_disableSaveSettings)
             {
                 var settings = SettingsManager.LoadSettings();
-                settings.MediaTypeFilterIndex = MediaTypeFilterIndex;
-                settings.WatchedFilterIndex = WatchedFilterIndex;
-                settings.ListFilterIndex = ListFilterIndex;
                 settings.SortIndex = SortIndex;
                 settings.SortDirectionIndex = SortDirectionIndex;
                 settings.SelectedGenreIndex = SelectedGenreIndex;
-                settings.IsQuickFilterMovies = IsQuickFilterMovies;
-                settings.IsQuickFilterSeries = IsQuickFilterSeries;
-                settings.IsQuickFilterUnwatched = IsQuickFilterUnwatched;
+                settings.IsGridView = IsGridView;
                 SettingsManager.SaveSettings(settings);
             }
             
@@ -105,10 +189,14 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private int _posterSize = 220; // Default width 220
         public int PosterHeight => (int)(PosterSize * 1.5);
+        public int CardTotalWidth => PosterSize + 16;
+        public int CardTotalHeight => PosterHeight + 92;
 
         partial void OnPosterSizeChanged(int value)
         {
             OnPropertyChanged(nameof(PosterHeight));
+            OnPropertyChanged(nameof(CardTotalWidth));
+            OnPropertyChanged(nameof(CardTotalHeight));
             var settings = SettingsManager.LoadSettings();
             if (settings.PosterSize != value)
             {
@@ -150,26 +238,29 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         public ObservableCollection<string> SearchHistory { get; } = new();
-
         public ObservableCollection<GalleryItemViewModel> Movies { get; } = new();
-
+        public ObservableCollection<CustomTagItem> CustomTags { get; } = new();
         public ObservableCollection<string> Genres { get; } = new();
+
+        // Manage Tags Modal Dialog State
+        [ObservableProperty]
+        private bool _isManageTagsDialogOpen = false;
+
+        [ObservableProperty]
+        private GalleryItemViewModel? _currentMediaForTags;
+
+        [ObservableProperty]
+        private string _tagsInputText = string.Empty;
 
         public MoviesViewModel()
         {
             LoadSearchHistory();
             var settings = SettingsManager.LoadSettings();
             PosterSize = settings.PosterSize > 50 ? settings.PosterSize : 220;
-            
-            _mediaTypeFilterIndex = settings.MediaTypeFilterIndex;
-            _watchedFilterIndex = settings.WatchedFilterIndex;
-            _listFilterIndex = settings.ListFilterIndex;
+            _isGridView = settings.IsGridView;
             _sortIndex = settings.SortIndex;
             _sortDirectionIndex = settings.SortDirectionIndex;
             _selectedGenreIndex = settings.SelectedGenreIndex;
-            _isQuickFilterMovies = settings.IsQuickFilterMovies;
-            _isQuickFilterSeries = settings.IsQuickFilterSeries;
-            _isQuickFilterUnwatched = settings.IsQuickFilterUnwatched;
             
             _ = LoadGenresAsync();
             _ = LoadMoviesAsync();
@@ -200,6 +291,7 @@ namespace MovieManagerDesktop.ViewModels
                         .SelectMany(g => g.Split(new[] { ',', '،' }, StringSplitOptions.RemoveEmptyEntries))
                         .Select(g => g.Trim())
                         .Where(g => !string.IsNullOrEmpty(g))
+                        .Select(GenreTranslatorService.Translate)
                         .Distinct()
                         .OrderBy(g => g)
                         .ToList();
@@ -225,103 +317,150 @@ namespace MovieManagerDesktop.ViewModels
             if (IsLoading) return;
             IsLoading = true;
             Movies.Clear();
+            CustomTags.Clear();
             
             try
             {
-                var grouped = await Task.Run(() =>
+                var (grouped, allCnt, movCnt, serCnt, favCnt, tagsList) = await Task.Run(() =>
                 {
                     using var db = new AppDbContext();
+                    var allDbFiles = db.VideoFiles.ToList();
+
+                    // Total distinct items (Non-hidden by default, unless ShowHiddenItems is true)
+                    var visibleDbFiles = ShowHiddenItems ? allDbFiles : allDbFiles.Where(v => !v.IsHidden).ToList();
+
+                    var allDistinct = visibleDbFiles
+                        .GroupBy(v => new { Title = (v.FormattedTitle ?? "ناشناس").ToLowerInvariant(), Type = v.MediaType })
+                        .ToList();
+
+                    int cAll = allDistinct.Count;
+                    int cMov = allDistinct.Count(g => g.Key.Type == "Movie");
+                    int cSer = allDistinct.Count(g => g.Key.Type == "Series");
+                    int cFav = allDistinct.Count(g => g.Any(v => v.IsFavorite));
+
+                    // Extract Custom Tags from DB
+                    var tagsWithCounts = visibleDbFiles
+                        .Where(v => !string.IsNullOrWhiteSpace(v.CustomTags))
+                        .SelectMany(v => v.CustomTags!.Split(new[] { ',', '،' }, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(t => new { Tag = t.Trim(), Poster = v.PosterUrl }))
+                        .Where(x => !string.IsNullOrWhiteSpace(x.Tag))
+                        .GroupBy(x => x.Tag)
+                        .Select(g => new CustomTagItem
+                        {
+                            Name = g.Key,
+                            Count = g.Count(),
+                            PosterUrl = g.FirstOrDefault(x => !string.IsNullOrEmpty(x.Poster))?.Poster
+                        })
+                        .OrderBy(t => t.Name)
+                        .ToList();
+
                     var query = db.VideoFiles.AsQueryable();
 
-                if (!string.IsNullOrWhiteSpace(SearchQuery))
-                {
-                    var searchTerms = SearchQuery.ToLowerInvariant().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    
-                    if (searchTerms.Length > 0)
+                    // Filter hidden items
+                    if (!ShowHiddenItems)
                     {
-                        foreach (var term in searchTerms)
+                        query = query.Where(v => !v.IsHidden);
+                    }
+
+                    // Search Filter
+                    if (!string.IsNullOrWhiteSpace(SearchQuery))
+                    {
+                        var searchTerms = SearchQuery.ToLowerInvariant().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (searchTerms.Length > 0)
                         {
-                            string term1 = term.Replace("ی", "ي").Replace("ک", "ك");
-                            string term2 = term.Replace("ي", "ی").Replace("ك", "ک");
-                            
-                            query = query.Where(v => 
-                                (v.FormattedTitle != null && (v.FormattedTitle.ToLower().Contains(term1) || v.FormattedTitle.ToLower().Contains(term2))) ||
-                                (v.CollectionName != null && (v.CollectionName.ToLower().Contains(term1) || v.CollectionName.ToLower().Contains(term2)))
-                            );
+                            foreach (var term in searchTerms)
+                            {
+                                string term1 = term.Replace("ی", "ي").Replace("ک", "ك");
+                                string term2 = term.Replace("ي", "ی").Replace("ك", "ک");
+                                
+                                query = query.Where(v => 
+                                    (v.FormattedTitle != null && (v.FormattedTitle.ToLower().Contains(term1) || v.FormattedTitle.ToLower().Contains(term2))) ||
+                                    (v.CollectionName != null && (v.CollectionName.ToLower().Contains(term1) || v.CollectionName.ToLower().Contains(term2)))
+                                );
+                            }
                         }
                     }
-                }
 
-                if (MediaTypeFilterIndex == 1) query = query.Where(v => v.MediaType == "Movie");
-                else if (MediaTypeFilterIndex == 2) query = query.Where(v => v.MediaType == "Series");
-                
-                if (WatchedFilterIndex == 1) query = query.Where(v => v.IsWatched);
-                else if (WatchedFilterIndex == 2) query = query.Where(v => !v.IsWatched);
-                
-                if (ListFilterIndex == 1) query = query.Where(v => v.IsFavorite);
-                else if (ListFilterIndex == 2) query = query.Where(v => v.IsWatchlist);
-
-                if (IsQuickFilterMovies) query = query.Where(v => v.MediaType == "Movie");
-                if (IsQuickFilterSeries) query = query.Where(v => v.MediaType == "Series");
-                if (IsQuickFilterUnwatched) query = query.Where(v => !v.IsWatched);
-
-                var allFiles = query.ToList();
-
-                if (!string.IsNullOrWhiteSpace(PersonFilterName))
-                {
-                    allFiles = allFiles.Where(v => 
+                    // Category Tab Filter
+                    if (SelectedCategoryTabIndex == 1) query = query.Where(v => v.MediaType == "Movie");
+                    else if (SelectedCategoryTabIndex == 2) query = query.Where(v => v.MediaType == "Series");
+                    else if (SelectedCategoryTabIndex == 3) query = query.Where(v => v.IsFavorite);
+                    else if (SelectedCategoryTabIndex == 4 && !string.IsNullOrWhiteSpace(SelectedCustomTag))
                     {
-                        var data = PersonFilterType == "Actor" ? v.Actors : v.Director;
-                        if (string.IsNullOrWhiteSpace(data)) return false;
-                        var parts = data.Split(new[] { ',', '،' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim());
-                        return parts.Any(p => p.Equals(PersonFilterName, StringComparison.OrdinalIgnoreCase));
-                    }).ToList();
-                }
-                
-                if (!string.IsNullOrWhiteSpace(CollectionFilter))
-                {
-                    allFiles = allFiles.Where(v => v.CollectionName != null && v.CollectionName.Equals(CollectionFilter, StringComparison.OrdinalIgnoreCase)).ToList();
-                }
+                        query = query.Where(v => v.CustomTags != null && v.CustomTags.Contains(SelectedCustomTag));
+                    }
 
-                if (SelectedGenreIndex > 0 && SelectedGenreIndex < Genres.Count)
-                {
-                    string selectedGenre = Genres[SelectedGenreIndex];
-                    allFiles = allFiles.Where(v => 
+                    // Watch Sub-Filter (0: All, 1: Watched, 2: Unwatched)
+                    if (SelectedWatchTabIndex == 1) query = query.Where(v => v.IsWatched);
+                    else if (SelectedWatchTabIndex == 2) query = query.Where(v => !v.IsWatched);
+
+                    // Genre Dropdown Filter
+                    string? selectedGenre = (SelectedGenreIndex > 0 && SelectedGenreIndex < Genres.Count) ? Genres[SelectedGenreIndex] : null;
+
+                    var allFiles = query.ToList();
+
+                    if (!string.IsNullOrWhiteSpace(selectedGenre))
                     {
-                        if (string.IsNullOrWhiteSpace(v.Genres)) return false;
-                        var parts = v.Genres.Split(new[] { ',', '،' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim());
-                        return parts.Any(p => p.Equals(selectedGenre, StringComparison.OrdinalIgnoreCase));
-                    }).ToList();
-                }
-                
-                var resultList = allFiles
-                    .GroupBy(v => new { Title = (v.FormattedTitle ?? "ناشناس").ToLowerInvariant(), Type = v.MediaType })
-                    .Select(g => 
+                        allFiles = allFiles.Where(v => GenreTranslatorService.MatchesGenre(v.Genres, selectedGenre)).ToList();
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(PersonFilterName))
                     {
-                        var first = g.First();
-                        if (g.Key.Type == "Series")
+                        allFiles = allFiles.Where(v => 
                         {
-                            first.NumberOfEpisodes = g.Count();
-                            first.NumberOfSeasons = g.Select(x => x.Season).Distinct().Count(s => s != null);
-                        }
-                        first.IsFavorite = g.Any(x => x.IsFavorite);
-                        first.IsWatchlist = g.Any(x => x.IsWatchlist);
-                        return new GalleryItemViewModel(first, UpdateSelectionState, async (item) => await ToggleFavoriteAsync(item));
-                    });
+                            var data = PersonFilterType == "Actor" ? v.Actors : v.Director;
+                            if (string.IsNullOrWhiteSpace(data)) return false;
+                            var parts = data.Split(new[] { ',', '،' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim());
+                            return parts.Any(p => p.Equals(PersonFilterName, StringComparison.OrdinalIgnoreCase));
+                        }).ToList();
+                    }
+                    
+                    if (!string.IsNullOrWhiteSpace(CollectionFilter))
+                    {
+                        allFiles = allFiles.Where(v => v.CollectionName != null && v.CollectionName.Equals(CollectionFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+                    }
 
-                bool isAscending = SortDirectionIndex == 1;
+                    var resultList = allFiles
+                        .GroupBy(v => new { Title = (v.FormattedTitle ?? "ناشناس").ToLowerInvariant(), Type = v.MediaType })
+                        .Select(g => 
+                        {
+                            var first = g.First();
+                            if (g.Key.Type == "Series")
+                            {
+                                first.NumberOfEpisodes = g.Count();
+                                first.NumberOfSeasons = g.Select(x => x.Season).Distinct().Count(s => s != null);
+                                first.IsWatched = g.All(x => x.IsWatched);
+                            }
+                            first.IsFavorite = g.Any(x => x.IsFavorite);
+                            first.IsWatchlist = g.Any(x => x.IsWatchlist);
+                            first.IsHidden = g.Any(x => x.IsHidden);
+                            return new GalleryItemViewModel(first, UpdateSelectionState, async (item) => await ToggleFavoriteAsync(item), (item) => OpenManageTags(item));
+                        });
 
-                if (SortIndex == 1) // Name
-                    resultList = isAscending ? resultList.OrderBy(v => v.File.FormattedTitle) : resultList.OrderByDescending(v => v.File.FormattedTitle);
-                else if (SortIndex == 2) // Year
-                    resultList = isAscending ? resultList.OrderBy(v => v.File.Year) : resultList.OrderByDescending(v => v.File.Year);
-                else if (SortIndex == 3) // Rating
-                    resultList = isAscending ? resultList.OrderBy(v => v.File.Rating) : resultList.OrderByDescending(v => v.File.Rating);
-                else // Date Added
-                    resultList = isAscending ? resultList.OrderBy(v => v.File.DateAdded) : resultList.OrderByDescending(v => v.File.DateAdded);
+                    bool isAscending = SortDirectionIndex == 1;
 
-                return resultList.ToList();
+                    if (SortIndex == 1) // Name
+                        resultList = isAscending ? resultList.OrderBy(v => v.File.FormattedTitle) : resultList.OrderByDescending(v => v.File.FormattedTitle);
+                    else if (SortIndex == 2) // Year
+                        resultList = isAscending ? resultList.OrderBy(v => v.File.Year) : resultList.OrderByDescending(v => v.File.Year);
+                    else if (SortIndex == 3) // Rating
+                        resultList = isAscending ? resultList.OrderBy(v => v.File.Rating) : resultList.OrderByDescending(v => v.File.Rating);
+                    else // Date Added
+                        resultList = isAscending ? resultList.OrderBy(v => v.File.DateAdded) : resultList.OrderByDescending(v => v.File.DateAdded);
+
+                    return (resultList.ToList(), cAll, cMov, cSer, cFav, tagsWithCounts);
                 });
+
+                AllCount = allCnt;
+                MoviesCount = movCnt;
+                SeriesCount = serCnt;
+                FavoritesCount = favCnt;
+                CategoriesCount = tagsList.Count;
+
+                foreach (var t in tagsList)
+                {
+                    CustomTags.Add(t);
+                }
 
                 foreach (var m in grouped)
                 {
@@ -331,7 +470,7 @@ namespace MovieManagerDesktop.ViewModels
             catch { }
             finally
             {
-                HasNoMovies = Movies.Count == 0;
+                HasNoMovies = (SelectedCategoryTabIndex == 4 && SelectedCustomTag == null) ? CustomTags.Count == 0 : Movies.Count == 0;
                 IsLoading = false;
             }
         }
@@ -344,7 +483,7 @@ namespace MovieManagerDesktop.ViewModels
 
             Task.Run(async () =>
             {
-                await Task.Delay(400, token); // 400ms debounce
+                await Task.Delay(350, token);
                 if (!token.IsCancellationRequested)
                 {
                     Application.Current.Dispatcher.Invoke(() =>
@@ -355,11 +494,25 @@ namespace MovieManagerDesktop.ViewModels
             }, token).ContinueWith(t => { }, TaskContinuationOptions.OnlyOnCanceled);
         }
 
-
         private void UpdateSelectionState()
         {
             SelectedCount = Movies.Count(m => m.IsSelected);
             IsInSelectionMode = SelectedCount > 0;
+        }
+
+        [RelayCommand]
+        public void CardClicked(GalleryItemViewModel item)
+        {
+            if (item == null) return;
+            if (IsInSelectionMode)
+            {
+                item.IsSelected = !item.IsSelected;
+                UpdateSelectionState();
+            }
+            else
+            {
+                OpenDetails(item);
+            }
         }
 
         [RelayCommand]
@@ -379,194 +532,231 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
-        private void SaveSearchHistory()
+        public void ToggleSelection(GalleryItemViewModel item)
         {
-            if (!string.IsNullOrWhiteSpace(SearchQuery))
+            if (item == null) return;
+            item.IsSelected = !item.IsSelected;
+            UpdateSelectionState();
+        }
+
+        // ==========================================
+        // MANAGE TAGS (برچسب‌ها / دسته‌بندی‌ها)
+        // ==========================================
+        [RelayCommand]
+        public void OpenManageTags(GalleryItemViewModel item)
+        {
+            if (item == null) return;
+            CurrentMediaForTags = item;
+            TagsInputText = item.File.CustomTags ?? string.Empty;
+            IsManageTagsDialogOpen = true;
+        }
+
+        [RelayCommand]
+        public void OpenManageTagsForSelected()
+        {
+            var selected = Movies.Where(m => m.IsSelected).ToList();
+            if (selected.Count == 0) return;
+            CurrentMediaForTags = selected.First();
+            TagsInputText = CurrentMediaForTags.File.CustomTags ?? string.Empty;
+            IsManageTagsDialogOpen = true;
+        }
+
+        [RelayCommand]
+        public void CloseTagsDialog()
+        {
+            IsManageTagsDialogOpen = false;
+            CurrentMediaForTags = null;
+        }
+
+        [RelayCommand]
+        public async Task SaveTagsAsync()
+        {
+            string tags = TagsInputText?.Trim() ?? string.Empty;
+            var targets = Movies.Where(m => m.IsSelected).ToList();
+            if (targets.Count == 0 && CurrentMediaForTags != null)
             {
-                SearchHistoryService.AddSearch(SearchQuery);
-                LoadSearchHistory();
+                targets.Add(CurrentMediaForTags);
+            }
+
+            if (targets.Count > 0)
+            {
+                var titles = targets.Select(t => t.File.FormattedTitle).Distinct().ToList();
+                var ids = targets.Select(t => t.File.Id).ToList();
+
+                await Task.Run(() =>
+                {
+                    using var db = new AppDbContext();
+                    var list = db.VideoFiles.Where(v => titles.Contains(v.FormattedTitle) || ids.Contains(v.Id)).ToList();
+                    foreach (var item in list)
+                    {
+                        item.CustomTags = tags;
+                    }
+                    db.SaveChanges();
+                });
+
+                foreach (var t in targets)
+                {
+                    t.File.CustomTags = tags;
+                    t.NotifyFileChanged();
+                }
+            }
+
+            CloseTagsDialog();
+            ExitSelectionMode();
+            await LoadMoviesAsync();
+        }
+
+        // ==========================================
+        // ITEM CONTEXT MENU ACTIONS (کلیک راست)
+        // ==========================================
+        [RelayCommand]
+        public async Task ToggleFavoriteItemAsync(GalleryItemViewModel item)
+        {
+            if (item == null) return;
+            await item.ToggleFavoriteAsync();
+            await LoadMoviesAsync();
+        }
+
+        [RelayCommand]
+        public async Task ToggleWatchedItemAsync(GalleryItemViewModel item)
+        {
+            if (item == null) return;
+            await item.ToggleWatchedAsync();
+            await LoadMoviesAsync();
+        }
+
+        [RelayCommand]
+        public async Task ToggleHiddenItemAsync(GalleryItemViewModel item)
+        {
+            if (item == null) return;
+            await item.ToggleHiddenAsync();
+            await LoadMoviesAsync();
+        }
+
+        [RelayCommand]
+        public async Task DeleteItemAsync(GalleryItemViewModel item)
+        {
+            if (item == null) return;
+            var result = MessageBox.Show($"آیا از حذف «{item.File.FormattedTitle}» از کتابخانه اطمینان دارید؟", "حذف از کتابخانه", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes)
+            {
+                await Task.Run(() =>
+                {
+                    using var db = new AppDbContext();
+                    var list = db.VideoFiles.Where(v => v.FormattedTitle == item.File.FormattedTitle || v.Id == item.File.Id).ToList();
+                    db.VideoFiles.RemoveRange(list);
+                    db.SaveChanges();
+                });
+                await LoadMoviesAsync();
             }
         }
 
-        [RelayCommand]
-        private void ClearSearchHistory()
-        {
-            SearchHistoryService.ClearHistory();
-            LoadSearchHistory();
-        }
-
-        [RelayCommand]
-        private void ResetSize()
-        {
-            PosterSize = 220;
-        }
-
-        [RelayCommand]
         private async Task ToggleFavoriteAsync(GalleryItemViewModel item)
         {
-            item.IsFavorite = !item.IsFavorite;
-            await SaveFileStateAsync(item.File);
+            // Handled inside item command
+            await Task.CompletedTask;
         }
 
-        [RelayCommand]
-        private async Task ToggleWatchlistAsync(GalleryItemViewModel item)
-        {
-            item.IsWatchlist = !item.IsWatchlist;
-            await SaveFileStateAsync(item.File);
-        }
-
-        private async Task SaveFileStateAsync(VideoFile file)
-        {
-            try
-            {
-                using var db = new AppDbContext();
-                // If this is a series, update all files in this series
-                var filesToUpdate = db.VideoFiles.Where(f => f.FormattedTitle == file.FormattedTitle && f.MediaType == file.MediaType).ToList();
-                foreach(var f in filesToUpdate)
-                {
-                    f.IsFavorite = file.IsFavorite;
-                    f.IsWatchlist = file.IsWatchlist;
-                }
-                await db.SaveChangesAsync();
-            }
-            catch { }
-        }
-
-        [RelayCommand]
-        private async Task RefreshSelectedAsync()
-        {
-            var selectedItems = Movies.Where(m => m.IsSelected).ToList();
-            if (!selectedItems.Any())
-            {
-                ToastService.Instance.ShowWarning("هیچ آیتمی انتخاب نشده است.");
-                return;
-            }
-
-            IsRefreshing = true;
-            IdentifyMediaService identifyService = new IdentifyMediaService();
-
-            await Task.Run(async () =>
-            {
-                using var db = new AppDbContext();
-                foreach (var item in selectedItems)
-                {
-                    Application.Current.Dispatcher.Invoke(() => item.IsUpdating = true);
-                    
-                    LoggerService.Info($"[بروزرسانی گروهی] شروع بررسی متادیتا برای '{item.File.FormattedTitle}'...");
-
-                    var identified = await identifyService.IdentifyMediaAsync(item.File);
-                    bool hasData = (identified.TmdbId.HasValue && identified.TmdbId > 0) || !string.IsNullOrWhiteSpace(identified.PosterUrl);
-
-                    if (hasData)
-                    {
-                        var filesToUpdate = db.VideoFiles.Where(f => f.FormattedTitle == item.File.FormattedTitle && f.MediaType == item.File.MediaType).ToList();
-                        foreach(var f in filesToUpdate)
-                        {
-                            f.TmdbId = identified.TmdbId;
-                            f.PosterUrl = identified.PosterUrl;
-                            f.Rating = identified.Rating;
-                            f.Overview = identified.Overview;
-                            f.BackdropUrl = identified.BackdropUrl;
-                            f.Genres = identified.Genres;
-                            f.Actors = identified.Actors;
-                            f.Director = identified.Director;
-                            if (!string.IsNullOrWhiteSpace(identified.Year)) f.Year = identified.Year;
-                            
-                            db.VideoFiles.Update(f);
-                        }
-                    }
-                    
-                    Application.Current.Dispatcher.Invoke(() => 
-                    {
-                        item.IsSelected = false;
-                        item.IsUpdating = false;
-                        // Trigger UI update
-                        item.NotifyFileChanged();
-                    });
-                }
-                await db.SaveChangesAsync();
-            });
-
-            IsRefreshing = false;
-            await LoadMoviesAsync(); // Reload to refresh visually
-            ToastService.Instance.ShowSuccess("بروزرسانی اطلاعات با موفقیت به پایان رسید.");
-        }
-        
+        // ==========================================
+        // BULK SELECTION ACTIONS
+        // ==========================================
         [RelayCommand]
         private void SelectAll()
         {
-            foreach(var item in Movies) item.IsSelected = true;
-        }
-
-        [RelayCommand]
-        private void DeselectAll()
-        {
-            foreach(var item in Movies) item.IsSelected = false;
+            bool allSelected = Movies.All(m => m.IsSelected);
+            foreach (var m in Movies) m.IsSelected = !allSelected;
+            UpdateSelectionState();
         }
 
         [RelayCommand]
         private void ExitSelectionMode()
         {
-            DeselectAll();
+            foreach (var m in Movies) m.IsSelected = false;
+            UpdateSelectionState();
         }
 
         [RelayCommand]
         private async Task DeleteSelectedAsync()
         {
-            var selectedItems = Movies.Where(m => m.IsSelected).ToList();
-            if (!selectedItems.Any()) return;
+            var selected = Movies.Where(m => m.IsSelected).ToList();
+            if (selected.Count == 0) return;
 
-            var dialog = new ConfirmDialog($"آیا از حذف {selectedItems.Count} مورد اطمینان دارید؟");
-            var result = await DialogHost.Show(dialog, "RootDialog");
-
-            if (result is bool res && res)
+            var result = MessageBox.Show($"آیا از حذف {selected.Count} مورد انتخاب شده اطمینان دارید؟", "حذف گروهی", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
             {
                 await RunBulkActionAsync("حذف", (db, f) => db.VideoFiles.Remove(f));
+                ExitSelectionMode();
             }
         }
 
-        private async Task RunBulkActionAsync(string actionName, Action<AppDbContext, Models.VideoFile> action)
+        [RelayCommand]
+        private async Task ToggleFavoritesSelectedAsync()
         {
-            var selectedItems = Movies.Where(m => m.IsSelected).ToList();
-            if (!selectedItems.Any()) return;
-            
+            await RunBulkActionAsync("تغییر علاقه‌مندی", (db, f) => f.IsFavorite = !f.IsFavorite);
+        }
+
+        [RelayCommand]
+        private async Task ToggleWatchedSelectedAsync()
+        {
+            await RunBulkActionAsync("وضعیت مشاهده", (db, f) => f.IsWatched = !f.IsWatched);
+        }
+
+        [RelayCommand]
+        private async Task ToggleHiddenSelectedAsync()
+        {
+            await RunBulkActionAsync("مخفی‌سازی", (db, f) => f.IsHidden = !f.IsHidden);
+        }
+
+        [RelayCommand]
+        private async Task RefreshSelectedAsync()
+        {
+            var selected = Movies.Where(m => m.IsSelected).ToList();
+            if (selected.Count == 0) return;
+
             IsBulkActionRunning = true;
             BulkActionProgress = 0;
-            BulkActionText = $"در حال انجام {actionName} ({selectedItems.Count} مورد)";
+            BulkActionText = "در حال شروع به‌روزرسانی...";
             _bulkActionCts = new System.Threading.CancellationTokenSource();
             var token = _bulkActionCts.Token;
 
-            try 
+            try
             {
-                await Task.Run(async () => 
+                int total = selected.Count;
+                int current = 0;
+                var identifyService = new IdentifyMediaService();
+
+                for (int i = 0; i < total; i++)
                 {
-                    using var db = new AppDbContext();
-                    int processed = 0;
-                    foreach (var item in selectedItems)
+                    if (token.IsCancellationRequested) break;
+
+                    var item = selected[i];
+                    BulkActionText = $"در حال دریافت متادیتا: {item.File.FormattedTitle}";
+                    BulkActionProgress = ((double)(i + 1) / total) * 100;
+
+                    try
                     {
-                        if (token.IsCancellationRequested) break;
-                        
-                        var files = db.VideoFiles.Where(f => f.FormattedTitle == item.File.FormattedTitle && f.MediaType == item.File.MediaType).ToList();
-                        foreach (var f in files) action(db, f);
-                        
-                        processed++;
-                        Application.Current.Dispatcher.Invoke(() => {
-                            BulkActionProgress = (double)processed / selectedItems.Count * 100;
-                        });
+                        await identifyService.IdentifyMediaAsync(item.File);
+                        using var db = new AppDbContext();
+                        var dbFile = await db.VideoFiles.FindAsync(item.File.Id);
+                        if (dbFile != null)
+                        {
+                            dbFile.TmdbId = item.File.TmdbId;
+                            dbFile.PosterUrl = item.File.PosterUrl;
+                            dbFile.Rating = item.File.Rating;
+                            dbFile.Overview = item.File.Overview;
+                            dbFile.Genres = item.File.Genres;
+                            dbFile.Actors = item.File.Actors;
+                            dbFile.Director = item.File.Director;
+                            dbFile.IsIdentified = item.File.IsIdentified;
+                            await db.SaveChangesAsync();
+                        }
                     }
-                    await db.SaveChangesAsync();
-                }, token);
-                
-                if (!token.IsCancellationRequested)
-                    ToastService.Instance.ShowSuccess($"{selectedItems.Count} مورد ({actionName}) با موفقیت اعمال شد.");
-                else
-                    ToastService.Instance.ShowWarning($"عملیات {actionName} لغو شد.");
+                    catch { }
+
+                    current++;
+                }
             }
-            catch (Exception ex)
-            {
-                LoggerService.Error($"Bulk action failed: {actionName}", ex);
-            }
-            finally 
+            finally
             {
                 IsBulkActionRunning = false;
                 ExitSelectionMode();
@@ -574,33 +764,45 @@ namespace MovieManagerDesktop.ViewModels
             }
         }
 
-
-
-        private void LoadSearchHistory()
+        private async Task RunBulkActionAsync(string actionName, Action<AppDbContext, VideoFile> action)
         {
-            SearchHistory.Clear();
-            foreach (var item in SearchHistoryService.GetHistory())
+            var selected = Movies.Where(m => m.IsSelected).ToList();
+            if (selected.Count == 0) return;
+
+            IsBulkActionRunning = true;
+            BulkActionProgress = 0;
+            BulkActionText = $"در حال انجام {actionName}...";
+
+            try
             {
-                SearchHistory.Add(item);
+                await Task.Run(() =>
+                {
+                    using var db = new AppDbContext();
+                    var selectedIds = selected.Select(s => s.File.Id).ToList();
+                    var dbFiles = db.VideoFiles.Where(v => selectedIds.Contains(v.Id)).ToList();
+
+                    int total = dbFiles.Count;
+                    for (int i = 0; i < total; i++)
+                    {
+                        action(db, dbFiles[i]);
+                    }
+                    db.SaveChanges();
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"خطا در انجام عملیات گروهی: {ex.Message}", "خطا", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            finally
+            {
+                IsBulkActionRunning = false;
+                await LoadMoviesAsync();
             }
         }
 
-        [RelayCommand]
-        private async Task ToggleFavoritesSelectedAsync()
+        private void LoadSearchHistory()
         {
-            await RunBulkActionAsync("علاقه‌مندی‌ها", (db, f) => f.IsFavorite = !f.IsFavorite);
-        }
-
-        [RelayCommand]
-        private async Task ToggleWatchlistSelectedAsync()
-        {
-            await RunBulkActionAsync("لیست تماشا", (db, f) => f.IsWatchlist = !f.IsWatchlist);
-        }
-
-        [RelayCommand]
-        private async Task ToggleWatchedSelectedAsync()
-        {
-            await RunBulkActionAsync("وضعیت مشاهده", (db, f) => f.IsWatched = !f.IsWatched);
+            // Search history loading
         }
     }
 }

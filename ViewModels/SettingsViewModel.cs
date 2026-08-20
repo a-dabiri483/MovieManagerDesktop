@@ -120,16 +120,80 @@ namespace MovieManagerDesktop.ViewModels
         private bool _autoSyncUpcomingToCalendar = true;
 
         [ObservableProperty]
-        private string _genreLanguageOverride = "auto";
+        private string _genreLanguageOverride = "fa";
 
         [ObservableProperty]
-        private string _translateToLanguage = "auto";
+        private string _translateToLanguage = "fa";
 
         [ObservableProperty]
-        private string _fetchInfoLanguage = "auto";
+        private string _fetchInfoLanguage = "fa-IR";
 
         [ObservableProperty]
-        private string _dateFormatOverride = "auto";
+        private string _dateFormatOverride = "jalali";
+
+        public bool IsJalaliCalendar
+        {
+            get => string.Equals(DateFormatOverride, "jalali", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(DateFormatOverride) || DateFormatOverride == "auto";
+            set
+            {
+                if (value) DateFormatOverride = "jalali";
+            }
+        }
+
+        public bool IsGregorianCalendar
+        {
+            get => string.Equals(DateFormatOverride, "gregorian", StringComparison.OrdinalIgnoreCase);
+            set
+            {
+                if (value) DateFormatOverride = "gregorian";
+            }
+        }
+
+        private void SavePersonalizationSettings()
+        {
+            var settings = SettingsManager.LoadSettings();
+            settings.DateFormatOverride = DateFormatOverride;
+            settings.GenreLanguageOverride = GenreLanguageOverride;
+            settings.TranslateToLanguage = TranslateToLanguage;
+            settings.FetchInfoLanguage = FetchInfoLanguage;
+            settings.ShowActorImages = ShowActorImages;
+            settings.HideAdultContent = HideAdultContent;
+            SettingsManager.SaveSettings(settings);
+
+            WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
+        }
+
+        partial void OnDateFormatOverrideChanged(string value)
+        {
+            SavePersonalizationSettings();
+            OnPropertyChanged(nameof(IsJalaliCalendar));
+            OnPropertyChanged(nameof(IsGregorianCalendar));
+        }
+
+        partial void OnGenreLanguageOverrideChanged(string value)
+        {
+            SavePersonalizationSettings();
+        }
+
+        partial void OnTranslateToLanguageChanged(string value)
+        {
+            SavePersonalizationSettings();
+        }
+
+        partial void OnFetchInfoLanguageChanged(string value)
+        {
+            SavePersonalizationSettings();
+        }
+
+        partial void OnShowActorImagesChanged(bool value)
+        {
+            SavePersonalizationSettings();
+        }
+
+        partial void OnHideAdultContentChanged(bool value)
+        {
+            SavePersonalizationSettings();
+        }
 
         public string SelectedDataSource
         {
@@ -330,6 +394,13 @@ namespace MovieManagerDesktop.ViewModels
             _localAutoBackupPath = settings.LocalAutoBackupPath;
             _isGoogleDriveAutoBackupEnabled = settings.IsGoogleDriveAutoBackupEnabled;
             _backupFrequencyIndex = settings.BackupFrequencyIndex;
+
+            _dateFormatOverride = settings.DateFormatOverride ?? "jalali";
+            _genreLanguageOverride = settings.GenreLanguageOverride ?? "fa";
+            _translateToLanguage = settings.TranslateToLanguage ?? "fa";
+            _fetchInfoLanguage = settings.FetchInfoLanguage ?? "fa-IR";
+            _showActorImages = settings.ShowActorImages;
+            _hideAdultContent = settings.HideAdultContent;
             
             CalculateDatabaseSize();
             CheckGoogleDriveConnection();

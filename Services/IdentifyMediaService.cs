@@ -482,6 +482,16 @@ namespace MovieManagerDesktop.Services
                     file.BackdropUrl = file.PosterUrl;
                 }
 
+                // Fallback: extract 4-digit year from filename if Year is still empty
+                if (string.IsNullOrWhiteSpace(file.Year) && !string.IsNullOrWhiteSpace(file.FileName))
+                {
+                    var match = System.Text.RegularExpressions.Regex.Match(file.FileName, @"\b(19\d{2}|20\d{2})\b");
+                    if (match.Success)
+                    {
+                        file.Year = match.Groups[1].Value;
+                    }
+                }
+
                 // Download images after identification
                 if (!string.IsNullOrWhiteSpace(file.PosterUrl) && file.PosterUrl.StartsWith("http"))
                 {
@@ -731,6 +741,28 @@ namespace MovieManagerDesktop.Services
                     if (firstMatch.TryGetProperty("vote_average", out var rating) && rating.ValueKind == JsonValueKind.Number)
                     {
                         file.Rating = Math.Round(rating.GetDouble(), 1);
+                    }
+
+                    // Extract Release Year and Air Dates
+                    if (string.IsNullOrWhiteSpace(file.Year))
+                    {
+                        if (firstMatch.TryGetProperty("release_date", out var rd) && !string.IsNullOrEmpty(rd.GetString()) && rd.GetString()!.Length >= 4)
+                        {
+                            file.Year = rd.GetString()!.Substring(0, 4);
+                        }
+                        else if (firstMatch.TryGetProperty("first_air_date", out var fad) && !string.IsNullOrEmpty(fad.GetString()) && fad.GetString()!.Length >= 4)
+                        {
+                            file.Year = fad.GetString()!.Substring(0, 4);
+                        }
+                    }
+
+                    if (firstMatch.TryGetProperty("first_air_date", out var faDate) && DateTime.TryParse(faDate.GetString(), out var parsedFad))
+                    {
+                        file.FirstAirDate = parsedFad;
+                    }
+                    else if (firstMatch.TryGetProperty("release_date", out var relDate) && DateTime.TryParse(relDate.GetString(), out var parsedRel))
+                    {
+                        file.FirstAirDate = parsedRel;
                     }
                     
                     int tmdbId = 0;

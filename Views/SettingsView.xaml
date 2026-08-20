@@ -675,9 +675,12 @@
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                     <TextBlock Text="فرمت تقویم و تاریخ" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
-                                    <TextBlock Text="خودکار (بر اساس زبان برنامه)" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
+                                    <TextBlock Text="شمسی (جلالی با اعداد انگلیسی) / میلادی" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
                                 </StackPanel>
-                                <TextBlock Grid.Column="2" Text="هجری شمسی (جلالی)" Foreground="{DynamicResource PrimaryColor}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <RadioButton Content="شمسی" IsChecked="{Binding IsJalaliCalendar}" Foreground="White" Margin="0,0,10,0"/>
+                                    <RadioButton Content="میلادی" IsChecked="{Binding IsGregorianCalendar}" Foreground="White"/>
+                                </StackPanel>
                             </Grid>
                         </StackPanel>
                     </Border>
@@ -705,10 +708,10 @@
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                     <TextBlock Text="زبان ژانرها" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
-                                    <TextBlock Text="خودکار / فارسی / انگلیسی" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
+                                    <TextBlock Text="موتور ترجمه دوطرفه ژانرها (فارسی / انگلیسی)" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
                                 </StackPanel>
-                                <ComboBox Grid.Column="2" SelectedValue="{Binding GenreLanguageOverride}" SelectedValuePath="Tag" Width="130" Foreground="White" Background="#15FFFFFF">
-                                    <ComboBoxItem Content="خودکار" Tag="auto"/>
+                                <ComboBox Grid.Column="2" SelectedValue="{Binding GenreLanguageOverride}" SelectedValuePath="Tag" Width="170" Foreground="White" Background="#15FFFFFF">
+                                    <ComboBoxItem Content="خودکار (بر اساس زبان برنامه)" Tag="auto"/>
                                     <ComboBoxItem Content="همیشه فارسی" Tag="fa"/>
                                     <ComboBoxItem Content="همیشه انگلیسی" Tag="en"/>
                                 </ComboBox>
@@ -728,12 +731,24 @@
                                 </Border>
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                     <TextBlock Text="زبان ترجمه متن‌ها" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
-                                    <TextBlock Text="موتور ترجمه هوشمند گوگل" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
+                                    <TextBlock Text="موتور ترجمه هوشمند متون و خلاصه" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
                                 </StackPanel>
-                                <ComboBox Grid.Column="2" SelectedValue="{Binding TranslateToLanguage}" SelectedValuePath="Tag" Width="130" Foreground="White" Background="#15FFFFFF">
-                                    <ComboBoxItem Content="به فارسی" Tag="fa"/>
-                                    <ComboBoxItem Content="به انگلیسی" Tag="en"/>
-                                    <ComboBoxItem Content="خودکار" Tag="auto"/>
+                                <ComboBox Grid.Column="2" SelectedValue="{Binding TranslateToLanguage}" SelectedValuePath="Tag" Width="180" Foreground="White" Background="#15FFFFFF">
+                                    <ComboBoxItem Content="خودکار (بر اساس زبان برنامه)" Tag="auto"/>
+                                    <ComboBoxItem Content="فارسی (Persian)" Tag="fa"/>
+                                    <ComboBoxItem Content="انگلیسی (English)" Tag="en"/>
+                                    <ComboBoxItem Content="فرانسوی (French)" Tag="fr"/>
+                                    <ComboBoxItem Content="آلمانی (German)" Tag="de"/>
+                                    <ComboBoxItem Content="اسپانیایی (Spanish)" Tag="es"/>
+                                    <ComboBoxItem Content="ایتالیایی (Italian)" Tag="it"/>
+                                    <ComboBoxItem Content="ترکی (Turkish)" Tag="tr"/>
+                                    <ComboBoxItem Content="عربی (Arabic)" Tag="ar"/>
+                                    <ComboBoxItem Content="روسی (Russian)" Tag="ru"/>
+                                    <ComboBoxItem Content="چینی (Chinese)" Tag="zh"/>
+                                    <ComboBoxItem Content="ژاپنی (Japanese)" Tag="ja"/>
+                                    <ComboBoxItem Content="کره‌ای (Korean)" Tag="ko"/>
+                                    <ComboBoxItem Content="هندی (Hindi)" Tag="hi"/>
+                                    <ComboBoxItem Content="پرتغالی (Portuguese)" Tag="pt"/>
                                 </ComboBox>
                             </Grid>
 

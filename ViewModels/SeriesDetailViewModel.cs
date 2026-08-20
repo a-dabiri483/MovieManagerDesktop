@@ -114,13 +114,13 @@ namespace MovieManagerDesktop.ViewModels
                 };
             }
             if (Series.FirstAirDate.HasValue)
-                FirstAirDateText = Series.FirstAirDate.Value.ToString("yyyy/MM/dd");
+                FirstAirDateText = DateTimeFormatterService.FormatShortDate(Series.FirstAirDate.Value);
             else if (!string.IsNullOrWhiteSpace(Series.Year))
-                FirstAirDateText = Series.Year;
+                FirstAirDateText = DateTimeFormatterService.FormatYear(Series.Year);
             
             // Last Air Date
             if (Series.LastAirDate.HasValue)
-                LastAirDateText = Series.LastAirDate.Value.ToString("yyyy/MM/dd");
+                LastAirDateText = DateTimeFormatterService.FormatShortDate(Series.LastAirDate.Value);
             
             // Network
             if (!string.IsNullOrEmpty(Series.NetworkName))
@@ -148,7 +148,7 @@ namespace MovieManagerDesktop.ViewModels
             // Next Episode
             if (!string.IsNullOrEmpty(Series.NextEpisodeDate))
             {
-                NextEpisodeText = $"تاریخ: {Series.NextEpisodeDate}";
+                NextEpisodeText = $"تاریخ: {DateTimeFormatterService.FormatDate(Series.NextEpisodeDate)}";
                 if (Series.NextEpisodeNumber.HasValue)
                     NextEpisodeText = $"قسمت {Series.NextEpisodeNumber} - " + NextEpisodeText;
             }
@@ -162,6 +162,9 @@ namespace MovieManagerDesktop.ViewModels
             else
                 EpisodesInfoText = $"{seasons} Seasons - {episodes} Episodes";
         }
+
+        public string FormattedGenres => GenreTranslatorService.TranslateList(Series.Genres);
+        public string FormattedYear => DateTimeFormatterService.FormatYear(Series.Year);
 
         private async Task LoadDetailsAsync()
         {

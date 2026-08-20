@@ -23,6 +23,9 @@
             <converters:JalaliDateConverter x:Key="JalaliDateConverter" />
             <converters:PersianNumberConverter x:Key="PersianNumberConverter" />
             <converters:EqualityToVisibilityConverter x:Key="EqualityToVisibilityConverter" />
+            <converters:RadioIntEqualsConverter x:Key="RadioIntEqualsConverter" />
+            <converters:ZeroToVisibilityConverter x:Key="ZeroToVisibilityConverter" />
+            <converters:StringNullOrEmptyToVisibilityConverter x:Key="StringNullOrEmptyToVisibilityConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

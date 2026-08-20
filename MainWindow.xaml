@@ -77,6 +77,21 @@
         <DataTemplate DataType="{x:Type viewmodels:CalendarViewModel}">
             <views:CalendarView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:ManualSearchViewModel}">
+            <views:ManualSearchView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:TrackerViewModel}">
+            <views:TrackerView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:TrackedDetailViewModel}">
+            <views:TrackedDetailView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:AnalyticsViewModel}">
+            <views:AnalyticsView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:CinemaHubViewModel}">
+            <views:CinemaHubView />
+        </DataTemplate>
 
         <!-- Android Bottom Nav Item Style -->
         <Style x:Key="AndroidBottomNavRadioStyle" TargetType="RadioButton">
