@@ -258,17 +258,10 @@
                                                 <materialDesign:PackIcon Kind="Play" Width="24" Height="24" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
 
-                                            <!-- Episode Badge for Series (Bottom-Left in RTL = Bottom-Right visually) -->
+                                            <!-- Episode Badge for Series -->
                                             <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,10"
                                                     Background="#E60F172A" CornerRadius="8" Padding="6,2" BorderBrush="#50FFFFFF" BorderThickness="0.8">
-                                                <TextBlock Foreground="White" FontSize="10" FontWeight="Bold" FlowDirection="LeftToRight">
-                                                    <TextBlock.Text>
-                                                        <MultiBinding StringFormat="S{0} E{1}">
-                                                            <Binding Path="Season" FallbackValue="1"/>
-                                                            <Binding Path="LastPlayedEpisode" FallbackValue="{Binding Episode}"/>
-                                                        </MultiBinding>
-                                                    </TextBlock.Text>
-                                                </TextBlock>
+                                                <TextBlock Text="{Binding DisplayEpisodeInfo}" Foreground="White" FontSize="10" FontWeight="Bold" FlowDirection="LeftToRight"/>
                                             </Border>
 
                                             <!-- Red Progress Bar at Bottom -->
