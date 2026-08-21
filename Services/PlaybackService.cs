@@ -28,6 +28,22 @@ namespace MovieManagerDesktop.Services
                 return;
             }
 
+            file.LastPlayedAt = DateTime.Now;
+            Task.Run(() =>
+            {
+                try
+                {
+                    using var db = new AppDbContext();
+                    var dbItem = db.VideoFiles.Find(file.Id);
+                    if (dbItem != null)
+                    {
+                        dbItem.LastPlayedAt = file.LastPlayedAt;
+                        db.SaveChanges();
+                    }
+                }
+                catch { }
+            });
+
             var settings = SettingsManager.LoadSettings();
 
             if (settings.UseInternalPlayer)

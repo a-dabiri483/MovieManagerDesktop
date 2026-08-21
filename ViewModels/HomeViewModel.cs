@@ -182,16 +182,17 @@ namespace MovieManagerDesktop.ViewModels
                     .Where(f => f.WatchProgressPercent > 0 && f.WatchProgressPercent < 100)
                     .ToList();
 
-                // Group series by title, keep only the latest episode per series
+                // Group series by title, keep only 1 item per series (the most recently played or highest ep)
                 var continueWatchingGrouped = continueWatchingRaw
-                    .GroupBy(f => f.MediaType == "Series" 
-                        ? (f.FormattedTitle ?? f.FileName).ToLowerInvariant() 
+                    .GroupBy(f => string.Equals(f.MediaType, "Series", StringComparison.OrdinalIgnoreCase) 
+                        ? (!string.IsNullOrWhiteSpace(f.FormattedTitle) ? f.FormattedTitle : f.FileName).ToLowerInvariant() 
                         : f.Id.ToString())
-                    .Select(g => g.OrderByDescending(f => f.Season ?? 0)
+                    .Select(g => g.OrderByDescending(f => f.LastPlayedAt ?? DateTime.MinValue)
+                                  .ThenByDescending(f => f.Season ?? 0)
                                   .ThenByDescending(f => f.LastPlayedEpisode ?? f.Episode ?? 0)
                                   .ThenByDescending(f => f.DateAdded)
                                   .First())
-                    .OrderByDescending(f => f.DateAdded)
+                    .OrderByDescending(f => f.LastPlayedAt ?? f.DateAdded)
                     .Take(20)
                     .ToList();
 
@@ -229,7 +230,15 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (file != null)
             {
+                file.LastPlayedAt = DateTime.Now;
                 PlaybackService.PlayMedia(file);
+
+                // Move played item to position 0 (beginning of the list)
+                if (ContinueWatchingItems.Contains(file))
+                {
+                    ContinueWatchingItems.Remove(file);
+                    ContinueWatchingItems.Insert(0, file);
+                }
             }
         }
 

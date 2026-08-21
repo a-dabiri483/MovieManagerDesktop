@@ -54,6 +54,7 @@ namespace MovieManagerDesktop.Models
         public bool HasSubtitle { get; set; } = false;
         public string? ContentRating { get; set; }
         public int? LastPlayedEpisode { get; set; }
+        public DateTime? LastPlayedAt { get; set; }
 
         [ObservableProperty]
         private double _watchProgressPercent = 0; // 0 to 100
@@ -113,5 +114,32 @@ namespace MovieManagerDesktop.Models
                 return string.Empty;
             }
         }
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public string CompactEpisodeTag
+        {
+            get
+            {
+                if (Season.HasValue && (LastPlayedEpisode.HasValue || Episode.HasValue))
+                {
+                    int ep = LastPlayedEpisode ?? Episode ?? 1;
+                    return $"S{Season.Value} E{ep}";
+                }
+                else if (Episode.HasValue)
+                {
+                    return $"E{Episode.Value}";
+                }
+                return string.Empty;
+            }
+        }
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public bool HasCompactEpisodeTag => !string.IsNullOrEmpty(CompactEpisodeTag);
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public bool HasContentRating => !string.IsNullOrWhiteSpace(ContentRating);
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public bool HasRating => Rating.HasValue && Rating.Value > 0;
     }
 }

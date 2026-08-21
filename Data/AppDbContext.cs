@@ -98,6 +98,11 @@ namespace MovieManagerDesktop.Data
             catch { }
             try
             {
+                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN LastPlayedAt TEXT;");
+            }
+            catch { }
+            try
+            {
                 Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN IsTracked INTEGER NOT NULL DEFAULT 0;");
             }
             catch { }

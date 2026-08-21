@@ -201,16 +201,36 @@
             <!-- ================================================ -->
             <!-- 2. CONTINUE WATCHING SECTION (ادامه تماشا) -->
             <!-- ================================================ -->
-            <StackPanel Margin="0,0,0,24" Visibility="{Binding HasContinueWatching, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <!-- Section Header -->
-                <StackPanel Orientation="Horizontal" Margin="6,0,0,14">
-                    <Border Width="4" Height="18" Background="#EB3B5A" CornerRadius="2" Margin="0,0,8,0"/>
-                    <TextBlock Text="🍿" FontSize="17" Margin="0,0,6,0"/>
-                    <TextBlock Text="ادامه تماشا" FontSize="17" FontWeight="Bold" Foreground="White"/>
-                </StackPanel>
+            <StackPanel Margin="0,0,0,26" Visibility="{Binding HasContinueWatching, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <!-- Section Header with Title & Left/Right Nav Buttons -->
+                <Grid Margin="6,0,6,14">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="4" Height="18" Background="#EB3B5A" CornerRadius="2" Margin="0,0,8,0"/>
+                        <TextBlock Text="ادامه تماشا" FontSize="17" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                        <TextBlock Text="🍿" FontSize="17" Margin="6,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
 
-                <!-- Horizontal ScrollViewer with Cards -->
-                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Padding="0,4,0,8">
+                    <!-- Left / Right Navigation Scroll Buttons -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <Button Click="ScrollRight_Click" Width="32" Height="32" Padding="0" Margin="0,0,6,0"
+                                Background="#20FFFFFF" BorderBrush="#33FFFFFF" BorderThickness="1"
+                                materialDesign:ButtonAssist.CornerRadius="16" Cursor="Hand" ToolTip="قبلی">
+                            <materialDesign:PackIcon Kind="ChevronRight" Width="20" Height="20" Foreground="White"/>
+                        </Button>
+                        <Button Click="ScrollLeft_Click" Width="32" Height="32" Padding="0"
+                                Background="#20FFFFFF" BorderBrush="#33FFFFFF" BorderThickness="1"
+                                materialDesign:ButtonAssist.CornerRadius="16" Cursor="Hand" ToolTip="بعدی">
+                            <materialDesign:PackIcon Kind="ChevronLeft" Width="20" Height="20" Foreground="White"/>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Horizontal ScrollViewer with Mouse Wheel Pass-Through -->
+                <ScrollViewer x:Name="ContinueWatchingScrollViewer" 
+                              HorizontalScrollBarVisibility="Hidden" 
+                              VerticalScrollBarVisibility="Disabled" 
+                              PreviewMouseWheel="ContinueWatchingScrollViewer_PreviewMouseWheel"
+                              Padding="4,4,4,12">
                     <ItemsControl ItemsSource="{Binding ContinueWatchingItems}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -226,7 +246,7 @@
                                     </Border.InputBindings>
                                     <Grid>
                                         <Grid.RowDefinitions>
-                                            <RowDefinition Height="200"/>
+                                            <RowDefinition Height="215"/>
                                             <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
 
@@ -234,40 +254,92 @@
                                         <Grid Grid.Row="0" ClipToBounds="True">
                                             <!-- Poster Image -->
                                             <Image controls:CachedImage.SourceUrl="{Binding PosterUrl}" Stretch="UniformToFill"
-                                                   RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                                   RenderOptions.EdgeMode="Aliased"
+                                                   SnapsToDevicePixels="True"/>
                                             
                                             <!-- Fallback icon when no poster -->
                                             <Border Background="#20FFFFFF" Visibility="{Binding PosterUrl, Converter={StaticResource NullToVisibilityConverter}}">
                                                 <materialDesign:PackIcon Kind="MovieOpenOutline" Width="40" Height="40" Foreground="#40FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
 
-                                            <!-- Dark gradient at bottom for progress bar -->
-                                            <Border VerticalAlignment="Bottom" Height="50">
+                                            <!-- Top-Start Purple Episode Badge (S1 E3 e.g., matching user screenshot) -->
+                                            <Border Visibility="{Binding HasCompactEpisodeTag, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                    HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8,8,0,0" Panel.ZIndex="12"
+                                                    Background="#7C3AED" CornerRadius="12" Padding="9,3.5">
+                                                <Border.Effect>
+                                                    <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.6" Color="#7C3AED"/>
+                                                </Border.Effect>
+                                                <TextBlock Text="{Binding CompactEpisodeTag}" Foreground="White" FontSize="11" FontWeight="Black" FlowDirection="LeftToRight"/>
+                                            </Border>
+
+                                            <!-- Top-End Content Rating Badge (e.g. TV-MA) -->
+                                            <Border Visibility="{Binding HasContentRating, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0" Panel.ZIndex="12"
+                                                    Background="#C0000000" CornerRadius="8" Padding="6,2">
+                                                <TextBlock Text="{Binding ContentRating}" Foreground="White" FontSize="9.5" FontWeight="Bold"/>
+                                            </Border>
+
+                                            <!-- Floating Badges (Mic & CC Circles on Top-Right Corner in RTL) -->
+                                            <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8,38,0,0" Panel.ZIndex="10">
+                                                <!-- Dubbed Badge (Dark Glass Circle + Neon Green Mic) -->
+                                                <Border Visibility="{Binding HasDubbing, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                        Background="#E60F172A" BorderBrush="#334155" BorderThickness="1.2"
+                                                        CornerRadius="13" Width="26" Height="26" Margin="0,0,0,6"
+                                                        ToolTip="دارای دوبله فارسی">
+                                                    <Border.Effect>
+                                                        <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.75" Color="Black"/>
+                                                    </Border.Effect>
+                                                    <materialDesign:PackIcon Kind="Microphone" Width="14" Height="14" Foreground="#00E676" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+
+                                                <!-- Subtitle Badge (Dark Glass Circle + Yellow CC) -->
+                                                <Border Visibility="{Binding HasSubtitle, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                        Background="#E60F172A" BorderBrush="#334155" BorderThickness="1.2"
+                                                        CornerRadius="13" Width="26" Height="26"
+                                                        ToolTip="دارای زیرنویس فارسی">
+                                                    <Border.Effect>
+                                                        <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.75" Color="Black"/>
+                                                    </Border.Effect>
+                                                    <materialDesign:PackIcon Kind="ClosedCaption" Width="14" Height="14" Foreground="#FFD166" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </StackPanel>
+
+                                            <!-- IMDb Gold Star Badge (Bottom Right of Poster) -->
+                                            <Border Visibility="{Binding HasRating, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                    HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,12" Panel.ZIndex="10"
+                                                    Background="#E60F172A" BorderBrush="#FFC107" BorderThickness="1"
+                                                    CornerRadius="10" Padding="6,2">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <materialDesign:PackIcon Kind="Star" Width="12" Height="12" Foreground="#FFC107" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                                    <TextBlock Text="{Binding Rating, StringFormat={}{0:0.0}}" Foreground="#FFC107" FontSize="10.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Dark Gradient at Bottom -->
+                                            <Border VerticalAlignment="Bottom" Height="60">
                                                 <Border.Background>
                                                     <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
                                                         <GradientStop Color="Transparent" Offset="0"/>
-                                                        <GradientStop Color="#CC000000" Offset="1"/>
+                                                        <GradientStop Color="#E6000000" Offset="1"/>
                                                     </LinearGradientBrush>
                                                 </Border.Background>
                                             </Border>
 
                                             <!-- Play Button Overlay (Center) -->
-                                            <Border Width="44" Height="44" CornerRadius="22" Background="#B0000000" 
+                                            <Border Width="44" Height="44" CornerRadius="22" Background="#CC0F172A" 
                                                     HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                    BorderBrush="#60FFFFFF" BorderThickness="1.5">
+                                                    BorderBrush="#80FFFFFF" BorderThickness="1.5" Panel.ZIndex="8">
+                                                <Border.Effect>
+                                                    <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.5" Color="Black"/>
+                                                </Border.Effect>
                                                 <materialDesign:PackIcon Kind="Play" Width="24" Height="24" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
 
-                                            <!-- Episode Badge for Series -->
-                                            <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,10"
-                                                    Background="#E60F172A" CornerRadius="8" Padding="6,2" BorderBrush="#50FFFFFF" BorderThickness="0.8">
-                                                <TextBlock Text="{Binding DisplayEpisodeInfo}" Foreground="White" FontSize="10" FontWeight="Bold" FlowDirection="LeftToRight"/>
-                                            </Border>
-
                                             <!-- Red Progress Bar at Bottom -->
-                                            <Grid VerticalAlignment="Bottom" Height="3">
-                                                <Border Background="#40FFFFFF" CornerRadius="1.5"/>
-                                                <Border Background="#EB3B5A" CornerRadius="1.5" HorizontalAlignment="Left">
+                                            <Grid VerticalAlignment="Bottom" Height="3.5" Panel.ZIndex="15">
+                                                <Border Background="#40FFFFFF" CornerRadius="1.75"/>
+                                                <Border Background="#EB3B5A" CornerRadius="1.75" HorizontalAlignment="Left">
                                                     <Border.Width>
                                                         <MultiBinding>
                                                             <MultiBinding.Converter>
@@ -282,8 +354,8 @@
                                         </Grid>
 
                                         <!-- Title Below Poster -->
-                                        <TextBlock Grid.Row="1" Text="{Binding DisplayName}" Foreground="White" FontSize="12" FontWeight="Bold"
-                                                   TextTrimming="CharacterEllipsis" MaxHeight="18" Margin="8,6,8,8" TextAlignment="Center"/>
+                                        <TextBlock Grid.Row="1" Text="{Binding DisplayName}" Foreground="White" FontSize="12.5" FontWeight="Bold"
+                                                   TextTrimming="CharacterEllipsis" MaxHeight="20" Margin="8,8,8,8" TextAlignment="Center" ToolTip="{Binding DisplayName}"/>
                                     </Grid>
                                 </Border>
                             </DataTemplate>
