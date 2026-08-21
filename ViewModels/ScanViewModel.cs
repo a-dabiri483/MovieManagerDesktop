@@ -291,18 +291,17 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
-        private async Task OpenEditDialogAsync(ScannedGroupViewModel group)
+        private void EditScannedGroup(ScannedGroupViewModel group)
         {
             if (group == null) return;
             
             var vm = new EditScannedGroupViewModel(group, this);
             var view = new EditScannedGroupDialog
             {
-                DataContext = vm,
-                Owner = System.Windows.Application.Current.MainWindow
+                DataContext = vm
             };
             vm.CloseAction = () => view.Close();
-            view.ShowDialog();
+            WindowHelper.SafeShowDialog(view);
         }
 
         [RelayCommand]
@@ -325,11 +324,10 @@ namespace MovieManagerDesktop.ViewModels
             var vm = new SelectExistingMediaViewModel(targetGroups, this);
             var view = new SelectExistingMediaDialog
             {
-                DataContext = vm,
-                Owner = System.Windows.Application.Current.MainWindow
+                DataContext = vm
             };
             vm.CloseAction = () => view.Close();
-            view.ShowDialog();
+            WindowHelper.SafeShowDialog(view);
         }
 
         [RelayCommand]

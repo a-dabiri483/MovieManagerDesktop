@@ -929,8 +929,7 @@ namespace MovieManagerDesktop.ViewModels
                 }
             };
             
-            searchDialog.Owner = System.Windows.Application.Current.MainWindow;
-            searchDialog.ShowDialog();
+            WindowHelper.SafeShowDialog(searchDialog);
         }
 
         [RelayCommand]

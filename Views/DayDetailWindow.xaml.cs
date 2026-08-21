@@ -29,6 +29,14 @@ namespace MovieManagerDesktop.Views
             }
         }
 
+        private void Header_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (e.ButtonState == System.Windows.Input.MouseButtonState.Pressed)
+            {
+                DragMove();
+            }
+        }
+
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             Close();

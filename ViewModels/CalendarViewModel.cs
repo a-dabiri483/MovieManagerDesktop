@@ -36,11 +36,20 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private int _seriesCount;
 
+        [ObservableProperty]
+        private string _firstPosterUrl = string.Empty;
+
         public bool HasReleases => (MoviesCount + SeriesCount) > 0;
 
         public ObservableCollection<CalendarMediaItem> Releases { get; } = new();
 
-        public string FirstPosterUrl => Releases.FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.PosterUrl))?.PosterUrl ?? string.Empty;
+        public void NotifyUpdates()
+        {
+            FirstPosterUrl = Releases.FirstOrDefault(r => !string.IsNullOrWhiteSpace(r.PosterUrl))?.PosterUrl ?? string.Empty;
+            OnPropertyChanged(nameof(HasReleases));
+            OnPropertyChanged(nameof(MoviesCount));
+            OnPropertyChanged(nameof(SeriesCount));
+        }
     }
 
     public partial class CalendarMediaItem : ObservableObject
@@ -122,36 +131,8 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (day == null || day.DayNumber == 0 || day.Releases.Count == 0) return;
             
-            try
-            {
-                var window = new MovieManagerDesktop.Views.DayDetailWindow(day);
-                var activeWindow = System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.IsActive && w != window)
-                                  ?? System.Windows.Application.Current.MainWindow;
-
-                if (activeWindow != null && activeWindow != window && activeWindow.IsLoaded)
-                {
-                    window.Owner = activeWindow;
-                    window.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
-                }
-                else
-                {
-                    window.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen;
-                }
-
-                window.ShowDialog();
-            }
-            catch
-            {
-                try
-                {
-                    var fallback = new MovieManagerDesktop.Views.DayDetailWindow(day)
-                    {
-                        WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen
-                    };
-                    fallback.ShowDialog();
-                }
-                catch { }
-            }
+            var window = new MovieManagerDesktop.Views.DayDetailWindow(day);
+            WindowHelper.SafeShowDialog(window);
         }
 
         private string GetMonthKey()
@@ -303,9 +284,12 @@ namespace MovieManagerDesktop.ViewModels
                 // Save to cache
                 SaveCache(flatList);
 
-                // Apply to days
-                ApplyReleasesToDays(flatList);
-                HasCachedData = true;
+                // Apply to days on UI thread
+                System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+                {
+                    ApplyReleasesToDays(flatList);
+                    HasCachedData = true;
+                });
 
                 ToastService.Instance.ShowSuccess($"عناوین ماه {MonthName} با موفقیت دریافت شد.");
             }
@@ -363,6 +347,11 @@ namespace MovieManagerDesktop.ViewModels
                             targetDay.SeriesCount++;
                     }
                 }
+            }
+
+            foreach (var day in Days)
+            {
+                day.NotifyUpdates();
             }
         }
 
