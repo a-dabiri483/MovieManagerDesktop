@@ -196,10 +196,15 @@ namespace MovieManagerDesktop.ViewModels
                     bool hasAnyActivity = eps.Any(e => e.IsWatched || e.WatchProgressPercent > 0 || e.LastPlayedAt.HasValue);
                     if (hasAnyActivity)
                     {
+                        var seriesLastPlayed = eps.Max(e => e.LastPlayedAt);
                         // Check if there is an in-progress episode
                         var inProgressEp = eps.FirstOrDefault(e => !e.IsWatched && e.WatchProgressPercent > 0 && e.WatchProgressPercent < 95);
                         if (inProgressEp != null)
                         {
+                            if (seriesLastPlayed.HasValue && (!inProgressEp.LastPlayedAt.HasValue || inProgressEp.LastPlayedAt < seriesLastPlayed))
+                            {
+                                inProgressEp.LastPlayedAt = seriesLastPlayed;
+                            }
                             continueSeries.Add(inProgressEp);
                         }
                         else
@@ -208,6 +213,10 @@ namespace MovieManagerDesktop.ViewModels
                             var nextUnwatchedEp = eps.FirstOrDefault(e => !e.IsWatched);
                             if (nextUnwatchedEp != null)
                             {
+                                if (seriesLastPlayed.HasValue)
+                                {
+                                    nextUnwatchedEp.LastPlayedAt = seriesLastPlayed;
+                                }
                                 continueSeries.Add(nextUnwatchedEp);
                             }
                         }
@@ -216,7 +225,8 @@ namespace MovieManagerDesktop.ViewModels
 
                 var combinedContinueWatching = continueMovies
                     .Concat(continueSeries)
-                    .OrderByDescending(f => f.LastPlayedAt ?? (f.WatchProgressPercent > 0 ? DateTime.Now.AddDays(-1) : f.DateAdded))
+                    .OrderByDescending(f => f.LastPlayedAt ?? (f.WatchProgressPercent > 0 ? DateTime.Now.AddDays(-1) : DateTime.MinValue))
+                    .ThenByDescending(f => f.DateAdded)
                     .Take(20)
                     .ToList();
 
