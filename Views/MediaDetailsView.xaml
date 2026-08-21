@@ -476,23 +476,27 @@
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <!-- Right Column in RTL: Season Tabs Stack -->
-                                        <ColumnDefinition Width="155"/>
+                                        <ColumnDefinition Width="165"/>
                                         <!-- Left Column in RTL: Selected Season Episodes 2-Column Grid -->
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
 
                                     <!-- Right Column: Season Selector List -->
-                                    <ItemsControl Grid.Column="0" ItemsSource="{Binding Seasons}" Margin="0,0,12,0">
+                                    <ItemsControl Grid.Column="0" ItemsSource="{Binding Seasons}" Margin="0,0,14,0">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Button Command="{Binding DataContext.SelectSeasonCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                <Button Style="{x:Null}" 
+                                                        Height="Auto" 
+                                                        MinHeight="52"
+                                                        Command="{Binding DataContext.SelectSeasonCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
                                                         CommandParameter="{Binding}"
                                                         Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,0,8"
-                                                        HorizontalContentAlignment="Stretch" Cursor="Hand">
+                                                        HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Cursor="Hand">
                                                     <Button.Template>
                                                         <ControlTemplate TargetType="Button">
-                                                            <Border CornerRadius="8" 
+                                                            <Border CornerRadius="10" 
                                                                     Padding="10,8" 
+                                                                    MinHeight="50"
                                                                     BorderThickness="1.5">
                                                                 <Border.Style>
                                                                     <Style TargetType="Border">
@@ -507,7 +511,7 @@
                                                                     </Style>
                                                                 </Border.Style>
                                                                 
-                                                                <Grid>
+                                                                <Grid VerticalAlignment="Center">
                                                                     <Grid.ColumnDefinitions>
                                                                         <!-- Right in RTL: S1 / S2 Pill Badge -->
                                                                         <ColumnDefinition Width="Auto"/>
@@ -518,19 +522,19 @@
                                                                     </Grid.ColumnDefinitions>
 
                                                                     <!-- Season Badge -->
-                                                                    <Border Grid.Column="0" Background="#1E293B" CornerRadius="5" Padding="6,3" Margin="0,0,8,0" VerticalAlignment="Center">
-                                                                        <TextBlock Text="{Binding SeasonTag}" Foreground="{DynamicResource PrimaryText}" FontWeight="Bold" FontSize="11.5"/>
+                                                                    <Border Grid.Column="0" Background="#1E293B" CornerRadius="6" Padding="6,3" Margin="0,0,8,0" VerticalAlignment="Center">
+                                                                        <TextBlock Text="{Binding SeasonTag}" Foreground="{DynamicResource PrimaryText}" FontWeight="Bold" FontSize="11"/>
                                                                     </Border>
 
                                                                     <!-- Title and Count -->
                                                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                                        <TextBlock Text="{Binding SeasonTitle}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
-                                                                        <TextBlock Text="{Binding EpisodesCountText}" FontSize="10.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
+                                                                        <TextBlock Text="{Binding SeasonTitle}" FontSize="13.5" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
+                                                                        <TextBlock Text="{Binding EpisodesCountText}" FontSize="11" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
                                                                     </StackPanel>
 
                                                                     <!-- Watched Checkmark Indicator -->
-                                                                    <materialDesign:PackIcon Grid.Column="2" Kind="CheckCircle" Width="16" Height="16" 
-                                                                                             Foreground="#4CAF50" VerticalAlignment="Center" Margin="6,0,0,0"
+                                                                    <materialDesign:PackIcon Grid.Column="2" Kind="CheckCircle" Width="17" Height="17" 
+                                                                                             Foreground="#00E676" VerticalAlignment="Center" Margin="4,0,0,0"
                                                                                              Visibility="{Binding AllWatched, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                                                 </Grid>
                                                             </Border>
