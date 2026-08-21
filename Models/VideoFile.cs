@@ -153,5 +153,41 @@ namespace MovieManagerDesktop.Models
 
         [System.ComponentModel.DataAnnotations.Schema.NotMapped]
         public bool HasDisplayYear => !string.IsNullOrWhiteSpace(DisplayYear);
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public bool IsDubbed
+        {
+            get
+            {
+                if (HasDubbing) return true;
+                string text = $"{FileName} {FilePath}".ToLowerInvariant();
+                string[] dubKeywords = { "dubbed", "farsi.dubbed", "farsi_dubbed", "farsidubbed", "دوبله", "fa.dubbed", "fa_dubbed", "persian.dubbed", "duble", "2dooble", "doooble", "dooble", "دو زبانه", "دوزبانه" };
+                return System.Linq.Enumerable.Any(dubKeywords, k => text.Contains(k));
+            }
+        }
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public bool IsSubtitled
+        {
+            get
+            {
+                if (HasSubtitle) return true;
+                string text = $"{FileName} {FilePath}".ToLowerInvariant();
+                string[] subKeywords = { "subbed", "subtitle", "softsub", "hardsub", "زیرنویس" };
+                return System.Linq.Enumerable.Any(subKeywords, k => text.Contains(k));
+            }
+        }
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public string TypeBadgeBg => IsSeries ? "#358854D0" : "#35EB3B5A";
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public string TypeBadgeBorder => IsSeries ? "#708854D0" : "#70EB3B5A";
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public string TypeBadgeFg => IsSeries ? "#E0C6FF" : "#FFCCD5";
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public bool HasEpisodeInfo => !string.IsNullOrWhiteSpace(DisplayEpisodeInfo);
     }
 }

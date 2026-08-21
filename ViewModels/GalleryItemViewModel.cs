@@ -78,9 +78,9 @@ namespace MovieManagerDesktop.ViewModels
 
         // Type Badge
         public string TypeBadgeText => IsSeries ? "سریال" : "فیلم";
-        public string TypeBadgeBg => IsSeries ? "#258854D0" : "#25EB3B5A";
-        public string TypeBadgeBorder => IsSeries ? "#408854D0" : "#40EB3B5A";
-        public string TypeBadgeFg => IsSeries ? "#A55EEA" : "#EB3B5A";
+        public string TypeBadgeBg => IsSeries ? "#358854D0" : "#35EB3B5A";
+        public string TypeBadgeBorder => IsSeries ? "#708854D0" : "#70EB3B5A";
+        public string TypeBadgeFg => IsSeries ? "#E0C6FF" : "#FFCCD5";
 
         // Authentic Year formatting based on user calendar preference (Jalali / Gregorian with English digits)
         public string FormattedYear => DateTimeFormatterService.FormatYear(File.Year);
