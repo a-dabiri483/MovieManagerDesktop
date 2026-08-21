@@ -162,8 +162,17 @@ namespace MovieManagerDesktop
 
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ChangedButton == MouseButton.Left)
-                this.DragMove();
+            if (e.ChangedButton == MouseButton.Left && e.ButtonState == MouseButtonState.Pressed)
+            {
+                try
+                {
+                    this.DragMove();
+                }
+                catch
+                {
+                    // Ignore drag exceptions if interrupted
+                }
+            }
         }
 
         private void BtnMinimize_Click(object sender, RoutedEventArgs e)

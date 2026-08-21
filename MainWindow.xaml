@@ -19,7 +19,8 @@
         TextOptions.TextHintingMode="Fixed"
         RenderOptions.ClearTypeHint="Enabled"
         RenderOptions.BitmapScalingMode="HighQuality"
-        MouseMove="Window_MouseMove">
+        MouseMove="Window_MouseMove"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
     <Window.DataContext>
         <viewmodels:MainViewModel />
@@ -187,8 +188,9 @@
     <materialDesign:DialogHost Identifier="RootDialog" DialogBackground="{DynamicResource MainBackground}">
         <Border CornerRadius="20" ClipToBounds="True" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Background="{DynamicResource MainBackground}">
             <Grid>
-                <!-- TOP WINDOW DRAGGING BAR AND CONTROLS (Floating Minimal) -->
-                <Grid Panel.ZIndex="100" VerticalAlignment="Top" Height="40" WindowChrome.IsHitTestVisibleInChrome="True" MouseLeftButtonDown="Window_MouseLeftButtonDown" Background="Transparent"
+                <!-- TOP WINDOW DRAGGING BAR AND CONTROLS (Floating Minimal, LTR for standard Windows layout) -->
+                <Grid Panel.ZIndex="100" VerticalAlignment="Top" Height="40" WindowChrome.IsHitTestVisibleInChrome="True" Background="Transparent"
+                      FlowDirection="LeftToRight"
                       Visibility="{Binding IsPlayerActive, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=inverse}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -196,13 +198,13 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Top-Right App Identity (Android style) -->
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0,0,0">
+                    <!-- Top-Left App Identity (Logo on the Left) -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
                         <Image Source="pack://application:,,,/Assets/logo.png" Width="22" Height="22" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,8,0"/>
                         <TextBlock Text="MovieManager" Foreground="{DynamicResource SecondaryText}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
                     </StackPanel>
 
-                    <!-- Top-Left Window Control Buttons -->
+                    <!-- Top-Right Window Control Buttons (Close, Maximize, Minimize on the Right) -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
                         <Button Content="&#xE8D7;" ToolTip="نمایش لاگ‌ها" Style="{StaticResource WindowBtnStyle}" Click="BtnViewLogs_Click"/>
                         <Button Content="&#xE921;" ToolTip="کوچک‌کردن" Style="{StaticResource WindowBtnStyle}" Click="BtnMinimize_Click"/>
