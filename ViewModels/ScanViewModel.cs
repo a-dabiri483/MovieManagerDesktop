@@ -459,6 +459,22 @@ namespace MovieManagerDesktop.ViewModels
                     item.Actors = identified.Actors;
                     item.Director = identified.Director;
                     if (!string.IsNullOrWhiteSpace(identified.Year)) item.Year = identified.Year;
+                    else if (identified.FirstAirDate.HasValue) item.Year = identified.FirstAirDate.Value.Year.ToString();
+
+                    item.FirstAirDate = identified.FirstAirDate;
+                    item.LastAirDate = identified.LastAirDate;
+                    item.NetworkName = identified.NetworkName;
+                    item.AirDay = identified.AirDay;
+                    item.AirTime = identified.AirTime;
+                    item.TotalSeasonsCount = identified.TotalSeasonsCount ?? identified.NumberOfSeasons;
+                    item.TotalEpisodesCount = identified.TotalEpisodesCount ?? identified.NumberOfEpisodes;
+                    item.NumberOfSeasons = identified.NumberOfSeasons ?? identified.TotalSeasonsCount;
+                    item.NumberOfEpisodes = identified.NumberOfEpisodes ?? identified.TotalEpisodesCount;
+                    item.NextEpisodeDate = identified.NextEpisodeDate;
+                    item.NextEpisodeSeason = identified.NextEpisodeSeason;
+                    item.NextEpisodeNumber = identified.NextEpisodeNumber;
+                    item.SeriesStatus = identified.SeriesStatus;
+                    item.CollectionName = identified.CollectionName;
                     item.IsIdentified = true;
                     db.VideoFiles.Add(item);
                 }
@@ -625,6 +641,22 @@ namespace MovieManagerDesktop.ViewModels
                                     file.Actors = identified.Actors;
                                     file.Director = identified.Director;
                                     if (!string.IsNullOrWhiteSpace(identified.Year)) file.Year = identified.Year;
+                                    else if (identified.FirstAirDate.HasValue) file.Year = identified.FirstAirDate.Value.Year.ToString();
+
+                                    file.FirstAirDate = identified.FirstAirDate;
+                                    file.LastAirDate = identified.LastAirDate;
+                                    file.NetworkName = identified.NetworkName;
+                                    file.AirDay = identified.AirDay;
+                                    file.AirTime = identified.AirTime;
+                                    file.TotalSeasonsCount = identified.TotalSeasonsCount ?? identified.NumberOfSeasons;
+                                    file.TotalEpisodesCount = identified.TotalEpisodesCount ?? identified.NumberOfEpisodes;
+                                    file.NumberOfSeasons = identified.NumberOfSeasons ?? identified.TotalSeasonsCount;
+                                    file.NumberOfEpisodes = identified.NumberOfEpisodes ?? identified.TotalEpisodesCount;
+                                    file.NextEpisodeDate = identified.NextEpisodeDate;
+                                    file.NextEpisodeSeason = identified.NextEpisodeSeason;
+                                    file.NextEpisodeNumber = identified.NextEpisodeNumber;
+                                    file.SeriesStatus = identified.SeriesStatus;
+                                    file.CollectionName = identified.CollectionName;
                                     file.IsIdentified = true;
                                     db.VideoFiles.Add(file);
                                 }

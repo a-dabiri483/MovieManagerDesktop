@@ -21,15 +21,40 @@
         <Grid.Resources>
             <materialDesign:BooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" TrueValue="Collapsed" FalseValue="Visible"/>
             <SolidColorBrush x:Key="PrimaryText" Color="#FFFFFF"/>
-            <SolidColorBrush x:Key="SecondaryText" Color="#E0E0E0"/>
-            <SolidColorBrush x:Key="CardBackground" Color="#20FFFFFF"/>
-            <SolidColorBrush x:Key="HoverBackground" Color="#40FFFFFF"/>
-            <SolidColorBrush x:Key="NormalBorder" Color="#40FFFFFF"/>
-            <SolidColorBrush x:Key="LightBorder" Color="#20FFFFFF"/>
+            <SolidColorBrush x:Key="SecondaryText" Color="#CBD5E1"/>
+            <SolidColorBrush x:Key="CardBackground" Color="#E60F172A"/>
+            <SolidColorBrush x:Key="HoverBackground" Color="#33475569"/>
+            <SolidColorBrush x:Key="NormalBorder" Color="#334155"/>
+            <SolidColorBrush x:Key="LightBorder" Color="#1E293B"/>
+
+            <Style x:Key="DetailTabRadioButtonStyle" TargetType="RadioButton">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="#94A3B8"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="RadioButton">
+                            <Border x:Name="TabBorder" Background="{TemplateBinding Background}" CornerRadius="8" Padding="14,6">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="TabBorder" Property="Background" Value="#25334155"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="TabBorder" Property="Background" Value="#EB3B5A"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </Grid.Resources>
         <!-- Backdrop Image with Gradient Overlay and Vignette -->
         <Grid>
-            <Image x:Name="BackdropImage" controls:CachedImage.SourceUrl="{Binding Media.BackdropUrl}" Stretch="UniformToFill" Opacity="0.75">
+            <Image x:Name="BackdropImage" controls:CachedImage.SourceUrl="{Binding EffectiveBackdropUrl}" Stretch="UniformToFill" Opacity="0.75">
                 <Image.RenderTransform>
                     <TranslateTransform x:Name="BackdropTranslate" Y="0"/>
                 </Image.RenderTransform>
@@ -38,9 +63,9 @@
             <Border>
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#700D0D12" Offset="0"/>
-                        <GradientStop Color="#D00D0D12" Offset="0.55"/>
-                        <GradientStop Color="#FF0D0D12" Offset="1"/>
+                        <GradientStop Color="#400A0E17" Offset="0"/>
+                        <GradientStop Color="#990A0E17" Offset="0.45"/>
+                        <GradientStop Color="#F00A0E17" Offset="1"/>
                     </LinearGradientBrush>
                 </Border.Background>
             </Border>
@@ -50,20 +75,20 @@
                 <Border.Background>
                     <RadialGradientBrush GradientOrigin="0.5,0.5" Center="0.5,0.5" RadiusX="0.8" RadiusY="0.8">
                         <GradientStop Color="Transparent" Offset="0.3"/>
-                        <GradientStop Color="#80000000" Offset="1"/>
+                        <GradientStop Color="#70000000" Offset="1"/>
                     </RadialGradientBrush>
                 </Border.Background>
             </Border>
         </Grid>
         
-        <Grid Margin="40,60,40,40">
+        <Grid Margin="30,8,30,65">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
             
             <!-- Header (Back Button & Title) -->
-            <Grid Margin="0,0,0,30" Panel.ZIndex="10">
+            <Grid Margin="0,0,0,10" Panel.ZIndex="10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -71,11 +96,11 @@
                 </Grid.ColumnDefinitions>
                 <Button Command="{Binding GoBackCommand}" 
                         Background="#80000000" BorderThickness="0" 
-                        Foreground="{DynamicResource PrimaryText}" Width="50" Height="50" Margin="0,0,20,0" 
-                        ToolTip="بازگشت" materialDesign:ButtonAssist.CornerRadius="25">
-                    <materialDesign:PackIcon Kind="ArrowRight" Width="30" Height="30"/>
+                        Foreground="{DynamicResource PrimaryText}" Width="44" Height="44" Margin="0,0,16,0" 
+                        ToolTip="بازگشت" materialDesign:ButtonAssist.CornerRadius="22">
+                    <materialDesign:PackIcon Kind="ArrowRight" Width="26" Height="26"/>
                 </Button>
-                <TextBlock Grid.Column="1" Text="{Binding Media.FormattedTitle}" Foreground="{DynamicResource PrimaryText}" FontSize="30" FontWeight="Black" VerticalAlignment="Center" TextWrapping="Wrap">
+                <TextBlock Grid.Column="1" Text="{Binding Media.FormattedTitle}" Foreground="{DynamicResource PrimaryText}" FontSize="26" FontWeight="Black" VerticalAlignment="Center" TextWrapping="Wrap">
                     <TextBlock.Effect>
                         <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.8" Color="Black"/>
                     </TextBlock.Effect>
@@ -85,100 +110,34 @@
                     <!-- Open Folder Button -->
                     <Button Command="{Binding OpenFolderCommand}" 
                             Background="{DynamicResource CardBackground}" BorderThickness="1" BorderBrush="{DynamicResource NormalBorder}"
-                            Foreground="{DynamicResource PrimaryText}" Width="50" Height="50" Padding="0"
-                            materialDesign:ButtonAssist.CornerRadius="25"
-                            ToolTip="باز کردن پوشه" Margin="0,0,10,0">
-                        <materialDesign:PackIcon Kind="FolderOpenOutline" Width="24" Height="24"/>
+                            Foreground="{DynamicResource PrimaryText}" Width="44" Height="44" Padding="0"
+                            materialDesign:ButtonAssist.CornerRadius="22"
+                            ToolTip="باز کردن پوشه" Margin="0,0,8,0">
+                        <materialDesign:PackIcon Kind="FolderOpenOutline" Width="22" Height="22"/>
                     </Button>
                     <!-- Favorite Button -->
                     <Button Command="{Binding ToggleFavoriteCommand}" 
                             Background="{DynamicResource CardBackground}" BorderThickness="1" BorderBrush="{DynamicResource NormalBorder}"
-                            Foreground="{DynamicResource PrimaryText}" Width="50" Height="50" Padding="0"
-                            materialDesign:ButtonAssist.CornerRadius="25"
-                            ToolTip="افزودن/حذف از علاقه‌مندی‌ها" Margin="0,0,10,0">
-                        <materialDesign:PackIcon Kind="{Binding FavoriteIconKind}" Width="24" Height="24" Foreground="{Binding FavoriteIconColor}"/>
+                            Foreground="{DynamicResource PrimaryText}" Width="44" Height="44" Padding="0"
+                            materialDesign:ButtonAssist.CornerRadius="22"
+                            ToolTip="افزودن/حذف از علاقه‌مندی‌ها" Margin="0,0,8,0">
+                        <materialDesign:PackIcon Kind="{Binding FavoriteIconKind}" Width="22" Height="22" Foreground="{Binding FavoriteIconColor}"/>
                     </Button>
-                    <Button Command="{Binding ToggleWatchedCommand}" 
-                            Background="{DynamicResource CardBackground}" BorderThickness="1" BorderBrush="{DynamicResource NormalBorder}"
-                        Foreground="{DynamicResource PrimaryText}" Height="50" Padding="15,0"
-                        materialDesign:ButtonAssist.CornerRadius="25"
-                        ToolTip="تغییر وضعیت دیده شده/نشده">
-                    <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0">
-                            <materialDesign:PackIcon.Style>
-                                <Style TargetType="materialDesign:PackIcon">
-                                    <Setter Property="Kind" Value="EyeOffOutline"/>
-                                    <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsWatched}" Value="True">
-                                            <Setter Property="Kind" Value="EyeCheck"/>
-                                            <Setter Property="Foreground" Value="{DynamicResource SuccessColor}"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </materialDesign:PackIcon.Style>
-                        </materialDesign:PackIcon>
-                        <TextBlock VerticalAlignment="Center" FontSize="16" FontWeight="SemiBold">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Text" Value="دیده نشده"/>
-                                    <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsWatched}" Value="True">
-                                            <Setter Property="Text" Value="دیده شده"/>
-                                            <Setter Property="Foreground" Value="{DynamicResource SuccessColor}"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </StackPanel>
-                </Button>
-                
-                    <!-- Operations Menu -->
-                    <materialDesign:PopupBox PlacementMode="BottomAndAlignRightEdges"
-                                             StaysOpen="False"
-                                             Margin="10,0,0,0"
-                                             Foreground="{DynamicResource PrimaryText}"
-                                             ToolTip="عملیات بیشتر"
-                                             VerticalAlignment="Center">
+                    
+                    <!-- More Options (Three dots) -->
+                    <materialDesign:PopupBox PlacementMode="BottomAndAlignRightEdges" StaysOpen="False">
                         <materialDesign:PopupBox.ToggleContent>
-                            <Border Background="{DynamicResource CardBackground}" BorderThickness="1" BorderBrush="{DynamicResource NormalBorder}" Width="50" Height="50" CornerRadius="25">
-                                <materialDesign:PackIcon Kind="DotsVertical" Width="24" Height="24" Foreground="{DynamicResource PrimaryText}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <Border Background="{DynamicResource CardBackground}" BorderThickness="1" BorderBrush="{DynamicResource NormalBorder}"
+                                    CornerRadius="22" Width="44" Height="44">
+                                <materialDesign:PackIcon Kind="DotsVertical" Width="22" Height="22" Foreground="{DynamicResource PrimaryText}" 
+                                                        HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
                         </materialDesign:PopupBox.ToggleContent>
-                        <Border Background="{DynamicResource CardBackground}" CornerRadius="8">
-                            <StackPanel MinWidth="220" Margin="0,8">
-                                <Button Command="{Binding UpdateSeriesTrackerCommand}" 
-                                        Visibility="{Binding IsSeries, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                        Style="{StaticResource MaterialDesignFlatButton}" 
-                                        HorizontalContentAlignment="Right" Padding="15,10" Height="Auto">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="30"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <materialDesign:PackIcon Grid.Column="0" Kind="Sync" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                        <TextBlock Grid.Column="1" Text="بروزرسانی اطلاعات ردیاب" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                                    </Grid>
-                                </Button>
-                                
-                                <Button Command="{Binding RefreshDataCommand}" 
-                                        Visibility="{Binding IsMovie, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                        Style="{StaticResource MaterialDesignFlatButton}" 
-                                        HorizontalContentAlignment="Right" Padding="15,10" Height="Auto">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="30"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <materialDesign:PackIcon Grid.Column="0" Kind="Refresh" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                        <TextBlock Grid.Column="1" Text="بروز رسانی" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                                    </Grid>
-                                </Button>
-
+                        <Border Background="#1E2430" CornerRadius="12" Padding="8" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" MinWidth="200">
+                            <StackPanel>
                                 <Button Command="{Binding ManualIdentifyCommand}" 
                                         Style="{StaticResource MaterialDesignFlatButton}" 
+                                        Foreground="{DynamicResource PrimaryText}" 
                                         HorizontalContentAlignment="Right" Padding="15,10" Height="Auto">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -186,12 +145,41 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
                                         <materialDesign:PackIcon Grid.Column="0" Kind="DatabaseSearch" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                        <TextBlock Grid.Column="1" Text="شناسایی دستی (ویرایش)" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                        <TextBlock Grid.Column="1" Text="شناسایی دستی (TMDb)" VerticalAlignment="Center" Margin="10,0,0,0"/>
                                     </Grid>
                                 </Button>
-
-                                <Button Command="{Binding ChangePosterCommand}" 
+                                
+                                <Button Command="{Binding RefreshDataCommand}" 
                                         Style="{StaticResource MaterialDesignFlatButton}" 
+                                        Foreground="{DynamicResource PrimaryText}" 
+                                        HorizontalContentAlignment="Right" Padding="15,10" Height="Auto">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="30"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <materialDesign:PackIcon Grid.Column="0" Kind="Refresh" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Column="1" Text="بروزرسانی متادیتا" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                    </Grid>
+                                </Button>
+                                
+                                <Button Command="{Binding EditMetadataCommand}" 
+                                        Style="{StaticResource MaterialDesignFlatButton}" 
+                                        Foreground="{DynamicResource PrimaryText}" 
+                                        HorizontalContentAlignment="Right" Padding="15,10" Height="Auto">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="30"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <materialDesign:PackIcon Grid.Column="0" Kind="PencilOutline" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Column="1" Text="ویرایش اطلاعات" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                    </Grid>
+                                </Button>
+                                
+                                <Button Command="{Binding RedownloadPosterCommand}" 
+                                        Style="{StaticResource MaterialDesignFlatButton}" 
+                                        Foreground="{DynamicResource PrimaryText}" 
                                         HorizontalContentAlignment="Right" Padding="15,10" Height="Auto">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
@@ -227,298 +215,565 @@
             <!-- Content -->
             <Grid Grid.Row="1">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="320"/>
+                    <ColumnDefinition Width="240"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 
-                <!-- Poster -->
-                <StackPanel VerticalAlignment="Top" HorizontalAlignment="Right" Width="320" Margin="0,0,40,0" Panel.ZIndex="5">
+                <!-- Poster Column -->
+                <StackPanel VerticalAlignment="Top" HorizontalAlignment="Right" Width="240" Margin="0,0,24,0" Panel.ZIndex="5">
                     <StackPanel.Effect>
-                        <DropShadowEffect BlurRadius="30" ShadowDepth="10" Opacity="0.5" Color="Black"/>
+                        <DropShadowEffect BlurRadius="25" ShadowDepth="8" Opacity="0.5" Color="Black"/>
                     </StackPanel.Effect>
                     
-                    <Border CornerRadius="{StaticResource RadiusLg}" Height="480" Background="#20FFFFFF" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1">
-                        <Border CornerRadius="{StaticResource RadiusLg}" ClipToBounds="True">
+                    <Border CornerRadius="{StaticResource RadiusLg}" Height="350" Background="#20FFFFFF" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" ClipToBounds="True">
+                        <Grid>
                             <Image controls:CachedImage.SourceUrl="{Binding Media.PosterUrl}" Stretch="UniformToFill" />
-                        </Border>
+
+                            <!-- Floating Badges (Top Corner in RTL): Dubbed (Green Mic) & Subtitle (Yellow CC) -->
+                            <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="14,14,0,0">
+                                <!-- Dubbed Badge (Dark Glass Circle + Neon Green Mic) -->
+                                <Border Visibility="{Binding HasDubbing, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Background="#E60F172A" BorderBrush="#334155" BorderThickness="1.2"
+                                        CornerRadius="17" Width="34" Height="34" Margin="0,0,0,8"
+                                        ToolTip="دارای دوبله فارسی">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="12" ShadowDepth="3" Opacity="0.75" Color="Black"/>
+                                    </Border.Effect>
+                                    <materialDesign:PackIcon Kind="Microphone" Width="18" Height="18" Foreground="#00E676" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+
+                                <!-- Subtitle Badge (Dark Glass Circle + Yellow CC) -->
+                                <Border Visibility="{Binding HasSubtitle, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Background="#E60F172A" BorderBrush="#334155" BorderThickness="1.2"
+                                        CornerRadius="17" Width="34" Height="34"
+                                        ToolTip="دارای زیرنویس فارسی">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="12" ShadowDepth="3" Opacity="0.75" Color="Black"/>
+                                    </Border.Effect>
+                                    <materialDesign:PackIcon Kind="ClosedCaption" Width="18" Height="18" Foreground="#FFD166" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Overlay Play Button for Movies -->
+                            <Button Command="{Binding PlayMovieCommand}" 
+                                    Visibility="{Binding IsMovie, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    Width="56" Height="56" Cursor="Hand"
+                                    materialDesign:ButtonAssist.CornerRadius="28"
+                                    Background="#E6EB3B5A" BorderBrush="#FFFFFF" BorderThickness="1.5"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    ToolTip="پخش فیلم">
+                                <materialDesign:PackIcon Kind="Play" Width="30" Height="30" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Button>
+                        </Grid>
                     </Border>
                     
                     <!-- Reflection Simulation -->
-                    <Border CornerRadius="{StaticResource RadiusLg}" Height="480" ClipToBounds="True" Opacity="0.4" Margin="0,5,0,-480">
+                    <Border CornerRadius="{StaticResource RadiusLg}" Height="160" ClipToBounds="True" Opacity="0.2" Margin="0,4,0,-160">
                         <Border.RenderTransform>
-                            <ScaleTransform ScaleY="-1" CenterY="240"/>
+                            <ScaleTransform ScaleY="-1" CenterY="80"/>
                         </Border.RenderTransform>
                         <Border.OpacityMask>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="Transparent" Offset="0.6"/>
+                                <GradientStop Color="Transparent" Offset="0.5"/>
                                 <GradientStop Color="White" Offset="1"/>
                             </LinearGradientBrush>
                         </Border.OpacityMask>
                         <Image controls:CachedImage.SourceUrl="{Binding Media.PosterUrl}" Stretch="UniformToFill" />
                     </Border>
-                    
-                    <!-- Play Movie Button -->
-                    <Button Command="{Binding PlayMovieCommand}" Visibility="{Binding IsMovie, Converter={StaticResource BooleanToVisibilityConverter}}" 
-                            Margin="0,20,0,0" Height="55" FontSize="18" FontWeight="Bold"
-                            Background="{DynamicResource PrimaryColor}" BorderBrush="{DynamicResource PrimaryColor}" Foreground="White" materialDesign:ButtonAssist.CornerRadius="12">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="Play" Width="28" Height="28" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock Text="پخش فیلم" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </Button>
                 </StackPanel>
                 
-                <!-- Details -->
-                <ScrollViewer x:Name="DetailsScrollViewer" Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,20,0" ScrollChanged="DetailsScrollViewer_ScrollChanged">
+                <!-- Details Column -->
+                <ScrollViewer x:Name="DetailsScrollViewer" Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,10,0" ScrollChanged="DetailsScrollViewer_ScrollChanged">
                     <StackPanel>
-                        <!-- Metadata Badges -->
-                        <WrapPanel Orientation="Horizontal" Margin="0,0,0,30">
+                        <!-- Metadata Badges Row (IMDb Rating, Year, Quality, Type) -->
+                        <WrapPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <!-- IMDb Rating Badge -->
+                            <Border Background="#33FFC107" BorderBrush="#FFFFC107" BorderThickness="1" CornerRadius="12" Padding="10,4" Margin="0,0,8,6">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Background="#FFFFC107" CornerRadius="3" Padding="4,1" Margin="0,0,5,0">
+                                        <TextBlock Text="IMDb" Foreground="Black" FontSize="10" FontWeight="Black"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding Media.Rating, StringFormat={}{0:0.0}}" Foreground="#FFFFC107" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <TextBlock Text="/10" Foreground="#CBD5E1" FontSize="10" VerticalAlignment="Center" Margin="2,0,0,0"/>
+                                </StackPanel>
+                            </Border>
+
                             <!-- Year -->
-                            <Border Background="{DynamicResource CardBackground}" CornerRadius="16" Padding="15,6" Margin="0,0,15,10">
+                            <Border Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" CornerRadius="12" Padding="10,4" Margin="0,0,8,6">
                                 <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Calendar" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Width="18" Height="18" Margin="0,0,8,0"/>
-                                    <TextBlock Text="{Binding FormattedYear}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <materialDesign:PackIcon Kind="Calendar" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Width="14" Height="14" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding FormattedYear}" Foreground="{DynamicResource PrimaryText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
-                            <!-- Rating -->
-                            <Border Background="#33FFC107" BorderBrush="#FFFFC107" BorderThickness="1" CornerRadius="16" Padding="15,6" Margin="0,0,15,10">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Star" Foreground="#FFFFC107" VerticalAlignment="Center" Width="18" Height="18" Margin="0,0,8,0"/>
-                                    <TextBlock Text="{Binding Media.Rating, StringFormat={}{0:0.0}}" Foreground="#FFFFC107" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Border>
+
                             <!-- Quality -->
-                            <Border Background="{DynamicResource CardBackground}" CornerRadius="16" Padding="15,6" Margin="0,0,15,10">
+                            <Border Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" CornerRadius="12" Padding="10,4" Margin="0,0,8,6" Visibility="{Binding Media.Quality, Converter={StaticResource NullToVisibilityConverter}}">
                                 <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="HighDefinition" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Width="18" Height="18" Margin="0,0,8,0"/>
-                                    <TextBlock Text="{Binding Media.Quality}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <materialDesign:PackIcon Kind="HighDefinition" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Width="14" Height="14" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding Media.Quality}" Foreground="{DynamicResource PrimaryText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
+
                             <!-- Type -->
-                            <Border Background="{DynamicResource CardBackground}" CornerRadius="16" Padding="15,6" Margin="0,0,15,10">
+                            <Border Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" CornerRadius="12" Padding="10,4" Margin="0,0,8,6">
                                 <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Movie" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Width="18" Height="18" Margin="0,0,8,0"/>
-                                    <TextBlock Text="{Binding Media.MediaType}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    <materialDesign:PackIcon Kind="Movie" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Width="14" Height="14" Margin="0,0,5,0"/>
+                                    <TextBlock Text="{Binding Media.MediaType}" Foreground="{DynamicResource PrimaryText}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Border>
                         </WrapPanel>
-                        <!-- Genres -->
-                        <TextBlock Text="{Binding FormattedGenres}" Foreground="{DynamicResource PrimaryColor}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,25" TextWrapping="Wrap"/>
+
+                        <!-- Genres Pills Row (with Dark Background) -->
+                        <ItemsControl ItemsSource="{Binding GenreList}" Margin="0,0,0,8">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#1E293B" BorderBrush="#334155" BorderThickness="1" CornerRadius="10" Padding="10,3" Margin="0,0,6,6">
+                                        <TextBlock Text="{Binding}" Foreground="{DynamicResource PrimaryText}" FontSize="11" FontWeight="SemiBold"/>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                             
-                            <!-- Overview -->
-                            <Grid Margin="0,0,0,15">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="خلاصه داستان" Foreground="{DynamicResource PrimaryText}" FontSize="22" FontWeight="Bold" VerticalAlignment="Center"/>
-                                <Button Grid.Column="2" Command="{Binding TranslatePlotCommand}" 
-                                        Style="{StaticResource MaterialDesignOutlinedButton}" 
-                                        Foreground="{DynamicResource PrimaryColor}" BorderBrush="{DynamicResource PrimaryColor}" 
-                                        ToolTip="ترجمه داستان به فارسی (با Google Translate)">
-                                    <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="Translate" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                        <TextBlock Text="ترجمه" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
-                            </Grid>
-                            <TextBlock Text="{Binding Media.Overview}" Foreground="{DynamicResource SecondaryText}" FontSize="16" LineHeight="30" TextWrapping="Wrap" Margin="0,0,0,35" TextAlignment="Justify"/>
-
-                            <!-- Director -->
-                            <TextBlock Text="کارگردان" Foreground="{DynamicResource PrimaryText}" FontSize="22" FontWeight="Bold" Margin="0,0,0,15"/>
-                            <TextBlock Text="{Binding Media.Director}" Foreground="{DynamicResource SecondaryText}" FontSize="16" TextWrapping="Wrap" Margin="0,0,0,30"/>
-
-                            <!-- Actors -->
-                            <TextBlock Text="بازیگران" Foreground="{DynamicResource PrimaryText}" FontSize="22" FontWeight="Bold" Margin="0,0,0,15"/>
-                            <TextBlock Text="{Binding Media.Actors}" Foreground="{DynamicResource SecondaryText}" FontSize="16" TextWrapping="Wrap" Margin="0,0,0,35" LineHeight="26"/>
-                            
-                            <!-- Series/Anime Tracker Section -->
-                            <StackPanel Visibility="{Binding ShowSeriesTracker, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,0,0,30">
-                                <TextBlock Text="اطلاعات ردیابی سریال/انیمه" Foreground="{DynamicResource PrimaryText}" FontSize="22" FontWeight="Bold" Margin="0,0,0,20"/>
-                                
-                                <Border Background="{DynamicResource CardBackground}" CornerRadius="16" Padding="20" BorderBrush="{DynamicResource HoverBackground}" BorderThickness="1">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-
-                                        <!-- وضعیت پخش (Badge) -->
-                                        <Border Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Right" CornerRadius="16" Padding="12,6" Margin="0,0,0,15" Background="{DynamicResource HoverBackground}">
-                                            <StackPanel Orientation="Horizontal">
-                                                <Ellipse Width="8" Height="8" Fill="{Binding SeriesStatusColor}" Margin="0,0,8,0"/>
-                                                <TextBlock Text="{Binding SeriesStatusText}" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{Binding SeriesStatusColor}"/>
-                                            </StackPanel>
-                                        </Border>
-
-                                        <!-- تاریخ شروع -->
-                                        <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Margin="0,0,0,15">
-                                            <materialDesign:PackIcon Kind="CalendarStart" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                            <StackPanel>
-                                                <TextBlock Text="شروع پخش" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
-                                                <TextBlock Text="{Binding Media.FirstAirDate, Converter={StaticResource JalaliDateConverter}, TargetNullValue='نامشخص'}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold"/>
-                                            </StackPanel>
+                        <!-- Compact Overview (خلاصه داستان جمع و جور) -->
+                        <Border Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" CornerRadius="10" Padding="14,8" Margin="0,0,0,10">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,6" LastChildFill="False">
+                                    <!-- Title on Right in RTL -->
+                                    <TextBlock DockPanel.Dock="Right" Text="خلاصه داستان" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <!-- Small Translate Button on Left in RTL -->
+                                    <Button DockPanel.Dock="Left" Command="{Binding TranslatePlotCommand}" 
+                                            Background="#1E293B" BorderBrush="#334155" BorderThickness="1"
+                                            Height="24" Padding="8,0" Cursor="Hand" HorizontalAlignment="Left"
+                                            materialDesign:ButtonAssist.CornerRadius="12"
+                                            ToolTip="ترجمه داستان به فارسی (با Google Translate)">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="Translate" Width="12" Height="12" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                            <TextBlock Text="ترجمه" Foreground="{DynamicResource PrimaryText}" FontSize="10.5" VerticalAlignment="Center"/>
                                         </StackPanel>
-
-                                        <!-- تاریخ پایان -->
-                                        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,15">
-                                            <materialDesign:PackIcon Kind="CalendarEnd" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                            <StackPanel>
-                                                <TextBlock Text="پایان پخش" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
-                                                <TextBlock Text="{Binding Media.LastAirDate, Converter={StaticResource JalaliDateConverter}, TargetNullValue='نامشخص'}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold"/>
-                                            </StackPanel>
-                                        </StackPanel>
-
-                                        <!-- شبکه/استودیو -->
-                                        <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Margin="0,0,0,15">
-                                            <materialDesign:PackIcon Kind="Television" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                            <StackPanel>
-                                                <TextBlock Text="استودیو / شبکه" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
-                                                <TextBlock Text="{Binding NetworkText}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold"/>
-                                            </StackPanel>
-                                        </StackPanel>
-
-                                        <!-- برنامه پخش -->
-                                        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,15">
-                                            <materialDesign:PackIcon Kind="ClockOutline" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                            <StackPanel>
-                                                <TextBlock Text="برنامه پخش" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
-                                                <TextBlock Text="{Binding AirScheduleText}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold"/>
-                                            </StackPanel>
-                                        </StackPanel>
-
-                                        <!-- تعداد قسمتها -->
-                                        <StackPanel Grid.Row="3" Grid.Column="0" Orientation="Horizontal" Margin="0,0,0,15">
-                                            <materialDesign:PackIcon Kind="Filmstrip" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                            <StackPanel>
-                                                <TextBlock Text="تعداد قسمتها" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
-                                                <TextBlock Text="{Binding EpisodesInfoText, Converter={StaticResource PersianNumberConverter}}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold"/>
-                                            </StackPanel>
-                                        </StackPanel>
-
-                                        <!-- قسمت بعدی -->
-                                        <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,15">
-                                            <materialDesign:PackIcon Kind="ArrowRightBold" Width="18" Height="18" Foreground="#FFFF9800" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                            <StackPanel>
-                                                <TextBlock Text="قسمت بعدی" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
-                                                <TextBlock Text="{Binding NextEpisodeText, Converter={StaticResource PersianNumberConverter}}" Foreground="#FFFF9800" FontSize="14" FontWeight="SemiBold"/>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
+                                    </Button>
+                                </DockPanel>
+                                <TextBlock Text="{Binding Media.Overview}" Foreground="{DynamicResource SecondaryText}" FontSize="12" LineHeight="19" MaxHeight="40" TextTrimming="CharacterEllipsis" TextWrapping="Wrap" TextAlignment="Justify"/>
                             </StackPanel>
+                        </Border>
 
-                            <!-- Episodes Section (Series Only) -->
-                            <StackPanel Visibility="{Binding HasEpisodes, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <Grid Margin="0,0,0,20">
+                        <!-- Navigation Tabs Bar (دکمه‌های تب‌بندی) -->
+                        <Border Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" CornerRadius="10" Padding="4" Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal">
+                                <!-- Tab 1: Episodes / Play -->
+                                <RadioButton GroupName="DetailsTabs" IsChecked="{Binding IsTabEpisodesSelected, Mode=OneWay}"
+                                             Command="{Binding SelectTabCommand}" CommandParameter="0"
+                                             Style="{StaticResource DetailTabRadioButtonStyle}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="PlayCircleOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="تماشا و قسمت‌ها" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </RadioButton>
+
+                                <!-- Tab 2: Cast & Crew -->
+                                <RadioButton GroupName="DetailsTabs" IsChecked="{Binding IsTabCastSelected, Mode=OneWay}"
+                                             Command="{Binding SelectTabCommand}" CommandParameter="1"
+                                             Style="{StaticResource DetailTabRadioButtonStyle}" Margin="6,0,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="AccountGroupOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="عوامل و بازیگران" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </RadioButton>
+
+                                <!-- Tab 3: Series Tracker (Series Only) -->
+                                <RadioButton GroupName="DetailsTabs" IsChecked="{Binding IsTabTrackerSelected, Mode=OneWay}"
+                                             Command="{Binding SelectTabCommand}" CommandParameter="2"
+                                             Visibility="{Binding IsSeries, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                             Style="{StaticResource DetailTabRadioButtonStyle}" Margin="6,0,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="Radar" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="اطلاعات ردیاب و وضعیت" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </RadioButton>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- TAB CONTENT 0: تماشا و قسمت‌ها -->
+                        <StackPanel Visibility="{Binding IsTabEpisodesSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <!-- Movie Play Card (When Media is a Movie) -->
+                            <Border Visibility="{Binding IsMovie, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                    Background="{DynamicResource CardBackground}" CornerRadius="12" Padding="16" Margin="0,0,0,16" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1">
+                                <DockPanel VerticalAlignment="Center">
+                                    <Button DockPanel.Dock="Left" Command="{Binding PlayMovieCommand}"
+                                            Height="40" Padding="20,0" Cursor="Hand"
+                                            materialDesign:ButtonAssist.CornerRadius="20"
+                                            Background="#EB3B5A" BorderThickness="0"
+                                            ToolTip="پخش کامل فیلم">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="Play" Width="18" Height="18" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Text="پخش فیلم" Foreground="White" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Media.FormattedTitle}" Foreground="{DynamicResource PrimaryText}" FontSize="15" FontWeight="Bold"/>
+                                        <TextBlock Text="{Binding Media.FilePath}" Foreground="{DynamicResource SecondaryText}" FontSize="11" Margin="0,3,0,0" TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                </DockPanel>
+                            </Border>
+
+                            <!-- Series Episodes Section (When Media is Series) -->
+                            <StackPanel Visibility="{Binding IsSeries, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,0,0,20">
+                                <!-- Header with Title, Continue Watching pill button -->
+                                <Grid Margin="0,0,0,10">
                                     <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="فایل‌ها و قسمت‌ها" Foreground="{DynamicResource PrimaryText}" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
-                                    <Button Grid.Column="1" Command="{Binding PlayLastEpisodeCommand}" Style="{StaticResource MaterialDesignFlatButton}" Foreground="{DynamicResource PrimaryColor}" FontSize="15" FontWeight="Bold">
-                                        <StackPanel Orientation="Horizontal">
-                                            <materialDesign:PackIcon Kind="Play" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                            <TextBlock Text="پخش ادامه" VerticalAlignment="Center"/>
+                                    
+                                    <!-- Right in RTL: Title -->
+                                    <TextBlock Grid.Column="0" Text="فایل‌ها و قسمت‌ها" Foreground="{DynamicResource PrimaryText}" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+
+                                    <!-- Left in RTL: Sleek Compact Continue Watching Pill Button -->
+                                    <Button Grid.Column="2" 
+                                            Command="{Binding ContinueWatchingCommand}" 
+                                            Visibility="{Binding CanContinueWatching, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                            Height="32" Padding="14,0" Cursor="Hand"
+                                            materialDesign:ButtonAssist.CornerRadius="16"
+                                            Background="#EB3B5A" BorderThickness="0"
+                                            ToolTip="ادامه تماشا">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="Play" Width="16" Height="16" Foreground="White" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding ContinueWatchingText}" Foreground="White" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
                                         </StackPanel>
                                     </Button>
                                 </Grid>
-                                
-                                <ItemsControl ItemsSource="{Binding Seasons}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Margin="0,0,0,30">
-                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                                                    <TextBlock Text="{Binding Name}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
-                                                    <CheckBox IsChecked="{Binding IsWatched}" 
-                                                              Command="{Binding DataContext.ToggleSeasonWatchedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                                              CommandParameter="{Binding}"
-                                                              Margin="15,0,0,0" VerticalAlignment="Center" 
-                                                              Content="دیده شده" Foreground="{DynamicResource SecondaryText}"/>
+
+                                <!-- Watched Progress Bar -->
+                                <Border Background="{DynamicResource CardBackground}" 
+                                        CornerRadius="10" 
+                                        Padding="14,8" 
+                                        Margin="0,0,0,10" 
+                                        BorderBrush="{DynamicResource NormalBorder}" 
+                                        BorderThickness="1">
+                                    <StackPanel>
+                                        <DockPanel Margin="0,0,0,5">
+                                            <TextBlock Text="{Binding ProgressPercentText}" 
+                                                       DockPanel.Dock="Left" 
+                                                       Foreground="#EB3B5A" 
+                                                       FontWeight="Bold" 
+                                                       FontSize="11.5" 
+                                                       VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding WatchedProgressSummaryText}" 
+                                                       Foreground="{DynamicResource PrimaryText}" 
+                                                       FontWeight="SemiBold" 
+                                                       FontSize="11.5" 
+                                                       VerticalAlignment="Center"/>
+                                        </DockPanel>
+                                        <ProgressBar Minimum="0" Maximum="100" 
+                                                     Value="{Binding OverallProgressPercent}" 
+                                                     Height="4" 
+                                                     Foreground="#EB3B5A" 
+                                                     Background="#1E293B" 
+                                                     BorderThickness="0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Master-Detail Seasons and Episodes Layout -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <!-- Right Column in RTL: Season Tabs Stack -->
+                                        <ColumnDefinition Width="155"/>
+                                        <!-- Left Column in RTL: Selected Season Episodes 2-Column Grid -->
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Right Column: Season Selector List -->
+                                    <ItemsControl Grid.Column="0" ItemsSource="{Binding Seasons}" Margin="0,0,12,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border CornerRadius="8" 
+                                                        Margin="0,0,0,8" 
+                                                        Padding="10,8" 
+                                                        Cursor="Hand"
+                                                        BorderThickness="1.5">
+                                                    <Border.InputBindings>
+                                                        <MouseBinding MouseAction="LeftClick" 
+                                                                      Command="{Binding DataContext.SelectSeasonCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                      CommandParameter="{Binding}"/>
+                                                    </Border.InputBindings>
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+                                                            <Setter Property="BorderBrush" Value="{DynamicResource NormalBorder}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                    <Setter Property="Background" Value="#2D1525"/>
+                                                                    <Setter Property="BorderBrush" Value="#EB3B5A"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    
+                                                    <DockPanel>
+                                                        <!-- Season Badge -->
+                                                        <Border DockPanel.Dock="Right" Background="#1E293B" CornerRadius="5" Padding="6,3" Margin="0,0,8,0" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding SeasonTag}" Foreground="{DynamicResource PrimaryText}" FontWeight="Bold" FontSize="12"/>
+                                                        </Border>
+
+                                                        <!-- Watched Checkmark Indicator -->
+                                                        <materialDesign:PackIcon DockPanel.Dock="Left" Kind="CheckCircle" Width="16" Height="16" 
+                                                                                 Foreground="#4CAF50" VerticalAlignment="Center"
+                                                                                 Visibility="{Binding AllWatched, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                                                        <!-- Title and Count -->
+                                                        <StackPanel VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding SeasonTitle}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
+                                                            <TextBlock Text="{Binding EpisodesCountText}" FontSize="10.5" Foreground="{DynamicResource SecondaryText}" Margin="0,1,0,0"/>
+                                                        </StackPanel>
+                                                    </DockPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <!-- Left Column: Selected Season Header & 2-Column Episodes Grid -->
+                                    <StackPanel Grid.Column="1">
+                                        <!-- Selected Season Action Bar -->
+                                        <Border Background="{DynamicResource CardBackground}" 
+                                                CornerRadius="8" 
+                                                Padding="12,6" 
+                                                Margin="0,0,0,8" 
+                                                BorderBrush="{DynamicResource NormalBorder}" 
+                                                BorderThickness="1">
+                                            <DockPanel VerticalAlignment="Center">
+                                                <!-- Right in RTL: Season Title & Count -->
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding SelectedSeason.Name}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text=" - " Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                                                    <TextBlock Text="{Binding SelectedSeason.WatchedSummaryText}" FontSize="12" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
                                                 </StackPanel>
-                                                
-                                                <ItemsControl ItemsSource="{Binding Episodes}">
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Border CornerRadius="12" Margin="0,0,0,15" Padding="15">
-                                                                <Border.Style>
-                                                                    <Style TargetType="Border">
-                                                                        <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
-                                                                        <Setter Property="BorderThickness" Value="4,0,0,0"/>
-                                                                        <Setter Property="BorderBrush" Value="Transparent"/>
-                                                                        <Style.Triggers>
-                                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                                <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
-                                                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
-                                                                            </Trigger>
-                                                                            <DataTrigger Binding="{Binding IsWatched}" Value="True">
-                                                                                <Setter Property="Opacity" Value="0.6"/>
-                                                                                <Setter Property="Background" Value="Transparent"/>
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </Border.Style>
-                                                                <Grid x:Name="EpGrid">
-                                                                    <Grid.RenderTransform>
-                                                                        <TranslateTransform X="0"/>
-                                                                    </Grid.RenderTransform>
-                                                                    <Grid.ColumnDefinitions>
-                                                                        <ColumnDefinition Width="Auto"/>
-                                                                        <ColumnDefinition Width="*"/>
-                                                                        <ColumnDefinition Width="Auto"/>
-                                                                    </Grid.ColumnDefinitions>
-                                                                    
-                                                                    <CheckBox Grid.Column="0" IsChecked="{Binding IsWatched}" Command="{Binding DataContext.ToggleEpisodeWatchedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource MaterialDesignCheckBox}" VerticalAlignment="Center" Margin="0,0,15,0">
-                                                                        <CheckBox.LayoutTransform>
-                                                                            <ScaleTransform ScaleX="1.3" ScaleY="1.3" />
-                                                                        </CheckBox.LayoutTransform>
-                                                                    </CheckBox>
-                                                                    
-                                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                                        <TextBlock Text="{Binding FormattedTitle}" Foreground="{DynamicResource PrimaryText}" FontSize="18" FontWeight="SemiBold"/>
-                                                                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                                                            <TextBlock Text="فصل" Foreground="{DynamicResource SecondaryText}" FontSize="14" Margin="0,0,5,0"/>
-                                                                            <TextBlock Text="{Binding Season, Converter={StaticResource PersianNumberConverter}}" Foreground="{DynamicResource PrimaryColor}" FontSize="14" Margin="0,0,15,0"/>
-                                                                            <TextBlock Text="قسمت" Foreground="{DynamicResource SecondaryText}" FontSize="14" Margin="0,0,5,0"/>
-                                                                            <TextBlock Text="{Binding Episode, Converter={StaticResource PersianNumberConverter}}" Foreground="{DynamicResource PrimaryColor}" FontSize="14"/>
-                                                                            <TextBlock Text="{Binding Quality}" Foreground="{DynamicResource WarningColor}" FontSize="14" Margin="15,0,0,0" FontWeight="Bold"/>
-                                                                        </StackPanel>
-                                                                    </StackPanel>
-                                                                    
-                                                                    <Button Grid.Column="2" Content="پخش فایل" Command="{Binding DataContext.PlayEpisodeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="{DynamicResource PrimaryColor}" BorderBrush="{DynamicResource PrimaryColor}" BorderThickness="1" materialDesign:ButtonAssist.CornerRadius="8" Padding="15,0"/>
-                                                                </Grid>
-                                                                <Border.Triggers>
-                                                                    <EventTrigger RoutedEvent="MouseEnter">
-                                                                        <BeginStoryboard>
-                                                                            <Storyboard>
-                                                                                <DoubleAnimation Storyboard.TargetName="EpGrid" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" To="-8" Duration="0:0:0.2"/>
-                                                                            </Storyboard>
-                                                                        </BeginStoryboard>
-                                                                    </EventTrigger>
-                                                                    <EventTrigger RoutedEvent="MouseLeave">
-                                                                        <BeginStoryboard>
-                                                                            <Storyboard>
-                                                                                <DoubleAnimation Storyboard.TargetName="EpGrid" Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" To="0" Duration="0:0:0.2"/>
-                                                                            </Storyboard>
-                                                                        </BeginStoryboard>
-                                                                    </EventTrigger>
-                                                                </Border.Triggers>
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
+
+                                                <!-- Left in RTL: Mark All Watched Button -->
+                                                <Button DockPanel.Dock="Left" 
+                                                        Command="{Binding ToggleSelectedSeasonAllWatchedCommand}"
+                                                        Background="#1E293B" BorderBrush="#334155" BorderThickness="1"
+                                                        Height="28" Padding="10,0" Cursor="Hand"
+                                                        materialDesign:ButtonAssist.CornerRadius="14"
+                                                        ToolTip="علامت‌گذاری تمام قسمت‌های این فصل">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <materialDesign:PackIcon Kind="CheckAll" Width="15" Height="15" Foreground="#4CAF50" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                                        <TextBlock Text="تیک زدن کل فصل" Foreground="{DynamicResource PrimaryText}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </DockPanel>
+                                        </Border>
+
+                                        <!-- 2-Column Episodes Grid for Selected Season -->
+                                        <ItemsControl ItemsSource="{Binding SelectedSeason.Episodes}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <UniformGrid Columns="2"/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border Background="{DynamicResource CardBackground}" 
+                                                            CornerRadius="8" 
+                                                            Margin="3" 
+                                                            Padding="10,7" 
+                                                            BorderThickness="1" 
+                                                            BorderBrush="{DynamicResource NormalBorder}">
+                                                        <DockPanel VerticalAlignment="Center">
+                                                            <!-- Right in RTL: Checkbox for Watched Status -->
+                                                            <Button DockPanel.Dock="Right" 
+                                                                    Command="{Binding DataContext.ToggleEpisodeWatchedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,8,0" 
+                                                                    Cursor="Hand" VerticalAlignment="Center"
+                                                                    ToolTip="علامت‌گذاری به عنوان دیده شده">
+                                                                <Border Width="22" Height="22" CornerRadius="4">
+                                                                    <Border.Style>
+                                                                        <Style TargetType="Border">
+                                                                            <Setter Property="Background" Value="#1E293B"/>
+                                                                            <Setter Property="BorderBrush" Value="#475569"/>
+                                                                            <Setter Property="BorderThickness" Value="1.5"/>
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsWatched}" Value="True">
+                                                                                    <Setter Property="Background" Value="#EB3B5A"/>
+                                                                                    <Setter Property="BorderBrush" Value="#EB3B5A"/>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Border.Style>
+                                                                    <materialDesign:PackIcon Kind="Check" Width="14" Height="14" Foreground="White" 
+                                                                                             HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                                             Visibility="{Binding IsWatched, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                                </Border>
+                                                            </Button>
+
+                                                            <!-- Left in RTL: Circular Play Button -->
+                                                            <Button DockPanel.Dock="Left" 
+                                                                    Command="{Binding DataContext.PlayEpisodeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Background="#25EB3B5A" BorderBrush="#40EB3B5A" BorderThickness="1"
+                                                                    Width="32" Height="32" Padding="0" Cursor="Hand"
+                                                                    materialDesign:ButtonAssist.CornerRadius="16"
+                                                                    ToolTip="پخش این قسمت">
+                                                                <materialDesign:PackIcon Kind="Play" Width="16" Height="16" Foreground="#EB3B5A" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Button>
+
+                                                            <!-- Middle in RTL: Title & Episode Badges -->
+                                                            <StackPanel VerticalAlignment="Center" Margin="0,0,6,0">
+                                                                <TextBlock Text="{Binding FormattedTitle}" 
+                                                                           FontSize="12" FontWeight="SemiBold" 
+                                                                           Foreground="{DynamicResource PrimaryText}" 
+                                                                           TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                                <StackPanel Orientation="Horizontal" Margin="0,3,0,0">
+                                                                    <Border Background="#1E293B" CornerRadius="3" Padding="4,1" Margin="0,0,5,0">
+                                                                        <TextBlock Foreground="#A5B4FC" FontSize="10.5" FontWeight="Bold" FontFamily="Consolas, Segoe UI">
+                                                                            <Run Text="S"/><Run Text="{Binding Season}"/><Run Text="E"/><Run Text="{Binding Episode, StringFormat={}{0:D2}}"/>
+                                                                        </TextBlock>
+                                                                    </Border>
+                                                                    <Border Background="#25FFB300" CornerRadius="3" Padding="4,1" Margin="0,0,5,0" Visibility="{Binding Quality, Converter={StaticResource NullToVisibilityConverter}}">
+                                                                        <TextBlock Text="{Binding Quality}" FontSize="9.5" Foreground="#FFB300" FontWeight="Bold"/>
+                                                                    </Border>
+                                                                    <Border Background="#132B38" CornerRadius="3" Padding="4,1" Margin="0,0,5,0" Visibility="{Binding HasDubbing, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                        <TextBlock Text="دوبله" FontSize="9.5" Foreground="#00E5FF" FontWeight="SemiBold"/>
+                                                                    </Border>
+                                                                    <Border Background="#2C1A3B" CornerRadius="3" Padding="4,1" Margin="0,0,5,0" Visibility="{Binding HasSubtitle, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                        <TextBlock Text="زیرنویس" FontSize="9.5" Foreground="#E056FD" FontWeight="SemiBold"/>
+                                                                    </Border>
+                                                                </StackPanel>
+                                                            </StackPanel>
+                                                        </DockPanel>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Grid>
                             </StackPanel>
+                        </StackPanel>
+
+                        <!-- TAB CONTENT 1: عوامل و بازیگران -->
+                        <StackPanel Visibility="{Binding IsTabCastSelected, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,0,0,20">
+                            <!-- Director Card -->
+                            <Border Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" CornerRadius="10" Padding="14" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <materialDesign:PackIcon Kind="MovieRoll" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="کارگردان" Foreground="{DynamicResource PrimaryText}" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Media.Director}" Foreground="{DynamicResource SecondaryText}" FontSize="13" LineHeight="22" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Actors Card -->
+                            <Border Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" CornerRadius="10" Padding="14">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <materialDesign:PackIcon Kind="AccountMultiple" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="بازیگران" Foreground="{DynamicResource PrimaryText}" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Media.Actors}" Foreground="{DynamicResource SecondaryText}" FontSize="13" LineHeight="24" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+
+                        <!-- TAB CONTENT 2: اطلاعات ردیاب و سریال -->
+                        <StackPanel Visibility="{Binding IsTabTrackerSelected, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,0,0,20">
+                            <Border Background="{DynamicResource CardBackground}" CornerRadius="12" Padding="16" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- وضعیت پخش (Badge) -->
+                                    <Border Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Right" CornerRadius="14" Padding="12,5" Margin="0,0,0,12" Background="{DynamicResource HoverBackground}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Ellipse Width="7" Height="7" Fill="{Binding SeriesStatusColor}" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding SeriesStatusText}" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{Binding SeriesStatusColor}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- تاریخ شروع -->
+                                    <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Margin="0,0,0,12">
+                                        <materialDesign:PackIcon Kind="CalendarStart" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <StackPanel>
+                                            <TextBlock Text="شروع پخش" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
+                                            <TextBlock Text="{Binding FirstAirDateText, Converter={StaticResource PersianNumberConverter}}" Foreground="{DynamicResource PrimaryText}" FontSize="13" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- تاریخ پایان -->
+                                    <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,12">
+                                        <materialDesign:PackIcon Kind="CalendarEnd" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <StackPanel>
+                                            <TextBlock Text="پایان پخش" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
+                                            <TextBlock Text="{Binding LastAirDateText, Converter={StaticResource PersianNumberConverter}}" Foreground="{DynamicResource PrimaryText}" FontSize="13" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- شبکه/استودیو -->
+                                    <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Margin="0,0,0,12">
+                                        <materialDesign:PackIcon Kind="Television" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <StackPanel>
+                                            <TextBlock Text="استودیو / شبکه" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
+                                            <TextBlock Text="{Binding NetworkText}" Foreground="{DynamicResource PrimaryText}" FontSize="13" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- برنامه پخش -->
+                                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,12">
+                                        <materialDesign:PackIcon Kind="ClockOutline" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <StackPanel>
+                                            <TextBlock Text="برنامه پخش" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
+                                            <TextBlock Text="{Binding AirScheduleText}" Foreground="{DynamicResource PrimaryText}" FontSize="13" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- تعداد قسمتها -->
+                                    <StackPanel Grid.Row="3" Grid.Column="0" Orientation="Horizontal" Margin="0,0,0,12">
+                                        <materialDesign:PackIcon Kind="Filmstrip" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <StackPanel>
+                                            <TextBlock Text="تعداد قسمتها" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
+                                            <TextBlock Text="{Binding EpisodesInfoText, Converter={StaticResource PersianNumberConverter}}" Foreground="{DynamicResource PrimaryText}" FontSize="13" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- قسمت بعدی -->
+                                    <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,12">
+                                        <materialDesign:PackIcon Kind="ArrowRightBold" Width="18" Height="18" Foreground="#FFFF9800" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <StackPanel>
+                                            <TextBlock Text="قسمت بعدی" Foreground="{DynamicResource SecondaryText}" FontSize="11"/>
+                                            <TextBlock Text="{Binding NextEpisodeText, Converter={StaticResource PersianNumberConverter}}" Foreground="#FFFF9800" FontSize="13" FontWeight="SemiBold"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- دکمه بروزرسانی اطلاعات ردیاب -->
+                                    <Button Grid.Row="4" Grid.ColumnSpan="2"
+                                            Command="{Binding UpdateSeriesTrackerCommand}"
+                                            Height="34" Margin="0,4,0,0"
+                                            Background="#1E293B" BorderBrush="#334155" BorderThickness="1"
+                                            Cursor="Hand" materialDesign:ButtonAssist.CornerRadius="17"
+                                            ToolTip="بروزرسانی وضعیت و تاریخ‌های پخش از سرور">
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="Refresh" Width="16" Height="16" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                            <TextBlock Text="بروزرسانی اطلاعات ردیاب" Foreground="{DynamicResource PrimaryText}" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </Grid>

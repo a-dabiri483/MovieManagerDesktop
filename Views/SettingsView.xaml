@@ -85,6 +85,7 @@
                 <!-- Dynamic Header Titles -->
                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="تنظیمات" Visibility="{Binding IsMainView, Converter={StaticResource BooleanToVisibilityConverter}}" FontSize="26" FontWeight="Black" Foreground="White"/>
+                    <TextBlock Text="پلیر ویدیو (داخلی / خارجی)" Visibility="{Binding IsPlayerView, Converter={StaticResource BooleanToVisibilityConverter}}" FontSize="24" FontWeight="Black" Foreground="White"/>
                     <TextBlock Text="منابع داده و وب سرویس API" Visibility="{Binding IsDataSourcesView, Converter={StaticResource BooleanToVisibilityConverter}}" FontSize="24" FontWeight="Black" Foreground="White"/>
                     <TextBlock Text="پشتیبان‌گیری و بازیابی" Visibility="{Binding IsBackupView, Converter={StaticResource BooleanToVisibilityConverter}}" FontSize="24" FontWeight="Black" Foreground="White"/>
                     <TextBlock Text="سیستم چند پراکسی (ضد تحریم)" Visibility="{Binding IsProxyView, Converter={StaticResource BooleanToVisibilityConverter}}" FontSize="24" FontWeight="Black" Foreground="White"/>
@@ -177,6 +178,29 @@
                             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                 <TextBlock Text="پشتیبان‌گیری و بازیابی" FontSize="15.5" FontWeight="Black" Foreground="White"/>
                                 <TextBlock Text="پشتیبان‌گیری آفلاین JSON، همگام‌سازی ابری با گوگل درایو و بکاپ خودکار" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Card 4: تنظیمات پلیر ویدیو -->
+                    <Border Style="{StaticResource SettingsActionCard}">
+                        <Grid Background="Transparent">
+                            <Grid.InputBindings>
+                                <MouseBinding MouseAction="LeftClick" Command="{Binding OpenPlayerCommand}"/>
+                            </Grid.InputBindings>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <!-- Sky/Cyan Icon -->
+                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#2538BDF8" Margin="0,0,16,0">
+                                <materialDesign:PackIcon Kind="PlayCircleOutline" Width="26" Height="26" Foreground="#38BDF8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Text="پلیر ویدیو (داخلی / خارجی)" FontSize="15.5" FontWeight="Black" Foreground="White"/>
+                                <TextBlock Text="انتخاب بین پلیر داخلی برنامه (با میانبرهای کامل PotPlayer) یا پلیر خارجی" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
                             </StackPanel>
                             <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
                         </Grid>
@@ -1087,6 +1111,118 @@
 
                             <TextBlock Grid.Row="2" Grid.Column="0" Text="پشتیبانی از پلتفرم:" FontSize="13" Foreground="{DynamicResource SecondaryText}"/>
                             <TextBlock Grid.Row="2" Grid.Column="1" Text="Windows 10 / Windows 11 (x64)" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource EmeraldAccent}"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+
+            <!-- ================================================================= -->
+            <!-- VIEW 8: VIDEO PLAYER SETTINGS (تنظیمات پلیر ویدیو) -->
+            <!-- ================================================================= -->
+            <StackPanel Visibility="{Binding IsPlayerView, Converter={StaticResource BooleanToVisibilityConverter}}" MaxWidth="850">
+                
+                <!-- Card 1: انتخاب حالت پخش (داخلی یا خارجی) -->
+                <Border Style="{StaticResource SettingsGroupCard}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <Border Width="4" Height="18" Background="#38BDF8" CornerRadius="2" Margin="0,0,8,0"/>
+                            <TextBlock Text="نحوه پخش ویدیوها" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                        </StackPanel>
+
+                        <!-- Option A: پلیر داخلی پیشرفته برنامه -->
+                        <Border Background="{DynamicResource CardBackgroundLight}" CornerRadius="14" Padding="16,14" Margin="0,0,0,12" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <RadioButton Grid.Column="0" GroupName="PlayerSelectionGroup" IsChecked="{Binding IsInternalPlayerSelected, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="پلیر داخلی مدرن برنامه (پیشنهادی)" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                                        <Border Background="#2538BDF8" CornerRadius="6" Padding="8,2" Margin="10,0,0,0">
+                                            <TextBlock Text="شتاب گرافیکی سخت‌افزاری + کلیدهای میانبر PotPlayer" FontSize="11" FontWeight="Bold" Foreground="#38BDF8"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBlock Text="پخش تمام‌صفحه بدون حاشیه با هسته قدرتمند LibVLC، سایدبار قسمت‌های سریال، قابلیت تغییر آنی دوبله و زیرنویس، بوک‌مارک‌گذاری و پشتیبانی کامل از کلیدهای کیبورد PotPlayer."
+                                               FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Option B: پلیر خارجی سیستم -->
+                        <Border Background="{DynamicResource CardBackgroundLight}" CornerRadius="14" Padding="16,14" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <RadioButton Grid.Column="0" GroupName="PlayerSelectionGroup" IsChecked="{Binding IsExternalPlayerSelected, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="پخش از طریق پلیر خارجی ویندوز" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="اجرای خودکار ویدیوها در نرم‌افزارهای خارجی مانند PotPlayer، VLC یا پلیر پیش‌فرض ویندوز."
+                                               FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Card 2: انتخاب نوع پلیر خارجی (فقط زمانی که پلیر خارجی فعال است) -->
+                <Border Style="{StaticResource SettingsGroupCard}" Visibility="{Binding IsExternalPlayerSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                            <Border Width="4" Height="18" Background="#EB3B5A" CornerRadius="2" Margin="0,0,8,0"/>
+                            <TextBlock Text="انتخاب نرم‌افزار پلیر خارجی" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                        </StackPanel>
+
+                        <!-- Radio 1: پیش‌فرض سیستم -->
+                        <RadioButton GroupName="ExternalPlayerTypeGroup" IsChecked="{Binding IsSystemDefaultPlayerSelected, Mode=TwoWay}" Margin="0,0,0,12">
+                            <StackPanel Margin="10,0,0,0">
+                                <TextBlock Text="پلیر پیش‌فرض سیستم (Windows Default Player)" Foreground="White" FontWeight="SemiBold" FontSize="13.5"/>
+                                <TextBlock Text="باز شدن با نرم‌افزاری که در ویندوز به عنوان پلیر اصلی برای فایل‌های ویدیو تعیین شده است." Foreground="{DynamicResource SecondaryText}" FontSize="11.5" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- Radio 2: PotPlayer -->
+                        <RadioButton GroupName="ExternalPlayerTypeGroup" IsChecked="{Binding IsPotPlayerSelected, Mode=TwoWay}" Margin="0,0,0,12">
+                            <StackPanel Margin="10,0,0,0">
+                                <TextBlock Text="Daum PotPlayer" Foreground="White" FontWeight="SemiBold" FontSize="13.5"/>
+                                <TextBlock Text="تشخیص خودکار مسیر نصب PotPlayer64.exe در Program Files" Foreground="{DynamicResource SecondaryText}" FontSize="11.5" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- Radio 3: VLC -->
+                        <RadioButton GroupName="ExternalPlayerTypeGroup" IsChecked="{Binding IsVlcSelected, Mode=TwoWay}" Margin="0,0,0,12">
+                            <StackPanel Margin="10,0,0,0">
+                                <TextBlock Text="VLC Media Player" Foreground="White" FontWeight="SemiBold" FontSize="13.5"/>
+                                <TextBlock Text="تشخیص خودکار مسیر نصب vlc.exe در Program Files" Foreground="{DynamicResource SecondaryText}" FontSize="11.5" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- Radio 4: Custom Path -->
+                        <RadioButton GroupName="ExternalPlayerTypeGroup" IsChecked="{Binding IsCustomPlayerSelected, Mode=TwoWay}" Margin="0,0,0,12">
+                            <StackPanel Margin="10,0,0,0">
+                                <TextBlock Text="انتخاب مسیر دلخواه (Custom Player .exe)" Foreground="White" FontWeight="SemiBold" FontSize="13.5"/>
+                                <TextBlock Text="تعیین مسیر مستقیم فایل اجرایی پلیر دلخواه شما بر روی سیستم" Foreground="{DynamicResource SecondaryText}" FontSize="11.5" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </RadioButton>
+
+                        <!-- Custom Path Browser -->
+                        <Grid Margin="30,8,0,0" Visibility="{Binding IsCustomPlayerSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Grid.Column="0" Text="{Binding CustomExternalPlayerPath, UpdateSourceTrigger=PropertyChanged}" 
+                                     Style="{DynamicResource MaterialDesignOutlinedTextBox}"
+                                     materialDesign:HintAssist.Hint="مسیر فایل اجرایی پلیر (.exe)"
+                                     Foreground="White" IsReadOnly="True"/>
+                            <Button Grid.Column="1" Command="{Binding BrowseCustomExternalPlayerCommand}"
+                                    Style="{DynamicResource MaterialDesignRaisedButton}"
+                                    Background="{DynamicResource PrimaryGradientBrush}" BorderThickness="0"
+                                    Margin="10,0,0,0" Height="40" Content="انتخاب فایل..."/>
                         </Grid>
                     </StackPanel>
                 </Border>

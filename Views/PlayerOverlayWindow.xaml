@@ -1,0 +1,1240 @@
+<Window x:Class="MovieManagerDesktop.Views.PlayerOverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
+        mc:Ignorable="d"
+        Title="Player Overlay"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="#01000000"
+        ShowInTaskbar="False"
+        Focusable="True"
+        Topmost="{Binding IsAlwaysOnTop, Mode=OneWay}"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        TextOptions.TextHintingMode="Fixed"
+        RenderOptions.ClearTypeHint="Enabled"
+        RenderOptions.BitmapScalingMode="HighQuality"
+        Loaded="Window_Loaded"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        MouseMove="Window_MouseMove"
+        PreviewMouseWheel="Window_PreviewMouseWheel"
+        PreviewMouseDown="Window_PreviewMouseDown">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+
+        <!-- Custom Slider Style for Video Seek Bar -->
+        <Style x:Key="VideoSeekBarStyle" TargetType="{x:Type Slider}">
+            <Setter Property="Stylus.IsPressAndHoldEnabled" Value="false"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Slider}">
+                        <Grid VerticalAlignment="Center">
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.DecreaseLarge}">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="{x:Type RepeatButton}">
+                                                <Border Background="#00ADB5" Height="5" CornerRadius="2.5"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static Slider.IncreaseLarge}">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="{x:Type RepeatButton}">
+                                                <Border Background="#40FFFFFF" Height="5" CornerRadius="2.5"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="{x:Type Thumb}">
+                                                <Ellipse Width="15" Height="15" Fill="#00FFF0" Stroke="#00ADB5" StrokeThickness="2" Cursor="Hand"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Player Button Style -->
+        <Style x:Key="PlayerIconBtn" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#30FFFFFF"/>
+                                <Setter Property="Foreground" Value="#00FFF0"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#5000ADB5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Big Play Button Style -->
+        <Style x:Key="BigPlayBtn" TargetType="Button">
+            <Setter Property="Background" Value="#00ADB5"/>
+            <Setter Property="Foreground" Value="#121820"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="52"/>
+            <Setter Property="Height" Value="52"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="26">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#00FFF0"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#008B92"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Background="Transparent" x:Name="OverlayRootGrid">
+        <!-- ═══════════ 1. OSD MESSAGE OVERLAY (Top-Left under toolbar) ═══════════ -->
+        <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="24,54,0,0"
+                Background="#EE0A0E17" CornerRadius="8" Padding="14,8"
+                BorderBrush="#00ADB5" BorderThickness="1.5"
+                Visibility="{Binding ShowOsd, Converter={StaticResource BoolToVis}}"
+                IsHitTestVisible="False">
+            <TextBlock Text="{Binding OsdMessage}" Foreground="#00FFF0" FontSize="14" FontWeight="SemiBold" FlowDirection="RightToLeft"/>
+        </Border>
+
+        <!-- ═══════════ 1.5 COMPACT CORNER SUBTITLE TRANSLATION BADGE ═══════════ -->
+        <Border x:Name="TranslationBadge" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="20,54,0,0"
+                Background="#EE0A0E17" CornerRadius="8" Padding="10,6" MaxWidth="250"
+                BorderBrush="#00ADB5" BorderThickness="1.2"
+                Visibility="{Binding IsTranslatingSubtitle, Converter={StaticResource BoolToVis}}"
+                Panel.ZIndex="35" FlowDirection="RightToLeft">
+            <StackPanel>
+                <DockPanel>
+                    <Button DockPanel.Dock="Left" Command="{Binding CancelTranslationCommand}" Style="{StaticResource PlayerIconBtn}" Height="20" Width="20" Padding="0" Margin="4,0,0,0" ToolTip="لغو ترجمه">
+                        <materialDesign:PackIcon Kind="Close" Width="14" Height="14" Foreground="#FF5252"/>
+                    </Button>
+                    <TextBlock Text="{Binding TranslationProgress, StringFormat='{}{0:0}٪'}" Foreground="#00FFF0" FontWeight="Bold" FontSize="12" DockPanel.Dock="Left" VerticalAlignment="Center" FontFamily="Consolas, Segoe UI" Margin="4,0,0,0"/>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Translate" Width="15" Height="15" Foreground="#00FFF0" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="{Binding TranslationStatusText}" Foreground="#EEEEEE" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="140"/>
+                    </StackPanel>
+                </DockPanel>
+                <ProgressBar Minimum="0" Maximum="100" Value="{Binding TranslationProgress}" 
+                             Height="3" Foreground="#00ADB5" Background="#25FFFFFF" BorderThickness="0" Margin="0,5,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ═══════════ 2. TOP BAR (WINDOW HEADER & CONTROLS) ═══════════ -->
+        <Border x:Name="TopControlsBar" VerticalAlignment="Top" 
+                Background="#E60A0E17" Padding="12,6"
+                BorderBrush="#20FFFFFF" BorderThickness="0,0,0,1"
+                Visibility="{Binding ShowTopBar, Converter={StaticResource BoolToVis}}"
+                MouseLeftButtonDown="TopControlsBar_MouseLeftButtonDown">
+            <Grid FlowDirection="RightToLeft">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Right in RTL (Grid.Column 0): Window Action Buttons (Minimize, Maximize, Close) -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" FlowDirection="LeftToRight">
+                    <Button Click="MinimizeWindow_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="کوچک‌نمایی" Margin="2,0">
+                        <materialDesign:PackIcon Kind="WindowMinimize" Width="18" Height="18"/>
+                    </Button>
+                    <Button Click="MaximizeWindow_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="حداکثر / پنجره" Margin="2,0">
+                        <materialDesign:PackIcon Kind="WindowMaximize" Width="18" Height="18"/>
+                    </Button>
+                    <Button Command="{Binding ClosePlayerCommand}" Style="{StaticResource PlayerIconBtn}" ToolTip="بستن (Esc / F4)" Margin="2,0">
+                        <materialDesign:PackIcon Kind="Close" Width="20" Height="20" Foreground="#FF5252"/>
+                    </Button>
+                </StackPanel>
+
+                <!-- Center: Media Title & Season/Episode -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="12,0">
+                    <TextBlock Text="{Binding MediaTitle}" Foreground="#FFFFFF" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Text="{Binding SeasonEpisodeText}" Foreground="#00FFF0" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,2,0,0">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible"/>
+                                <Style.Triggers>
+                                    <Trigger Property="Text" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- Left in RTL (Grid.Column 2): Quick Tools (Always on Top, Playlist, Bookmarks, Shortcuts Help) -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Command="{Binding ToggleAlwaysOnTopCommand}" Style="{StaticResource PlayerIconBtn}" 
+                            ToolTip="همیشه در بالا (Always On Top)" Margin="0,0,4,0">
+                        <materialDesign:PackIcon Width="20" Height="20">
+                            <materialDesign:PackIcon.Style>
+                                <Style TargetType="materialDesign:PackIcon">
+                                    <Setter Property="Kind" Value="PinOutline"/>
+                                    <Setter Property="Foreground" Value="#EEEEEE"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsAlwaysOnTop}" Value="True">
+                                            <Setter Property="Kind" Value="Pin"/>
+                                            <Setter Property="Foreground" Value="#00FFF0"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </materialDesign:PackIcon.Style>
+                        </materialDesign:PackIcon>
+                    </Button>
+                    <Button Click="TogglePlaylistDrawer_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="لیست پخش / قسمت‌ها (F6)" Margin="0,0,4,0">
+                        <materialDesign:PackIcon Kind="PlaylistPlay" Width="22" Height="22"/>
+                    </Button>
+                    <Button Click="ToggleBookmarksDrawer_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="نشانک‌ها (H / P)" Margin="0,0,4,0">
+                        <materialDesign:PackIcon Kind="BookmarkOutline" Width="20" Height="20"/>
+                    </Button>
+                    <Button Click="ToggleShortcutsHelp_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="راهنمای کلیدهای میانبر (F1)" Margin="0,0,4,0">
+                        <materialDesign:PackIcon Kind="KeyboardOutline" Width="20" Height="20"/>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ═══════════ 2.5 REAL-TIME SUBTITLE DISPLAY LAYER (RESPONSIVE) ═══════════ -->
+        <Border HorizontalAlignment="Center" VerticalAlignment="Bottom" 
+                Margin="{Binding SubtitleContainerMargin}"
+                Padding="0"
+                Visibility="{Binding HasSubtitleText, Converter={StaticResource BoolToVis}}"
+                IsHitTestVisible="False" Panel.ZIndex="10">
+            <Border Background="{Binding SubtitleBackgroundBrush}" CornerRadius="6" Padding="12,6" HorizontalAlignment="Center">
+                <TextBlock Text="{Binding CurrentSubtitleText}"
+                           FontSize="{Binding RenderedSubtitleFontSize}"
+                           Foreground="{Binding SubtitleColorBrush}"
+                           FontFamily="{Binding SubtitleFontFamily}"
+                           FontWeight="{Binding SubtitleFontWeight}"
+                           TextAlignment="{Binding SubtitleTextAlignment}"
+                           TextWrapping="Wrap"
+                           MaxWidth="1000">
+                    <TextBlock.Effect>
+                        <DropShadowEffect BlurRadius="6" ShadowDepth="2" Direction="315" Color="#000000" Opacity="0.95"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+            </Border>
+        </Border>
+
+        <!-- ═══════════ 3. BOTTOM BAR (LTR CONTROLS & TIMELINE) ═══════════ -->
+        <Border x:Name="BottomControlsBar" VerticalAlignment="Bottom" 
+                Background="#EE0A0E17" Padding="20,12"
+                CornerRadius="16,16,0,0" Margin="16,0,16,0"
+                BorderBrush="#3000ADB5" BorderThickness="1,1,1,0"
+                Visibility="{Binding ShowBottomBar, Converter={StaticResource BoolToVis}}">
+            <Grid FlowDirection="LeftToRight">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Row 0: Timeline Slider with Left Current Time and Right Total Time -->
+                <Grid Grid.Row="0" Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Current Playback Position (e.g. 00:05:30) -->
+                    <TextBlock Grid.Column="0" Text="{Binding CurrentTimeFormatted}" 
+                               Foreground="#00FFF0" FontSize="13" FontWeight="SemiBold" 
+                               VerticalAlignment="Center" Margin="0,0,14,0" FontFamily="Consolas, Segoe UI"/>
+
+                    <!-- Center: Progress Seek Bar (Moving 0 -> 1 LTR) -->
+                    <Slider Grid.Column="1" Minimum="0.0" Maximum="1.0" 
+                            Value="{Binding Progress, Mode=TwoWay}"
+                            Style="{StaticResource VideoSeekBarStyle}" 
+                            IsMoveToPointEnabled="True"
+                            PreviewMouseDown="SeekSlider_PreviewMouseDown"
+                            PreviewMouseMove="SeekSlider_PreviewMouseMove"
+                            PreviewMouseUp="SeekSlider_PreviewMouseUp"
+                            VerticalAlignment="Center" Cursor="Hand"/>
+
+                    <!-- Right: Duration (e.g. 02:15:40) -->
+                    <TextBlock Grid.Column="2" Text="{Binding TotalDurationFormatted}" 
+                               Foreground="#94A3B8" FontSize="13" FontWeight="SemiBold" 
+                               VerticalAlignment="Center" Margin="14,0,0,0" FontFamily="Consolas, Segoe UI"/>
+                </Grid>
+
+                <!-- Row 1: Buttons Row (Left: Volume, Center: Playback Buttons, Right: Options) -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Column: Volume Controls -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Command="{Binding ToggleMuteCommand}" Style="{StaticResource PlayerIconBtn}" ToolTip="قطع/وصل صدا (M)">
+                            <materialDesign:PackIcon Width="24" Height="24">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Kind" Value="VolumeHigh"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsMuted}" Value="True">
+                                                <Setter Property="Kind" Value="VolumeMute"/>
+                                                <Setter Property="Foreground" Value="#FF5252"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding Volume}" Value="0">
+                                                <Setter Property="Kind" Value="VolumeMute"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                        </Button>
+
+                        <!-- Volume Slider (0 to 200) -->
+                        <Slider Minimum="0" Maximum="200" Value="{Binding Volume, Mode=TwoWay}" 
+                                Width="100" VerticalAlignment="Center" Cursor="Hand" Margin="8,0,6,0"
+                                ValueChanged="VolumeSlider_ValueChanged"
+                                ToolTip="{Binding Volume, StringFormat='ولوم: {0}%'}"/>
+                        
+                        <TextBlock Text="{Binding Volume, StringFormat='{}{0}%'}" Foreground="#94A3B8" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Width="38" FontFamily="Consolas, Segoe UI"/>
+                    </StackPanel>
+
+                    <!-- Center Column: Media Control Buttons (Previous, -5s, Play/Pause, +5s, Next) -->
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <!-- Prev File / Episode -->
+                        <Button Command="{Binding PlayPreviousCommand}" Style="{StaticResource PlayerIconBtn}" ToolTip="قسمت/فایل قبلی (PgUp)" Margin="4,0">
+                            <materialDesign:PackIcon Kind="SkipPrevious" Width="26" Height="26"/>
+                        </Button>
+
+                        <!-- Seek -5s -->
+                        <Button Click="SeekBackward5s_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="۵ ثانیه عقب (←)" Margin="4,0">
+                            <materialDesign:PackIcon Kind="Rewind5" Width="26" Height="26"/>
+                        </Button>
+
+                        <!-- Main Play / Pause Button -->
+                        <Button Command="{Binding TogglePlayPauseCommand}" Style="{StaticResource BigPlayBtn}" ToolTip="پخش / توقف (Space)" Margin="10,0">
+                            <materialDesign:PackIcon Width="32" Height="32">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Kind" Value="Play"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                <Setter Property="Kind" Value="Pause"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                        </Button>
+
+                        <!-- Seek +5s -->
+                        <Button Click="SeekForward5s_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="۵ ثانیه جلو (→)" Margin="4,0">
+                            <materialDesign:PackIcon Kind="FastForward5" Width="26" Height="26"/>
+                        </Button>
+
+                        <!-- Next File / Episode -->
+                        <Button Command="{Binding PlayNextCommand}" Style="{StaticResource PlayerIconBtn}" ToolTip="قسمت/فایل بعدی (PgDn)" Margin="4,0">
+                            <materialDesign:PackIcon Kind="SkipNext" Width="26" Height="26"/>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Right Column: Subtitles, Audio, Speed, Aspect Ratio, Fullscreen -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Audio Track Selector (A) -->
+                        <Button Click="OpenAudioTracksPopup_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="انتخاب صدای دوبله/زبان اصلی (A)" Margin="3,0">
+                            <materialDesign:PackIcon Kind="Translate" Width="22" Height="22"/>
+                        </Button>
+
+                        <!-- Subtitles Selector (L) -->
+                        <Button Click="OpenSubtitlesPopup_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="زیرنویس‌ها (L)" Margin="3,0">
+                            <materialDesign:PackIcon Kind="SubtitlesOutline" Width="22" Height="22"/>
+                        </Button>
+
+                        <!-- Playback Speed (X / C / Z, Left/Right Click, Scroll) -->
+                        <Button x:Name="SpeedButton" Click="ToggleSpeedMenu_Click" 
+                                MouseRightButtonDown="SpeedButton_MouseRightButtonDown" 
+                                PreviewMouseWheel="SpeedButton_PreviewMouseWheel"
+                                Style="{StaticResource PlayerIconBtn}" 
+                                ToolTip="سرعت پخش (کلیک چپ: منو | راست: کاهش | اسکرول: تنظیم | کلیدها: X / C / Z)" 
+                                Margin="3,0">
+                            <TextBlock Text="{Binding PlaybackSpeed, StringFormat='{}{0:0.0}x'}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center" Foreground="#00ADB5" FontFamily="Consolas, Segoe UI"/>
+                        </Button>
+
+                        <!-- Aspect Ratio (J / 1-7, 9) -->
+                        <Button Click="ToggleAspectRatioMenu_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="نسبت تصویر (J)" Margin="3,0">
+                            <materialDesign:PackIcon Kind="AspectRatio" Width="22" Height="22"/>
+                        </Button>
+
+                        <!-- Fullscreen Toggle (Enter / F) -->
+                        <Button Command="{Binding ToggleFullscreenCommand}" Style="{StaticResource PlayerIconBtn}" ToolTip="تمام‌صفحه (Enter / F)" Margin="3,0">
+                            <materialDesign:PackIcon Width="24" Height="24">
+                                <materialDesign:PackIcon.Style>
+                                    <Style TargetType="materialDesign:PackIcon">
+                                        <Setter Property="Kind" Value="Fullscreen"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsFullscreen}" Value="True">
+                                                <Setter Property="Kind" Value="FullscreenExit"/>
+                                                <Setter Property="Foreground" Value="#00FFF0"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </materialDesign:PackIcon.Style>
+                            </materialDesign:PackIcon>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- ═══════════ 4. SIDE DRAWER: PLAYLIST / EPISODES (F6) ═══════════ -->
+        <Border x:Name="PlaylistDrawer" HorizontalAlignment="Left" VerticalAlignment="Stretch" Width="340"
+                Background="#F50D131F" BorderBrush="#3000ADB5" BorderThickness="0,0,1,0"
+                Visibility="{Binding ShowPlaylistDrawer, Converter={StaticResource BoolToVis}}"
+                FlowDirection="RightToLeft">
+            <Grid Margin="16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <DockPanel Grid.Row="0" Margin="0,0,0,16">
+                    <Button DockPanel.Dock="Left" Click="TogglePlaylistDrawer_Click" Style="{StaticResource PlayerIconBtn}">
+                        <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                    </Button>
+                    <TextBlock Text="لیست پخش / قسمت‌ها (F6)" FontWeight="Bold" FontSize="16" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <ListBox Grid.Row="1" ItemsSource="{Binding Playlist}" Background="Transparent" BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="#1A2232" CornerRadius="8" Padding="12,10" Margin="0,0,0,8" Cursor="Hand">
+                                <Border.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick" 
+                                                  Command="{Binding DataContext.PlayPlaylistItemCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                  CommandParameter="{Binding}"/>
+                                </Border.InputBindings>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <materialDesign:PackIcon Grid.Column="0" Kind="PlayCircleOutline" Width="24" Height="24" Foreground="#00ADB5" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="{Binding DisplayName}" Foreground="#FFFFFF" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{Binding DisplayEpisodeInfo}" Foreground="#00FFF0" FontSize="11" Margin="0,3,0,0">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                    <Style.Triggers>
+                                                        <Trigger Property="Text" Value="">
+                                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </Border>
+
+        <!-- ═══════════ 5. SIDE DRAWER: BOOKMARKS (H / P) ═══════════ -->
+        <Border x:Name="BookmarksDrawer" HorizontalAlignment="Right" VerticalAlignment="Stretch" Width="320"
+                Background="#F50D131F" BorderBrush="#3000ADB5" BorderThickness="1,0,0,0"
+                Visibility="{Binding ShowBookmarksDrawer, Converter={StaticResource BoolToVis}}"
+                FlowDirection="RightToLeft">
+            <Grid Margin="16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <DockPanel Grid.Row="0" Margin="0,0,0,16">
+                    <Button DockPanel.Dock="Left" Click="ToggleBookmarksDrawer_Click" Style="{StaticResource PlayerIconBtn}">
+                        <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                    </Button>
+                    <TextBlock Text="نشانک‌های فیلم (H)" FontWeight="Bold" FontSize="16" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <ListBox Grid.Row="1" ItemsSource="{Binding Bookmarks}" Background="Transparent" BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="#1A2232" CornerRadius="8" Padding="12,10" Margin="0,0,0,8" Cursor="Hand">
+                                <Border.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick" 
+                                                  Command="{Binding DataContext.SeekToBookmarkCommand, RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                  CommandParameter="{Binding}"/>
+                                </Border.InputBindings>
+                                <DockPanel>
+                                    <materialDesign:PackIcon DockPanel.Dock="Left" Kind="BookmarkCheck" Width="20" Height="20" Foreground="#00FFF0" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding TimeFormatted}" Foreground="#00ADB5" FontWeight="Bold" DockPanel.Dock="Right" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Title}" Foreground="#FFFFFF" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </DockPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <Button Grid.Row="2" Style="{StaticResource PlayerIconBtn}" Background="#00ADB5" Foreground="#05080E" Padding="12,8" Margin="0,10,0,0"
+                        Click="AddBookmark_Click">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="BookmarkPlus" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="افزودن نشانک در این لحظه (P)" FontWeight="Bold"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- ═══════════ 6. SHORTCUTS HELP MODAL (F1) ═══════════ -->
+        <Grid Background="#B0000000" Visibility="{Binding ShowShortcutsHelp, Converter={StaticResource BoolToVis}}">
+            <Border x:Name="ShortcutsHelpCard" Background="#161B26" BorderBrush="#00ADB5" BorderThickness="1" 
+                    CornerRadius="14" Width="720" MaxHeight="600" 
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Padding="20,16"
+                    FlowDirection="RightToLeft"
+                    MouseLeftButtonDown="ShortcutsCard_MouseLeftButtonDown"
+                    MouseMove="ShortcutsCard_MouseMove"
+                    MouseLeftButtonUp="ShortcutsCard_MouseLeftButtonUp">
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="ShortcutsTranslateTransform" X="0" Y="0"/>
+                </Border.RenderTransform>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="#1B2433" CornerRadius="8" Padding="10,8" Margin="0,0,0,12" Cursor="SizeAll">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Left" Click="ToggleShortcutsHelp_Click" Style="{StaticResource PlayerIconBtn}">
+                                <materialDesign:PackIcon Kind="Close" Width="20" Height="20"/>
+                            </Button>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="DragVertical" Width="18" Height="18" Foreground="#64748B" Margin="0,0,4,0"/>
+                                <materialDesign:PackIcon Kind="KeyboardOutline" Width="24" Height="24" Foreground="#00FFF0" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="راهنمای کامل کلیدهای میانبر (PotPlayer Shortcuts)" FontWeight="Bold" FontSize="15" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <ScrollViewer x:Name="ShortcutsScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto" PreviewMouseWheel="GenericModal_PreviewMouseWheel">
+                        <Border Background="#0F141D" CornerRadius="8" BorderBrush="#20FFFFFF" BorderThickness="1" Padding="6">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="220"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Header -->
+                                <Border Grid.Row="0" Grid.ColumnSpan="2" Background="#1E2736" Padding="12,8" CornerRadius="4">
+                                    <Grid>
+                                        <TextBlock Text="عملکرد" Foreground="#00FFF0" FontWeight="Bold" FontSize="14"/>
+                                        <TextBlock Text="کلید" Foreground="#00FFF0" FontWeight="Bold" FontSize="14" HorizontalAlignment="Right" Margin="0,0,16,0"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Rows -->
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="پخش / توقف (Play / Pause)" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" Text="Space / دابل‌کلیک چپ" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="تمام‌صفحه (Fullscreen)" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" Text="Enter / F" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="پرش ۵ ثانیه (با Ctrl: ۳۰ ثانیه، با Shift: ۱ دقیقه)" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" Text="← / →" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="4" Grid.Column="0" Text="ولوم بالا / پایین" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="4" Grid.Column="1" Text="↑ / ↓ یا اسکرول ماوس" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="5" Grid.Column="0" Text="فایل قبلی / بعدی" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="5" Grid.Column="1" Text="PgUp / PgDn" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="6" Grid.Column="0" Text="کاهش / افزایش سرعت پخش" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="6" Grid.Column="1" Text="X / C / Z" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="7" Grid.Column="0" Text="فریم قبلی / بعدی (Frame Stepping)" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="7" Grid.Column="1" Text="D / E" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="8" Grid.Column="0" Text="سینک زیرنویس ۰.۵∓ ثانیه و ریست" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="8" Grid.Column="1" Text="&lt; / &gt; و /" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="9" Grid.Column="0" Text="سینک صدا ۰.۰۵ ثانیه" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="9" Grid.Column="1" Text="Shift+&lt; / &gt;" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="10" Grid.Column="0" Text="تنظیم زمان و روشن/خاموش کردن تکرار A-B" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="10" Grid.Column="1" Text="[ / ] و \" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="11" Grid.Column="0" Text="روشنایی/کنتراست/اشباع/رنگ ±۱٪ و ریست تصویر" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="11" Grid.Column="1" Text="W/E, R/T, Y/U, I/O و Q" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="12" Grid.Column="0" Text="پیش‌تنظیم‌های اندازه پنجره (0.5x تا حداکثر و اصلی)" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="12" Grid.Column="1" Text="1 تا 7 و 9" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="13" Grid.Column="0" Text="افزودن بوک‌مارک / مشاهده بوک‌مارک‌ها" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="13" Grid.Column="1" Text="P / H" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="14" Grid.Column="0" Text="انتخاب استریم صدا / انتخاب زیرنویس / نسبت تصویر / اسنپ‌شات" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="14" Grid.Column="1" Text="A / L / J / K" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="15" Grid.Column="0" Text="تصویر آینه‌ای / فلیپ تصویر" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="15" Grid.Column="1" Text="Ctrl+Z / Ctrl+V" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="16" Grid.Column="0" Text="نرمال‌سازی صدا / حذف نویز" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="16" Grid.Column="1" Text="Shift+N / Shift+D" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="17" Grid.Column="0" Text="ضبط پیوسته فریم / ضبط صدا" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="17" Grid.Column="1" Text="Ctrl+G / Shift+G" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+
+                                <TextBlock Grid.Row="18" Grid.Column="0" Text="راهنما / پوشه / بازکردن / بستن / تنظیمات / پلی‌لیست / اکولایزر" Foreground="#EEEEEE" Padding="10,8"/>
+                                <TextBlock Grid.Row="18" Grid.Column="1" Text="F1 تا F7, F12" Foreground="#00ADB5" FontWeight="Bold" Padding="10,8" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </Border>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ═══════════ 7. POPUP: AUDIO TRACKS (A) ═══════════ -->
+        <Border x:Name="AudioTracksPopupCard" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,130,90"
+                Background="#F5121824" BorderBrush="#00ADB5" BorderThickness="1" CornerRadius="10" Padding="14" Width="280"
+                Visibility="{Binding ShowAudioTracksPopup, Converter={StaticResource BoolToVis}}"
+                FlowDirection="RightToLeft" Panel.ZIndex="20"
+                MouseLeftButtonDown="AudioTracksPopupCard_MouseLeftButtonDown"
+                MouseMove="AudioTracksPopupCard_MouseMove"
+                MouseLeftButtonUp="AudioTracksPopupCard_MouseLeftButtonUp">
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="AudioPopupTranslateTransform" X="0" Y="0"/>
+            </Border.RenderTransform>
+            <StackPanel>
+                <Border Background="#1B2433" CornerRadius="6" Padding="8,5" Margin="0,0,0,10" Cursor="SizeAll">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Left" Click="CloseAudioTracksPopup_Click" Style="{StaticResource PlayerIconBtn}" Height="22" Width="22">
+                            <materialDesign:PackIcon Kind="Close" Width="14" Height="14"/>
+                        </Button>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="DragVertical" Width="16" Height="16" Foreground="#64748B" Margin="0,0,2,0"/>
+                            <TextBlock Text="انتخاب صدای فیلم (دوبله/زبان)" FontWeight="Bold" Foreground="#00FFF0" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+                <ScrollViewer x:Name="AudioTracksScrollViewer" MaxHeight="180" VerticalScrollBarVisibility="Auto" PreviewMouseWheel="GenericModal_PreviewMouseWheel">
+                    <ItemsControl ItemsSource="{Binding AudioTracks}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource PlayerIconBtn}" HorizontalContentAlignment="Stretch" Margin="0,0,0,4"
+                                        Command="{Binding DataContext.SelectAudioTrackCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}">
+                                    <DockPanel>
+                                        <materialDesign:PackIcon DockPanel.Dock="Left" Kind="Check" Width="18" Height="18" Foreground="#00FFF0"
+                                                                 Visibility="{Binding IsSelected, Converter={StaticResource BoolToVis}}" Margin="0,0,6,0"/>
+                                        <TextBlock Text="{Binding Name}" Foreground="#FFFFFF" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                    </DockPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <Separator Background="#25FFFFFF" Margin="0,8,0,8"/>
+
+                <!-- Audio Sync Controls -->
+                <TextBlock Text="همگام‌سازی صدا (Audio Delay)" Foreground="#94A3B8" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Command="{Binding AdjustAudioDelayCommand}" CommandParameter="-50" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Margin="0,0,2,0" Padding="4,4">
+                        <TextBlock Text="-50ms" FontSize="11" Foreground="#EEEEEE"/>
+                    </Button>
+                    <Button Grid.Column="1" Command="{Binding ResetAudioDelayCommand}" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Margin="2,0" Padding="4,4" ToolTip="کلیک برای ریست">
+                        <TextBlock Text="{Binding AudioDelayMilliseconds, StringFormat='{}{0}ms'}" FontSize="11" FontWeight="Bold" Foreground="#00FFF0"/>
+                    </Button>
+                    <Button Grid.Column="2" Command="{Binding AdjustAudioDelayCommand}" CommandParameter="50" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Margin="2,0,0,0" Padding="4,4">
+                        <TextBlock Text="+50ms" FontSize="11" Foreground="#EEEEEE"/>
+                    </Button>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+
+        <!-- ═══════════ 8. POPUP: SUBTITLE TRACKS & QUICK SYNC (L) ═══════════ -->
+        <Border x:Name="SubtitlesPopupCard" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,90,90"
+                Background="#F5121824" BorderBrush="#00ADB5" BorderThickness="1" CornerRadius="10" Padding="14" Width="310"
+                Visibility="{Binding ShowSubtitlesPopup, Converter={StaticResource BoolToVis}}"
+                FlowDirection="RightToLeft" Panel.ZIndex="20"
+                MouseLeftButtonDown="SubtitlesPopupCard_MouseLeftButtonDown"
+                MouseMove="SubtitlesPopupCard_MouseMove"
+                MouseLeftButtonUp="SubtitlesPopupCard_MouseLeftButtonUp">
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="SubtitlesPopupTranslateTransform" X="0" Y="0"/>
+            </Border.RenderTransform>
+            <StackPanel>
+                <Border Background="#1B2433" CornerRadius="6" Padding="8,5" Margin="0,0,0,10" Cursor="SizeAll">
+                    <DockPanel>
+                        <Button DockPanel.Dock="Left" Click="CloseSubtitlesPopup_Click" Style="{StaticResource PlayerIconBtn}" Height="22" Width="22">
+                            <materialDesign:PackIcon Kind="Close" Width="14" Height="14"/>
+                        </Button>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="DragVertical" Width="16" Height="16" Foreground="#64748B" Margin="0,0,2,0"/>
+                            <TextBlock Text="تنظیمات و انتخاب زیرنویس" FontWeight="Bold" Foreground="#00FFF0" FontSize="13" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+
+                <!-- Subtitle Tracks List in ScrollViewer -->
+                <ScrollViewer x:Name="SubtitlesTracksScrollViewer" MaxHeight="200" VerticalScrollBarVisibility="Auto" PreviewMouseWheel="GenericModal_PreviewMouseWheel">
+                    <ItemsControl ItemsSource="{Binding SubtitleTracks}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource PlayerIconBtn}" HorizontalContentAlignment="Stretch" Margin="0,0,0,4"
+                                        Command="{Binding DataContext.SelectSubtitleTrackCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                        CommandParameter="{Binding}">
+                                    <DockPanel>
+                                        <materialDesign:PackIcon DockPanel.Dock="Left" Kind="Check" Width="18" Height="18" Foreground="#00FFF0"
+                                                                 Visibility="{Binding IsSelected, Converter={StaticResource BoolToVis}}" Margin="0,0,6,0"/>
+                                        <TextBlock Text="{Binding Name}" Foreground="#FFFFFF" FontSize="12" TextTrimming="CharacterEllipsis"/>
+                                    </DockPanel>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <Separator Background="#25FFFFFF" Margin="0,6,0,8"/>
+
+                <!-- Subtitle Sync Controls -->
+                <TextBlock Text="همگام‌سازی و تاخیر زیرنویس" Foreground="#94A3B8" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
+                <Grid Margin="0,0,0,8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Command="{Binding AdjustSubtitleDelayCommand}" CommandParameter="-0.5" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Margin="0,0,2,0" Padding="4,4">
+                        <TextBlock Text="-0.5s" FontSize="11" Foreground="#EEEEEE"/>
+                    </Button>
+                    <Button Grid.Column="1" Command="{Binding ResetSubtitleDelayCommand}" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Margin="2,0" Padding="4,4" ToolTip="کلیک برای ریست">
+                        <TextBlock Text="{Binding SubtitleDelaySeconds, StringFormat='{}{0:F1}s'}" FontSize="11" FontWeight="Bold" Foreground="#00FFF0"/>
+                    </Button>
+                    <Button Grid.Column="2" Command="{Binding AdjustSubtitleDelayCommand}" CommandParameter="0.5" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Margin="2,0,0,0" Padding="4,4">
+                        <TextBlock Text="+0.5s" FontSize="11" Foreground="#EEEEEE"/>
+                    </Button>
+                </Grid>
+
+                <!-- Download Online Subtitles Button -->
+                <Button Command="{Binding OpenOnlineSubtitleModalCommand}" Style="{StaticResource PlayerIconBtn}" Background="#E50914" Foreground="#FFFFFF" HorizontalAlignment="Stretch" Margin="0,0,0,6" Padding="8,7">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="DownloadOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="📥 دانلود آنلاین زیرنویس (SubDL)..." FontSize="12" FontWeight="Bold"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Open Subtitle Studio Button -->
+                <Button Command="{Binding ToggleSubtitleStudioCommand}" Style="{StaticResource PlayerIconBtn}" Background="#00ADB5" Foreground="#05080E" HorizontalAlignment="Stretch" Margin="0,0,0,6" Padding="8,7">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="PaletteOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="🎨 شخصی‌سازی ظاهر زیرنویس (Studio)..." FontSize="12" FontWeight="Bold"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- AI Translation & Encoding Fix -->
+                <Button Command="{Binding TranslateSubtitleCommand}" Background="#1E2736" HorizontalAlignment="Stretch" Margin="0,0,0,4" Padding="8,6">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource PlayerIconBtn}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsTranslatingSubtitle}" Value="True">
+                                    <Setter Property="IsEnabled" Value="False"/>
+                                    <Setter Property="Opacity" Value="0.6"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Translate" Width="16" Height="16" Foreground="#00FFF0" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="#FFFFFF">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Text" Value="🌐 ترجمه زیرنویس به فارسی (هوش مصنوعی)"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsTranslatingSubtitle}" Value="True">
+                                            <Setter Property="Text" Value="⏳ در حال ترجمه زیرنویس..."/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </Button>
+
+                <Button Command="{Binding FixSubtitleEncodingCommand}" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" HorizontalAlignment="Stretch" Margin="0,0,0,4" Padding="8,6">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="AutoFix" Width="16" Height="16" Foreground="#00ADB5" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="✨ اصلاح انکودینگ حروف ناخوانای فارسی" FontSize="11" Foreground="#FFFFFF"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Command="{Binding LoadExternalSubtitleCommand}" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" HorizontalAlignment="Stretch" Margin="0,0,0,2" Padding="8,6">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <materialDesign:PackIcon Kind="FolderOpenOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Text="📂 افزودن فایل زیرنویس از سیستم..." FontSize="11" Foreground="#FFFFFF"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Border>
+
+        <!-- ═══════════ 8.5 MODAL: SUBTITLE STUDIO (COMPACT & DRAGGABLE) ═══════════ -->
+        <Grid Visibility="{Binding ShowSubtitleStudioModal, Converter={StaticResource BoolToVis}}" Panel.ZIndex="30">
+            <Border x:Name="SubtitleStudioCard"
+                    Background="#F0111622" BorderBrush="#00ADB5" BorderThickness="1.5" 
+                    CornerRadius="14" Width="380" MaxHeight="480" 
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Padding="14,12"
+                    FlowDirection="RightToLeft"
+                    MouseLeftButtonDown="StudioCard_MouseLeftButtonDown"
+                    MouseMove="StudioCard_MouseMove"
+                    MouseLeftButtonUp="StudioCard_MouseLeftButtonUp">
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="StudioTranslateTransform" X="0" Y="0"/>
+                </Border.RenderTransform>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header (Draggable Handle) -->
+                    <Border Grid.Row="0" Background="#1B2433" CornerRadius="8" Padding="10,6" Margin="0,0,0,10"
+                            Cursor="SizeAll">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Left" Command="{Binding ToggleSubtitleStudioCommand}" Style="{StaticResource PlayerIconBtn}" Height="26" Width="26">
+                                <materialDesign:PackIcon Kind="Close" Width="18" Height="18" Foreground="#FF5252"/>
+                            </Button>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="DragVertical" Width="18" Height="18" Foreground="#64748B" Margin="0,0,4,0"/>
+                                <materialDesign:PackIcon Kind="PaletteAdvanced" Width="18" Height="18" Foreground="#00FFF0" Margin="0,0,6,0"/>
+                                <TextBlock Text="استودیوی زیرنویس" FontWeight="Bold" FontSize="13" Foreground="#FFFFFF"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Content (Scrollable with mouse wheel) -->
+                    <ScrollViewer x:Name="StudioScrollViewer" Grid.Row="1" VerticalScrollBarVisibility="Auto" PreviewMouseWheel="StudioScrollViewer_PreviewMouseWheel">
+                        <StackPanel Margin="0,0,4,0">
+                            <!-- Live Preview Box -->
+                            <Border Background="#090D14" BorderBrush="#2500ADB5" BorderThickness="1" CornerRadius="8" Padding="10,8" Margin="0,0,0,10">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="پیش‌نمایش زنده:" Foreground="#64748B" FontSize="10" Margin="0,0,0,4" HorizontalAlignment="Center"/>
+                                    <Border Background="{Binding SubtitleBackgroundBrush}" CornerRadius="4" Padding="8,4" HorizontalAlignment="Center">
+                                        <TextBlock Text="پیش‌نمایش زیرنویس فارسی (Live)"
+                                                   FontSize="{Binding RenderedSubtitleFontSize}"
+                                                   Foreground="{Binding SubtitleColorBrush}"
+                                                   FontFamily="{Binding SubtitleFontFamily}"
+                                                   FontWeight="{Binding SubtitleFontWeight}"
+                                                   TextAlignment="{Binding SubtitleTextAlignment}">
+                                            <TextBlock.Effect>
+                                                <DropShadowEffect BlurRadius="4" ShadowDepth="1" Direction="315" Color="#000000" Opacity="0.95"/>
+                                            </TextBlock.Effect>
+                                        </TextBlock>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 1. Font Size Slider & Controls -->
+                            <DockPanel Margin="0,0,0,4">
+                                <TextBlock Text="اندازه فونت:" Foreground="#FFFFFF" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding SubtitleFontSize, StringFormat='{}{0}px'}" Foreground="#00FFF0" FontWeight="Bold" FontSize="12" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" Command="{Binding ChangeSubtitleFontSizeCommand}" CommandParameter="-2" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Width="26" Height="26" ToolTip="کاهش سایز">
+                                    <materialDesign:PackIcon Kind="Minus" Width="14" Height="14"/>
+                                </Button>
+                                <Slider Grid.Column="1" Minimum="16" Maximum="56" Value="{Binding SubtitleFontSize, Mode=TwoWay}" 
+                                        Style="{StaticResource VideoSeekBarStyle}" VerticalAlignment="Center" Margin="6,0"/>
+                                <Button Grid.Column="2" Command="{Binding ChangeSubtitleFontSizeCommand}" CommandParameter="2" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Width="26" Height="26" ToolTip="افزایش سایز">
+                                    <materialDesign:PackIcon Kind="Plus" Width="14" Height="14"/>
+                                </Button>
+                            </Grid>
+
+                            <!-- 2. Text Color Palette -->
+                            <TextBlock Text="رنگ متن زیرنویس:" Foreground="#FFFFFF" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,4"/>
+                            <UniformGrid Columns="8" Margin="0,0,0,8">
+                                <Button Command="{Binding SetSubtitleColorCommand}" CommandParameter="#FFFFFF" Style="{StaticResource PlayerIconBtn}" Background="#FFFFFF" Height="24" Margin="2" ToolTip="سفید"/>
+                                <Button Command="{Binding SetSubtitleColorCommand}" CommandParameter="#FFE600" Style="{StaticResource PlayerIconBtn}" Background="#FFE600" Height="24" Margin="2" ToolTip="زرد"/>
+                                <Button Command="{Binding SetSubtitleColorCommand}" CommandParameter="#00FFF0" Style="{StaticResource PlayerIconBtn}" Background="#00FFF0" Height="24" Margin="2" ToolTip="فیروزه‌ای"/>
+                                <Button Command="{Binding SetSubtitleColorCommand}" CommandParameter="#00FF66" Style="{StaticResource PlayerIconBtn}" Background="#00FF66" Height="24" Margin="2" ToolTip="سبز فسفری"/>
+                                <Button Command="{Binding SetSubtitleColorCommand}" CommandParameter="#FF9100" Style="{StaticResource PlayerIconBtn}" Background="#FF9100" Height="24" Margin="2" ToolTip="نارنجی"/>
+                                <Button Command="{Binding SetSubtitleColorCommand}" CommandParameter="#FF4081" Style="{StaticResource PlayerIconBtn}" Background="#FF4081" Height="24" Margin="2" ToolTip="صورتی"/>
+                                <Button Command="{Binding SetSubtitleColorCommand}" CommandParameter="#FF5252" Style="{StaticResource PlayerIconBtn}" Background="#FF5252" Height="24" Margin="2" ToolTip="قرمز"/>
+                                <Button Command="{Binding SetSubtitleColorCommand}" CommandParameter="#448AFF" Style="{StaticResource PlayerIconBtn}" Background="#448AFF" Height="24" Margin="2" ToolTip="آبی"/>
+                            </UniformGrid>
+
+                            <!-- 3. Bold & Alignment in one compact row -->
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <!-- Bold Toggle -->
+                                <Button Grid.Column="0" Command="{Binding ToggleSubtitleBoldCommand}" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Margin="0,0,4,0" Height="28" Padding="6,2">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="FormatBold" Width="16" Height="16" Foreground="#00FFF0" Margin="0,0,4,0"/>
+                                        <TextBlock Text="{Binding SubtitleBoldStatusText}" FontSize="11" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <!-- Alignment -->
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Command="{Binding SetSubtitleAlignmentCommand}" CommandParameter="Right" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Width="28" Height="28" Margin="2,0" ToolTip="راست‌چین">
+                                        <materialDesign:PackIcon Kind="FormatAlignRight" Width="14" Height="14"/>
+                                    </Button>
+                                    <Button Command="{Binding SetSubtitleAlignmentCommand}" CommandParameter="Center" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Width="28" Height="28" Margin="2,0" ToolTip="وسط‌چین">
+                                        <materialDesign:PackIcon Kind="FormatAlignCenter" Width="14" Height="14"/>
+                                    </Button>
+                                    <Button Command="{Binding SetSubtitleAlignmentCommand}" CommandParameter="Left" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Width="28" Height="28" Margin="2,0" ToolTip="چپ‌چین">
+                                        <materialDesign:PackIcon Kind="FormatAlignLeft" Width="14" Height="14"/>
+                                    </Button>
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- 4. Background Box & Opacity -->
+                            <Border Background="#161D2A" CornerRadius="8" Padding="8" Margin="0,0,0,8">
+                                <StackPanel>
+                                    <DockPanel Margin="0,0,0,4">
+                                        <TextBlock Text="باکس پس‌زمینه:" Foreground="#FFFFFF" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center"/>
+                                        <Button Command="{Binding ToggleSubtitleBackgroundCommand}" Style="{StaticResource PlayerIconBtn}" Background="#222C3D" Height="22" Padding="6,1" DockPanel.Dock="Left">
+                                            <TextBlock Text="{Binding SubtitleBackgroundStatusText}" FontSize="10" Foreground="#00FFF0"/>
+                                        </Button>
+                                    </DockPanel>
+                                    <!-- Opacity Slider -->
+                                    <Grid Margin="0,2,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="شفافیت:" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center"/>
+                                        <Slider Grid.Column="1" Minimum="10" Maximum="100" Value="{Binding SubtitleBgOpacityPercent, Mode=TwoWay}" 
+                                                Style="{StaticResource VideoSeekBarStyle}" VerticalAlignment="Center" Margin="6,0"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding SubtitleBgOpacityPercent, StringFormat='{}{0}%'}" Foreground="#00FFF0" FontSize="10" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- 5. Vertical Position (Margin from Bottom) -->
+                            <DockPanel Margin="0,0,0,2">
+                                <TextBlock Text="موقعیت ارتفاع از پایین:" Foreground="#FFFFFF" FontWeight="SemiBold" FontSize="11" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding SubtitleBottomMargin, StringFormat='{}{0}px'}" Foreground="#00FFF0" FontWeight="Bold" FontSize="11" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+                            </DockPanel>
+                            <Slider Minimum="15" Maximum="200" Value="{Binding SubtitleBottomMargin, Mode=TwoWay}" 
+                                    Style="{StaticResource VideoSeekBarStyle}" VerticalAlignment="Center" Margin="0,0,0,8"/>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ═══════════ 8.6 MODAL: ONLINE SUBTITLE SEARCH & DOWNLOAD (DRAGGABLE) ═══════════ -->
+        <Grid Visibility="{Binding ShowOnlineSubtitleModal, Converter={StaticResource BoolToVis}}" Panel.ZIndex="35">
+            <Border x:Name="OnlineSubCard"
+                    Background="#F0111622" BorderBrush="#E50914" BorderThickness="1.5" 
+                    CornerRadius="14" Width="460" MaxHeight="540" 
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Padding="14,12"
+                    FlowDirection="RightToLeft"
+                    MouseLeftButtonDown="OnlineSubCard_MouseLeftButtonDown"
+                    MouseMove="OnlineSubCard_MouseMove"
+                    MouseLeftButtonUp="OnlineSubCard_MouseLeftButtonUp">
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="OnlineSubTranslateTransform" X="0" Y="0"/>
+                </Border.RenderTransform>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/> <!-- Title & Close -->
+                        <RowDefinition Height="Auto"/> <!-- Search Bar -->
+                        <RowDefinition Height="Auto"/> <!-- Language Chips -->
+                        <RowDefinition Height="Auto"/> <!-- Status / Progress -->
+                        <RowDefinition Height="*"/>    <!-- Subtitle Results List -->
+                    </Grid.RowDefinitions>
+
+                    <!-- Title Bar (Draggable Handle) -->
+                    <Border Grid.Row="0" Background="#1B2433" CornerRadius="8" Padding="10,6" Margin="0,0,0,10"
+                            Cursor="SizeAll">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Left" Command="{Binding CloseOnlineSubtitleModalCommand}" Style="{StaticResource PlayerIconBtn}" Padding="4">
+                                <materialDesign:PackIcon Kind="Close" Width="16" Height="16" Foreground="#FF5252"/>
+                            </Button>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="DragVertical" Width="18" Height="18" Foreground="#64748B" Margin="0,0,4,0"/>
+                                <materialDesign:PackIcon Kind="CloudDownloadOutline" Width="20" Height="20" Foreground="#E50914" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="دانلود آنلاین زیرنویس" FontWeight="Bold" Foreground="#FFFFFF" FontSize="13" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Search Input & Button -->
+                    <Grid Grid.Row="1" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Background="#1A2232" BorderBrush="#33FFFFFF" BorderThickness="1" CornerRadius="6" Margin="0,0,6,0">
+                            <TextBox Text="{Binding SubtitleSearchQuery, UpdateSourceTrigger=PropertyChanged}" 
+                                     KeyDown="OnlineSubSearch_KeyDown"
+                                     Background="Transparent" Foreground="#FFFFFF" CaretBrush="#00FFF0"
+                                     BorderThickness="0" Padding="8,6" FontSize="12" VerticalAlignment="Center"/>
+                        </Border>
+                        <Button Grid.Column="1" Command="{Binding SearchOnlineSubtitlesCommand}" 
+                                Background="#E50914" Foreground="#FFFFFF" Style="{StaticResource PlayerIconBtn}" Padding="12,6">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Magnify" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBlock Text="جستجو" FontSize="12" FontWeight="Bold"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                    <!-- Language Filter Chips -->
+                    <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal">
+                            <Button Command="{Binding SetSearchLanguageCommand}" CommandParameter="ALL" Style="{StaticResource PlayerIconBtn}" Margin="0,0,4,0" Padding="8,4" Background="#1E2736">
+                                <TextBlock Text="همه 🌍" FontSize="10" FontWeight="SemiBold"/>
+                            </Button>
+                            <Button Command="{Binding SetSearchLanguageCommand}" CommandParameter="FA" Style="{StaticResource PlayerIconBtn}" Margin="0,0,4,0" Padding="8,4" Background="#1E2736">
+                                <TextBlock Text="🇮🇷 فارسی" FontSize="10" FontWeight="Bold" Foreground="#00FFF0"/>
+                            </Button>
+                            <Button Command="{Binding SetSearchLanguageCommand}" CommandParameter="EN" Style="{StaticResource PlayerIconBtn}" Margin="0,0,4,0" Padding="8,4" Background="#1E2736">
+                                <TextBlock Text="🇬🇧 English" FontSize="10" FontWeight="SemiBold"/>
+                            </Button>
+                            <Button Command="{Binding SetSearchLanguageCommand}" CommandParameter="AR" Style="{StaticResource PlayerIconBtn}" Margin="0,0,4,0" Padding="8,4" Background="#1E2736">
+                                <TextBlock Text="🇸🇦 العربية" FontSize="10" FontWeight="SemiBold"/>
+                            </Button>
+                            <Button Command="{Binding SetSearchLanguageCommand}" CommandParameter="TR" Style="{StaticResource PlayerIconBtn}" Margin="0,0,4,0" Padding="8,4" Background="#1E2736">
+                                <TextBlock Text="🇹🇷 Türkçe" FontSize="10" FontWeight="SemiBold"/>
+                            </Button>
+                            <Button Command="{Binding SetSearchLanguageCommand}" CommandParameter="AZ" Style="{StaticResource PlayerIconBtn}" Margin="0,0,4,0" Padding="8,4" Background="#1E2736">
+                                <TextBlock Text="🇦🇿 Azərbaycanca" FontSize="10" FontWeight="SemiBold"/>
+                            </Button>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Status Text & Loading Indicator -->
+                    <StackPanel Grid.Row="3" Margin="0,0,0,6">
+                        <ProgressBar IsIndeterminate="True" Height="2" Background="Transparent" Foreground="#E50914"
+                                     Visibility="{Binding IsSearchingOnlineSubtitles, Converter={StaticResource BoolToVis}}"/>
+                        <ProgressBar IsIndeterminate="True" Height="2" Background="Transparent" Foreground="#00FFF0"
+                                     Visibility="{Binding IsDownloadingOnlineSubtitle, Converter={StaticResource BoolToVis}}"/>
+                        <TextBlock Text="{Binding OnlineSubtitleStatusText}" Foreground="#94A3B8" FontSize="10.5" Margin="0,4,0,0" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+
+                    <!-- Results List -->
+                    <ScrollViewer x:Name="OnlineSubScrollViewer" Grid.Row="4" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="320"
+                                  PreviewMouseWheel="GenericModal_PreviewMouseWheel">
+                        <ItemsControl ItemsSource="{Binding OnlineSubtitleResults}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Background="#161E2E" BorderBrush="#25FFFFFF" BorderThickness="1" CornerRadius="8" Margin="0,0,0,6" Padding="8,6">
+                                        <DockPanel>
+                                            <!-- Action Buttons (Download & Auto-Translate) -->
+                                            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <Button Command="{Binding DataContext.DownloadOnlineSubtitleCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="#E50914" Foreground="#FFFFFF" Style="{StaticResource PlayerIconBtn}" Padding="8,4" Margin="0,0,4,0">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="Download" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                        <TextBlock Text="دریافت" FontSize="10.5" FontWeight="Bold"/>
+                                                    </StackPanel>
+                                                </Button>
+
+                                                <Button Command="{Binding DataContext.DownloadAndTranslateSubtitleCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="دریافت و ترجمه خودکار به فارسی با هوش مصنوعی"
+                                                        Background="#1E2736" BorderBrush="#00FFF0" BorderThickness="1" Foreground="#00FFF0" Style="{StaticResource PlayerIconBtn}" Padding="6,4">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <materialDesign:PackIcon Kind="Translate" Width="13" Height="13" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                                        <TextBlock Text="ترجمه" FontSize="10" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+
+                                            <!-- Info Stack -->
+                                            <StackPanel VerticalAlignment="Center">
+                                                <DockPanel Margin="0,0,0,2">
+                                                    <!-- Language Flag/Badge -->
+                                                    <Border Background="#25E50914" CornerRadius="4" Padding="4,1" Margin="0,0,6,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Language}" FontSize="9.5" FontWeight="Bold" Foreground="#FFFFFF"/>
+                                                    </Border>
+                                                    <!-- Source Badge -->
+                                                    <Border Background="#1AFFFFFF" CornerRadius="4" Padding="4,1" Margin="0,0,6,0" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Source}" FontSize="9" Foreground="#94A3B8"/>
+                                                    </Border>
+                                                    <!-- Title / Release Name -->
+                                                    <TextBlock Text="{Binding Title}" Foreground="#FFFFFF" FontSize="11" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                                </DockPanel>
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ═══════════ 9. POPUP: PLAYBACK SPEED (X / C / Z) ═══════════ -->
+        <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,50,90"
+                Background="#F5121824" BorderBrush="#00ADB5" BorderThickness="1" CornerRadius="10" Padding="14" Width="280"
+                Visibility="{Binding ShowSpeedPopup, Converter={StaticResource BoolToVis}}"
+                FlowDirection="RightToLeft" Panel.ZIndex="20">
+            <StackPanel>
+                <DockPanel Margin="0,0,0,10">
+                    <Button DockPanel.Dock="Left" Click="CloseSpeedPopup_Click" Style="{StaticResource PlayerIconBtn}">
+                        <materialDesign:PackIcon Kind="Close" Width="16" Height="16"/>
+                    </Button>
+                    <TextBlock Text="تنظیم سرعت پخش" FontWeight="Bold" Foreground="#00FFF0" FontSize="13" VerticalAlignment="Center"/>
+                </DockPanel>
+
+                <!-- Current Speed Display & Quick - / Reset / + Buttons -->
+                <Border Background="#1A2232" CornerRadius="8" Padding="10,8" Margin="0,0,0,10">
+                    <Grid FlowDirection="LeftToRight">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Decrease Speed Button -->
+                        <Button Grid.Column="0" Command="{Binding DecreaseSpeedCommand}" Style="{StaticResource PlayerIconBtn}" 
+                                ToolTip="کاهش سرعت ۰.۱x (X)" Padding="8,4" Background="#283446">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Minus" Width="16" Height="16" Foreground="#FF5252" VerticalAlignment="Center"/>
+                                <TextBlock Text="0.1x" FontSize="11" Foreground="#EEEEEE" Margin="2,0,0,0"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Current Speed Text & Reset -->
+                        <Button Grid.Column="1" Command="{Binding ResetSpeedCommand}" Style="{StaticResource PlayerIconBtn}" 
+                                ToolTip="ریست به سرعت عادی ۱.۰x (Z)" Margin="6,0">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="{Binding PlaybackSpeed, StringFormat='{}{0:0.00}x'}" FontWeight="Bold" FontSize="15" Foreground="#00FFF0" HorizontalAlignment="Center"/>
+                                <TextBlock Text="عادی (۱.۰x)" FontSize="10" Foreground="#94A3B8" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Increase Speed Button -->
+                        <Button Grid.Column="2" Command="{Binding IncreaseSpeedCommand}" Style="{StaticResource PlayerIconBtn}" 
+                                ToolTip="افزایش سرعت ۰.۱x (C)" Padding="8,4" Background="#283446">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="0.1x" FontSize="11" Foreground="#EEEEEE" Margin="0,0,2,0"/>
+                                <materialDesign:PackIcon Kind="Plus" Width="16" Height="16" Foreground="#00E676" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- Speed Presets Header -->
+                <TextBlock Text="سرعت‌های آماده:" Foreground="#94A3B8" FontSize="11" Margin="0,0,0,6"/>
+
+                <!-- Preset Chips Grid -->
+                <UniformGrid Columns="4" Margin="0,0,0,2">
+                    <Button Command="{Binding SetSpeedCommand}" CommandParameter="0.5" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Margin="2" Padding="4">
+                        <TextBlock Text="0.5x" FontSize="11"/>
+                    </Button>
+                    <Button Command="{Binding SetSpeedCommand}" CommandParameter="0.75" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Margin="2" Padding="4">
+                        <TextBlock Text="0.75x" FontSize="11"/>
+                    </Button>
+                    <Button Command="{Binding SetSpeedCommand}" CommandParameter="1.0" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Margin="2" Padding="4">
+                        <TextBlock Text="1.0x" FontSize="11" FontWeight="Bold" Foreground="#00FFF0"/>
+                    </Button>
+                    <Button Command="{Binding SetSpeedCommand}" CommandParameter="1.25" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Margin="2" Padding="4">
+                        <TextBlock Text="1.25x" FontSize="11"/>
+                    </Button>
+                    <Button Command="{Binding SetSpeedCommand}" CommandParameter="1.5" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Margin="2" Padding="4">
+                        <TextBlock Text="1.5x" FontSize="11"/>
+                    </Button>
+                    <Button Command="{Binding SetSpeedCommand}" CommandParameter="1.75" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Margin="2" Padding="4">
+                        <TextBlock Text="1.75x" FontSize="11"/>
+                    </Button>
+                    <Button Command="{Binding SetSpeedCommand}" CommandParameter="2.0" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Margin="2" Padding="4">
+                        <TextBlock Text="2.0x" FontSize="11"/>
+                    </Button>
+                    <Button Command="{Binding SetSpeedCommand}" CommandParameter="3.0" Style="{StaticResource PlayerIconBtn}" Background="#1E2736" Margin="2" Padding="4">
+                        <TextBlock Text="3.0x" FontSize="11"/>
+                    </Button>
+                </UniformGrid>
+            </StackPanel>
+        </Border>
+
+        <!-- ═══════════ RESIZE GRIP (Bottom-Right corner) ═══════════ -->
+        <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,3,3" IsHitTestVisible="False">
+            <materialDesign:PackIcon Kind="ResizeBottomRight" Width="14" Height="14" Foreground="#5000ADB5"/>
+        </Border>
+    </Grid>
+</Window>

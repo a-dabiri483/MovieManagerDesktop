@@ -40,6 +40,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <!-- Back Button -->
@@ -56,8 +57,16 @@
                         <materialDesign:PackIcon Kind="ChartBar" Width="26" Height="26" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
                         <TextBlock Text="آمار و تحلیل جامع آرشیو" FontSize="24" FontWeight="Black" Foreground="White"/>
                     </StackPanel>
-                    <TextBlock Text="تحلیل کاملاً واقعی و لحظه‌ای از فایل‌ها، وضعیت تماشا، زمان، کیفیت‌ها و هنرمندان موجود در سیستم شما" FontSize="13" Foreground="{DynamicResource SecondaryText}" Margin="34,4,0,0"/>
+                    <TextBlock Text="تحلیل کاملاً واقعی و لحظه‌ای از فایل‌ها، وضعیت تماشا، زمان، کیفیت‌ها و هنرمندان موجود در دیتابیس شما" FontSize="13" Foreground="{DynamicResource SecondaryText}" Margin="34,4,0,0"/>
                 </StackPanel>
+
+                <!-- Refresh Button -->
+                <Button Grid.Column="2" Command="{Binding RefreshAnalyticsCommand}"
+                        Style="{StaticResource MaterialDesignFloatingActionMiniButton}"
+                        Background="#20FFD32A" BorderBrush="#40FFD32A" Foreground="{DynamicResource GoldColor}"
+                        Width="42" Height="42" Cursor="Hand" ToolTip="به‌روزرسانی و محاسبه مجدد آمار">
+                    <materialDesign:PackIcon Kind="Refresh" Width="22" Height="22"/>
+                </Button>
             </Grid>
 
             <!-- Row 1: 4 Key Indicator Cards -->

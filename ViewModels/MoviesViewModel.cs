@@ -229,6 +229,18 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private string _bulkActionText = string.Empty;
 
+        [ObservableProperty]
+        private int _bulkActionCurrentCount = 0;
+
+        [ObservableProperty]
+        private int _bulkActionTotalCount = 0;
+
+        [ObservableProperty]
+        private string _bulkActionPercentText = "0%";
+
+        [ObservableProperty]
+        private string _bulkActionCountText = "";
+
         private System.Threading.CancellationTokenSource? _bulkActionCts;
 
         [RelayCommand]
@@ -634,6 +646,86 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
+        public async Task RefreshItemAsync(GalleryItemViewModel item)
+        {
+            if (item == null || item.File == null) return;
+            try
+            {
+                item.IsUpdating = true;
+                ToastService.Instance.ShowInfo($"در حال به‌روزرسانی «{item.File.FormattedTitle}» از TMDb...");
+                var identifyService = new IdentifyMediaService();
+                var updated = await identifyService.IdentifyMediaAsync(item.File);
+
+                using (var db = new AppDbContext())
+                {
+                    var dbFiles = db.VideoFiles.Where(v => v.FormattedTitle == item.File.FormattedTitle || v.Id == item.File.Id).ToList();
+                    foreach (var dbFile in dbFiles)
+                    {
+                        dbFile.TmdbId = updated.TmdbId;
+                        dbFile.PosterUrl = updated.PosterUrl;
+                        dbFile.BackdropUrl = updated.BackdropUrl;
+                        dbFile.Rating = updated.Rating;
+                        dbFile.Overview = updated.Overview;
+                        dbFile.Genres = updated.Genres;
+                        dbFile.Actors = updated.Actors;
+                        dbFile.Director = updated.Director;
+                        dbFile.Year = updated.Year;
+                        dbFile.FirstAirDate = updated.FirstAirDate;
+                        dbFile.LastAirDate = updated.LastAirDate;
+                        dbFile.NetworkName = updated.NetworkName;
+                        dbFile.AirDay = updated.AirDay;
+                        dbFile.AirTime = updated.AirTime;
+                        dbFile.TotalSeasonsCount = updated.TotalSeasonsCount ?? updated.NumberOfSeasons;
+                        dbFile.TotalEpisodesCount = updated.TotalEpisodesCount ?? updated.NumberOfEpisodes;
+                        dbFile.NumberOfSeasons = updated.NumberOfSeasons ?? updated.TotalSeasonsCount;
+                        dbFile.NumberOfEpisodes = updated.NumberOfEpisodes ?? updated.TotalEpisodesCount;
+                        dbFile.NextEpisodeDate = updated.NextEpisodeDate;
+                        dbFile.NextEpisodeSeason = updated.NextEpisodeSeason;
+                        dbFile.NextEpisodeNumber = updated.NextEpisodeNumber;
+                        dbFile.SeriesStatus = updated.SeriesStatus;
+                        dbFile.CollectionName = updated.CollectionName;
+                        dbFile.IsIdentified = true;
+                    }
+                    await db.SaveChangesAsync();
+
+                    if (updated.MediaType == "Series" && updated.TmdbId.HasValue)
+                    {
+                        var (sList, eList) = await identifyService.FetchSeriesDetailsAsync(updated.TmdbId.Value);
+                        if (sList.Count > 0)
+                        {
+                            var oldS = db.TvSeasons.Where(s => s.TmdbSeriesId == updated.TmdbId.Value).ToList();
+                            var oldE = db.TvEpisodes.Where(e => e.TmdbSeriesId == updated.TmdbId.Value).ToList();
+                            db.TvSeasons.RemoveRange(oldS);
+                            db.TvEpisodes.RemoveRange(oldE);
+                            db.TvSeasons.AddRange(sList);
+                            db.TvEpisodes.AddRange(eList);
+                            await db.SaveChangesAsync();
+                        }
+                    }
+                }
+
+                item.NotifyFileChanged();
+                ToastService.Instance.ShowSuccess($"«{item.File.FormattedTitle}» با موفقیت به‌روزرسانی شد.");
+                await LoadMoviesAsync();
+            }
+            catch (Exception ex)
+            {
+                ToastService.Instance.ShowError($"خطا در به‌روزرسانی: {ex.Message}");
+            }
+            finally
+            {
+                item.IsUpdating = false;
+            }
+        }
+
+        [RelayCommand]
+        public void PlayItem(GalleryItemViewModel item)
+        {
+            if (item == null || item.File == null) return;
+            PlaybackService.PlayMedia(item.File);
+        }
+
+        [RelayCommand]
         public async Task DeleteItemAsync(GalleryItemViewModel item)
         {
             if (item == null) return;
@@ -713,15 +805,20 @@ namespace MovieManagerDesktop.ViewModels
             var selected = Movies.Where(m => m.IsSelected).ToList();
             if (selected.Count == 0) return;
 
-            IsBulkActionRunning = true;
+            int total = selected.Count;
+            BulkActionTotalCount = total;
+            BulkActionCurrentCount = 0;
             BulkActionProgress = 0;
+            BulkActionPercentText = "0%";
+            BulkActionCountText = $"0 از {total}";
             BulkActionText = "در حال شروع به‌روزرسانی...";
+            IsBulkActionRunning = true;
+
             _bulkActionCts = new System.Threading.CancellationTokenSource();
             var token = _bulkActionCts.Token;
 
             try
             {
-                int total = selected.Count;
                 int current = 0;
                 var identifyService = new IdentifyMediaService();
 
@@ -730,30 +827,73 @@ namespace MovieManagerDesktop.ViewModels
                     if (token.IsCancellationRequested) break;
 
                     var item = selected[i];
-                    BulkActionText = $"در حال دریافت متادیتا: {item.File.FormattedTitle}";
+                    BulkActionCurrentCount = i + 1;
                     BulkActionProgress = ((double)(i + 1) / total) * 100;
+                    BulkActionPercentText = $"{Math.Round(BulkActionProgress)}%";
+                    BulkActionCountText = $"{i + 1} از {total}";
+                    BulkActionText = $"در حال دریافت متادیتا برای «{item.File.FormattedTitle}»";
 
                     try
                     {
-                        await identifyService.IdentifyMediaAsync(item.File);
+                        var updated = await identifyService.IdentifyMediaAsync(item.File);
                         using var db = new AppDbContext();
-                        var dbFile = await db.VideoFiles.FindAsync(item.File.Id);
-                        if (dbFile != null)
+                        var dbFiles = db.VideoFiles.Where(v => v.FormattedTitle == item.File.FormattedTitle || v.Id == item.File.Id).ToList();
+                        foreach (var dbFile in dbFiles)
                         {
-                            dbFile.TmdbId = item.File.TmdbId;
-                            dbFile.PosterUrl = item.File.PosterUrl;
-                            dbFile.Rating = item.File.Rating;
-                            dbFile.Overview = item.File.Overview;
-                            dbFile.Genres = item.File.Genres;
-                            dbFile.Actors = item.File.Actors;
-                            dbFile.Director = item.File.Director;
-                            dbFile.IsIdentified = item.File.IsIdentified;
-                            await db.SaveChangesAsync();
+                            dbFile.TmdbId = updated.TmdbId;
+                            dbFile.PosterUrl = updated.PosterUrl;
+                            dbFile.BackdropUrl = updated.BackdropUrl;
+                            dbFile.Rating = updated.Rating;
+                            dbFile.Overview = updated.Overview;
+                            dbFile.Genres = updated.Genres;
+                            dbFile.Actors = updated.Actors;
+                            dbFile.Director = updated.Director;
+                            dbFile.Year = updated.Year;
+                            dbFile.FirstAirDate = updated.FirstAirDate;
+                            dbFile.LastAirDate = updated.LastAirDate;
+                            dbFile.NetworkName = updated.NetworkName;
+                            dbFile.AirDay = updated.AirDay;
+                            dbFile.AirTime = updated.AirTime;
+                            dbFile.TotalSeasonsCount = updated.TotalSeasonsCount ?? updated.NumberOfSeasons;
+                            dbFile.TotalEpisodesCount = updated.TotalEpisodesCount ?? updated.NumberOfEpisodes;
+                            dbFile.NumberOfSeasons = updated.NumberOfSeasons ?? updated.TotalSeasonsCount;
+                            dbFile.NumberOfEpisodes = updated.NumberOfEpisodes ?? updated.TotalEpisodesCount;
+                            dbFile.NextEpisodeDate = updated.NextEpisodeDate;
+                            dbFile.NextEpisodeSeason = updated.NextEpisodeSeason;
+                            dbFile.NextEpisodeNumber = updated.NextEpisodeNumber;
+                            dbFile.SeriesStatus = updated.SeriesStatus;
+                            dbFile.CollectionName = updated.CollectionName;
+                            dbFile.IsIdentified = true;
+                        }
+                        await db.SaveChangesAsync();
+
+                        if (updated.MediaType == "Series" && updated.TmdbId.HasValue)
+                        {
+                            var (sList, eList) = await identifyService.FetchSeriesDetailsAsync(updated.TmdbId.Value);
+                            if (sList.Count > 0)
+                            {
+                                var oldS = db.TvSeasons.Where(s => s.TmdbSeriesId == updated.TmdbId.Value).ToList();
+                                var oldE = db.TvEpisodes.Where(e => e.TmdbSeriesId == updated.TmdbId.Value).ToList();
+                                db.TvSeasons.RemoveRange(oldS);
+                                db.TvEpisodes.RemoveRange(oldE);
+                                db.TvSeasons.AddRange(sList);
+                                db.TvEpisodes.AddRange(eList);
+                                await db.SaveChangesAsync();
+                            }
                         }
                     }
                     catch { }
 
                     current++;
+                }
+
+                if (!token.IsCancellationRequested)
+                {
+                    ToastService.Instance.ShowSuccess($"{current} عنوان با موفقیت از TMDb به‌روزرسانی شدند.");
+                }
+                else
+                {
+                    ToastService.Instance.ShowInfo($"عملیات به‌روزرسانی متوقف شد ({current} مورد انجام شد).");
                 }
             }
             finally

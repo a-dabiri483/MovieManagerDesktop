@@ -11,6 +11,14 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private ObservableObject _currentViewModel;
 
+        [ObservableProperty]
+        private bool _isPlayerActive = false;
+
+        partial void OnCurrentViewModelChanged(ObservableObject? value)
+        {
+            IsPlayerActive = value is PlayerViewModel;
+        }
+
         private HomeViewModel? _homeViewModel;
         private MoviesViewModel? _moviesViewModel;
         private FavoritesViewModel? _favoritesViewModel;

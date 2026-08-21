@@ -51,6 +51,27 @@ namespace MovieManagerDesktop.Services
         public bool ShowActorImages { get; set; } = true;
         public bool HideAdultContent { get; set; } = false;
 
+        // Video Player Settings
+        public bool UseInternalPlayer { get; set; } = true;
+        public string ExternalPlayerType { get; set; } = "SystemDefault"; // SystemDefault, PotPlayer, VLC, Custom
+        public string CustomExternalPlayerPath { get; set; } = string.Empty;
+        public double? PlayerWindowWidth { get; set; } = null;
+        public double? PlayerWindowHeight { get; set; } = null;
+        public double? PlayerWindowLeft { get; set; } = null;
+        public double? PlayerWindowTop { get; set; } = null;
+        public bool PlayerAlwaysOnTop { get; set; } = false;
+        public int PlayerVolume { get; set; } = 100;
+        public int SubtitleFontSize { get; set; } = 28;
+        public string SubtitleColorHex { get; set; } = "#FFFFFF";
+        public string SubtitleFontFamily { get; set; } = "Vazirmatn";
+        public bool IsSubtitleBold { get; set; } = true;
+        public bool HasSubtitleBackground { get; set; } = false;
+        public string SubtitleBackgroundColorHex { get; set; } = "#000000";
+        public int SubtitleBgOpacityPercent { get; set; } = 75;
+        public int SubtitleBottomMargin { get; set; } = 40;
+        public string SubtitleAlignment { get; set; } = "Center";
+        public bool HasSubtitleShadow { get; set; } = true;
+
         // Trashed Broken Items (AutoRelocator)
         public List<int> TrashedBrokenDbIds { get; set; } = new();
     }

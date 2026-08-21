@@ -279,17 +279,9 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void PlayFeatured()
         {
-            if (FeaturedVideoFile != null && !string.IsNullOrEmpty(FeaturedVideoFile.FilePath) && System.IO.File.Exists(FeaturedVideoFile.FilePath))
+            if (FeaturedVideoFile != null)
             {
-                try
-                {
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-                    {
-                        FileName = FeaturedVideoFile.FilePath,
-                        UseShellExecute = true
-                    });
-                }
-                catch { }
+                PlaybackService.PlayMedia(FeaturedVideoFile);
             }
             else
             {

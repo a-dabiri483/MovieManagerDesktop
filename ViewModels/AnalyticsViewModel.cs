@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -56,8 +58,37 @@ namespace MovieManagerDesktop.ViewModels
         private int _worksCount;
     }
 
+    public class AnalyticsDataResult
+    {
+        public int MovCount { get; set; }
+        public int SerCount { get; set; }
+        public int EpCount { get; set; }
+        public int FileCount { get; set; }
+        public double MovPct { get; set; }
+        public double SerPct { get; set; }
+        public int FavCount { get; set; }
+        public int WatchCount { get; set; }
+        public int MovWatched { get; set; }
+        public int EpWatched { get; set; }
+        public int CompSeries { get; set; }
+        public double OverallPct { get; set; }
+        public string WatchTimeStr { get; set; } = "۰ ساعت";
+        public string ArchiveDurationStr { get; set; } = "۰ ساعت";
+        public string StorageStr { get; set; } = "۰ GB";
+        public string AvgRatingStr { get; set; } = "۰.۰";
+        public int TopRateCnt { get; set; }
+        public List<GenreStatItem> TopGenresList { get; set; } = new();
+        public List<SimpleStatItem> QualityList { get; set; } = new();
+        public List<SimpleStatItem> DecadeList { get; set; } = new();
+        public List<PersonStatItem> TopDirList { get; set; } = new();
+        public List<PersonStatItem> TopActList { get; set; } = new();
+    }
+
     public partial class AnalyticsViewModel : ObservableObject
     {
+        [ObservableProperty]
+        private bool _isLoading = false;
+
         // 1. Counts
         [ObservableProperty]
         private int _totalMoviesCount;
@@ -122,261 +153,334 @@ namespace MovieManagerDesktop.ViewModels
 
         private readonly string[] _genreColors = { "#8854D0", "#FF4757", "#2ED573", "#FFA502", "#1E90FF", "#20BF6B", "#EB3B5A", "#4B7BEC", "#A55EEA", "#FD9644" };
         private readonly string[] _qualityColors = { "#00D2D3", "#3A86FF", "#54A0FF", "#5F27CD", "#FF9F43" };
-        private readonly string[] _decadeColors = { "#10AC84", "#01A3A4", "#2E86DE", "#341F97", "#EE5253" };
+        private readonly string[] _decadeColors = { "#10AC84", "#01A3A4", "#2E86DE", "#341F97", "#EE5253", "#FFA502" };
 
         public AnalyticsViewModel()
         {
-            LoadAnalytics();
+            _ = LoadAnalyticsAsync();
+
+            WeakReferenceMessenger.Default.Register<MediaUpdatedMessage>(this, (r, m) =>
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    _ = LoadAnalyticsAsync();
+                });
+            });
         }
 
-        public void LoadAnalytics()
+        [RelayCommand]
+        public async Task RefreshAnalyticsAsync()
         {
+            await LoadAnalyticsAsync();
+            ToastService.Instance.ShowSuccess("آمار و تحلیل‌های آرشیو با موفقیت به‌روزرسانی شد.");
+        }
+
+        public async Task LoadAnalyticsAsync()
+        {
+            if (IsLoading) return;
+            IsLoading = true;
+
             try
             {
-                using var db = new AppDbContext();
-                if (!db.Database.CanConnect()) return;
-
-                var allFiles = db.VideoFiles.AsNoTracking().ToList();
-                if (allFiles.Count == 0) return;
-
-                TotalFilesCount = allFiles.Count;
-
-                // Group by Unique Title and Type
-                var movieFiles = allFiles.Where(f => (f.MediaType ?? "Movie").Equals("Movie", StringComparison.OrdinalIgnoreCase)).ToList();
-                var seriesFiles = allFiles.Where(f => (f.MediaType ?? "Movie").Equals("Series", StringComparison.OrdinalIgnoreCase)).ToList();
-
-                var groupedMovies = movieFiles
-                    .GroupBy(v => (v.FormattedTitle ?? v.FileName ?? "ناشناس").Trim().ToLowerInvariant())
-                    .ToList();
-
-                var groupedSeries = seriesFiles
-                    .GroupBy(v => (v.FormattedTitle ?? v.FileName ?? "ناشناس").Trim().ToLowerInvariant())
-                    .ToList();
-
-                TotalMoviesCount = groupedMovies.Count;
-                TotalSeriesCount = groupedSeries.Count;
-                TotalEpisodesCount = seriesFiles.Count;
-
-                int totalUniqueMedia = TotalMoviesCount + TotalSeriesCount;
-                if (totalUniqueMedia > 0)
+                var result = await Task.Run<AnalyticsDataResult?>(() =>
                 {
-                    MoviePercentage = Math.Round((double)TotalMoviesCount / totalUniqueMedia * 100, 1);
-                    SeriesPercentage = Math.Round((double)TotalSeriesCount / totalUniqueMedia * 100, 1);
-                }
+                    using var db = new AppDbContext();
+                    if (!db.Database.CanConnect()) return null;
 
-                // Favorites & Watchlist
-                TotalFavoritesCount = allFiles.Count(f => f.IsFavorite);
-                TotalWatchlistCount = allFiles.Count(f => f.IsWatchlist);
+                    var allFiles = db.VideoFiles.AsNoTracking().ToList();
+                    if (allFiles.Count == 0) return null;
 
-                // Watched calculations (considering IsWatched OR WatchProgressPercent >= 85)
-                TotalMoviesWatched = groupedMovies.Count(g => g.Any(m => m.IsWatched || m.WatchProgressPercent >= 85));
-                TotalEpisodesWatched = seriesFiles.Count(e => e.IsWatched || e.WatchProgressPercent >= 85);
+                    var res = new AnalyticsDataResult();
 
-                // Completed Series count (series where all episodes in library are watched)
-                int completedSeries = 0;
-                foreach (var sg in groupedSeries)
-                {
-                    if (sg.Any() && sg.All(ep => ep.IsWatched || ep.WatchProgressPercent >= 85))
-                    {
-                        completedSeries++;
-                    }
-                }
-                CompletedSeriesCount = completedSeries;
-
-                // Overall archive watch completion percentage
-                int totalWatchableUnits = TotalMoviesCount + TotalEpisodesCount;
-                int totalWatchedUnits = TotalMoviesWatched + TotalEpisodesWatched;
-                OverallWatchPercentage = totalWatchableUnits > 0
-                    ? Math.Round((double)totalWatchedUnits / totalWatchableUnits * 100, 1)
-                    : 0;
-
-                // Watch time calculation (accurate seconds calculation)
-                long watchedSeconds = 0;
-                long totalArchiveSeconds = 0;
-
-                foreach (var f in allFiles)
-                {
-                    bool isMovie = (f.MediaType ?? "Movie").Equals("Movie", StringComparison.OrdinalIgnoreCase);
-                    long fileDuration = f.TotalDurationSeconds > 0
-                        ? f.TotalDurationSeconds
-                        : (isMovie ? 110 * 60 : 45 * 60);
-
-                    totalArchiveSeconds += fileDuration;
-
-                    if (f.WatchProgressSeconds > 0)
-                    {
-                        watchedSeconds += f.WatchProgressSeconds;
-                    }
-                    else if (f.IsWatched || f.WatchProgressPercent >= 85)
-                    {
-                        watchedSeconds += fileDuration;
-                    }
-                    else if (f.WatchProgressPercent > 0)
-                    {
-                        watchedSeconds += (long)(fileDuration * (f.WatchProgressPercent / 100.0));
-                    }
-                }
-
-                TotalWatchTimeText = FormatSecondsToPersianDuration(watchedSeconds);
-                TotalArchiveDurationText = FormatSecondsToPersianDuration(totalArchiveSeconds);
-
-                // Ratings
-                var validRatings = allFiles.Where(f => f.Rating.HasValue && f.Rating.Value > 0).Select(f => f.Rating.Value).ToList();
-                if (validRatings.Any())
-                {
-                    AverageRating = validRatings.Average().ToString("0.0");
-                    TopRatedCount = groupedMovies.Count(g => g.Any(m => m.Rating >= 8.0)) + groupedSeries.Count(g => g.Any(s => s.Rating >= 8.0));
-                }
-
-                // Storage Size
-                long totalBytes = allFiles.Sum(f => f.FileSizeBytes);
-                if (totalBytes > 0)
-                {
-                    double gigabytes = (double)totalBytes / (1024 * 1024 * 1024);
-                    TotalStorageSize = gigabytes >= 1024
-                        ? $"{(gigabytes / 1024):0.2} TB"
-                        : $"{gigabytes:0.1} GB";
-                }
-
-                // 1. Genre Distribution
-                var genreMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                foreach (var f in allFiles)
-                {
-                    if (!string.IsNullOrWhiteSpace(f.Genres) && f.Genres != "N/A")
-                    {
-                        var split = f.Genres.Split(new[] { ',', '،' }, StringSplitOptions.RemoveEmptyEntries);
-                        foreach (var rawG in split)
+                    // 1. Group Distinct Movies and Series exactly like MoviesViewModel
+                    var allDistinct = allFiles
+                        .GroupBy(v => new
                         {
-                            var g = GenreTranslatorService.Translate(rawG.Trim());
-                            if (!string.IsNullOrWhiteSpace(g))
+                            Title = (v.FormattedTitle ?? v.FileName ?? "ناشناس").Trim().ToLowerInvariant(),
+                            Type = string.Equals(v.MediaType, "Series", StringComparison.OrdinalIgnoreCase) || v.Season != null ? "Series" : "Movie"
+                        })
+                        .ToList();
+
+                    res.MovCount = allDistinct.Count(g => g.Key.Type == "Movie");
+                    res.SerCount = allDistinct.Count(g => g.Key.Type == "Series");
+                    res.EpCount = allFiles.Count(f => string.Equals(f.MediaType, "Series", StringComparison.OrdinalIgnoreCase) || f.Season != null);
+                    res.FileCount = allFiles.Count;
+
+                    int totalDistinctMedia = res.MovCount + res.SerCount;
+                    if (totalDistinctMedia > 0)
+                    {
+                        res.MovPct = Math.Round((double)res.MovCount / totalDistinctMedia * 100, 1);
+                        res.SerPct = Math.Round((double)res.SerCount / totalDistinctMedia * 100, 1);
+                    }
+                    else
+                    {
+                        res.MovPct = 50;
+                        res.SerPct = 50;
+                    }
+
+                    // 2. Favorites & Watchlist
+                    res.FavCount = allDistinct.Count(g => g.Any(f => f.IsFavorite));
+                    res.WatchCount = allDistinct.Count(g => g.Any(f => f.IsWatchlist));
+
+                    // 3. Watched stats
+                    res.MovWatched = allDistinct.Count(g => g.Key.Type == "Movie" && g.Any(m => m.IsWatched || m.WatchProgressPercent >= 85));
+                    res.EpWatched = allFiles.Count(f => (string.Equals(f.MediaType, "Series", StringComparison.OrdinalIgnoreCase) || f.Season != null) && (f.IsWatched || f.WatchProgressPercent >= 85));
+                    res.CompSeries = allDistinct.Count(g => g.Key.Type == "Series" && g.All(ep => ep.IsWatched || ep.WatchProgressPercent >= 85));
+
+                    int totalWatchUnits = res.MovCount + res.EpCount;
+                    int totalWatchedUnits = res.MovWatched + res.EpWatched;
+                    res.OverallPct = totalWatchUnits > 0 ? Math.Round((double)totalWatchedUnits / totalWatchUnits * 100, 1) : 0;
+
+                    // 4. Real Time & Real Size
+                    long watchedSeconds = 0;
+                    long totalArchiveSeconds = 0;
+                    long totalBytes = 0;
+
+                    foreach (var f in allFiles)
+                    {
+                        bool isMovie = !string.Equals(f.MediaType, "Series", StringComparison.OrdinalIgnoreCase) && f.Season == null;
+                        long fileDuration = f.TotalDurationSeconds > 0
+                            ? f.TotalDurationSeconds
+                            : (isMovie ? 105 * 60 : 45 * 60);
+
+                        totalArchiveSeconds += fileDuration;
+
+                        if (f.WatchProgressSeconds > 0)
+                        {
+                            watchedSeconds += f.WatchProgressSeconds;
+                        }
+                        else if (f.IsWatched || f.WatchProgressPercent >= 85)
+                        {
+                            watchedSeconds += fileDuration;
+                        }
+                        else if (f.WatchProgressPercent > 0)
+                        {
+                            watchedSeconds += (long)(fileDuration * (f.WatchProgressPercent / 100.0));
+                        }
+
+                        // Storage calculation with on-disk fallback
+                        if (f.FileSizeBytes > 0)
+                        {
+                            totalBytes += f.FileSizeBytes;
+                        }
+                        else if (!string.IsNullOrWhiteSpace(f.FilePath) && File.Exists(f.FilePath))
+                        {
+                            try
                             {
-                                genreMap[g] = genreMap.GetValueOrDefault(g, 0) + 1;
+                                long size = new FileInfo(f.FilePath).Length;
+                                totalBytes += size;
+                            }
+                            catch { }
+                        }
+                    }
+
+                    res.WatchTimeStr = FormatSecondsToPersianDuration(watchedSeconds);
+                    res.ArchiveDurationStr = FormatSecondsToPersianDuration(totalArchiveSeconds);
+
+                    res.StorageStr = "۰ GB";
+                    if (totalBytes > 0)
+                    {
+                        double gigabytes = (double)totalBytes / (1024.0 * 1024.0 * 1024.0);
+                        if (gigabytes >= 1024.0)
+                        {
+                            double terabytes = gigabytes / 1024.0;
+                            res.StorageStr = $"{terabytes:0.##} TB ({gigabytes:N0} GB)";
+                        }
+                        else
+                        {
+                            res.StorageStr = $"{gigabytes:0.#} GB";
+                        }
+                    }
+
+                    // 5. Ratings & Masterpieces (100% Null-safe)
+                    var ratedDistinct = allDistinct
+                        .Select(g => g.Where(v => v.Rating.HasValue && v.Rating.Value > 0).Select(v => (double)v.Rating!.Value).DefaultIfEmpty(0.0).Max())
+                        .Where(r => r > 0)
+                        .ToList();
+
+                    res.AvgRatingStr = "۰.۰";
+                    res.TopRateCnt = 0;
+                    if (ratedDistinct.Any())
+                    {
+                        res.AvgRatingStr = ratedDistinct.Average().ToString("0.0");
+                        res.TopRateCnt = ratedDistinct.Count(r => r >= 8.0);
+                    }
+
+                    // 6. Genres Breakdown (Based on Distinct Titles)
+                    var genreMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var g in allDistinct)
+                    {
+                        var first = g.First();
+                        if (!string.IsNullOrWhiteSpace(first.Genres) && first.Genres != "N/A")
+                        {
+                            var split = first.Genres.Split(new[] { ',', '،', '|', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                            foreach (var rawG in split)
+                            {
+                                var gen = GenreTranslatorService.Translate(rawG.Trim());
+                                if (!string.IsNullOrWhiteSpace(gen))
+                                {
+                                    genreMap[gen] = genreMap.GetValueOrDefault(gen, 0) + 1;
+                                }
                             }
                         }
                     }
-                }
 
-                TopGenres.Clear();
-                int maxGenreCount = genreMap.Values.DefaultIfEmpty(1).Max();
-                int genreColorIdx = 0;
-                foreach (var kvp in genreMap.OrderByDescending(x => x.Value).Take(10))
-                {
-                    double pct = Math.Round((double)kvp.Value / maxGenreCount * 100, 1);
-                    TopGenres.Add(new GenreStatItem
+                    int genreColorIdx = 0;
+                    int maxGenreCount = genreMap.Values.DefaultIfEmpty(1).Max();
+                    foreach (var kvp in genreMap.OrderByDescending(x => x.Value).Take(10))
                     {
-                        GenreName = kvp.Key,
-                        Count = kvp.Value,
-                        Percentage = pct,
-                        BarColor = _genreColors[genreColorIdx % _genreColors.Length]
-                    });
-                    genreColorIdx++;
-                }
-
-                // 2. Quality / Resolution Breakdown
-                var qualityMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                foreach (var f in allFiles)
-                {
-                    string res = ExtractNormalizedResolution(f.Resolution, f.Quality);
-                    qualityMap[res] = qualityMap.GetValueOrDefault(res, 0) + 1;
-                }
-
-                QualityBreakdown.Clear();
-                int maxQualityCount = qualityMap.Values.DefaultIfEmpty(1).Max();
-                int qColorIdx = 0;
-                foreach (var kvp in qualityMap.OrderByDescending(x => x.Value))
-                {
-                    double pct = Math.Round((double)kvp.Value / allFiles.Count * 100, 1);
-                    QualityBreakdown.Add(new SimpleStatItem
-                    {
-                        Name = kvp.Key,
-                        Count = kvp.Value,
-                        Percentage = pct,
-                        Color = _qualityColors[qColorIdx % _qualityColors.Length]
-                    });
-                    qColorIdx++;
-                }
-
-                // 3. Decades Breakdown
-                var decadeMap = new Dictionary<string, int>();
-                foreach (var f in allFiles)
-                {
-                    string decade = ExtractDecade(f.Year);
-                    decadeMap[decade] = decadeMap.GetValueOrDefault(decade, 0) + 1;
-                }
-
-                DecadeBreakdown.Clear();
-                int dColorIdx = 0;
-                foreach (var kvp in decadeMap.OrderByDescending(x => x.Key))
-                {
-                    double pct = Math.Round((double)kvp.Value / allFiles.Count * 100, 1);
-                    DecadeBreakdown.Add(new SimpleStatItem
-                    {
-                        Name = kvp.Key,
-                        Count = kvp.Value,
-                        Percentage = pct,
-                        Color = _decadeColors[dColorIdx % _decadeColors.Length]
-                    });
-                    dColorIdx++;
-                }
-
-                // 4. Top Directors & Actors
-                var directorMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                var actorMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-                foreach (var g in groupedMovies.Concat(groupedSeries))
-                {
-                    var first = g.First();
-                    if (!string.IsNullOrWhiteSpace(first.Director) && first.Director != "N/A")
-                    {
-                        foreach (var d in first.Director.Split(new[] { ',', '،' }, StringSplitOptions.RemoveEmptyEntries))
+                        double pct = Math.Round((double)kvp.Value / maxGenreCount * 100, 1);
+                        res.TopGenresList.Add(new GenreStatItem
                         {
-                            var trimmed = d.Trim();
-                            if (trimmed.Length > 2)
-                                directorMap[trimmed] = directorMap.GetValueOrDefault(trimmed, 0) + 1;
+                            GenreName = kvp.Key,
+                            Count = kvp.Value,
+                            Percentage = pct,
+                            BarColor = _genreColors[genreColorIdx % _genreColors.Length]
+                        });
+                        genreColorIdx++;
+                    }
+
+                    // 7. Quality / Resolution Breakdown
+                    var qualityMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var f in allFiles)
+                    {
+                        string qr = ExtractNormalizedResolution(f.Resolution, f.Quality);
+                        qualityMap[qr] = qualityMap.GetValueOrDefault(qr, 0) + 1;
+                    }
+
+                    int qColorIdx = 0;
+                    foreach (var kvp in qualityMap.OrderByDescending(x => x.Value))
+                    {
+                        double pct = Math.Round((double)kvp.Value / allFiles.Count * 100, 1);
+                        res.QualityList.Add(new SimpleStatItem
+                        {
+                            Name = kvp.Key,
+                            Count = kvp.Value,
+                            Percentage = pct,
+                            Color = _qualityColors[qColorIdx % _qualityColors.Length]
+                        });
+                        qColorIdx++;
+                    }
+
+                    // 8. Decades Breakdown (Based on Distinct Titles)
+                    var decadeMap = new Dictionary<string, int>();
+                    foreach (var g in allDistinct)
+                    {
+                        var first = g.First();
+                        string? yearVal = first.Year;
+                        if (string.IsNullOrWhiteSpace(yearVal) && first.FirstAirDate.HasValue)
+                        {
+                            yearVal = first.FirstAirDate.Value.Year.ToString();
+                        }
+
+                        string decade = ExtractDecade(yearVal);
+                        decadeMap[decade] = decadeMap.GetValueOrDefault(decade, 0) + 1;
+                    }
+
+                    int dColorIdx = 0;
+                    foreach (var kvp in decadeMap.OrderByDescending(x => x.Key))
+                    {
+                        double pct = Math.Round((double)kvp.Value / allDistinct.Count * 100, 1);
+                        res.DecadeList.Add(new SimpleStatItem
+                        {
+                            Name = kvp.Key,
+                            Count = kvp.Value,
+                            Percentage = pct,
+                            Color = _decadeColors[dColorIdx % _decadeColors.Length]
+                        });
+                        dColorIdx++;
+                    }
+
+                    // 9. Top Directors & Actors (Based on Distinct Titles)
+                    var directorMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                    var actorMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var g in allDistinct)
+                    {
+                        var first = g.First();
+                        if (!string.IsNullOrWhiteSpace(first.Director) && first.Director != "N/A")
+                        {
+                            foreach (var d in first.Director.Split(new[] { ',', '،', '|', ';' }, StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                var trimmed = d.Trim();
+                                if (trimmed.Length > 2)
+                                    directorMap[trimmed] = directorMap.GetValueOrDefault(trimmed, 0) + 1;
+                            }
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(first.Actors) && first.Actors != "N/A")
+                        {
+                            foreach (var a in first.Actors.Split(new[] { ',', '،', '|', ';' }, StringSplitOptions.RemoveEmptyEntries).Take(4))
+                            {
+                                var trimmed = a.Trim();
+                                if (trimmed.Length > 2)
+                                    actorMap[trimmed] = actorMap.GetValueOrDefault(trimmed, 0) + 1;
+                            }
                         }
                     }
 
-                    if (!string.IsNullOrWhiteSpace(first.Actors) && first.Actors != "N/A")
-                    {
-                        foreach (var a in first.Actors.Split(new[] { ',', '،' }, StringSplitOptions.RemoveEmptyEntries).Take(4))
-                        {
-                            var trimmed = a.Trim();
-                            if (trimmed.Length > 2)
-                                actorMap[trimmed] = actorMap.GetValueOrDefault(trimmed, 0) + 1;
-                        }
-                    }
-                }
+                    res.TopDirList = directorMap.OrderByDescending(x => x.Value).Take(5)
+                        .Select(kvp => new PersonStatItem { Name = kvp.Key, Role = "کارگردان", WorksCount = kvp.Value }).ToList();
 
-                TopDirectors.Clear();
-                foreach (var kvp in directorMap.OrderByDescending(x => x.Value).Take(5))
-                {
-                    TopDirectors.Add(new PersonStatItem
-                    {
-                        Name = kvp.Key,
-                        Role = "کارگردان",
-                        WorksCount = kvp.Value
-                    });
-                }
+                    res.TopActList = actorMap.OrderByDescending(x => x.Value).Take(5)
+                        .Select(kvp => new PersonStatItem { Name = kvp.Key, Role = "بازیگر", WorksCount = kvp.Value }).ToList();
 
-                TopActors.Clear();
-                foreach (var kvp in actorMap.OrderByDescending(x => x.Value).Take(5))
+                    return res;
+                });
+
+                if (result != null)
                 {
-                    TopActors.Add(new PersonStatItem
-                    {
-                        Name = kvp.Key,
-                        Role = "بازیگر",
-                        WorksCount = kvp.Value
-                    });
+                    TotalMoviesCount = result.MovCount;
+                    TotalSeriesCount = result.SerCount;
+                    TotalEpisodesCount = result.EpCount;
+                    TotalFilesCount = result.FileCount;
+
+                    MoviePercentage = result.MovPct;
+                    SeriesPercentage = result.SerPct;
+                    TotalFavoritesCount = result.FavCount;
+                    TotalWatchlistCount = result.WatchCount;
+
+                    TotalMoviesWatched = result.MovWatched;
+                    TotalEpisodesWatched = result.EpWatched;
+                    CompletedSeriesCount = result.CompSeries;
+                    OverallWatchPercentage = result.OverallPct;
+
+                    TotalWatchTimeText = result.WatchTimeStr;
+                    TotalArchiveDurationText = result.ArchiveDurationStr;
+                    TotalStorageSize = result.StorageStr;
+                    AverageRating = result.AvgRatingStr;
+                    TopRatedCount = result.TopRateCnt;
+
+                    TopGenres.Clear();
+                    foreach (var g in result.TopGenresList) TopGenres.Add(g);
+
+                    QualityBreakdown.Clear();
+                    foreach (var q in result.QualityList) QualityBreakdown.Add(q);
+
+                    DecadeBreakdown.Clear();
+                    foreach (var d in result.DecadeList) DecadeBreakdown.Add(d);
+
+                    TopDirectors.Clear();
+                    foreach (var dir in result.TopDirList) TopDirectors.Add(dir);
+
+                    TopActors.Clear();
+                    foreach (var act in result.TopActList) TopActors.Add(act);
                 }
             }
             catch (Exception ex)
             {
                 LoggerService.Error("Error calculating analytics", ex);
             }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         private static string FormatSecondsToPersianDuration(long totalSeconds)
         {
+            if (totalSeconds <= 0) return "۰ ساعت";
+
             long totalMinutes = totalSeconds / 60;
             if (totalMinutes < 60)
             {

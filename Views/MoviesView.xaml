@@ -26,17 +26,17 @@
             <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Margin" Value="0,0,8,0"/>
-            <Setter Property="Height" Value="38"/>
-            <Setter Property="Padding" Value="16,0"/>
-            <Setter Property="FontSize" Value="13.5"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="FontSize" Value="12"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="RadioButton">
                         <Border x:Name="pillBorder" Background="{TemplateBinding Background}" 
-                                CornerRadius="19" Padding="{TemplateBinding Padding}">
+                                CornerRadius="16" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -67,10 +67,10 @@
             <Setter Property="Background" Value="#12FFFFFF"/>
             <Setter Property="BorderBrush" Value="{DynamicResource LightBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Margin" Value="0,0,8,0"/>
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="Padding" Value="14,0"/>
-            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="FontSize" Value="11.5"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
@@ -79,7 +79,7 @@
                         <Border x:Name="subBorder" Background="{TemplateBinding Background}" 
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="16" Padding="{TemplateBinding Padding}">
+                                CornerRadius="14" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -105,140 +105,230 @@
         <KeyBinding Key="F5" Command="{Binding RefreshSelectedCommand}" />
     </UserControl.InputBindings>
 
-    <Grid Margin="32,20,32,0" PreviewMouseWheel="Grid_PreviewMouseWheel">
+    <Grid Margin="24,10,24,0" PreviewMouseWheel="Grid_PreviewMouseWheel">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- ======================================================== -->
-        <!-- ROW 0: TOP APP BAR & HEADER -->
+        <!-- ROW 0: UNIFIED COMPACT CONTROL DECK & HEADER -->
         <!-- ======================================================== -->
-        <Grid Grid.Row="0" Margin="0,0,0,12" Height="46">
+        <Grid Grid.Row="0" Margin="0,0,0,10">
             
             <!-- Normal Header State -->
-            <Grid Visibility="{Binding IsInSelectionMode, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <Border Visibility="{Binding IsInSelectionMode, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"
+                    Background="{DynamicResource CardBackground}" CornerRadius="16" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Padding="12,6">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.3" Color="Black"/>
+                </Border.Effect>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <!-- Right Column in RTL: Category Tabs -->
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- Middle Column in RTL: Search Box -->
+                        <ColumnDefinition Width="*"/>
+                        <!-- Left Column in RTL: Watch Sub-Filters & Actions -->
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <!-- Page Title / Selected Tag Header -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Command="{Binding ClearCustomTagFilterCommand}"
-                            Visibility="{Binding HasBackButton, Converter={StaticResource BoolToVisibilityConverter}}"
-                            Background="Transparent" BorderThickness="0" Width="36" Height="36" Padding="0" Margin="0,0,8,0"
-                            ToolTip="بازگشت" Cursor="Hand">
-                        <materialDesign:PackIcon Kind="ArrowRight" Width="24" Height="24" Foreground="{DynamicResource PrimaryColor}"/>
-                    </Button>
+                    <!-- Right Column: Category Tabs -->
+                    <ScrollViewer Grid.Column="0" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" VerticalAlignment="Center" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal">
+                            
+                            <!-- 1. همه -->
+                            <RadioButton Style="{StaticResource AndroidTabPillRadioStyle}" 
+                                         IsChecked="{Binding SelectedCategoryTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=0}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="همه" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <Border Background="#30000000" CornerRadius="8" Padding="6,1">
+                                        <TextBlock Text="{Binding AllCount}" FontSize="10.5" FontWeight="Black" Foreground="White"/>
+                                    </Border>
+                                </StackPanel>
+                            </RadioButton>
 
-                    <TextBlock Text="{Binding PageTitle}" FontSize="24" FontWeight="Black" Foreground="White" VerticalAlignment="Center"
-                               Visibility="{Binding SelectedCustomTag, Converter={StaticResource NullToVisibilityConverter}, ConverterParameter=Inverse}"/>
-                    
-                    <TextBlock Text="{Binding SelectedCustomTag, StringFormat='{}برچسب: {0}'}" FontSize="22" FontWeight="Black" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center"
-                               Visibility="{Binding SelectedCustomTag, Converter={StaticResource NullToVisibilityConverter}}"/>
-                </StackPanel>
+                            <!-- 2. فیلم‌ها -->
+                            <RadioButton Style="{StaticResource AndroidTabPillRadioStyle}"
+                                         IsChecked="{Binding SelectedCategoryTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=1}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="فیلم‌ها" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <Border Background="#30000000" CornerRadius="8" Padding="6,1">
+                                        <TextBlock Text="{Binding MoviesCount}" FontSize="10.5" FontWeight="Black" Foreground="White"/>
+                                    </Border>
+                                </StackPanel>
+                            </RadioButton>
 
-                <!-- Top Left Action Icons -->
-                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                    
-                    <!-- 1. Eye / Show Hidden Toggle Button -->
-                    <Button Command="{Binding ToggleShowHiddenCommand}" 
-                            Background="Transparent" BorderThickness="0" Width="40" Height="40" Padding="0" Margin="0,0,8,0"
-                            ToolTip="حالت مخفی (نمایش موارد قفل‌شده)" Cursor="Hand">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="Transparent" CornerRadius="20" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <Grid>
-                                        <materialDesign:PackIcon Kind="Eye" Width="24" Height="24" Foreground="{DynamicResource PrimaryColor}" 
-                                                                 Visibility="{Binding DataContext.ShowHiddenItems, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
-                                        <materialDesign:PackIcon Kind="EyeOffOutline" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" 
-                                                                 Visibility="{Binding DataContext.ShowHiddenItems, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"/>
+                            <!-- 3. سریال‌ها -->
+                            <RadioButton Style="{StaticResource AndroidTabPillRadioStyle}"
+                                         IsChecked="{Binding SelectedCategoryTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=2}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="سریال‌ها" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <Border Background="#30000000" CornerRadius="8" Padding="6,1">
+                                        <TextBlock Text="{Binding SeriesCount}" FontSize="10.5" FontWeight="Black" Foreground="White"/>
+                                    </Border>
+                                </StackPanel>
+                            </RadioButton>
+
+                            <!-- 4. علاقه‌مندی‌ها -->
+                            <RadioButton Style="{StaticResource AndroidTabPillRadioStyle}"
+                                         IsChecked="{Binding SelectedCategoryTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=3}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="علاقه‌مندی‌ها" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <Border Background="#30000000" CornerRadius="8" Padding="6,1">
+                                        <TextBlock Text="{Binding FavoritesCount}" FontSize="10.5" FontWeight="Black" Foreground="White"/>
+                                    </Border>
+                                </StackPanel>
+                            </RadioButton>
+
+                            <!-- 5. دسته‌بندی‌ها -->
+                            <RadioButton Style="{StaticResource AndroidTabPillRadioStyle}"
+                                         IsChecked="{Binding SelectedCategoryTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=4}">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <TextBlock Text="دسته‌بندی‌ها" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <Border Background="#30000000" CornerRadius="8" Padding="6,1">
+                                        <TextBlock Text="{Binding CategoriesCount}" FontSize="10.5" FontWeight="Black" Foreground="White"/>
+                                    </Border>
+                                </StackPanel>
+                            </RadioButton>
+
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Middle Column: Search Box -->
+                    <Border Grid.Column="1" Background="#14FFFFFF" CornerRadius="16" BorderBrush="#25FFFFFF" BorderThickness="1" Padding="10,0" Height="34" MaxWidth="260" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="0,0,10,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <materialDesign:PackIcon Grid.Column="0" Kind="Magnify" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBox Grid.Column="1" Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" 
+                                     materialDesign:HintAssist.Hint="جستجو..." 
+                                     Foreground="White" FontSize="12.5" BorderThickness="0" Background="Transparent" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Left Column: Watch Sub-Filters & Actions -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        
+                        <!-- Watch Sub-filters: همه / تماشا شده / تماشا نشده -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,8,0"
+                                    Visibility="{Binding IsWatchSubFilterVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <RadioButton Style="{StaticResource AndroidSubFilterPillStyle}"
+                                         IsChecked="{Binding SelectedWatchTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=0}">
+                                <TextBlock Text="همه" VerticalAlignment="Center"/>
+                            </RadioButton>
+
+                            <RadioButton Style="{StaticResource AndroidSubFilterPillStyle}"
+                                         IsChecked="{Binding SelectedWatchTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=1}">
+                                <TextBlock Text="تماشا شده" VerticalAlignment="Center"/>
+                            </RadioButton>
+
+                            <RadioButton Style="{StaticResource AndroidSubFilterPillStyle}"
+                                         IsChecked="{Binding SelectedWatchTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=2}">
+                                <TextBlock Text="تماشا نشده" VerticalAlignment="Center"/>
+                            </RadioButton>
+                        </StackPanel>
+
+                        <!-- Separator -->
+                        <Border Width="1" Height="20" Background="#20FFFFFF" Margin="0,0,6,0"/>
+
+                        <!-- 1. Eye / Show Hidden Toggle Button -->
+                        <Button Command="{Binding ToggleShowHiddenCommand}" 
+                                Background="Transparent" BorderThickness="0" Width="32" Height="32" Padding="0" Margin="0,0,4,0"
+                                ToolTip="حالت مخفی (نمایش موارد قفل‌شده)" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="Transparent" CornerRadius="16" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Grid>
+                                            <materialDesign:PackIcon Kind="Eye" Width="20" Height="20" Foreground="{DynamicResource PrimaryColor}" 
+                                                                     Visibility="{Binding DataContext.ShowHiddenItems, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                            <materialDesign:PackIcon Kind="EyeOffOutline" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" 
+                                                                     Visibility="{Binding DataContext.ShowHiddenItems, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"/>
+                                        </Grid>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
+
+                        <!-- 2. Poster Size Button -->
+                        <ToggleButton x:Name="PosterSizeButton" Width="32" Height="32" Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,4,0"
+                                      ToolTip="تنظیم اندازه پوسترها" Cursor="Hand">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border Background="Transparent" CornerRadius="16" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="FormatSize" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+
+                        <!-- Poster Size Slider Dropdown Popup -->
+                        <Popup IsOpen="{Binding IsChecked, ElementName=PosterSizeButton}" StaysOpen="False" PlacementTarget="{Binding ElementName=PosterSizeButton}" Placement="Bottom">
+                            <Border Background="{DynamicResource CardBackground}" CornerRadius="14" Padding="14" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Margin="0,6,0,0" Width="240">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.6" Color="Black"/>
+                                </Border.Effect>
+                                <StackPanel>
+                                    <Grid Margin="0,0,0,6">
+                                        <TextBlock Text="اندازه نمایش پوستر:" Foreground="{DynamicResource SecondaryText}" FontSize="11.5" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                        <TextBlock Text="{Binding PosterSize, StringFormat='{}{0}px'}" Foreground="{DynamicResource PrimaryColor}" FontSize="11.5" FontWeight="Black" HorizontalAlignment="Left"/>
                                     </Grid>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
+                                    <Slider Minimum="150" Maximum="350" Value="{Binding PosterSize}" Foreground="{DynamicResource PrimaryColor}"/>
+                                </StackPanel>
+                            </Border>
+                        </Popup>
 
-                    <!-- 2. Poster Size Button (Clean flat icon button) -->
-                    <ToggleButton x:Name="PosterSizeButton" Width="40" Height="40" Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,8,0"
-                                  ToolTip="تنظیم اندازه پوسترها" Cursor="Hand">
-                        <ToggleButton.Template>
-                            <ControlTemplate TargetType="ToggleButton">
-                                <Border Background="Transparent" CornerRadius="20" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="FormatSize" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}"/>
-                                </Border>
-                            </ControlTemplate>
-                        </ToggleButton.Template>
-                    </ToggleButton>
+                        <!-- 3. Sort & Filter Button -->
+                        <ToggleButton x:Name="FilterButton" Width="32" Height="32" Background="Transparent" BorderThickness="0" Padding="0"
+                                      ToolTip="مرتب‌سازی و فیلترها" Cursor="Hand">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="ToggleButton">
+                                    <Border Background="Transparent" CornerRadius="16" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="SortVariant" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}"/>
+                                    </Border>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
 
-                    <!-- Poster Size Slider Dropdown Popup -->
-                    <Popup IsOpen="{Binding IsChecked, ElementName=PosterSizeButton}" StaysOpen="False" PlacementTarget="{Binding ElementName=PosterSizeButton}" Placement="Bottom">
-                        <Border Background="{DynamicResource CardBackground}" CornerRadius="16" Padding="18" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Margin="0,8,0,0" Width="250">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="22" ShadowDepth="4" Opacity="0.6" Color="Black"/>
-                            </Border.Effect>
-                            <StackPanel>
-                                <Grid Margin="0,0,0,8">
-                                    <TextBlock Text="اندازه نمایش پوستر:" Foreground="{DynamicResource SecondaryText}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right"/>
-                                    <TextBlock Text="{Binding PosterSize, StringFormat='{}{0}px'}" Foreground="{DynamicResource PrimaryColor}" FontSize="12" FontWeight="Black" HorizontalAlignment="Left"/>
-                                </Grid>
-                                <Slider Minimum="150" Maximum="350" Value="{Binding PosterSize}" Foreground="{DynamicResource PrimaryColor}"/>
-                            </StackPanel>
-                        </Border>
-                    </Popup>
+                        <!-- Sort & Filter Dropdown Popup -->
+                        <Popup IsOpen="{Binding IsChecked, ElementName=FilterButton}" StaysOpen="False" PlacementTarget="{Binding ElementName=FilterButton}" Placement="Bottom">
+                            <Border Background="{DynamicResource CardBackground}" CornerRadius="14" Padding="14" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Margin="0,6,0,0" MinWidth="220">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.6" Color="Black"/>
+                                </Border.Effect>
+                                <StackPanel>
+                                    <TextBlock Text="مرتب‌سازی بر اساس:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,4" FontSize="11" FontWeight="Bold"/>
+                                    <ComboBox SelectedIndex="{Binding SortIndex}" Foreground="White" Margin="0,0,0,10" Background="#15FFFFFF">
+                                        <ComboBoxItem Content="تاریخ افزودن"/>
+                                        <ComboBoxItem Content="نام فیلم/سریال"/>
+                                        <ComboBoxItem Content="سال ساخت"/>
+                                        <ComboBoxItem Content="امتیاز"/>
+                                    </ComboBox>
 
-                    <!-- 3. Sort & Filter Button (Clean flat icon button) -->
-                    <ToggleButton x:Name="FilterButton" Width="40" Height="40" Background="Transparent" BorderThickness="0" Padding="0"
-                                  ToolTip="مرتب‌سازی و فیلترها" Cursor="Hand">
-                        <ToggleButton.Template>
-                            <ControlTemplate TargetType="ToggleButton">
-                                <Border Background="Transparent" CornerRadius="20" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="SortVariant" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}"/>
-                                </Border>
-                            </ControlTemplate>
-                        </ToggleButton.Template>
-                    </ToggleButton>
-
-                    <!-- Sort & Filter Dropdown Popup -->
-                    <Popup IsOpen="{Binding IsChecked, ElementName=FilterButton}" StaysOpen="False" PlacementTarget="{Binding ElementName=FilterButton}" Placement="Bottom">
-                        <Border Background="{DynamicResource CardBackground}" CornerRadius="16" Padding="18" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Margin="0,8,0,0" MinWidth="220">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="22" ShadowDepth="4" Opacity="0.6" Color="Black"/>
-                            </Border.Effect>
-                            <StackPanel>
-                                <TextBlock Text="مرتب‌سازی بر اساس:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,6" FontSize="11.5" FontWeight="Bold"/>
-                                <ComboBox SelectedIndex="{Binding SortIndex}" Foreground="White" Margin="0,0,0,12" Background="#15FFFFFF">
-                                    <ComboBoxItem Content="تاریخ افزودن"/>
-                                    <ComboBoxItem Content="نام فیلم/سریال"/>
-                                    <ComboBoxItem Content="سال ساخت"/>
-                                    <ComboBoxItem Content="امتیاز"/>
-                                </ComboBox>
-
-                                <TextBlock Text="جهت مرتب‌سازی:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,6" FontSize="11.5" FontWeight="Bold"/>
-                                <ComboBox SelectedIndex="{Binding SortDirectionIndex}" Foreground="White" Margin="0,0,0,12" Background="#15FFFFFF">
-                                    <ComboBoxItem Content="نزولی"/>
-                                    <ComboBoxItem Content="صعودی"/>
-                                </ComboBox>
-                                
-                                <TextBlock Text="ژانر:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,6" FontSize="11.5" FontWeight="Bold"/>
-                                <ComboBox ItemsSource="{Binding Genres}" SelectedIndex="{Binding SelectedGenreIndex}" Foreground="White" Background="#15FFFFFF"/>
-                            </StackPanel>
-                        </Border>
-                    </Popup>
-                </StackPanel>
-            </Grid>
+                                    <TextBlock Text="جهت مرتب‌سازی:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,4" FontSize="11" FontWeight="Bold"/>
+                                    <ComboBox SelectedIndex="{Binding SortDirectionIndex}" Foreground="White" Margin="0,0,0,10" Background="#15FFFFFF">
+                                        <ComboBoxItem Content="نزولی"/>
+                                        <ComboBoxItem Content="صعودی"/>
+                                    </ComboBox>
+                                    
+                                    <TextBlock Text="ژانر:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,4" FontSize="11" FontWeight="Bold"/>
+                                    <ComboBox ItemsSource="{Binding Genres}" SelectedIndex="{Binding SelectedGenreIndex}" Foreground="White" Background="#15FFFFFF"/>
+                                </StackPanel>
+                            </Border>
+                        </Popup>
+                    </StackPanel>
+                </Grid>
+            </Border>
 
             <!-- Selection Mode Action Bar (Top Bulk Bar activated on right-click) -->
-            <Border Background="{DynamicResource CardBackground}" CornerRadius="16" Padding="14,0" BorderBrush="{DynamicResource PrimaryColor}" BorderThickness="1.5"
+            <Border Background="{DynamicResource CardBackground}" CornerRadius="16" Padding="16,6" BorderBrush="{DynamicResource PrimaryColor}" BorderThickness="1.5"
+                    MinHeight="54"
                     Visibility="{Binding IsInSelectionMode, Converter={StaticResource BoolToVisibilityConverter}}">
                 <Border.Effect>
-                    <DropShadowEffect BlurRadius="22" ShadowDepth="2" Opacity="0.6" Color="#EB3B5A"/>
+                    <DropShadowEffect BlurRadius="20" ShadowDepth="2" Opacity="0.6" Color="#EB3B5A"/>
                 </Border.Effect>
-                <Grid Height="52">
+                <Grid VerticalAlignment="Center">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
@@ -247,66 +337,74 @@
                     </Grid.ColumnDefinitions>
 
                     <Button Grid.Column="0" Command="{Binding ExitSelectionModeCommand}" 
-                            Background="#20FFFFFF" BorderThickness="0" Width="38" Height="38" Padding="0" 
-                            materialDesign:ButtonAssist.CornerRadius="19" Foreground="White" ToolTip="خروج از حالت انتخاب (Esc)" Cursor="Hand">
-                        <materialDesign:PackIcon Kind="Close" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            Background="#20FFFFFF" BorderThickness="0" Width="34" Height="34" Padding="0" 
+                            materialDesign:ButtonAssist.CornerRadius="17" Foreground="White" ToolTip="خروج از حالت انتخاب (Esc)" Cursor="Hand"
+                            VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Close" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Button>
 
-                    <TextBlock Grid.Column="1" Text="{Binding SelectedCount, StringFormat='{}{0} مورد انتخاب شد'}" Foreground="White" FontSize="15" FontWeight="Black" VerticalAlignment="Center" Margin="14,0,0,0"/>
+                    <TextBlock Grid.Column="1" Text="{Binding SelectedCount, StringFormat='{}{0} مورد انتخاب شد'}" Foreground="White" FontSize="14" FontWeight="Black" VerticalAlignment="Center" Margin="12,0,0,0"/>
 
                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                         <!-- انتخاب همه -->
                         <Button Command="{Binding SelectAllCommand}" 
                                 Background="#25EB3B5A" BorderThickness="0" Foreground="{DynamicResource PrimaryColor}"
-                                Height="38" Padding="16,0" materialDesign:ButtonAssist.CornerRadius="12"
-                                Content="انتخاب همه" Margin="0,0,10,0" FontWeight="Black" FontSize="13" Cursor="Hand"/>
+                                Height="34" Padding="14,0" materialDesign:ButtonAssist.CornerRadius="10"
+                                Content="انتخاب همه" Margin="0,0,8,0" FontWeight="Black" FontSize="12" Cursor="Hand"
+                                VerticalAlignment="Center"/>
                         
                         <!-- برچسب‌ها -->
                         <Button Command="{Binding OpenManageTagsForSelectedCommand}" 
                                 Background="#2000B894" BorderThickness="0" Foreground="{DynamicResource TealAccent}"
-                                Width="40" Height="40" Padding="0" materialDesign:ButtonAssist.CornerRadius="12"
-                                ToolTip="مدیریت برچسب‌ها" Margin="0,0,8,0" Cursor="Hand">
-                            <materialDesign:PackIcon Kind="TagOutline" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                Width="34" Height="34" Padding="0" materialDesign:ButtonAssist.CornerRadius="10"
+                                ToolTip="مدیریت برچسب‌ها" Margin="0,0,6,0" Cursor="Hand"
+                                VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="TagOutline" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
 
                         <!-- علاقه‌مندی -->
                         <Button Command="{Binding ToggleFavoritesSelectedCommand}" 
                                 Background="#20FF3B47" BorderThickness="0" Foreground="#FF3B47"
-                                Width="40" Height="40" Padding="0" materialDesign:ButtonAssist.CornerRadius="12"
-                                ToolTip="افزودن به علاقه‌مندی‌ها" Margin="0,0,8,0" Cursor="Hand">
-                            <materialDesign:PackIcon Kind="HeartOutline" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                Width="34" Height="34" Padding="0" materialDesign:ButtonAssist.CornerRadius="10"
+                                ToolTip="افزودن به علاقه‌مندی‌ها" Margin="0,0,6,0" Cursor="Hand"
+                                VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="HeartOutline" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
 
                         <!-- مشاهده شده -->
                         <Button Command="{Binding ToggleWatchedSelectedCommand}" 
                                 Background="#2026DE81" BorderThickness="0" Foreground="{DynamicResource EmeraldAccent}"
-                                Width="40" Height="40" Padding="0" materialDesign:ButtonAssist.CornerRadius="12"
-                                ToolTip="تغییر وضعیت مشاهده" Margin="0,0,8,0" Cursor="Hand">
-                            <materialDesign:PackIcon Kind="EyeCheckOutline" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                Width="34" Height="34" Padding="0" materialDesign:ButtonAssist.CornerRadius="10"
+                                ToolTip="تغییر وضعیت مشاهده" Margin="0,0,6,0" Cursor="Hand"
+                                VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="EyeCheckOutline" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
 
                         <!-- مخفی‌سازی -->
                         <Button Command="{Binding ToggleHiddenSelectedCommand}" 
                                 Background="#208854D0" BorderThickness="0" Foreground="{DynamicResource PurpleAccent}"
-                                Width="40" Height="40" Padding="0" materialDesign:ButtonAssist.CornerRadius="12"
-                                ToolTip="مخفی‌سازی / قفل" Margin="0,0,8,0" Cursor="Hand">
-                            <materialDesign:PackIcon Kind="LockOutline" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                Width="34" Height="34" Padding="0" materialDesign:ButtonAssist.CornerRadius="10"
+                                ToolTip="مخفی‌سازی / قفل" Margin="0,0,6,0" Cursor="Hand"
+                                VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="LockOutline" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
 
                         <!-- بروزرسانی (F5) -->
                         <Button Command="{Binding RefreshSelectedCommand}" 
                                 Background="#20FFD32A" BorderThickness="0" Foreground="{DynamicResource GoldColor}"
-                                Width="40" Height="40" Padding="0" materialDesign:ButtonAssist.CornerRadius="12"
-                                ToolTip="به‌روزرسانی آنلاین (F5)" Margin="0,0,8,0" Cursor="Hand">
-                            <materialDesign:PackIcon Kind="Refresh" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                Width="34" Height="34" Padding="0" materialDesign:ButtonAssist.CornerRadius="10"
+                                ToolTip="به‌روزرسانی آنلاین (F5)" Margin="0,0,6,0" Cursor="Hand"
+                                VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
 
                         <!-- حذف -->
                         <Button Command="{Binding DeleteSelectedCommand}" 
                                 Background="#30EB3B5A" BorderThickness="0" Foreground="{DynamicResource PrimaryColor}"
-                                Width="40" Height="40" Padding="0" materialDesign:ButtonAssist.CornerRadius="12"
-                                ToolTip="حذف از آرشیو" Cursor="Hand">
-                            <materialDesign:PackIcon Kind="DeleteOutline" Width="22" Height="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                Width="34" Height="34" Padding="0" materialDesign:ButtonAssist.CornerRadius="10"
+                                ToolTip="حذف از آرشیو" Cursor="Hand"
+                                VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="DeleteOutline" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
                     </StackPanel>
                 </Grid>
@@ -314,134 +412,17 @@
         </Grid>
 
         <!-- ======================================================== -->
-        <!-- ROW 1: CATEGORY TABS & SEARCH CARD -->
+        <!-- ROW 1: CONTENT AREA -->
         <!-- ======================================================== -->
-        <Border Grid.Row="1" Background="{DynamicResource CardBackground}" CornerRadius="22" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Padding="16,12" Margin="0,0,0,12">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.35" Color="Black"/>
-            </Border.Effect>
-            <StackPanel>
-                
-                <!-- Category Segmented Tabs Row -->
-                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,10">
-                    <StackPanel Orientation="Horizontal">
-                        
-                        <!-- 1. همه -->
-                        <RadioButton Style="{StaticResource AndroidTabPillRadioStyle}" 
-                                     IsChecked="{Binding SelectedCategoryTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=0}">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="همه" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <Border Background="#30000000" CornerRadius="10" Padding="8,2">
-                                    <TextBlock Text="{Binding AllCount}" FontSize="11" FontWeight="Black" Foreground="White"/>
-                                </Border>
-                            </StackPanel>
-                        </RadioButton>
-
-                        <!-- 2. فیلم‌ها -->
-                        <RadioButton Style="{StaticResource AndroidTabPillRadioStyle}"
-                                     IsChecked="{Binding SelectedCategoryTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=1}">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="فیلم‌ها" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <Border Background="#30000000" CornerRadius="10" Padding="8,2">
-                                    <TextBlock Text="{Binding MoviesCount}" FontSize="11" FontWeight="Black" Foreground="White"/>
-                                </Border>
-                            </StackPanel>
-                        </RadioButton>
-
-                        <!-- 3. سریال‌ها -->
-                        <RadioButton Style="{StaticResource AndroidTabPillRadioStyle}"
-                                     IsChecked="{Binding SelectedCategoryTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=2}">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="سریال‌ها" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <Border Background="#30000000" CornerRadius="10" Padding="8,2">
-                                    <TextBlock Text="{Binding SeriesCount}" FontSize="11" FontWeight="Black" Foreground="White"/>
-                                </Border>
-                            </StackPanel>
-                        </RadioButton>
-
-                        <!-- 4. علاقه‌مندی‌ها -->
-                        <RadioButton Style="{StaticResource AndroidTabPillRadioStyle}"
-                                     IsChecked="{Binding SelectedCategoryTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=3}">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="علاقه‌مندی‌ها" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <Border Background="#30000000" CornerRadius="10" Padding="8,2">
-                                    <TextBlock Text="{Binding FavoritesCount}" FontSize="11" FontWeight="Black" Foreground="White"/>
-                                </Border>
-                            </StackPanel>
-                        </RadioButton>
-
-                        <!-- 5. دسته‌بندی‌ها (برچسب‌های سفارشی) -->
-                        <RadioButton Style="{StaticResource AndroidTabPillRadioStyle}"
-                                     IsChecked="{Binding SelectedCategoryTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=4}">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="دسته‌بندی‌ها" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <Border Background="#30000000" CornerRadius="10" Padding="8,2">
-                                    <TextBlock Text="{Binding CategoriesCount}" FontSize="11" FontWeight="Black" Foreground="White"/>
-                                </Border>
-                            </StackPanel>
-                        </RadioButton>
-
-                    </StackPanel>
-                </ScrollViewer>
-
-                <!-- Search Input Box -->
-                <Border Background="#10FFFFFF" CornerRadius="16" BorderBrush="#20FFFFFF" BorderThickness="1" Padding="14,0" Height="44">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <materialDesign:PackIcon Grid.Column="0" Kind="Magnify" Width="22" Height="22" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                        <TextBox Grid.Column="1" Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" 
-                                 materialDesign:HintAssist.Hint="جستجو..." 
-                                 Foreground="White" FontSize="14" BorderThickness="0" Background="Transparent" VerticalAlignment="Center"/>
-                    </Grid>
-                </Border>
-
-            </StackPanel>
-        </Border>
-
-        <!-- ======================================================== -->
-        <!-- ROW 2: SUB-FILTER WATCH PILLS (For Non-Categories Tab) -->
-        <!-- ======================================================== -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="4,0,0,14"
-                    Visibility="{Binding IsWatchSubFilterVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-            
-            <!-- 1. همه -->
-            <RadioButton Style="{StaticResource AndroidSubFilterPillStyle}"
-                         IsChecked="{Binding SelectedWatchTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=0}">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <materialDesign:PackIcon Kind="Check" Width="15" Height="15" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                    <TextBlock Text="همه" VerticalAlignment="Center"/>
-                </StackPanel>
-            </RadioButton>
-
-            <!-- 2. تماشا شده -->
-            <RadioButton Style="{StaticResource AndroidSubFilterPillStyle}"
-                         IsChecked="{Binding SelectedWatchTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=1}">
-                <TextBlock Text="تماشا شده" VerticalAlignment="Center"/>
-            </RadioButton>
-
-            <!-- 3. تماشا نشده -->
-            <RadioButton Style="{StaticResource AndroidSubFilterPillStyle}"
-                         IsChecked="{Binding SelectedWatchTabIndex, Converter={StaticResource RadioIntEqualsConverter}, ConverterParameter=2}">
-                <TextBlock Text="تماشا نشده" VerticalAlignment="Center"/>
-            </RadioButton>
-
-        </StackPanel>
-
-        <!-- ======================================================== -->
-        <!-- ROW 3: CONTENT AREA -->
-        <!-- ======================================================== -->
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="1">
             
             <!-- Skeleton Shimmer Loading -->
             <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}">
                 <WrapPanel Margin="0,0,-16,0">
-                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="8,8,16,18" CornerRadius="18"/>
-                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="8,8,16,18" CornerRadius="18"/>
-                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="8,8,16,18" CornerRadius="18"/>
-                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="8,8,16,18" CornerRadius="18"/>
+                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="6,6,12,16" CornerRadius="16"/>
+                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="6,6,12,16" CornerRadius="16"/>
+                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="6,6,12,16" CornerRadius="16"/>
+                    <controls:ShimmerEffect Width="{Binding PosterSize}" Height="{Binding PosterHeight}" Margin="6,6,12,16" CornerRadius="16"/>
                 </WrapPanel>
             </ScrollViewer>
 
@@ -500,8 +481,8 @@
                     </ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Border Background="{DynamicResource CardBackground}" CornerRadius="18" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" 
-                                    Width="260" Height="120" Margin="8,8,8,16" Padding="14" Cursor="Hand">
+                            <Border Background="{DynamicResource CardBackground}" CornerRadius="16" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" 
+                                    Width="260" Height="110" Margin="6,6,6,12" Padding="12" Cursor="Hand">
                                 <Border.InputBindings>
                                     <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.SelectCustomTagCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding Name}"/>
                                 </Border.InputBindings>
@@ -517,17 +498,17 @@
 
                                     <!-- Tag Info -->
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                            <materialDesign:PackIcon Kind="TagOutline" Width="20" Height="20" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                            <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="Black" Foreground="White" TextTrimming="CharacterEllipsis"/>
+                                        <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                            <materialDesign:PackIcon Kind="TagOutline" Width="18" Height="18" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="Black" Foreground="White" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
-                                        <Border Background="#25EB3B5A" CornerRadius="8" Padding="8,3" HorizontalAlignment="Right">
+                                        <Border Background="#25EB3B5A" CornerRadius="8" Padding="8,2" HorizontalAlignment="Right">
                                             <TextBlock Text="{Binding Count, StringFormat='{}{0} مورد'}" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource PrimaryColor}"/>
                                         </Border>
                                     </StackPanel>
 
                                     <!-- Poster Backdrop Thumbnail -->
-                                    <Border Grid.Column="1" Width="70" Height="90" CornerRadius="12" ClipToBounds="True" Background="#15FFFFFF" Margin="10,0,0,0">
+                                    <Border Grid.Column="1" Width="64" Height="84" CornerRadius="10" ClipToBounds="True" Background="#15FFFFFF" Margin="8,0,0,0">
                                         <Image Source="{Binding PosterUrl}" Stretch="UniformToFill"/>
                                     </Border>
                                 </Grid>
@@ -602,18 +583,15 @@
                         </ItemsPanelTemplate>
                     </ListBox.ItemsPanel>
 
-                    <!-- Poster Card Template (No 3-dot buttons, Left click selects in selection mode or opens details, Right click enters selection mode) -->
+                    <!-- Poster Card Template (Enhanced Modern Design Inspired by Dream to You, Allied, Toy Story) -->
                     <ListBox.ItemTemplate>
                         <DataTemplate>
-                            <Grid Width="{Binding DataContext.PosterSize, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="8,8,8,12">
+                            <Grid Width="{Binding DataContext.PosterSize, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="6,6,6,12">
                                 
                                 <!-- Card Container -->
-                                <Border CornerRadius="18" Padding="8" Cursor="Hand">
+                                <Border CornerRadius="16" Padding="6" Cursor="Hand" Background="#E60F172A" BorderBrush="#334155" BorderThickness="1">
                                     <Border.Style>
                                         <Style TargetType="Border">
-                                            <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
-                                            <Setter Property="BorderBrush" Value="{DynamicResource LightBorder}"/>
-                                            <Setter Property="BorderThickness" Value="1"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsSelected}" Value="True">
                                                     <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
@@ -628,7 +606,7 @@
                                         <MouseBinding Gesture="RightClick" Command="{Binding DataContext.ToggleSelectionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                                     </Border.InputBindings>
                                     <Border.Effect>
-                                        <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.4" Color="Black"/>
+                                        <DropShadowEffect BlurRadius="16" ShadowDepth="3" Opacity="0.45" Color="Black"/>
                                     </Border.Effect>
 
                                     <StackPanel>
@@ -636,79 +614,105 @@
                                         <!-- Poster Image Box -->
                                         <Grid Height="{Binding DataContext.PosterHeight, RelativeSource={RelativeSource AncestorType=UserControl}}" ClipToBounds="True">
                                             
-                                            <!-- Actual Poster Image -->
-                                            <Border CornerRadius="14" ClipToBounds="True" Background="#15FFFFFF">
-                                                <Image Source="{Binding File.PosterUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                            <!-- Actual Poster Image with Bottom Gradient -->
+                                            <Border CornerRadius="12" ClipToBounds="True" Background="#15FFFFFF">
+                                                <Grid>
+                                                    <Image Source="{Binding File.PosterUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                    
+                                                    <!-- Dark Gradient Overlay at bottom of poster (for clear text contrast) -->
+                                                    <Border VerticalAlignment="Bottom" Height="65">
+                                                        <Border.Background>
+                                                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                                                <GradientStop Color="Transparent" Offset="0"/>
+                                                                <GradientStop Color="#B0090E17" Offset="0.6"/>
+                                                                <GradientStop Color="#F0090E17" Offset="1"/>
+                                                            </LinearGradientBrush>
+                                                        </Border.Background>
+                                                    </Border>
+                                                </Grid>
                                             </Border>
 
-                                            <!-- Top-Left Large Star Rating Capsule -->
+                                            <!-- Top-Right in RTL (Top Corner): Dubbing & Subtitle Badges (Floating Dark Glass Circles) -->
+                                            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0">
+                                                <!-- Dubbed (Neon Green Mic) -->
+                                                <Border Visibility="{Binding HasDubbing, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                        Background="#D90F172A" BorderBrush="#40334155" BorderThickness="1"
+                                                        CornerRadius="14" Width="28" Height="28" Margin="0,0,0,5"
+                                                        ToolTip="دارای دوبله فارسی">
+                                                    <Border.Effect>
+                                                        <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.7" Color="Black"/>
+                                                    </Border.Effect>
+                                                    <materialDesign:PackIcon Kind="Microphone" Width="15" Height="15" Foreground="#00E676" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+
+                                                <!-- Subtitle (Yellow CC) -->
+                                                <Border Visibility="{Binding HasSubtitle, Converter={StaticResource BoolToVisibilityConverter}}"
+                                                        Background="#D90F172A" BorderBrush="#40334155" BorderThickness="1"
+                                                        CornerRadius="14" Width="28" Height="28"
+                                                        ToolTip="دارای زیرنویس فارسی">
+                                                    <Border.Effect>
+                                                        <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.7" Color="Black"/>
+                                                    </Border.Effect>
+                                                    <materialDesign:PackIcon Kind="ClosedCaption" Width="15" Height="15" Foreground="#FFD166" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                            </StackPanel>
+
+                                            <!-- Top-Left in RTL: IMDb Rating Capsule (Green border / gold star score) -->
                                             <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8,8,0,0"
-                                                    Background="#95000000" CornerRadius="14" Padding="10,5" BorderBrush="#35FFFFFF" BorderThickness="0.8"
+                                                    Background="#D90F172A" CornerRadius="12" Padding="7,3" BorderBrush="#40334155" BorderThickness="1"
                                                     Visibility="{Binding HasRating, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <Border.Effect>
+                                                    <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.7" Color="Black"/>
+                                                </Border.Effect>
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <materialDesign:PackIcon Kind="Star" Width="16" Height="16" Foreground="{DynamicResource GoldColor}" VerticalAlignment="Center" Margin="0,0,5,0"/>
-                                                    <TextBlock Text="{Binding RatingFormatted}" Foreground="White" FontSize="13.5" FontWeight="Black" VerticalAlignment="Center"/>
+                                                    <materialDesign:PackIcon Kind="Star" Width="13" Height="13" Foreground="#FFD166" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                    <TextBlock Text="{Binding RatingFormatted}" Foreground="#4ADE80" FontSize="11.5" FontWeight="Black" VerticalAlignment="Center"/>
                                                 </StackPanel>
                                             </Border>
 
-                                            <!-- Top-Right Hidden Lock Badge (Only if marked hidden) -->
-                                            <Border HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0"
-                                                    Background="#95000000" CornerRadius="10" Padding="8,4" BorderBrush="#40EB3B5A" BorderThickness="0.8"
+                                            <!-- Top-Left Hidden Lock Badge (Only if marked hidden and no rating) -->
+                                            <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="8,0,0,8"
+                                                    Background="#D90F172A" CornerRadius="10" Padding="6,3" BorderBrush="#40EB3B5A" BorderThickness="0.8"
                                                     Visibility="{Binding IsHidden, Converter={StaticResource BoolToVisibilityConverter}}">
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                    <materialDesign:PackIcon Kind="Lock" Width="13" Height="13" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                    <TextBlock Text="مخفی" Foreground="White" FontSize="10" FontWeight="Bold"/>
+                                                    <materialDesign:PackIcon Kind="Lock" Width="12" Height="12" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                                    <TextBlock Text="مخفی" Foreground="White" FontSize="9.5" FontWeight="Bold"/>
                                                 </StackPanel>
                                             </Border>
 
-                                            <!-- Bottom-Left Age Rating Badge (Only if real age rating exists) -->
-                                            <Border HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="8,0,0,8"
-                                                    Background="#B0000000" CornerRadius="6" Padding="6,2.5" BorderBrush="#40FFFFFF" BorderThickness="0.8"
-                                                    Visibility="{Binding HasAgeRating, Converter={StaticResource BoolToVisibilityConverter}}">
-                                                <TextBlock Text="{Binding AgeRating}" Foreground="White" FontSize="9.5" FontWeight="Black"/>
-                                            </Border>
+                                            <!-- Bottom-Inside-Poster Overlay (Like Allied reference): Year & Type -->
+                                            <DockPanel VerticalAlignment="Bottom" Margin="8,0,8,6">
+                                                <!-- Year with Calendar Icon on Right -->
+                                                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <materialDesign:PackIcon Kind="CalendarOutline" Width="12" Height="12" Foreground="#CBD5E1" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                                    <TextBlock Text="{Binding DisplayYear}" FontSize="10.5" FontWeight="Bold" Foreground="#FFFFFF" VerticalAlignment="Center"/>
+                                                </StackPanel>
+
+                                                <!-- Type Badge on Left (فیلم / سریال) -->
+                                                <Border DockPanel.Dock="Left" Background="{Binding TypeBadgeBg}" BorderBrush="{Binding TypeBadgeBorder}" BorderThickness="0.8" CornerRadius="4" Padding="5,1">
+                                                    <TextBlock Text="{Binding TypeBadgeText}" FontSize="9.5" FontWeight="Bold" Foreground="{Binding TypeBadgeFg}"/>
+                                                </Border>
+                                            </DockPanel>
 
                                             <!-- Selection Checkbox Overlay -->
-                                            <Border HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,8"
-                                                    Background="{DynamicResource PrimaryColor}" CornerRadius="13" Width="26" Height="26"
+                                            <Border HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                    Background="{DynamicResource PrimaryColor}" CornerRadius="16" Width="32" Height="32"
                                                     Visibility="{Binding IsSelected, Converter={StaticResource BoolToVisibilityConverter}}">
-                                                <materialDesign:PackIcon Kind="Check" Width="18" Height="18" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                <materialDesign:PackIcon Kind="Check" Width="20" Height="20" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                             </Border>
 
                                         </Grid>
 
-                                        <!-- Bottom Details -->
-                                        <StackPanel Margin="2,8,2,2">
+                                        <!-- Bottom Details (Below Poster) -->
+                                        <StackPanel Margin="2,6,2,2">
                                             
-                                            <!-- Title -->
-                                            <TextBlock Text="{Binding File.FormattedTitle}" FontSize="13.5" FontWeight="Bold" Foreground="White" 
-                                                       TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" TextAlignment="Right"/>
+                                            <!-- Title (Persian / Formatted) -->
+                                            <TextBlock Text="{Binding File.FormattedTitle}" FontSize="13" FontWeight="Bold" Foreground="White" 
+                                                       TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" TextAlignment="Center"/>
 
-                                            <!-- 3 Persistent Badges Row (Always present for every Movie and Series: نوع + صوت/ترجمه + سال ساخت) -->
-                                            <WrapPanel Margin="0,6,0,0" Orientation="Horizontal" VerticalAlignment="Center">
-                                                
-                                                <!-- 1. Type Badge (فیلم / سریال) -->
-                                                <Border Background="{Binding TypeBadgeBg}" BorderBrush="{Binding TypeBadgeBorder}" BorderThickness="0.8" CornerRadius="6" Padding="6,2" Margin="0,0,4,3">
-                                                    <TextBlock Text="{Binding TypeBadgeText}" FontSize="9.5" FontWeight="Bold" Foreground="{Binding TypeBadgeFg}"/>
-                                                </Border>
-
-                                                <!-- 2. Audio/Subtitle Badge (دوبله / زیرنویس / زبان اصلی) -->
-                                                <Border Background="{Binding AudioBadgeBg}" BorderBrush="{Binding AudioBadgeBorder}" BorderThickness="0.8" CornerRadius="6" Padding="6,2" Margin="0,0,4,3">
-                                                    <TextBlock Text="{Binding AudioBadgeText}" FontSize="9.5" FontWeight="Bold" Foreground="{Binding AudioBadgeFg}"/>
-                                                </Border>
-
-                                                <!-- 3. Year Badge (سال ساخت) -->
-                                                <Border Background="#18FFFFFF" BorderBrush="#25FFFFFF" BorderThickness="0.8" CornerRadius="6" Padding="6,2" Margin="0,0,0,3">
-                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding DisplayYear}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" Margin="0,0,3,0"/>
-                                                        <materialDesign:PackIcon Kind="CalendarOutline" Width="11" Height="11" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                                                    </StackPanel>
-                                                </Border>
-
-                                            </WrapPanel>
-
-                                            <!-- Last Played Progress (For series) -->
-                                            <TextBlock Text="{Binding LastPlayedText}" FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource PrimaryColor}" Margin="0,3,0,0" 
+                                            <!-- Last Played / Progress for series -->
+                                            <TextBlock Text="{Binding LastPlayedText}" FontSize="10" FontWeight="Bold" Foreground="{DynamicResource PrimaryColor}" 
+                                                       HorizontalAlignment="Center" Margin="0,2,0,0" 
                                                        Visibility="{Binding LastPlayedText, Converter={StaticResource NullToVisibilityConverter}}"/>
 
                                         </StackPanel>
@@ -755,6 +759,57 @@
                                 Background="#15FFFFFF" Foreground="{DynamicResource SecondaryText}" BorderThickness="0"
                                 Height="38" Padding="16,0" materialDesign:ButtonAssist.CornerRadius="10"/>
                     </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ======================================================== -->
+        <!-- MODAL DIALOG: BULK ACTION / REFRESH CIRCULAR PROGRESS -->
+        <!-- ======================================================== -->
+        <Grid Grid.RowSpan="4" Background="#90000000" Visibility="{Binding IsBulkActionRunning, Converter={StaticResource BoolToVisibilityConverter}}">
+            <Border Background="{DynamicResource CardBackground}" CornerRadius="22" BorderBrush="{DynamicResource PrimaryColor}" BorderThickness="1.5"
+                    Width="420" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <Border.Effect>
+                    <DropShadowEffect BlurRadius="35" ShadowDepth="8" Opacity="0.8" Color="Black"/>
+                </Border.Effect>
+                <StackPanel HorizontalAlignment="Center">
+                    
+                    <!-- Header Icon & Title -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
+                        <materialDesign:PackIcon Kind="RefreshAuto" Width="24" Height="24" Foreground="{DynamicResource GoldColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="به‌روزرسانی اطلاعات از TMDb" FontSize="16" FontWeight="Black" Foreground="White" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Circular Progress Indicator with Center Percentage -->
+                    <Grid Width="130" Height="130" Margin="0,0,0,20" HorizontalAlignment="Center">
+                        <!-- Background track circle -->
+                        <ProgressBar Value="100" Maximum="100" 
+                                     Style="{StaticResource MaterialDesignCircularProgressBar}" 
+                                     Width="120" Height="120" 
+                                     Foreground="#18FFFFFF" BorderThickness="0"/>
+                        
+                        <!-- Active Progress circle -->
+                        <ProgressBar Value="{Binding BulkActionProgress}" Maximum="100" 
+                                     Style="{StaticResource MaterialDesignCircularProgressBar}" 
+                                     Width="120" Height="120" 
+                                     Foreground="{DynamicResource PrimaryColor}"/>
+
+                        <!-- Centered Count & Percent Info -->
+                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <TextBlock Text="{Binding BulkActionPercentText}" FontSize="22" FontWeight="Black" Foreground="White" HorizontalAlignment="Center"/>
+                            <TextBlock Text="{Binding BulkActionCountText}" FontSize="12.5" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Current File / Progress Description -->
+                    <TextBlock Text="{Binding BulkActionText}" FontSize="13.5" FontWeight="SemiBold" Foreground="{DynamicResource SecondaryText}" 
+                               TextAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="360" Margin="0,0,0,22"/>
+
+                    <!-- Cancel Button -->
+                    <Button Content="انصراف و توقف" Command="{Binding CancelBulkActionCommand}"
+                            Background="#25EB3B5A" Foreground="{DynamicResource PrimaryColor}" BorderBrush="#50EB3B5A" BorderThickness="1"
+                            Height="40" Padding="26,0" FontWeight="Bold" FontSize="13" materialDesign:ButtonAssist.CornerRadius="12"
+                            HorizontalAlignment="Center" Cursor="Hand"/>
                 </StackPanel>
             </Border>
         </Grid>

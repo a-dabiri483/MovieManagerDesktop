@@ -110,22 +110,49 @@ namespace MovieManagerDesktop.ViewModels
                             {
                                 try
                                 {
-                                    await identifySvc.UpdateSeriesStatusAsync(target);
-                                    if (target.TmdbId.HasValue)
+                                    var settings = SettingsManager.LoadSettings();
+                                    string apiKey = SettingsManager.GetTmdbApiKey();
+                                    string language = string.IsNullOrEmpty(settings.TmdbLanguage) ? "fa-IR" : settings.TmdbLanguage;
+
+                                    await identifySvc.IdentifySeriesDetailsAsync(target, apiKey, language);
+
+                                    using (var db2 = new AppDbContext())
                                     {
-                                        var (sList, eList) = await identifySvc.FetchSeriesDetailsAsync(target.TmdbId.Value);
-                                        if (sList.Count > 0)
+                                        var dbTarget = db2.VideoFiles.FirstOrDefault(v => v.Id == target.Id);
+                                        if (dbTarget != null)
                                         {
-                                            using var db2 = new AppDbContext();
-                                            var oldS = db2.TvSeasons.Where(s => s.TmdbSeriesId == target.TmdbId.Value).ToList();
-                                            var oldE = db2.TvEpisodes.Where(e => e.TmdbSeriesId == target.TmdbId.Value).ToList();
-                                            db2.TvSeasons.RemoveRange(oldS);
-                                            db2.TvEpisodes.RemoveRange(oldE);
-                                            db2.TvSeasons.AddRange(sList);
-                                            db2.TvEpisodes.AddRange(eList);
+                                            dbTarget.FirstAirDate = target.FirstAirDate;
+                                            dbTarget.LastAirDate = target.LastAirDate;
+                                            dbTarget.NetworkName = target.NetworkName;
+                                            dbTarget.AirDay = target.AirDay;
+                                            dbTarget.AirTime = target.AirTime;
+                                            dbTarget.TotalSeasonsCount = target.TotalSeasonsCount;
+                                            dbTarget.TotalEpisodesCount = target.TotalEpisodesCount;
+                                            dbTarget.NextEpisodeDate = target.NextEpisodeDate;
+                                            dbTarget.NextEpisodeNumber = target.NextEpisodeNumber;
+                                            dbTarget.SeriesStatus = target.SeriesStatus;
+                                            if (string.IsNullOrWhiteSpace(dbTarget.Year) && target.FirstAirDate.HasValue)
+                                                dbTarget.Year = target.FirstAirDate.Value.Year.ToString();
                                             await db2.SaveChangesAsync();
                                         }
+
+                                        if (target.TmdbId.HasValue)
+                                        {
+                                            var (sList, eList) = await identifySvc.FetchSeriesDetailsAsync(target.TmdbId.Value);
+                                            if (sList.Count > 0)
+                                            {
+                                                var oldS = db2.TvSeasons.Where(s => s.TmdbSeriesId == target.TmdbId.Value).ToList();
+                                                var oldE = db2.TvEpisodes.Where(e => e.TmdbSeriesId == target.TmdbId.Value).ToList();
+                                                db2.TvSeasons.RemoveRange(oldS);
+                                                db2.TvEpisodes.RemoveRange(oldE);
+                                                db2.TvSeasons.AddRange(sList);
+                                                db2.TvEpisodes.AddRange(eList);
+                                                await db2.SaveChangesAsync();
+                                            }
+                                        }
                                     }
+
+                                    WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
                                 }
                                 catch { }
                             });

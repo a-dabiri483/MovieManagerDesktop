@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.EntityFrameworkCore;
 using MovieManagerDesktop.Data;
 using MovieManagerDesktop.Messages;
 using MovieManagerDesktop.Models;
@@ -38,7 +39,7 @@ namespace MovieManagerDesktop.ViewModels
         {
             ProgressPercent = TotalEpisodes > 0 ? Math.Min(100.0, (double)WatchedEpisodes / TotalEpisodes * 100.0) : 0;
             IsCompleted = WatchedEpisodes >= TotalEpisodes && TotalEpisodes > 0;
-            ProgressText = $"{WatchedEpisodes} از {TotalEpisodes} قسمت";
+            ProgressText = $"{WatchedEpisodes} / {TotalEpisodes}";
             ProgressPercentText = $"{Math.Round(ProgressPercent)}%";
         }
 
@@ -73,6 +74,15 @@ namespace MovieManagerDesktop.ViewModels
         public bool IsSeries => MediaType.Equals("Series", StringComparison.OrdinalIgnoreCase);
         public string MediaTypeDisplay => IsSeries ? "سریال تلویزیونی" : "فیلم سینمایی";
 
+        public bool IsPersianLanguage
+        {
+            get
+            {
+                var lang = SettingsManager.LoadSettings().TmdbLanguage ?? "fa-IR";
+                return string.IsNullOrEmpty(lang) || lang.Contains("fa", StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
         // Series Tracker Properties
         [ObservableProperty]
         private string _seriesStatusText = "نامشخص";
@@ -105,6 +115,9 @@ namespace MovieManagerDesktop.ViewModels
         private string _episodesCountText = string.Empty;
 
         [ObservableProperty]
+        private string _totalEpisodesSummaryText = string.Empty;
+
+        [ObservableProperty]
         private double _overallProgressPercent;
 
         [ObservableProperty]
@@ -123,32 +136,34 @@ namespace MovieManagerDesktop.ViewModels
 
         private void InitTrackerInfo()
         {
+            bool isFa = IsPersianLanguage;
+
             if (IsSeries)
             {
                 string rawStatus = (Media.SeriesStatus ?? "").Trim().ToLowerInvariant();
                 if (rawStatus.Contains("returning") || rawStatus.Contains("airing"))
                 {
-                    SeriesStatusText = "در حال پخش";
-                    SeriesStatusColor = "#2ED573"; // سبز
+                    SeriesStatusText = isFa ? "در حال پخش" : "Returning Series";
+                    SeriesStatusColor = "#2ED573";
                 }
                 else if (rawStatus.Contains("ended") || rawStatus.Contains("finished"))
                 {
-                    SeriesStatusText = "تمام شده";
-                    SeriesStatusColor = "#A4B0BE"; // خاکستری
+                    SeriesStatusText = isFa ? "تمام شده" : "Ended";
+                    SeriesStatusColor = "#A4B0BE";
                 }
                 else if (rawStatus.Contains("cancel"))
                 {
-                    SeriesStatusText = "کنسل شده";
-                    SeriesStatusColor = "#FF4757"; // قرمز
+                    SeriesStatusText = isFa ? "کنسل شده" : "Canceled";
+                    SeriesStatusColor = "#FF4757";
                 }
                 else if (rawStatus.Contains("planned") || rawStatus.Contains("production"))
                 {
-                    SeriesStatusText = "در دست ساخت";
-                    SeriesStatusColor = "#FFA502"; // نارنجی
+                    SeriesStatusText = isFa ? "در دست ساخت" : "Planned";
+                    SeriesStatusColor = "#FFA502";
                 }
                 else
                 {
-                    SeriesStatusText = !string.IsNullOrEmpty(Media.SeriesStatus) ? Media.SeriesStatus : "نامشخص";
+                    SeriesStatusText = !string.IsNullOrEmpty(Media.SeriesStatus) ? Media.SeriesStatus : (isFa ? "نامشخص" : "Unknown");
                     SeriesStatusColor = "#00D2D3";
                 }
 
@@ -156,18 +171,42 @@ namespace MovieManagerDesktop.ViewModels
                     FirstAirDateText = DateTimeFormatterService.FormatShortDate(Media.FirstAirDate.Value);
                 else if (!string.IsNullOrEmpty(Media.Year))
                     FirstAirDateText = FormattedYear;
+                else
+                    FirstAirDateText = isFa ? "نامشخص" : "Unknown";
 
                 if (Media.LastAirDate.HasValue)
                     LastAirDateText = DateTimeFormatterService.FormatShortDate(Media.LastAirDate.Value);
+                else
+                    LastAirDateText = isFa ? "نامشخص" : "Unknown";
 
                 if (!string.IsNullOrEmpty(Media.NetworkName))
                     NetworkText = Media.NetworkName;
+                else
+                    NetworkText = isFa ? "نامشخص" : "Unknown";
 
                 if (!string.IsNullOrEmpty(Media.AirDay))
                 {
+                    string rawDay = Media.AirDay.ToLowerInvariant();
+                    string dayText = Media.AirDay;
+
+                    if (isFa)
+                    {
+                        if (rawDay.Contains("saturday")) dayText = "شنبه";
+                        else if (rawDay.Contains("sunday")) dayText = "یکشنبه";
+                        else if (rawDay.Contains("monday")) dayText = "دوشنبه";
+                        else if (rawDay.Contains("tuesday")) dayText = "سه‌شنبه";
+                        else if (rawDay.Contains("wednesday")) dayText = "چهارشنبه";
+                        else if (rawDay.Contains("thursday")) dayText = "پنج‌شنبه";
+                        else if (rawDay.Contains("friday")) dayText = "جمعه";
+                    }
+
                     AirScheduleText = !string.IsNullOrEmpty(Media.AirTime)
-                        ? $"{Media.AirDay} ساعت {Media.AirTime}"
-                        : Media.AirDay;
+                        ? (isFa ? $"{dayText} ساعت {Media.AirTime}" : $"{dayText} at {Media.AirTime}")
+                        : dayText;
+                }
+                else
+                {
+                    AirScheduleText = isFa ? "نامشخص" : "Unknown";
                 }
 
                 if (!string.IsNullOrEmpty(Media.NextEpisodeDate))
@@ -176,8 +215,8 @@ namespace MovieManagerDesktop.ViewModels
                     string formattedDate = DateTimeFormatterService.FormatDate(Media.NextEpisodeDate);
                     if (Media.NextEpisodeNumber.HasValue)
                     {
-                        string seasonPart = Media.NextEpisodeSeason.HasValue ? $"فصل {Media.NextEpisodeSeason} - " : "";
-                        NextEpisodeText = $"{seasonPart}قسمت {Media.NextEpisodeNumber} ({formattedDate})";
+                        string seasonPart = Media.NextEpisodeSeason.HasValue ? (isFa ? $"فصل {Media.NextEpisodeSeason} - " : $"S{Media.NextEpisodeSeason} - ") : "";
+                        NextEpisodeText = isFa ? $"{seasonPart}قسمت {Media.NextEpisodeNumber} ({formattedDate})" : $"{seasonPart}Ep {Media.NextEpisodeNumber} ({formattedDate})";
                     }
                     else
                     {
@@ -187,106 +226,66 @@ namespace MovieManagerDesktop.ViewModels
                 else
                 {
                     HasNextEpisode = false;
-                    NextEpisodeText = "قسمت جدیدی در برنامه پخش ثبت نشده است.";
+                    NextEpisodeText = isFa ? "نامشخص" : "Unknown";
                 }
 
                 int s = Media.TotalSeasonsCount ?? Media.NumberOfSeasons ?? 0;
                 int e = Media.TotalEpisodesCount ?? Media.NumberOfEpisodes ?? 0;
-                SeasonsCountText = s > 0 ? $"{s} فصل" : "نامشخص";
-                EpisodesCountText = e > 0 ? $"{e} قسمت" : "نامشخص";
+                SeasonsCountText = s > 0 ? (isFa ? $"{s} فصل" : $"{s} Seasons") : (isFa ? "نامشخص" : "Unknown");
+                EpisodesCountText = e > 0 ? (isFa ? $"{e} قسمت" : $"{e} Episodes") : (isFa ? "نامشخص" : "Unknown");
+                TotalEpisodesSummaryText = s > 0 && e > 0 
+                    ? (isFa ? $"{s} فصل - {e} قسمت" : $"{s} Seasons - {e} Episodes") 
+                    : (isFa ? "نامشخص" : "Unknown");
             }
             else
             {
-                SeriesStatusText = "فیلم سینمایی";
+                SeriesStatusText = isFa ? "فیلم سینمایی" : "Movie";
                 SeriesStatusColor = "#3A86FF";
-                FirstAirDateText = FormattedYear;
             }
         }
 
-        [RelayCommand]
         public async Task LoadDetailsAsync()
         {
-            if (!IsSeries || !Media.TmdbId.HasValue) return;
+            if (Media == null) return;
 
             IsLoading = true;
             try
             {
-                int tmdbId = Media.TmdbId.Value;
-
-                var (dbSeasons, dbEpisodes) = await Task.Run(() =>
-                {
-                    using var db = new AppDbContext();
-                    var sList = db.TvSeasons.Where(s => s.TmdbSeriesId == tmdbId).OrderBy(s => s.SeasonNumber).ToList();
-                    var eList = db.TvEpisodes.Where(e => e.TmdbSeriesId == tmdbId).OrderBy(e => e.SeasonNumber).ThenBy(e => e.EpisodeNumber).ToList();
-                    return (sList, eList);
-                });
-
-                if (dbSeasons.Count == 0 && dbEpisodes.Count == 0)
-                {
-                    // Fetch from TMDb
-                    var (fetchedSeasons, fetchedEpisodes) = await _mediaService.FetchSeriesDetailsAsync(tmdbId);
-                    if (fetchedSeasons.Count > 0)
-                    {
-                        await Task.Run(async () =>
-                        {
-                            using var db = new AppDbContext();
-                            db.TvSeasons.AddRange(fetchedSeasons);
-                            db.TvEpisodes.AddRange(fetchedEpisodes);
-                            await db.SaveChangesAsync();
-                        });
-                        dbSeasons = fetchedSeasons;
-                        dbEpisodes = fetchedEpisodes;
-                    }
-                }
-
+                using var db = new AppDbContext();
+                int totalSeasons = Media.TotalSeasonsCount ?? Media.NumberOfSeasons ?? 1;
                 SeasonItems.Clear();
-                int totalEps = 0;
-                int totalWatched = 0;
 
-                foreach (var s in dbSeasons.Where(x => x.SeasonNumber > 0).OrderBy(x => x.SeasonNumber))
+                for (int i = 1; i <= Math.Max(1, totalSeasons); i++)
                 {
-                    var seasonEps = dbEpisodes.Where(e => e.SeasonNumber == s.SeasonNumber).ToList();
-                    int count = s.EpisodeCount > 0 ? s.EpisodeCount : seasonEps.Count;
-                    if (count == 0) count = seasonEps.Count;
+                    int totalEps = 10;
+                    int watchedEps = 0;
 
-                    int watched = seasonEps.Count(e => e.IsWatched);
-
-                    totalEps += count;
-                    totalWatched += watched;
-
-                    SeasonItems.Add(new SeasonTrackerItem
+                    if (Media.TmdbId.HasValue)
                     {
-                        SeasonNumber = s.SeasonNumber,
-                        SeasonName = !string.IsNullOrWhiteSpace(s.Name) ? s.Name : $"فصل {s.SeasonNumber}",
-                        TotalEpisodes = count,
-                        WatchedEpisodes = watched
-                    });
-                }
-
-                if (SeasonItems.Count == 0 && (Media.NumberOfSeasons ?? 0) > 0)
-                {
-                    // Fallback create season items from NumberOfSeasons
-                    int sCount = Media.NumberOfSeasons!.Value;
-                    int epsPerSeason = (Media.NumberOfEpisodes ?? (sCount * 10)) / sCount;
-                    if (epsPerSeason == 0) epsPerSeason = 10;
-
-                    for (int i = 1; i <= sCount; i++)
-                    {
-                        SeasonItems.Add(new SeasonTrackerItem
+                        var eps = db.TvEpisodes.Where(e => e.TmdbSeriesId == Media.TmdbId.Value && e.SeasonNumber == i).ToList();
+                        if (eps.Count > 0)
                         {
-                            SeasonNumber = i,
-                            SeasonName = $"فصل {i}",
-                            TotalEpisodes = epsPerSeason,
-                            WatchedEpisodes = 0
-                        });
+                            totalEps = eps.Count;
+                            watchedEps = eps.Count(e => e.IsWatched);
+                        }
                     }
+
+                    var item = new SeasonTrackerItem
+                    {
+                        SeasonNumber = i,
+                        SeasonName = IsPersianLanguage ? $"فصل {i}" : $"Season {i}",
+                        TotalEpisodes = totalEps,
+                        WatchedEpisodes = watchedEps
+                    };
+                    item.Recalculate();
+                    SeasonItems.Add(item);
                 }
 
-                UpdateOverallProgress();
+                RecalculateOverall();
             }
             catch (Exception ex)
             {
-                LoggerService.Error("Error loading tracked series details", ex);
+                StatusMessage = $"خطا در بارگذاری جزئیات: {ex.Message}";
             }
             finally
             {
@@ -294,255 +293,163 @@ namespace MovieManagerDesktop.ViewModels
             }
         }
 
-        private void UpdateOverallProgress()
+        [RelayCommand]
+        private void IncrementWatched(SeasonTrackerItem item)
+        {
+            if (item == null || item.WatchedEpisodes >= item.TotalEpisodes) return;
+            item.WatchedEpisodes++;
+            SaveProgress(item);
+            RecalculateOverall();
+        }
+
+        [RelayCommand]
+        private void DecrementWatched(SeasonTrackerItem item)
+        {
+            if (item == null || item.WatchedEpisodes <= 0) return;
+            item.WatchedEpisodes--;
+            SaveProgress(item);
+            RecalculateOverall();
+        }
+
+        [RelayCommand]
+        private void MarkAllWatched(SeasonTrackerItem item)
+        {
+            if (item == null) return;
+            if (item.WatchedEpisodes >= item.TotalEpisodes)
+            {
+                item.WatchedEpisodes = 0;
+            }
+            else
+            {
+                item.WatchedEpisodes = item.TotalEpisodes;
+            }
+            SaveProgress(item);
+            RecalculateOverall();
+        }
+
+        private void SaveProgress(SeasonTrackerItem item)
+        {
+            try
+            {
+                using var db = new AppDbContext();
+                if (Media.TmdbId.HasValue)
+                {
+                    var eps = db.TvEpisodes.Where(e => e.TmdbSeriesId == Media.TmdbId.Value && e.SeasonNumber == item.SeasonNumber).OrderBy(e => e.EpisodeNumber).ToList();
+                    for (int i = 0; i < eps.Count; i++)
+                    {
+                        eps[i].IsWatched = i < item.WatchedEpisodes;
+                    }
+                }
+
+                var dbMedia = db.VideoFiles.FirstOrDefault(v => v.Id == Media.Id);
+                if (dbMedia != null)
+                {
+                    int totalEps = SeasonItems.Sum(s => s.TotalEpisodes);
+                    int watchedEps = SeasonItems.Sum(s => s.WatchedEpisodes);
+                    dbMedia.WatchProgressPercent = totalEps > 0 ? (double)watchedEps / totalEps * 100 : 0;
+                    dbMedia.IsTracked = true;
+                }
+                db.SaveChanges();
+                WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error saving progress: {ex.Message}");
+            }
+        }
+
+        private void RecalculateOverall()
         {
             int totalEps = SeasonItems.Sum(s => s.TotalEpisodes);
-            int totalWatched = SeasonItems.Sum(s => s.WatchedEpisodes);
-            OverallProgressPercent = totalEps > 0 ? Math.Min(100.0, (double)totalWatched / totalEps * 100.0) : 0;
-            OverallProgressText = $"{totalWatched} از {totalEps} قسمت دیده شده ({Math.Round(OverallProgressPercent)}%)";
-        }
+            int watchedEps = SeasonItems.Sum(s => s.WatchedEpisodes);
 
-        [RelayCommand]
-        public void IncrementWatched(SeasonTrackerItem season)
-        {
-            if (season == null || season.WatchedEpisodes >= season.TotalEpisodes) return;
-
-            season.WatchedEpisodes++;
-            UpdateOverallProgress();
-
-            // Persist to DB in background
-            Task.Run(async () =>
-            {
-                using var db = new AppDbContext();
-                if (Media.TmdbId.HasValue)
-                {
-                    var eps = db.TvEpisodes
-                        .Where(e => e.TmdbSeriesId == Media.TmdbId.Value && e.SeasonNumber == season.SeasonNumber)
-                        .OrderBy(e => e.EpisodeNumber)
-                        .ToList();
-
-                    if (eps.Count >= season.WatchedEpisodes)
-                    {
-                        eps[season.WatchedEpisodes - 1].IsWatched = true;
-                    }
-                    else if (eps.Count == 0)
-                    {
-                        // Ensure episode record exists
-                        var newEp = new TvEpisode
-                        {
-                            TmdbSeriesId = Media.TmdbId.Value,
-                            SeasonNumber = season.SeasonNumber,
-                            EpisodeNumber = season.WatchedEpisodes,
-                            IsWatched = true,
-                            Name = $"قسمت {season.WatchedEpisodes}"
-                        };
-                        db.TvEpisodes.Add(newEp);
-                    }
-                }
-
-                var dbMedia = db.VideoFiles.FirstOrDefault(v => v.Id == Media.Id);
-                if (dbMedia != null)
-                {
-                    dbMedia.WatchProgressPercent = OverallProgressPercent;
-                    dbMedia.IsWatched = OverallProgressPercent >= 100;
-                }
-                await db.SaveChangesAsync();
-            });
-        }
-
-        [RelayCommand]
-        public void DecrementWatched(SeasonTrackerItem season)
-        {
-            if (season == null || season.WatchedEpisodes <= 0) return;
-
-            int currentWatched = season.WatchedEpisodes;
-            season.WatchedEpisodes--;
-            UpdateOverallProgress();
-
-            // Persist to DB in background
-            Task.Run(async () =>
-            {
-                using var db = new AppDbContext();
-                if (Media.TmdbId.HasValue)
-                {
-                    var eps = db.TvEpisodes
-                        .Where(e => e.TmdbSeriesId == Media.TmdbId.Value && e.SeasonNumber == season.SeasonNumber)
-                        .OrderBy(e => e.EpisodeNumber)
-                        .ToList();
-
-                    if (eps.Count >= currentWatched)
-                    {
-                        eps[currentWatched - 1].IsWatched = false;
-                    }
-                }
-
-                var dbMedia = db.VideoFiles.FirstOrDefault(v => v.Id == Media.Id);
-                if (dbMedia != null)
-                {
-                    dbMedia.WatchProgressPercent = OverallProgressPercent;
-                    dbMedia.IsWatched = OverallProgressPercent >= 100;
-                }
-                await db.SaveChangesAsync();
-            });
-        }
-
-        [RelayCommand]
-        public void MarkAllWatched(SeasonTrackerItem season)
-        {
-            if (season == null) return;
-
-            bool isAll = season.IsCompleted;
-            season.WatchedEpisodes = isAll ? 0 : season.TotalEpisodes;
-            UpdateOverallProgress();
-
-            Task.Run(async () =>
-            {
-                using var db = new AppDbContext();
-                if (Media.TmdbId.HasValue)
-                {
-                    var eps = db.TvEpisodes
-                        .Where(e => e.TmdbSeriesId == Media.TmdbId.Value && e.SeasonNumber == season.SeasonNumber)
-                        .ToList();
-
-                    foreach (var ep in eps)
-                    {
-                        ep.IsWatched = !isAll;
-                    }
-
-                    var s = db.TvSeasons.FirstOrDefault(x => x.TmdbSeriesId == Media.TmdbId.Value && x.SeasonNumber == season.SeasonNumber);
-                    if (s != null)
-                    {
-                        s.IsWatched = !isAll;
-                    }
-                }
-
-                var dbMedia = db.VideoFiles.FirstOrDefault(v => v.Id == Media.Id);
-                if (dbMedia != null)
-                {
-                    dbMedia.WatchProgressPercent = OverallProgressPercent;
-                    dbMedia.IsWatched = OverallProgressPercent >= 100;
-                }
-                await db.SaveChangesAsync();
-            });
-        }
-
-        [RelayCommand]
-        public async Task RefreshFromTmdbAsync()
-        {
-            if (IsLoading) return;
-            IsLoading = true;
-
-            try
-            {
-                ToastService.Instance.ShowInfo("در حال بروزرسانی اطلاعات از TMDb...");
-                await _mediaService.UpdateSeriesStatusAsync(Media);
-
-                if (Media.TmdbId.HasValue && IsSeries)
-                {
-                    var (fetchedSeasons, fetchedEpisodes) = await _mediaService.FetchSeriesDetailsAsync(Media.TmdbId.Value);
-                    if (fetchedSeasons.Count > 0)
-                    {
-                        await Task.Run(async () =>
-                        {
-                            using var db = new AppDbContext();
-                            var oldS = db.TvSeasons.Where(s => s.TmdbSeriesId == Media.TmdbId.Value).ToList();
-                            var oldE = db.TvEpisodes.Where(e => e.TmdbSeriesId == Media.TmdbId.Value).ToList();
-                            
-                            // Preserve watched states
-                            var watchedSet = oldE.Where(e => e.IsWatched).Select(e => $"{e.SeasonNumber}_{e.EpisodeNumber}").ToHashSet();
-
-                            db.TvSeasons.RemoveRange(oldS);
-                            db.TvEpisodes.RemoveRange(oldE);
-
-                            foreach (var ep in fetchedEpisodes)
-                            {
-                                if (watchedSet.Contains($"{ep.SeasonNumber}_{ep.EpisodeNumber}"))
-                                    ep.IsWatched = true;
-                            }
-
-                            db.TvSeasons.AddRange(fetchedSeasons);
-                            db.TvEpisodes.AddRange(fetchedEpisodes);
-
-                            var dbMedia = db.VideoFiles.FirstOrDefault(v => v.Id == Media.Id);
-                            if (dbMedia != null)
-                            {
-                                dbMedia.SeriesStatus = Media.SeriesStatus;
-                                dbMedia.NextEpisodeDate = Media.NextEpisodeDate;
-                                dbMedia.NextEpisodeSeason = Media.NextEpisodeSeason;
-                                dbMedia.NextEpisodeNumber = Media.NextEpisodeNumber;
-                                dbMedia.NumberOfSeasons = Media.NumberOfSeasons;
-                                dbMedia.NumberOfEpisodes = Media.NumberOfEpisodes;
-                            }
-                            await db.SaveChangesAsync();
-                        });
-                    }
-                }
-
-                InitTrackerInfo();
-                await LoadDetailsAsync();
-
-                OnPropertyChanged(nameof(Title));
-                OnPropertyChanged(nameof(Overview));
-                OnPropertyChanged(nameof(FormattedYear));
-                ToastService.Instance.ShowSuccess("اطلاعات ردیاب با موفقیت بروزرسانی شد.");
-            }
-            catch (Exception ex)
-            {
-                LoggerService.Error("Error refreshing tracked details from TMDb", ex);
-                ToastService.Instance.ShowError("خطا در بروزرسانی از TMDb.");
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        [RelayCommand]
-        private async Task RemoveFromTrackerAsync()
-        {
-            var result = System.Windows.MessageBox.Show(
-                $"آیا مطمئن هستید که می‌خواهید «{Title}» را از لیست ردیاب حذف کنید؟",
-                "تأیید حذف از ردیاب",
-                System.Windows.MessageBoxButton.YesNo,
-                System.Windows.MessageBoxImage.Question);
-
-            if (result != System.Windows.MessageBoxResult.Yes) return;
-
-            try
-            {
-                await Task.Run(async () =>
-                {
-                    using var db = new AppDbContext();
-                    var dbItem = db.VideoFiles.FirstOrDefault(v => v.Id == Media.Id);
-                    if (dbItem != null)
-                    {
-                        if (dbItem.FilePath == "[Manual Tracker]" || string.IsNullOrEmpty(dbItem.FilePath))
-                        {
-                            db.VideoFiles.Remove(dbItem);
-                        }
-                        else
-                        {
-                            dbItem.IsTracked = false;
-                            dbItem.IsWatchlist = false;
-                        }
-                        await db.SaveChangesAsync();
-                    }
-                });
-
-                ToastService.Instance.ShowSuccess($"«{Title}» از ردیاب حذف شد.");
-                GoBack();
-            }
-            catch (Exception ex)
-            {
-                LoggerService.Error("Error removing item from tracker", ex);
-                ToastService.Instance.ShowError("خطا در حذف از ردیاب.");
-            }
+            OverallProgressPercent = totalEps > 0 ? Math.Min(100.0, (double)watchedEps / totalEps * 100.0) : 0;
+            OverallProgressText = IsPersianLanguage 
+                ? $"{watchedEps} از {totalEps} قسمت دیده شده ({Math.Round(OverallProgressPercent)}%)"
+                : $"{watchedEps} of {totalEps} episodes watched ({Math.Round(OverallProgressPercent)}%)";
         }
 
         [RelayCommand]
         private void GoBack()
         {
             WeakReferenceMessenger.Default.Send(new NavigationMessage(new TrackerViewModel()));
+        }
+
+        [RelayCommand]
+        private async Task RefreshFromTmdbAsync()
+        {
+            if (Media == null || IsLoading) return;
+            IsLoading = true;
+            try
+            {
+                var settings = SettingsManager.LoadSettings();
+                string apiKey = SettingsManager.GetTmdbApiKey();
+                string language = string.IsNullOrEmpty(settings.TmdbLanguage) ? "fa-IR" : settings.TmdbLanguage;
+
+                await _mediaService.IdentifySeriesDetailsAsync(Media, apiKey, language);
+
+                using var db = new AppDbContext();
+                var dbItem = db.VideoFiles.FirstOrDefault(v => v.Id == Media.Id);
+                if (dbItem != null)
+                {
+                    dbItem.FirstAirDate = Media.FirstAirDate;
+                    dbItem.LastAirDate = Media.LastAirDate;
+                    dbItem.NetworkName = Media.NetworkName;
+                    dbItem.AirDay = Media.AirDay;
+                    dbItem.AirTime = Media.AirTime;
+                    dbItem.TotalSeasonsCount = Media.TotalSeasonsCount;
+                    dbItem.TotalEpisodesCount = Media.TotalEpisodesCount;
+                    dbItem.NextEpisodeDate = Media.NextEpisodeDate;
+                    dbItem.NextEpisodeNumber = Media.NextEpisodeNumber;
+                    dbItem.SeriesStatus = Media.SeriesStatus;
+                    await db.SaveChangesAsync();
+                }
+
+                if (Media.TmdbId.HasValue)
+                {
+                    var (fetchedSeasons, fetchedEpisodes) = await _mediaService.FetchSeriesDetailsAsync(Media.TmdbId.Value);
+                    if (fetchedSeasons.Count > 0)
+                    {
+                        var oldSeasons = db.TvSeasons.Where(s => s.TmdbSeriesId == Media.TmdbId.Value);
+                        db.TvSeasons.RemoveRange(oldSeasons);
+                        db.TvSeasons.AddRange(fetchedSeasons);
+                    }
+                    if (fetchedEpisodes.Count > 0)
+                    {
+                        var oldEpisodes = db.TvEpisodes.Where(e => e.TmdbSeriesId == Media.TmdbId.Value);
+                        db.TvEpisodes.RemoveRange(oldEpisodes);
+                        db.TvEpisodes.AddRange(fetchedEpisodes);
+                    }
+                    await db.SaveChangesAsync();
+                }
+
+                InitTrackerInfo();
+                await LoadDetailsAsync();
+                WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"خطا در بروزرسانی: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        [RelayCommand]
+        private void RemoveFromTracker()
+        {
+            if (Media == null) return;
+            using var db = new AppDbContext();
+            var dbMedia = db.VideoFiles.FirstOrDefault(v => v.Id == Media.Id);
+            if (dbMedia != null)
+            {
+                dbMedia.IsTracked = false;
+                db.SaveChanges();
+            }
+            WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
+            GoBack();
         }
     }
 }

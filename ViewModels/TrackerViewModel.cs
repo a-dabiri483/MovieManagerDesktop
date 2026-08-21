@@ -21,7 +21,17 @@ namespace MovieManagerDesktop.ViewModels
         public string Title => string.IsNullOrWhiteSpace(Media.FormattedTitle) ? (Media.FileName ?? "بدون عنوان") : Media.FormattedTitle;
         public string? PosterUrl => Media.PosterUrl;
         public string? BackdropUrl => Media.BackdropUrl;
-        public string FormattedYear => DateTimeFormatterService.FormatYear(Media.Year);
+        public string FormattedYear
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(Media.Year))
+                    return DateTimeFormatterService.FormatYear(Media.Year);
+                if (Media.FirstAirDate.HasValue)
+                    return DateTimeFormatterService.FormatYear(Media.FirstAirDate.Value.Year.ToString());
+                return string.Empty;
+            }
+        }
         public string FormattedGenres => GenreTranslatorService.TranslateList(Media.Genres);
         public string YearAndGenres
         {

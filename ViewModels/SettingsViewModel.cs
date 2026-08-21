@@ -26,6 +26,7 @@ namespace MovieManagerDesktop.ViewModels
         Backup,
         Proxy,
         Personalization,
+        Player,
         Education,
         About
     }
@@ -63,6 +64,7 @@ namespace MovieManagerDesktop.ViewModels
         public bool IsBackupView => CurrentSubView == SettingsSubView.Backup;
         public bool IsProxyView => CurrentSubView == SettingsSubView.Proxy;
         public bool IsPersonalizationView => CurrentSubView == SettingsSubView.Personalization;
+        public bool IsPlayerView => CurrentSubView == SettingsSubView.Player;
         public bool IsEducationView => CurrentSubView == SettingsSubView.Education;
         public bool IsAboutView => CurrentSubView == SettingsSubView.About;
 
@@ -73,6 +75,7 @@ namespace MovieManagerDesktop.ViewModels
             OnPropertyChanged(nameof(IsBackupView));
             OnPropertyChanged(nameof(IsProxyView));
             OnPropertyChanged(nameof(IsPersonalizationView));
+            OnPropertyChanged(nameof(IsPlayerView));
             OnPropertyChanged(nameof(IsEducationView));
             OnPropertyChanged(nameof(IsAboutView));
         }
@@ -190,9 +193,120 @@ namespace MovieManagerDesktop.ViewModels
             SavePersonalizationSettings();
         }
 
-        partial void OnHideAdultContentChanged(bool value)
+        // Video Player Settings Properties
+        [ObservableProperty]
+        private bool _useInternalPlayer = true;
+
+        [ObservableProperty]
+        private string _externalPlayerType = "SystemDefault"; // SystemDefault, PotPlayer, VLC, Custom
+
+        [ObservableProperty]
+        private string _customExternalPlayerPath = string.Empty;
+
+        public bool IsInternalPlayerSelected
         {
-            SavePersonalizationSettings();
+            get => UseInternalPlayer;
+            set
+            {
+                if (value)
+                {
+                    UseInternalPlayer = true;
+                    SavePlayerSettings();
+                }
+            }
+        }
+
+        public bool IsExternalPlayerSelected
+        {
+            get => !UseInternalPlayer;
+            set
+            {
+                if (value)
+                {
+                    UseInternalPlayer = false;
+                    SavePlayerSettings();
+                }
+            }
+        }
+
+        public bool IsSystemDefaultPlayerSelected
+        {
+            get => ExternalPlayerType == "SystemDefault";
+            set { if (value) { ExternalPlayerType = "SystemDefault"; SavePlayerSettings(); } }
+        }
+
+        public bool IsPotPlayerSelected
+        {
+            get => ExternalPlayerType == "PotPlayer";
+            set { if (value) { ExternalPlayerType = "PotPlayer"; SavePlayerSettings(); } }
+        }
+
+        public bool IsVlcSelected
+        {
+            get => ExternalPlayerType == "VLC";
+            set { if (value) { ExternalPlayerType = "VLC"; SavePlayerSettings(); } }
+        }
+
+        public bool IsCustomPlayerSelected
+        {
+            get => ExternalPlayerType == "Custom";
+            set { if (value) { ExternalPlayerType = "Custom"; SavePlayerSettings(); } }
+        }
+
+        [RelayCommand]
+        private void OpenPlayer()
+        {
+            LoadPlayerSettings();
+            CurrentSubView = SettingsSubView.Player;
+        }
+
+        [RelayCommand]
+        private void BrowseCustomExternalPlayer()
+        {
+            var dialog = new OpenFileDialog
+            {
+                Title = "انتخاب فایل اجرایی پلیر ویدیویی",
+                Filter = "فایل‌های اجرایی (*.exe)|*.exe|همه فایل‌ها (*.*)|*.*"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                CustomExternalPlayerPath = dialog.FileName;
+                ExternalPlayerType = "Custom";
+                SavePlayerSettings();
+                ToastService.Instance.ShowSuccess("پلیر سفارشی با موفقیت انتخاب شد.");
+            }
+        }
+
+        private void SavePlayerSettings()
+        {
+            var settings = SettingsManager.LoadSettings();
+            settings.UseInternalPlayer = UseInternalPlayer;
+            settings.ExternalPlayerType = ExternalPlayerType;
+            settings.CustomExternalPlayerPath = CustomExternalPlayerPath;
+            SettingsManager.SaveSettings(settings);
+
+            OnPropertyChanged(nameof(IsInternalPlayerSelected));
+            OnPropertyChanged(nameof(IsExternalPlayerSelected));
+            OnPropertyChanged(nameof(IsSystemDefaultPlayerSelected));
+            OnPropertyChanged(nameof(IsPotPlayerSelected));
+            OnPropertyChanged(nameof(IsVlcSelected));
+            OnPropertyChanged(nameof(IsCustomPlayerSelected));
+        }
+
+        private void LoadPlayerSettings()
+        {
+            var settings = SettingsManager.LoadSettings();
+            UseInternalPlayer = settings.UseInternalPlayer;
+            ExternalPlayerType = settings.ExternalPlayerType ?? "SystemDefault";
+            CustomExternalPlayerPath = settings.CustomExternalPlayerPath ?? string.Empty;
+
+            OnPropertyChanged(nameof(IsInternalPlayerSelected));
+            OnPropertyChanged(nameof(IsExternalPlayerSelected));
+            OnPropertyChanged(nameof(IsSystemDefaultPlayerSelected));
+            OnPropertyChanged(nameof(IsPotPlayerSelected));
+            OnPropertyChanged(nameof(IsVlcSelected));
+            OnPropertyChanged(nameof(IsCustomPlayerSelected));
         }
 
         public string SelectedDataSource

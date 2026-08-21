@@ -92,6 +92,9 @@
         <DataTemplate DataType="{x:Type viewmodels:CinemaHubViewModel}">
             <views:CinemaHubView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:PlayerViewModel}">
+            <views:PlayerView />
+        </DataTemplate>
 
         <!-- Android Bottom Nav Item Style -->
         <Style x:Key="AndroidBottomNavRadioStyle" TargetType="RadioButton">
@@ -178,7 +181,8 @@
         <Border CornerRadius="20" ClipToBounds="True" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Background="{DynamicResource MainBackground}">
             <Grid>
                 <!-- TOP WINDOW DRAGGING BAR AND CONTROLS (Floating Minimal) -->
-                <Grid Panel.ZIndex="100" VerticalAlignment="Top" Height="40" WindowChrome.IsHitTestVisibleInChrome="True" MouseLeftButtonDown="Window_MouseLeftButtonDown" Background="Transparent">
+                <Grid Panel.ZIndex="100" VerticalAlignment="Top" Height="40" WindowChrome.IsHitTestVisibleInChrome="True" MouseLeftButtonDown="Window_MouseLeftButtonDown" Background="Transparent"
+                      Visibility="{Binding IsPlayerActive, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=inverse}">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -201,11 +205,25 @@
                 </Grid>
 
                 <!-- MAIN FULL VIEW CONTENT AREA -->
-                <Grid Margin="0,35,0,0">
-                    <ContentControl Content="{Binding CurrentViewModel, NotifyOnTargetUpdated=True}" Margin="0,0,0,85">
+                <Grid>
+                    <Grid.Style>
+                        <Style TargetType="Grid">
+                            <Setter Property="Margin" Value="0,35,0,0"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsPlayerActive}" Value="True">
+                                    <Setter Property="Margin" Value="0"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+                    <ContentControl Content="{Binding CurrentViewModel, NotifyOnTargetUpdated=True}">
                         <ContentControl.Style>
                             <Style TargetType="ContentControl">
+                                <Setter Property="Margin" Value="0,0,0,85"/>
                                 <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsPlayerActive}" Value="True">
+                                        <Setter Property="Margin" Value="0"/>
+                                    </DataTrigger>
                                     <EventTrigger RoutedEvent="Binding.TargetUpdated">
                                         <BeginStoryboard>
                                             <Storyboard>
@@ -224,7 +242,8 @@
                         TextOptions.TextFormattingMode="Display"
                         TextOptions.TextRenderingMode="ClearType"
                         UseLayoutRounding="True"
-                        SnapsToDevicePixels="True">
+                        SnapsToDevicePixels="True"
+                        Visibility="{Binding IsPlayerActive, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=inverse}">
                     <Border Background="#F2101222" CornerRadius="37" BorderBrush="#40EB3B5A" BorderThickness="1.5" Padding="14,4" Height="74">
                         <Border.Effect>
                             <DropShadowEffect Color="#000000" BlurRadius="30" ShadowDepth="4" Opacity="0.7"/>

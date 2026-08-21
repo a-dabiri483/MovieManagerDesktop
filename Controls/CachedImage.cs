@@ -44,8 +44,8 @@ namespace MovieManagerDesktop.Controls
                         var bitmap = new BitmapImage();
                         bitmap.BeginInit();
                         bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                        // Use a reasonable decode width to save memory but still look good
-                        bitmap.DecodePixelWidth = 400; 
+                        // Use a decode width suitable for full-screen backdrops and HD posters
+                        bitmap.DecodePixelWidth = 1280; 
                         bitmap.UriSource = new Uri(localPath, UriKind.Absolute);
                         bitmap.EndInit();
                         bitmap.Freeze(); // Cross-thread safety

@@ -217,63 +217,114 @@
                     </Grid>
                 </Border>
 
-                <!-- 3. INFO METRICS ROW -->
-                <WrapPanel Margin="36,8,36,16">
-                    <!-- Network / Platform -->
-                    <Border Style="{StaticResource DetailStatPill}">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="TelevisionBox" Width="20" Height="20" Foreground="#00D2D3" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <StackPanel>
-                                <TextBlock Text="شبکه / پلتفرم" FontSize="11" Foreground="{DynamicResource SecondaryText}"/>
-                                <TextBlock Text="{Binding NetworkText}" FontSize="13" FontWeight="Bold" Foreground="White" Margin="0,2,0,0"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
+                <!-- 3. EXACT TRACKER INFO SECTION (Unified 6-Item Card matching Mobile & Desktop) -->
+                <Border Margin="36,0,36,20" Background="{DynamicResource CardBackground}" CornerRadius="20" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Padding="24,20"
+                        Visibility="{Binding IsSeries, Converter={StaticResource BoolToVis}}">
+                    <StackPanel>
+                        <!-- Header Row with Status Tag -->
+                        <Grid Margin="0,0,0,18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                    <!-- Air Schedule -->
-                    <Border Style="{StaticResource DetailStatPill}" Visibility="{Binding IsSeries, Converter={StaticResource BoolToVis}}">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="ClockOutline" Width="20" Height="20" Foreground="#FFA502" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <StackPanel>
-                                <TextBlock Text="برنامه و زمان پخش" FontSize="11" Foreground="{DynamicResource SecondaryText}"/>
-                                <TextBlock Text="{Binding AirScheduleText, Converter={StaticResource PersianNumberConverter}}" FontSize="13" FontWeight="Bold" Foreground="White" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="TelevisionPlay" Width="22" Height="22" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="اطلاعات پخش و ردیابی" FontSize="17" FontWeight="Black" Foreground="White"/>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
 
-                    <!-- Total Seasons -->
-                    <Border Style="{StaticResource DetailStatPill}" Visibility="{Binding IsSeries, Converter={StaticResource BoolToVis}}">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="FolderMultipleOutline" Width="20" Height="20" Foreground="#A55EEA" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <StackPanel>
-                                <TextBlock Text="تعداد فصل‌ها" FontSize="11" Foreground="{DynamicResource SecondaryText}"/>
-                                <TextBlock Text="{Binding SeasonsCountText, Converter={StaticResource PersianNumberConverter}}" FontSize="13" FontWeight="Bold" Foreground="White" Margin="0,2,0,0"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
+                            <!-- Status Badge -->
+                            <Border Grid.Column="2" CornerRadius="12" Padding="14,6" Background="#20000000" BorderBrush="{Binding SeriesStatusColor}" BorderThickness="1">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Border Width="8" Height="8" CornerRadius="4" Background="{Binding SeriesStatusColor}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding SeriesStatusText}" Foreground="{Binding SeriesStatusColor}" FontSize="12.5" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
 
-                    <!-- Total Episodes -->
-                    <Border Style="{StaticResource DetailStatPill}" Visibility="{Binding IsSeries, Converter={StaticResource BoolToVis}}">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="PlayBoxMultipleOutline" Width="20" Height="20" Foreground="#2ED573" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <StackPanel>
-                                <TextBlock Text="کل قسمت‌ها" FontSize="11" Foreground="{DynamicResource SecondaryText}"/>
-                                <TextBlock Text="{Binding EpisodesCountText, Converter={StaticResource PersianNumberConverter}}" FontSize="13" FontWeight="Bold" Foreground="White" Margin="0,2,0,0"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
+                        <Separator Background="{DynamicResource LightBorder}" Margin="0,0,0,18"/>
 
-                    <!-- First Air Date -->
-                    <Border Style="{StaticResource DetailStatPill}">
-                        <StackPanel Orientation="Horizontal">
-                            <materialDesign:PackIcon Kind="CalendarStar" Width="20" Height="20" Foreground="#3A86FF" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <StackPanel>
-                                <TextBlock Text="تاریخ شروع پخش" FontSize="11" Foreground="{DynamicResource SecondaryText}"/>
-                                <TextBlock Text="{Binding FirstAirDateText, Converter={StaticResource PersianNumberConverter}}" FontSize="13" FontWeight="Bold" Foreground="White" Margin="0,2,0,0"/>
+                        <!-- 6-Item Information Grid -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- 1. First Air Date -->
+                            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Margin="0,0,0,18">
+                                <Border Width="40" Height="40" CornerRadius="20" Background="#203A86FF" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="CalendarStart" Width="20" Height="20" Foreground="#3A86FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="شروع پخش" FontSize="11.5" Foreground="{DynamicResource SecondaryText}"/>
+                                    <TextBlock Text="{Binding FirstAirDateText, Converter={StaticResource PersianNumberConverter}}" FontSize="14" FontWeight="Bold" Foreground="White" Margin="0,2,0,0"/>
+                                </StackPanel>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
-                </WrapPanel>
+
+                            <!-- 2. Last Air Date -->
+                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,18">
+                                <Border Width="40" Height="40" CornerRadius="20" Background="#203A86FF" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="CalendarEnd" Width="20" Height="20" Foreground="#3A86FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="پایان پخش" FontSize="11.5" Foreground="{DynamicResource SecondaryText}"/>
+                                    <TextBlock Text="{Binding LastAirDateText, Converter={StaticResource PersianNumberConverter}}" FontSize="14" FontWeight="Bold" Foreground="White" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- 3. Network / Studio -->
+                            <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Margin="0,0,0,18">
+                                <Border Width="40" Height="40" CornerRadius="20" Background="#2000D2D3" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="Television" Width="20" Height="20" Foreground="#00D2D3" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="شبکه / استودیو" FontSize="11.5" Foreground="{DynamicResource SecondaryText}"/>
+                                    <TextBlock Text="{Binding NetworkText}" FontSize="14" FontWeight="Bold" Foreground="White" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- 4. Broadcast Schedule -->
+                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,18">
+                                <Border Width="40" Height="40" CornerRadius="20" Background="#20FFA502" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="ClockOutline" Width="20" Height="20" Foreground="#FFA502" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="برنامه پخش" FontSize="11.5" Foreground="{DynamicResource SecondaryText}"/>
+                                    <TextBlock Text="{Binding AirScheduleText, Converter={StaticResource PersianNumberConverter}}" FontSize="14" FontWeight="Bold" Foreground="White" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- 5. Next Episode -->
+                            <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Margin="0,0,0,6">
+                                <Border Width="40" Height="40" CornerRadius="20" Background="#25FFD32A" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="SkipNext" Width="22" Height="22" Foreground="#FFD32A" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="قسمت بعدی" FontSize="11.5" Foreground="{DynamicResource SecondaryText}"/>
+                                    <TextBlock Text="{Binding NextEpisodeText, Converter={StaticResource PersianNumberConverter}}" FontSize="14" FontWeight="Bold" Foreground="#FFD32A" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- 6. Total Episodes & Seasons -->
+                            <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,6">
+                                <Border Width="40" Height="40" CornerRadius="20" Background="#202ED573" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="FormatListNumbered" Width="20" Height="20" Foreground="#2ED573" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="تعداد قسمت‌ها" FontSize="11.5" Foreground="{DynamicResource SecondaryText}"/>
+                                    <TextBlock Text="{Binding TotalEpisodesSummaryText, Converter={StaticResource PersianNumberConverter}}" FontSize="14" FontWeight="Bold" Foreground="White" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
 
                 <!-- 4. OVERVIEW SECTION -->
                 <Border Margin="36,0,36,20" Background="{DynamicResource CardBackground}" CornerRadius="18" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Padding="22,18">

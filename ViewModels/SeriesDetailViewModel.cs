@@ -1,4 +1,7 @@
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -11,10 +14,57 @@ using MovieManagerDesktop.Services;
 
 namespace MovieManagerDesktop.ViewModels
 {
-    public class SeasonGroup
+    public partial class EpisodeItemViewModel : ObservableObject
+    {
+        public TvEpisode Episode { get; set; } = null!;
+        public VideoFile? LocalFile { get; set; }
+        public string SeriesTitle { get; set; } = string.Empty;
+
+        [ObservableProperty]
+        private bool _isWatched;
+
+        public int EpisodeNumber => Episode.EpisodeNumber;
+        public int SeasonNumber => Episode.SeasonNumber;
+        public string EpisodeTag => $"S{SeasonNumber:D2}E{EpisodeNumber:D2}";
+        public string DisplayTitle => string.IsNullOrWhiteSpace(Episode.Name) ? SeriesTitle : Episode.Name;
+        public string AirDateFormatted => string.IsNullOrWhiteSpace(Episode.AirDate) ? "" : DateTimeFormatterService.FormatDate(Episode.AirDate);
+        public string StillUrl => Episode.StillUrl;
+        public bool HasLocalFile => LocalFile != null && !string.IsNullOrEmpty(LocalFile.FilePath) && File.Exists(LocalFile.FilePath);
+        public bool HasDubbing => LocalFile != null && LocalFile.HasDubbing;
+        public bool HasSubtitle => LocalFile != null && LocalFile.HasSubtitle;
+    }
+
+    public partial class SeasonGroup : ObservableObject
     {
         public TvSeason? Season { get; set; }
-        public ObservableCollection<TvEpisode> Episodes { get; set; } = new();
+        public ObservableCollection<EpisodeItemViewModel> Episodes { get; set; } = new();
+
+        [ObservableProperty]
+        private bool _isExpanded = false;
+
+        public string ChevronIconKind => IsExpanded ? "ChevronUp" : "ChevronDown";
+
+        partial void OnIsExpandedChanged(bool value)
+        {
+            OnPropertyChanged(nameof(ChevronIconKind));
+        }
+
+        public int SeasonNumber => Season?.SeasonNumber ?? 0;
+        public string SeasonTag => $"S{SeasonNumber}";
+        public string SeasonTitle => $"فصل {SeasonNumber} - {Season?.EpisodeCount ?? Episodes.Count} قسمت";
+        
+        public string WatchedSummaryText => $"{Episodes.Count(e => e.IsWatched)} از {Season?.EpisodeCount ?? Episodes.Count} قسمت";
+        
+        public double SeasonProgressPercent => (Season?.EpisodeCount > 0) ? ((double)Episodes.Count(e => e.IsWatched) / Season.EpisodeCount * 100) : 0;
+        
+        public bool AllWatched => Episodes.Count > 0 && Episodes.All(e => e.IsWatched);
+
+        public void NotifyWatchedChanged()
+        {
+            OnPropertyChanged(nameof(WatchedSummaryText));
+            OnPropertyChanged(nameof(SeasonProgressPercent));
+            OnPropertyChanged(nameof(AllWatched));
+        }
     }
 
     public partial class SeriesDetailViewModel : ObservableObject
@@ -28,7 +78,7 @@ namespace MovieManagerDesktop.ViewModels
         private bool _isLoading;
 
         [ObservableProperty]
-        private string _errorMessage;
+        private string? _errorMessage;
         
         // Series Tracker UI Properties
         [ObservableProperty]
@@ -50,10 +100,36 @@ namespace MovieManagerDesktop.ViewModels
         private string _airScheduleText = "نامشخص";
         
         [ObservableProperty]
-        private string _nextEpisodeText = "ندارد";
+        private string _nextEpisodeText = "نامشخص";
         
         [ObservableProperty]
         private string _episodesInfoText = "نامشخص";
+
+        // Continue Watching CTA Properties
+        [ObservableProperty]
+        private string _continueWatchingText = "شروع تماشا";
+
+        [ObservableProperty]
+        private bool _canContinueWatching = false;
+
+        [ObservableProperty]
+        private EpisodeItemViewModel? _continueWatchingEpisode;
+
+        // Progress Overview Properties
+        [ObservableProperty]
+        private int _watchedEpisodesCount = 0;
+
+        [ObservableProperty]
+        private int _totalEpisodesCount = 0;
+
+        [ObservableProperty]
+        private double _overallProgressPercent = 0.0;
+
+        [ObservableProperty]
+        private string _watchedProgressSummaryText = string.Empty;
+
+        [ObservableProperty]
+        private string _progressPercentText = "0%";
 
         public ObservableCollection<SeasonGroup> Seasons { get; } = new();
 
@@ -84,7 +160,6 @@ namespace MovieManagerDesktop.ViewModels
             if (!string.IsNullOrEmpty(Series.SeriesStatus))
             {
                 var language = SettingsManager.LoadSettings().TmdbLanguage ?? "fa-IR";
-                bool isPersian = string.IsNullOrEmpty(language) || language.Contains("fa", StringComparison.OrdinalIgnoreCase);
                 string rawStatus = Series.SeriesStatus.Trim().ToLowerInvariant();
 
                 SeriesStatusText = rawStatus switch
@@ -148,9 +223,13 @@ namespace MovieManagerDesktop.ViewModels
             // Next Episode
             if (!string.IsNullOrEmpty(Series.NextEpisodeDate))
             {
-                NextEpisodeText = $"تاریخ: {DateTimeFormatterService.FormatDate(Series.NextEpisodeDate)}";
+                NextEpisodeText = $"{DateTimeFormatterService.FormatDate(Series.NextEpisodeDate)}";
                 if (Series.NextEpisodeNumber.HasValue)
                     NextEpisodeText = $"قسمت {Series.NextEpisodeNumber} - " + NextEpisodeText;
+            }
+            else
+            {
+                NextEpisodeText = "نامشخص";
             }
             
             // Episodes Info
@@ -219,7 +298,6 @@ namespace MovieManagerDesktop.ViewModels
                         // Update UI properties
                         App.Current.Dispatcher.Invoke(() => {
                             LoadSeriesTrackerInfo();
-                            ToastService.Instance.ShowSuccess("سریال با موفقیت بروزرسانی شد");
                         });
                     }
                     catch (Exception ex)
@@ -255,36 +333,292 @@ namespace MovieManagerDesktop.ViewModels
                     }
                 }
 
+                // Query local video files corresponding to this series
+                var localEpisodeFiles = db.VideoFiles
+                    .Where(v => (v.TmdbId == _series.TmdbId || v.FormattedTitle.ToLower() == _series.FormattedTitle.ToLower()) && v.Season != null && v.Episode != null)
+                    .ToList();
+
                 // Update UI
                 App.Current.Dispatcher.Invoke(() =>
                 {
                     Seasons.Clear();
+                    bool isFirst = true;
                     foreach (var s in dbSeasons.OrderBy(x => x.SeasonNumber))
                     {
-                        var group = new SeasonGroup { Season = s };
-                        var next = dbEpisodes.FirstOrDefault(e => e.SeasonNumber == s.SeasonNumber && DateTime.TryParse(e.AirDate, out var ad) && ad > DateTime.Today);
-                        if (next != null)
-                        {
-                            Series.NextEpisodeToAirInfo = $"فصل {next.SeasonNumber} قسمت {next.EpisodeNumber}: {next.AirDate}";
-                        }
-                        else
-                        {
-                            Series.NextEpisodeToAirInfo = string.Empty;
-                        }
+                        var group = new SeasonGroup 
+                        { 
+                            Season = s,
+                            IsExpanded = isFirst
+                        };
+                        isFirst = false;
+
                         foreach (var e in dbEpisodes.Where(ep => ep.SeasonNumber == s.SeasonNumber).OrderBy(x => x.EpisodeNumber))
                         {
-                            group.Episodes.Add(e);
+                            var localMatch = localEpisodeFiles.FirstOrDefault(lf => lf.Season == e.SeasonNumber && lf.Episode == e.EpisodeNumber);
+                            var epVm = new EpisodeItemViewModel
+                            {
+                                Episode = e,
+                                LocalFile = localMatch,
+                                SeriesTitle = _series.FormattedTitle,
+                                IsWatched = e.IsWatched
+                            };
+                            group.Episodes.Add(epVm);
                         }
                         Seasons.Add(group);
                     }
+
+                    UpdateProgressAndContinueWatching(db);
                 });
-                
-                UpdateSeriesProgress(db);
             }
             finally
             {
                 IsLoading = false;
             }
+        }
+
+        private void UpdateProgressAndContinueWatching(AppDbContext? existingDb = null)
+        {
+            bool ownDb = existingDb == null;
+            var db = existingDb ?? new AppDbContext();
+            try
+            {
+                int total = 0;
+                int watched = 0;
+                EpisodeItemViewModel? nextUnwatched = null;
+                EpisodeItemViewModel? firstEpisode = null;
+
+                foreach (var s in Seasons.OrderBy(x => x.SeasonNumber))
+                {
+                    foreach (var ep in s.Episodes.OrderBy(x => x.EpisodeNumber))
+                    {
+                        if (firstEpisode == null) firstEpisode = ep;
+                        total++;
+                        if (ep.IsWatched)
+                        {
+                            watched++;
+                        }
+                        else if (nextUnwatched == null)
+                        {
+                            nextUnwatched = ep;
+                        }
+                    }
+                    s.NotifyWatchedChanged();
+                }
+
+                WatchedEpisodesCount = watched;
+                TotalEpisodesCount = total;
+                OverallProgressPercent = total > 0 ? ((double)watched / total * 100) : 0;
+                ProgressPercentText = $"{Math.Round(OverallProgressPercent)}٪";
+                WatchedProgressSummaryText = $"شما {watched} از {total} قسمت را دیده‌اید";
+
+                if (nextUnwatched != null)
+                {
+                    ContinueWatchingEpisode = nextUnwatched;
+                    ContinueWatchingText = $"ادامه تماشا (فصل {nextUnwatched.SeasonNumber} قسمت {nextUnwatched.EpisodeNumber})";
+                    CanContinueWatching = true;
+                }
+                else if (firstEpisode != null)
+                {
+                    ContinueWatchingEpisode = firstEpisode;
+                    ContinueWatchingText = $"تماشای مجدد (فصل {firstEpisode.SeasonNumber} قسمت {firstEpisode.EpisodeNumber})";
+                    CanContinueWatching = true;
+                }
+                else
+                {
+                    ContinueWatchingEpisode = null;
+                    ContinueWatchingText = "شروع تماشا";
+                    CanContinueWatching = false;
+                }
+
+                // Update series record in database
+                if (_series.TmdbId != null)
+                {
+                    var dbSeries = db.VideoFiles.FirstOrDefault(v => v.Id == _series.Id);
+                    if (dbSeries != null)
+                    {
+                        dbSeries.WatchProgressPercent = OverallProgressPercent;
+                        dbSeries.IsTracked = true;
+                        db.SaveChanges();
+                    }
+                }
+            }
+            finally
+            {
+                if (ownDb) db.Dispose();
+            }
+        }
+
+        [RelayCommand]
+        private void ContinueWatching()
+        {
+            if (ContinueWatchingEpisode != null)
+            {
+                PlayEpisode(ContinueWatchingEpisode);
+            }
+            else
+            {
+                ToastService.Instance.ShowWarning("قسمتی برای پخش یافت نشد.");
+            }
+        }
+
+        [RelayCommand]
+        private void PlayEpisode(EpisodeItemViewModel? episodeItem)
+        {
+            if (episodeItem == null) return;
+
+            VideoFile? fileToPlay = episodeItem.LocalFile;
+
+            // If not directly linked, search DB for matching episode file
+            if (fileToPlay == null || string.IsNullOrEmpty(fileToPlay.FilePath) || !File.Exists(fileToPlay.FilePath))
+            {
+                using var db = new AppDbContext();
+                fileToPlay = db.VideoFiles.FirstOrDefault(v => 
+                    (v.TmdbId == _series.TmdbId || v.FormattedTitle.ToLower() == _series.FormattedTitle.ToLower()) &&
+                    v.Season == episodeItem.SeasonNumber &&
+                    v.Episode == episodeItem.EpisodeNumber);
+            }
+
+            // Fallback: check if series main file is an episode in a folder, search sister files in the directory
+            if (fileToPlay == null || string.IsNullOrEmpty(fileToPlay.FilePath) || !File.Exists(fileToPlay.FilePath))
+            {
+                if (!string.IsNullOrEmpty(_series.FilePath))
+                {
+                    string? dir = Path.GetDirectoryName(_series.FilePath);
+                    if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+                    {
+                        string sPad = episodeItem.SeasonNumber.ToString("D2");
+                        string ePad = episodeItem.EpisodeNumber.ToString("D2");
+                        string sRaw = episodeItem.SeasonNumber.ToString();
+                        string eRaw = episodeItem.EpisodeNumber.ToString();
+
+                        var files = Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories)
+                            .Where(f => f.EndsWith(".mkv", StringComparison.OrdinalIgnoreCase) || 
+                                        f.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) || 
+                                        f.EndsWith(".avi", StringComparison.OrdinalIgnoreCase))
+                            .ToList();
+
+                        var matchedFile = files.FirstOrDefault(f => {
+                            string name = Path.GetFileName(f).ToLowerInvariant();
+                            return (name.Contains($"s{sPad}e{ePad}") || name.Contains($"s{sRaw}e{eRaw}") || name.Contains($"{sRaw}x{ePad}"));
+                        });
+
+                        if (matchedFile != null)
+                        {
+                            fileToPlay = new VideoFile
+                            {
+                                FilePath = matchedFile,
+                                FileName = Path.GetFileName(matchedFile),
+                                FormattedTitle = _series.FormattedTitle,
+                                Season = episodeItem.SeasonNumber,
+                                Episode = episodeItem.EpisodeNumber,
+                                TmdbId = _series.TmdbId,
+                                PosterUrl = _series.PosterUrl,
+                                BackdropUrl = _series.BackdropUrl
+                            };
+                        }
+                    }
+                }
+            }
+
+            if (fileToPlay != null && !string.IsNullOrEmpty(fileToPlay.FilePath) && File.Exists(fileToPlay.FilePath))
+            {
+                // Build playlist of all available local episodes for seamless next/previous
+                var playlist = Seasons
+                    .SelectMany(s => s.Episodes)
+                    .Where(e => e.LocalFile != null && File.Exists(e.LocalFile.FilePath))
+                    .Select(e => e.LocalFile!)
+                    .DistinctBy(f => f.FilePath)
+                    .ToList();
+
+                int initialIndex = playlist.FindIndex(f => f.FilePath == fileToPlay.FilePath);
+                if (initialIndex < 0)
+                {
+                    playlist.Insert(0, fileToPlay);
+                    initialIndex = 0;
+                }
+
+                PlaybackService.PlayMedia(fileToPlay, playlist, initialIndex);
+            }
+            else
+            {
+                ToastService.Instance.ShowWarning($"فایل ویدیویی مربوط به فصل {episodeItem.SeasonNumber} قسمت {episodeItem.EpisodeNumber} در سیستم شما یافت نشد.");
+            }
+        }
+
+        [RelayCommand]
+        private void ToggleSeasonExpanded(SeasonGroup? seasonGroup)
+        {
+            if (seasonGroup == null) return;
+            seasonGroup.IsExpanded = !seasonGroup.IsExpanded;
+        }
+
+        [RelayCommand]
+        private void ToggleEpisodeWatched(EpisodeItemViewModel? episodeItem)
+        {
+            if (episodeItem == null) return;
+            
+            episodeItem.IsWatched = !episodeItem.IsWatched;
+            episodeItem.Episode.IsWatched = episodeItem.IsWatched;
+
+            Task.Run(async () =>
+            {
+                using var db = new AppDbContext();
+                var dbEp = db.TvEpisodes.FirstOrDefault(e => e.Id == episodeItem.Episode.Id);
+                if (dbEp != null)
+                {
+                    dbEp.IsWatched = episodeItem.IsWatched;
+                    await db.SaveChangesAsync();
+                }
+
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    UpdateProgressAndContinueWatching(db);
+                });
+            });
+        }
+        
+        [RelayCommand]
+        private void ToggleSeasonWatched(SeasonGroup? seasonGroup)
+        {
+            if (seasonGroup == null) return;
+            
+            bool newWatchedState = !seasonGroup.AllWatched;
+            if (seasonGroup.Season != null)
+            {
+                seasonGroup.Season.IsWatched = newWatchedState;
+            }
+
+            foreach (var ep in seasonGroup.Episodes)
+            {
+                ep.IsWatched = newWatchedState;
+                ep.Episode.IsWatched = newWatchedState;
+            }
+
+            seasonGroup.NotifyWatchedChanged();
+
+            Task.Run(async () =>
+            {
+                using var db = new AppDbContext();
+                if (seasonGroup.Season != null)
+                {
+                    var dbSeason = db.TvSeasons.FirstOrDefault(s => s.Id == seasonGroup.Season.Id);
+                    if (dbSeason != null) dbSeason.IsWatched = newWatchedState;
+                }
+
+                var epIds = seasonGroup.Episodes.Select(e => e.Episode.Id).ToList();
+                var dbEps = db.TvEpisodes.Where(e => epIds.Contains(e.Id)).ToList();
+                foreach (var ep in dbEps)
+                {
+                    ep.IsWatched = newWatchedState;
+                }
+
+                await db.SaveChangesAsync();
+
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    UpdateProgressAndContinueWatching(db);
+                });
+            });
         }
 
         [RelayCommand]
@@ -435,20 +769,41 @@ namespace MovieManagerDesktop.ViewModels
                     db.TvEpisodes.AddRange(fetchedEpisodes);
                     await db.SaveChangesAsync();
                 }
+
+                var localEpisodeFiles = db.VideoFiles
+                    .Where(v => (v.TmdbId == _series.TmdbId || v.FormattedTitle.ToLower() == _series.FormattedTitle.ToLower()) && v.Season != null && v.Episode != null)
+                    .ToList();
                 
                 App.Current.Dispatcher.Invoke(() =>
                 {
                     LoadSeriesTrackerInfo();
                     Seasons.Clear();
+                    bool isFirst = true;
                     foreach (var s in fetchedSeasons.OrderBy(x => x.SeasonNumber))
                     {
-                        var group = new SeasonGroup { Season = s };
+                        var group = new SeasonGroup 
+                        { 
+                            Season = s,
+                            IsExpanded = isFirst
+                        };
+                        isFirst = false;
+
                         foreach (var e in fetchedEpisodes.Where(ep => ep.SeasonNumber == s.SeasonNumber).OrderBy(x => x.EpisodeNumber))
                         {
-                            group.Episodes.Add(e);
+                            var localMatch = localEpisodeFiles.FirstOrDefault(lf => lf.Season == e.SeasonNumber && lf.Episode == e.EpisodeNumber);
+                            var epVm = new EpisodeItemViewModel
+                            {
+                                Episode = e,
+                                LocalFile = localMatch,
+                                SeriesTitle = _series.FormattedTitle,
+                                IsWatched = e.IsWatched
+                            };
+                            group.Episodes.Add(epVm);
                         }
                         Seasons.Add(group);
                     }
+
+                    UpdateProgressAndContinueWatching(db);
                     OnPropertyChanged(nameof(Series));
                     ToastService.Instance.ShowSuccess($"اطلاعات سریال، {fetchedSeasons.Count} فصل و {fetchedEpisodes.Count} قسمت با موفقیت بروزرسانی شد.");
                 });
@@ -566,76 +921,6 @@ namespace MovieManagerDesktop.ViewModels
         private void GoBack()
         {
             WeakReferenceMessenger.Default.Send(new NavigationMessage(new MoviesViewModel()));
-        }
-
-        [RelayCommand]
-        private void ToggleEpisodeWatched(TvEpisode episode)
-        {
-            if (episode == null) return;
-            
-            Task.Run(async () =>
-            {
-                using var db = new AppDbContext();
-                var dbEp = db.TvEpisodes.FirstOrDefault(e => e.Id == episode.Id);
-                if (dbEp != null)
-                {
-                    dbEp.IsWatched = episode.IsWatched;
-                    await db.SaveChangesAsync();
-                    UpdateSeriesProgress(db);
-                }
-            });
-        }
-        
-        [RelayCommand]
-        private void ToggleSeasonWatched(SeasonGroup season)
-        {
-            if (season == null) return;
-            Task.Run(() =>
-            {
-                using var db = new AppDbContext();
-                var dbSeason = db.TvSeasons.FirstOrDefault(s => s.Id == season.Season.Id);
-                if (dbSeason != null)
-                {
-                    dbSeason.IsWatched = season.Season.IsWatched;
-                    
-                    foreach (var ep in season.Episodes)
-                    {
-                        ep.IsWatched = season.Season.IsWatched;
-                        var dbEp = db.TvEpisodes.FirstOrDefault(e => e.Id == ep.Id);
-                        if (dbEp != null) dbEp.IsWatched = season.Season.IsWatched;
-                    }
-                }
-                
-                db.SaveChanges();
-                
-                UpdateSeriesProgress(db);
-            });
-        }
-        
-        private void UpdateSeriesProgress(AppDbContext db)
-        {
-            if (_series.TmdbId == null) return;
-            
-            int totalEpisodes = db.TvEpisodes.Count(e => e.TmdbSeriesId == _series.TmdbId.Value);
-            int watchedEpisodes = db.TvEpisodes.Count(e => e.TmdbSeriesId == _series.TmdbId.Value && e.IsWatched);
-            
-            if (totalEpisodes > 0)
-            {
-                var dbSeries = db.VideoFiles.FirstOrDefault(v => v.Id == _series.Id);
-                if (dbSeries != null)
-                {
-                    dbSeries.WatchProgressPercent = (double)watchedEpisodes / totalEpisodes * 100;
-                    dbSeries.IsTracked = true; // Auto track when interacted
-                    db.SaveChanges();
-                    
-                    // Update current instance
-                    App.Current.Dispatcher.Invoke(() =>
-                    {
-                        _series.WatchProgressPercent = dbSeries.WatchProgressPercent;
-                        _series.IsTracked = true;
-                    });
-                }
-            }
         }
     }
 }

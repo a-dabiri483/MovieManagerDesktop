@@ -139,7 +139,7 @@
                 <Border Background="{DynamicResource CardBackground}" 
                         CornerRadius="16" 
                         Padding="20" 
-                        Margin="30,0,30,30"
+                        Margin="30,0,30,20"
                         BorderBrush="{DynamicResource NormalBorder}"
                         BorderThickness="1">
                     <StackPanel>
@@ -147,27 +147,27 @@
                         <Grid Margin="0,0,0,15">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                                 <materialDesign:PackIcon Kind="TelevisionClassic" 
-                                                         Width="24" Height="24" 
+                                                         Width="22" Height="22" 
                                                          Foreground="{DynamicResource PrimaryColor}" 
                                                          VerticalAlignment="Center"
                                                          Margin="0,0,10,0"/>
                                 <TextBlock Text="اطلاعات پخش سریال" 
                                            Foreground="{DynamicResource PrimaryText}" 
-                                           FontSize="18" 
+                                           FontSize="16" 
                                            FontWeight="Bold" 
                                            VerticalAlignment="Center"/>
                             </StackPanel>
                             
                             <!-- Status Badge -->
                             <Border Background="#1A4CAF50" 
-                                    CornerRadius="16" 
-                                    Padding="12,6" 
+                                    CornerRadius="14" 
+                                    Padding="10,5" 
                                     HorizontalAlignment="Right">
                                 <StackPanel Orientation="Horizontal">
-                                    <Ellipse Width="8" Height="8" Fill="{Binding SeriesStatusColor}" Margin="0,0,8,0"/>
+                                    <Ellipse Width="8" Height="8" Fill="{Binding SeriesStatusColor}" Margin="0,0,6,0"/>
                                     <TextBlock Text="{Binding SeriesStatusText}" 
                                                Foreground="{Binding SeriesStatusColor}"
-                                               FontSize="14" 
+                                               FontSize="13" 
                                                FontWeight="SemiBold" 
                                                VerticalAlignment="Center"/>
                                 </StackPanel>
@@ -176,7 +176,7 @@
                         
                         <Separator Background="{DynamicResource NormalBorder}" Margin="0,0,0,15"/>
                         
-                        <!-- Info Grid -->
+                        <!-- Info Grid (2 Columns x 3 Rows matching design) -->
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -188,178 +188,240 @@
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
                             
-                            <!-- First Air Date -->
-                            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Margin="0,0,0,15">
-                                <materialDesign:PackIcon Kind="CalendarStart" 
-                                                         Width="20" Height="20" 
-                                                         Foreground="{DynamicResource PrimaryColor}" 
-                                                         VerticalAlignment="Center"
-                                                         Margin="0,0,10,0"/>
-                                <StackPanel>
-                                    <TextBlock Text="شروع پخش" 
-                                               Foreground="{DynamicResource SecondaryText}" 
-                                               FontSize="12"/>
-                                    <TextBlock Text="{Binding FirstAirDateText}" 
-                                               Foreground="{DynamicResource PrimaryText}" 
-                                               FontSize="14" 
-                                               FontWeight="SemiBold"/>
+                            <!-- Row 0: First Air Date & Last Air Date -->
+                            <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal" Margin="0,0,0,16" VerticalAlignment="Center">
+                                <Border Background="#1A00E5FF" CornerRadius="10" Width="40" Height="40" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="CalendarMonthOutline" Width="20" Height="20" Foreground="#00E5FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="شروع پخش" Foreground="{DynamicResource SecondaryText}" FontSize="12"/>
+                                    <TextBlock Text="{Binding FirstAirDateText}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold" Margin="0,2,0,0"/>
                                 </StackPanel>
                             </StackPanel>
                             
-                            <!-- Last Air Date -->
-                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,15">
-                                <materialDesign:PackIcon Kind="CalendarEnd" 
-                                                         Width="20" Height="20" 
-                                                         Foreground="{DynamicResource PrimaryColor}" 
-                                                         VerticalAlignment="Center"
-                                                         Margin="0,0,10,0"/>
-                                <StackPanel>
-                                    <TextBlock Text="آخرین پخش" 
-                                               Foreground="{DynamicResource SecondaryText}" 
-                                               FontSize="12"/>
-                                    <TextBlock Text="{Binding LastAirDateText}" 
-                                               Foreground="{DynamicResource PrimaryText}" 
-                                               FontSize="14" 
-                                               FontWeight="SemiBold"/>
+                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,16" VerticalAlignment="Center">
+                                <Border Background="#1A00E5FF" CornerRadius="10" Width="40" Height="40" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="CalendarCheckOutline" Width="20" Height="20" Foreground="#00E5FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="پایان پخش" Foreground="{DynamicResource SecondaryText}" FontSize="12"/>
+                                    <TextBlock Text="{Binding LastAirDateText}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold" Margin="0,2,0,0"/>
                                 </StackPanel>
                             </StackPanel>
                             
-                            <!-- Network -->
-                            <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Margin="0,0,0,15">
-                                <materialDesign:PackIcon Kind="Television" 
-                                                         Width="20" Height="20" 
-                                                         Foreground="{DynamicResource PrimaryColor}" 
-                                                         VerticalAlignment="Center"
-                                                         Margin="0,0,10,0"/>
-                                <StackPanel>
-                                    <TextBlock Text="شبکه پخش" 
-                                               Foreground="{DynamicResource SecondaryText}" 
-                                               FontSize="12"/>
-                                    <TextBlock Text="{Binding NetworkText}" 
-                                               Foreground="{DynamicResource PrimaryText}" 
-                                               FontSize="14" 
-                                               FontWeight="SemiBold"/>
+                            <!-- Row 1: Network & Air Schedule -->
+                            <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Margin="0,0,0,16" VerticalAlignment="Center">
+                                <Border Background="#1A00E5FF" CornerRadius="10" Width="40" Height="40" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="Television" Width="20" Height="20" Foreground="#00E5FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="شبکه / استودیو" Foreground="{DynamicResource SecondaryText}" FontSize="12"/>
+                                    <TextBlock Text="{Binding NetworkText}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold" Margin="0,2,0,0"/>
                                 </StackPanel>
                             </StackPanel>
                             
-                            <!-- Air Schedule -->
-                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,15">
-                                <materialDesign:PackIcon Kind="ClockOutline" 
-                                                         Width="20" Height="20" 
-                                                         Foreground="{DynamicResource PrimaryColor}" 
-                                                         VerticalAlignment="Center"
-                                                         Margin="0,0,10,0"/>
-                                <StackPanel>
-                                    <TextBlock Text="زمان پخش" 
-                                               Foreground="{DynamicResource SecondaryText}" 
-                                               FontSize="12"/>
-                                    <TextBlock Text="{Binding AirScheduleText}" 
-                                               Foreground="{DynamicResource PrimaryText}" 
-                                               FontSize="14" 
-                                               FontWeight="SemiBold"/>
+                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,16" VerticalAlignment="Center">
+                                <Border Background="#1A00E5FF" CornerRadius="10" Width="40" Height="40" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="ClockOutline" Width="20" Height="20" Foreground="#00E5FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="برنامه پخش" Foreground="{DynamicResource SecondaryText}" FontSize="12"/>
+                                    <TextBlock Text="{Binding AirScheduleText}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold" Margin="0,2,0,0"/>
                                 </StackPanel>
                             </StackPanel>
                             
-                            <!-- Episodes Info -->
-                            <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Filmstrip" 
-                                                         Width="20" Height="20" 
-                                                         Foreground="{DynamicResource PrimaryColor}" 
-                                                         VerticalAlignment="Center"
-                                                         Margin="0,0,10,0"/>
-                                <StackPanel>
-                                    <TextBlock Text="تعداد کل" 
-                                               Foreground="{DynamicResource SecondaryText}" 
-                                               FontSize="12"/>
-                                    <TextBlock Text="{Binding EpisodesInfoText, Converter={StaticResource PersianNumberConverter}}" 
-                                               Foreground="{DynamicResource PrimaryText}" 
-                                               FontSize="14" 
-                                               FontWeight="SemiBold"/>
+                            <!-- Row 2: Next Episode & Total Counts -->
+                            <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Background="#1AEB3B5A" CornerRadius="10" Width="40" Height="40" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="SkipNextCircleOutline" Width="20" Height="20" Foreground="#EB3B5A" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="قسمت بعدی" Foreground="{DynamicResource SecondaryText}" FontSize="12"/>
+                                    <TextBlock Text="{Binding NextEpisodeText}" Foreground="#EB3B5A" FontSize="14" FontWeight="SemiBold" Margin="0,2,0,0"/>
                                 </StackPanel>
                             </StackPanel>
                             
-                            <!-- Next Episode -->
-                            <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="ArrowRightBold" 
-                                                         Width="20" Height="20" 
-                                                         Foreground="{DynamicResource ErrorColor}" 
-                                                         VerticalAlignment="Center"
-                                                         Margin="0,0,10,0"/>
-                                <StackPanel>
-                                    <TextBlock Text="قسمت بعدی" 
-                                               Foreground="{DynamicResource SecondaryText}" 
-                                               FontSize="12"/>
-                                    <TextBlock Text="{Binding NextEpisodeText, Converter={StaticResource PersianNumberConverter}}" 
-                                               Foreground="{DynamicResource ErrorColor}" 
-                                               FontSize="14" 
-                                               FontWeight="SemiBold"/>
+                            <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Background="#1A00E5FF" CornerRadius="10" Width="40" Height="40" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="FormatListNumbered" Width="20" Height="20" Foreground="#00E5FF" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock Text="تعداد قسمت‌ها" Foreground="{DynamicResource SecondaryText}" FontSize="12"/>
+                                    <TextBlock Text="{Binding EpisodesInfoText, Converter={StaticResource PersianNumberConverter}}" Foreground="{DynamicResource PrimaryText}" FontSize="14" FontWeight="SemiBold" Margin="0,2,0,0"/>
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
                     </StackPanel>
                 </Border>
 
+                <!-- Big Gradient Continue Watching CTA Button -->
+                <Button Command="{Binding ContinueWatchingCommand}" 
+                        Margin="30,0,30,16" Height="48"
+                        Visibility="{Binding CanContinueWatching, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        Cursor="Hand"
+                        materialDesign:ButtonAssist.CornerRadius="14">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border CornerRadius="14" Padding="20,0" Height="48">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0.5" EndPoint="1,0.5">
+                                        <GradientStop Color="#FF3366" Offset="0"/>
+                                        <GradientStop Color="#EB3B5A" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="Play" Width="22" Height="22" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <TextBlock Text="{Binding ContinueWatchingText}" Foreground="White" FontWeight="Bold" FontSize="15" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
 
-                <!-- Seasons and Episodes -->
-                <ItemsControl ItemsSource="{Binding Seasons}" Margin="30,20,30,40">
+                <!-- Watched Progress Section -->
+                <Border Background="{DynamicResource CardBackground}" 
+                        CornerRadius="14" 
+                        Padding="18,14" 
+                        Margin="30,0,30,24" 
+                        BorderBrush="{DynamicResource NormalBorder}" 
+                        BorderThickness="1">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,10">
+                            <TextBlock Text="{Binding ProgressPercentText}" 
+                                       DockPanel.Dock="Left" 
+                                       Foreground="#EB3B5A" 
+                                       FontWeight="Bold" 
+                                       FontSize="13" 
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding WatchedProgressSummaryText}" 
+                                       Foreground="{DynamicResource PrimaryText}" 
+                                       FontWeight="SemiBold" 
+                                       FontSize="13" 
+                                       VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <ProgressBar Minimum="0" Maximum="100" 
+                                     Value="{Binding OverallProgressPercent}" 
+                                     Height="6" 
+                                     Foreground="#EB3B5A" 
+                                     Background="#1E2338" 
+                                     BorderThickness="0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Seasons and Episodes (Accordion / Collapsible) -->
+                <ItemsControl ItemsSource="{Binding Seasons}" Margin="30,0,30,40">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <StackPanel Margin="0,0,0,30">
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                                    <TextBlock Text="{Binding Season.Name, Converter={StaticResource SeasonNameConverter}}" FontSize="24" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
-                                    <CheckBox IsChecked="{Binding Season.IsWatched}" 
-                                              Command="{Binding DataContext.ToggleSeasonWatchedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                              CommandParameter="{Binding}"
-                                              Margin="15,0,0,0" VerticalAlignment="Center" 
-                                              Content="دیده شده" Foreground="{DynamicResource SecondaryText}"/>
-                                </StackPanel>
-                                
-                                <ItemsControl ItemsSource="{Binding Episodes}">
+                            <StackPanel Margin="0,0,0,12">
+                                <!-- Collapsible Season Header Card -->
+                                <Border Background="{DynamicResource CardBackground}" 
+                                        CornerRadius="12" 
+                                        Padding="14,10" 
+                                        Margin="0,0,0,8" 
+                                        BorderBrush="{DynamicResource NormalBorder}" 
+                                        BorderThickness="1" 
+                                        Cursor="Hand">
+                                    <Border.InputBindings>
+                                        <MouseBinding MouseAction="LeftClick" 
+                                                      Command="{Binding DataContext.ToggleSeasonExpandedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                      CommandParameter="{Binding}"/>
+                                    </Border.InputBindings>
+                                    <DockPanel>
+                                        <!-- Left in RTL: Chevron Arrow -->
+                                        <Border DockPanel.Dock="Left" VerticalAlignment="Center" Width="32" Height="32">
+                                            <materialDesign:PackIcon Kind="{Binding ChevronIconKind}" 
+                                                                     Width="22" Height="22" 
+                                                                     Foreground="{DynamicResource SecondaryText}" 
+                                                                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+
+                                        <!-- Right in RTL: S1 Badge with Red/Coral Line -->
+                                        <Border DockPanel.Dock="Right" Background="#1C2237" CornerRadius="8" Padding="12,6" Margin="0,0,14,0" VerticalAlignment="Center" MinWidth="44">
+                                            <StackPanel HorizontalAlignment="Center">
+                                                <TextBlock Text="{Binding SeasonTag}" Foreground="{DynamicResource PrimaryText}" FontWeight="Bold" FontSize="14" HorizontalAlignment="Center"/>
+                                                <Border Height="2.5" Width="20" Background="#EB3B5A" CornerRadius="1" Margin="0,3,0,0"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <!-- Middle in RTL: Season Title and Progress Count -->
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding SeasonTitle}" FontSize="15" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
+                                            <TextBlock Text="{Binding WatchedSummaryText}" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,3,0,0"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+
+                                <!-- Expanded Season Content (Episode Cards) -->
+                                <ItemsControl ItemsSource="{Binding Episodes}" 
+                                              Visibility="{Binding IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                              Margin="0,0,0,8">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Background="{DynamicResource CardBackground}" CornerRadius="12" Margin="0,0,0,12" Padding="15" BorderThickness="1" BorderBrush="{DynamicResource NormalBorder}">
-                                                <Border.Style>
-                                                    <Style TargetType="Border">
-                                                        <Setter Property="Cursor" Value="Hand" />
-                                                        <Style.Triggers>
-                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                <Setter Property="Background" Value="{DynamicResource HoverBackground}" />
-                                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}" />
-                                                            </Trigger>
-                                                            <DataTrigger Binding="{Binding IsWatched}" Value="True">
-                                                                <Setter Property="Opacity" Value="0.5"/>
-                                                                <Setter Property="Background" Value="Transparent"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Border.Style>
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                    </Grid.ColumnDefinitions>
+                                            <Border Background="{DynamicResource CardBackground}" 
+                                                    CornerRadius="10" 
+                                                    Margin="0,0,0,8" 
+                                                    Padding="14,10" 
+                                                    BorderThickness="1" 
+                                                    BorderBrush="{DynamicResource NormalBorder}">
+                                                <DockPanel VerticalAlignment="Center">
+                                                    <!-- Right in RTL: Checkbox for Watched Status -->
+                                                    <Button DockPanel.Dock="Right" 
+                                                            Command="{Binding DataContext.ToggleEpisodeWatchedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,14,0" 
+                                                            Cursor="Hand" VerticalAlignment="Center"
+                                                            ToolTip="علامت‌گذاری به عنوان دیده شده">
+                                                        <Border Width="24" Height="24" CornerRadius="5">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="Background" Value="#181E2E"/>
+                                                                    <Setter Property="BorderBrush" Value="#475569"/>
+                                                                    <Setter Property="BorderThickness" Value="1.5"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsWatched}" Value="True">
+                                                                            <Setter Property="Background" Value="#EB3B5A"/>
+                                                                            <Setter Property="BorderBrush" Value="#EB3B5A"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <materialDesign:PackIcon Kind="Check" Width="16" Height="16" Foreground="White" 
+                                                                                     HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                                     Visibility="{Binding IsWatched, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                        </Border>
+                                                    </Button>
 
-                                                    <CheckBox Grid.Column="0" IsChecked="{Binding IsWatched}" 
-                                                              Command="{Binding DataContext.ToggleEpisodeWatchedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                              CommandParameter="{Binding}"
-                                                              Style="{StaticResource MaterialDesignCheckBox}"
-                                                              VerticalAlignment="Center" Margin="0,0,15,0">
-                                                        <CheckBox.LayoutTransform>
-                                                            <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
-                                                        </CheckBox.LayoutTransform>
-                                                    </CheckBox>
+                                                    <!-- Left in RTL: Circular Play Button -->
+                                                    <Button DockPanel.Dock="Left" 
+                                                            Command="{Binding DataContext.PlayEpisodeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Background="#25EB3B5A" BorderBrush="#40EB3B5A" BorderThickness="1"
+                                                            Width="38" Height="38" Padding="0" Cursor="Hand"
+                                                            materialDesign:ButtonAssist.CornerRadius="19"
+                                                            ToolTip="پخش این قسمت">
+                                                        <materialDesign:PackIcon Kind="Play" Width="18" Height="18" Foreground="#EB3B5A" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Button>
 
-                                                    <StackPanel Grid.Column="1">
-                                                        <TextBlock FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource PrimaryText}">
-                                                            <Run Text="قسمت "/>
-                                                            <Run Text="{Binding EpisodeNumber, Converter={StaticResource PersianNumberConverter}, Mode=OneWay}"/>
-                                                            <Run Text=" - "/>
-                                                            <Run Text="{Binding Name, Mode=OneWay}"/>
-                                                        </TextBlock>
-                                                        <TextBlock Text="{Binding AirDate, Converter={StaticResource JalaliDateConverter}}" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,5,0,10"/>
-                                                        <TextBlock Text="{Binding Overview}" FontSize="13" Foreground="{DynamicResource SecondaryText}" TextWrapping="Wrap" MaxHeight="60" TextTrimming="CharacterEllipsis"/>
+                                                    <!-- Middle in RTL: Title & Episode Badges -->
+                                                    <StackPanel VerticalAlignment="Center" Margin="0,0,10,0">
+                                                        <TextBlock Text="{Binding DisplayTitle}" 
+                                                                   FontSize="14" FontWeight="SemiBold" 
+                                                                   Foreground="{DynamicResource PrimaryText}" 
+                                                                   TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                            <Border Background="#1C243B" CornerRadius="4" Padding="6,2" Margin="0,0,8,0">
+                                                                <TextBlock Text="{Binding EpisodeTag}" Foreground="#A5B4FC" FontSize="11" FontWeight="Bold" FontFamily="Consolas, Segoe UI"/>
+                                                            </Border>
+                                                            <Border Background="#132B38" CornerRadius="4" Padding="6,2" Margin="0,0,6,0" Visibility="{Binding HasDubbing, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <TextBlock Text="دوبله" FontSize="10" Foreground="#00E5FF" FontWeight="SemiBold"/>
+                                                            </Border>
+                                                            <Border Background="#2C1A3B" CornerRadius="4" Padding="6,2" Margin="0,0,6,0" Visibility="{Binding HasSubtitle, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                <TextBlock Text="زیرنویس" FontSize="10" Foreground="#E056FD" FontWeight="SemiBold"/>
+                                                            </Border>
+                                                            <TextBlock Text="{Binding AirDateFormatted}" FontSize="11" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="4,0,0,0"/>
+                                                        </StackPanel>
                                                     </StackPanel>
-                                                </Grid>
+                                                </DockPanel>
                                             </Border>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>

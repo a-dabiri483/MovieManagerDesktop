@@ -915,7 +915,11 @@ namespace MovieManagerDesktop.Services
                     if (root.TryGetProperty("first_air_date", out var firstAirDate) && firstAirDate.ValueKind == JsonValueKind.String)
                     {
                         if (DateTime.TryParse(firstAirDate.GetString(), out var date))
+                        {
                             file.FirstAirDate = date;
+                            if (string.IsNullOrWhiteSpace(file.Year))
+                                file.Year = date.Year.ToString();
+                        }
                     }
                     
                     // Last Air Date

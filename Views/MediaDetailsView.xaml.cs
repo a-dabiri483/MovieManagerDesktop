@@ -11,10 +11,10 @@ namespace MovieManagerDesktop.Views
 
         private void DetailsScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
+            // Backdrop is fixed in place for stability
             if (BackdropTranslate != null)
             {
-                // Move backdrop slower than scroll (parallax)
-                BackdropTranslate.Y = -e.VerticalOffset * 0.3;
+                BackdropTranslate.Y = 0;
             }
         }
     }

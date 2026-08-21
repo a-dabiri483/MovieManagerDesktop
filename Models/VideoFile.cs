@@ -89,5 +89,29 @@ namespace MovieManagerDesktop.Models
         
         [System.ComponentModel.DataAnnotations.Schema.NotMapped]
         public System.Collections.Generic.List<TvSeason> Seasons { get; set; } = new System.Collections.Generic.List<TvSeason>();
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public string DisplayName => !string.IsNullOrWhiteSpace(FormattedTitle) ? FormattedTitle : (!string.IsNullOrWhiteSpace(FileName) ? FileName : "ویدیو");
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public string DisplayEpisodeInfo
+        {
+            get
+            {
+                if (Season.HasValue && Episode.HasValue)
+                {
+                    return $"فصل {Season.Value:D2} • قسمت {Episode.Value:D2}";
+                }
+                else if (Episode.HasValue)
+                {
+                    return $"قسمت {Episode.Value:D2}";
+                }
+                else if (!string.IsNullOrEmpty(Quality) || !string.IsNullOrEmpty(Resolution))
+                {
+                    return $"{Quality ?? Resolution}";
+                }
+                return string.Empty;
+            }
+        }
     }
 }

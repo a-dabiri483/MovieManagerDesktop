@@ -64,6 +64,13 @@ namespace MovieManagerDesktop.Data
                 Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN IsHidden INTEGER NOT NULL DEFAULT 0;");
             }
             catch { }
+
+            // Auto-heal missing Year from FirstAirDate
+            try
+            {
+                Database.ExecuteSqlRaw("UPDATE VideoFiles SET Year = substr(FirstAirDate, 1, 4) WHERE (Year IS NULL OR Year = '' OR Year = '0') AND FirstAirDate IS NOT NULL AND length(FirstAirDate) >= 4;");
+            }
+            catch { }
             try
             {
                 Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN CustomTags TEXT;");
