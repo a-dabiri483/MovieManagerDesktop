@@ -2457,6 +2457,19 @@ namespace MovieManagerDesktop.ViewModels
         public void PlayNext()
         {
             if (Playlist.Count <= 1) return;
+
+            // Always mark the current episode as watched when skipping to the next episode (via button, PageDown, or auto-advance)
+            if (CurrentMedia != null)
+            {
+                CurrentMedia.IsWatched = true;
+                CurrentMedia.WatchProgressPercent = 100;
+                if (TotalDurationMs > 0)
+                {
+                    CurrentMedia.WatchProgressSeconds = TotalDurationMs / 1000L;
+                }
+                MarkMediaAsWatched(CurrentMedia);
+            }
+
             _currentPlaylistIndex = (_currentPlaylistIndex + 1) % Playlist.Count;
             LoadMedia(Playlist[_currentPlaylistIndex]);
         }

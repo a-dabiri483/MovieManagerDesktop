@@ -273,20 +273,6 @@
                             </Button>
                         </Grid>
                     </Border>
-                    
-                    <!-- Reflection Simulation -->
-                    <Border CornerRadius="{StaticResource RadiusLg}" Height="160" ClipToBounds="True" Opacity="0.2" Margin="0,4,0,-160">
-                        <Border.RenderTransform>
-                            <ScaleTransform ScaleY="-1" CenterY="80"/>
-                        </Border.RenderTransform>
-                        <Border.OpacityMask>
-                            <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                                <GradientStop Color="Transparent" Offset="0.5"/>
-                                <GradientStop Color="White" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.OpacityMask>
-                        <Image controls:CachedImage.SourceUrl="{Binding Media.PosterUrl}" Stretch="UniformToFill" />
-                    </Border>
                 </StackPanel>
                 
                 <!-- Details Column -->
@@ -521,23 +507,32 @@
                                                                     </Style>
                                                                 </Border.Style>
                                                                 
-                                                                <DockPanel>
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <!-- Right in RTL: S1 / S2 Pill Badge -->
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <!-- Middle: Title and Episode count -->
+                                                                        <ColumnDefinition Width="*"/>
+                                                                        <!-- Left in RTL: Green Watched checkmark -->
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                    </Grid.ColumnDefinitions>
+
                                                                     <!-- Season Badge -->
-                                                                    <Border DockPanel.Dock="Right" Background="#1E293B" CornerRadius="5" Padding="6,3" Margin="0,0,8,0" VerticalAlignment="Center">
-                                                                        <TextBlock Text="{Binding SeasonTag}" Foreground="{DynamicResource PrimaryText}" FontWeight="Bold" FontSize="12"/>
+                                                                    <Border Grid.Column="0" Background="#1E293B" CornerRadius="5" Padding="6,3" Margin="0,0,8,0" VerticalAlignment="Center">
+                                                                        <TextBlock Text="{Binding SeasonTag}" Foreground="{DynamicResource PrimaryText}" FontWeight="Bold" FontSize="11.5"/>
                                                                     </Border>
 
-                                                                    <!-- Watched Checkmark Indicator -->
-                                                                    <materialDesign:PackIcon DockPanel.Dock="Left" Kind="CheckCircle" Width="16" Height="16" 
-                                                                                             Foreground="#4CAF50" VerticalAlignment="Center"
-                                                                                             Visibility="{Binding AllWatched, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-
                                                                     <!-- Title and Count -->
-                                                                    <StackPanel VerticalAlignment="Center">
+                                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                                                         <TextBlock Text="{Binding SeasonTitle}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
-                                                                        <TextBlock Text="{Binding EpisodesCountText}" FontSize="10.5" Foreground="{DynamicResource SecondaryText}" Margin="0,1,0,0"/>
+                                                                        <TextBlock Text="{Binding EpisodesCountText}" FontSize="10.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
                                                                     </StackPanel>
-                                                                </DockPanel>
+
+                                                                    <!-- Watched Checkmark Indicator -->
+                                                                    <materialDesign:PackIcon Grid.Column="2" Kind="CheckCircle" Width="16" Height="16" 
+                                                                                             Foreground="#4CAF50" VerticalAlignment="Center" Margin="6,0,0,0"
+                                                                                             Visibility="{Binding AllWatched, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                                </Grid>
                                                             </Border>
                                                         </ControlTemplate>
                                                     </Button.Template>
