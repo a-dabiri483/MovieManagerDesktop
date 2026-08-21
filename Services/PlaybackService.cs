@@ -58,6 +58,7 @@ namespace MovieManagerDesktop.Services
                     {
                         dbItem.LastPlayedAt = file.LastPlayedAt;
                         db.SaveChanges();
+                        WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
                     }
                 }
                 catch { }

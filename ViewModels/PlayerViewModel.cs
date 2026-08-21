@@ -986,6 +986,9 @@ namespace MovieManagerDesktop.ViewModels
                 // Auto-extract and prepare embedded subtitles in background
                 LoadEmbeddedSubtitlesAsync(media.FilePath);
 
+                // Record playback start in database & notify Home in real time
+                RecordMediaPlaybackStartAsync(media);
+
                 ShowOsdNotification($"▶ {MediaTitle}");
             }
             catch (Exception ex)
@@ -993,6 +996,24 @@ namespace MovieManagerDesktop.ViewModels
                 LoggerService.Error("Error playing video file", ex);
                 ToastService.Instance.ShowError($"خطا در پخش فایل: {ex.Message}");
             }
+        }
+
+        private async void RecordMediaPlaybackStartAsync(VideoFile media)
+        {
+            if (media == null || media.Id == 0) return;
+            try
+            {
+                using var db = new AppDbContext();
+                var dbItem = await db.VideoFiles.FindAsync(media.Id);
+                if (dbItem != null)
+                {
+                    dbItem.LastPlayedAt = DateTime.Now;
+                    media.LastPlayedAt = dbItem.LastPlayedAt;
+                    await db.SaveChangesAsync();
+                    WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
+                }
+            }
+            catch { }
         }
 
         public void LoadEmbeddedSubtitlesAsync(string videoPath)
@@ -1297,9 +1318,12 @@ namespace MovieManagerDesktop.ViewModels
                 {
                     dbItem.WatchProgressSeconds = seconds;
                     dbItem.WatchProgressPercent = Math.Clamp(percent, 0.0, 100.0);
+                    dbItem.LastPlayedAt = DateTime.Now;
                     file.WatchProgressSeconds = seconds;
                     file.WatchProgressPercent = dbItem.WatchProgressPercent;
+                    file.LastPlayedAt = dbItem.LastPlayedAt;
                     await db.SaveChangesAsync();
+                    WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
                 }
             }
             catch { }
@@ -2607,7 +2631,9 @@ namespace MovieManagerDesktop.ViewModels
                     {
                         dbItem.WatchProgressSeconds = CurrentTimeMs / 1000L;
                         dbItem.WatchProgressPercent = Math.Clamp(Progress * 100.0, 0.0, 100.0);
+                        dbItem.LastPlayedAt = DateTime.Now;
                         db.SaveChanges();
+                        WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
                     }
                 }
                 catch { }

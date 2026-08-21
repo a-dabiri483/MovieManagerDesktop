@@ -24,10 +24,10 @@
             <Setter Property="Background" Value="#E60A0F1D"/>
             <Setter Property="BorderBrush" Value="#3338BDF8"/>
             <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="16"/>
+            <Setter Property="CornerRadius" Value="12"/>
             <Setter Property="Effect">
                 <Setter.Value>
-                    <DropShadowEffect BlurRadius="25" ShadowDepth="4" Color="Black" Opacity="0.8"/>
+                    <DropShadowEffect BlurRadius="20" ShadowDepth="2" Color="Black" Opacity="0.7"/>
                 </Setter.Value>
             </Setter>
         </Style>
@@ -38,11 +38,11 @@
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Foreground" Value="White"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Padding" Value="4"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         <ControlTemplate.Triggers>
@@ -72,7 +72,7 @@
         <Border VerticalAlignment="Top" HorizontalAlignment="Stretch"
                 Background="#D9060913"
                 BorderBrush="#2238BDF8" BorderThickness="0,0,0,1"
-                Padding="16,10"
+                Padding="12,6"
                 Visibility="{Binding ShowControls, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -84,56 +84,56 @@
                 <!-- Back / Close Player -->
                 <Button Grid.Column="0" Command="{Binding ClosePlayerCommand}" Style="{StaticResource PlayerIconBtn}" ToolTip="بستن و بازگشت (Esc / F4)">
                     <StackPanel Orientation="Horizontal">
-                        <materialDesign:PackIcon Kind="ArrowRight" Width="24" Height="24" Margin="0,0,6,0"/>
-                        <TextBlock Text="بازگشت" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold"/>
+                        <materialDesign:PackIcon Kind="ArrowRight" Width="20" Height="20" Margin="0,0,4,0"/>
+                        <TextBlock Text="بازگشت" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
                     </StackPanel>
                 </Button>
 
                 <!-- Media Title -->
                 <StackPanel Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center">
                     <TextBlock Text="{Binding MediaTitle}" 
-                               Foreground="White" FontSize="16" FontWeight="Bold" 
+                               Foreground="White" FontSize="14" FontWeight="Bold" 
                                HorizontalAlignment="Center" TextTrimming="CharacterEllipsis"/>
                     <TextBlock Text="{Binding SeasonEpisodeText}" 
-                               Foreground="#38BDF8" FontSize="12" FontWeight="SemiBold"
-                               HorizontalAlignment="Center" Margin="0,2,0,0"
+                               Foreground="#38BDF8" FontSize="11" FontWeight="SemiBold"
+                               HorizontalAlignment="Center" Margin="0,1,0,0"
                                Visibility="{Binding SeasonEpisodeText, Converter={StaticResource NullToVisibilityConverter}}"/>
                 </StackPanel>
 
                 <!-- Top Right Tools -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
                     <!-- Shortcuts Help (F1) -->
-                    <Button Style="{StaticResource PlayerIconBtn}" Click="ToggleShortcutsHelp_Click" ToolTip="راهنمای کلیدهای میانبر (F1)" Margin="3,0">
-                        <materialDesign:PackIcon Kind="KeyboardOutline" Width="22" Height="22"/>
+                    <Button Style="{StaticResource PlayerIconBtn}" Click="ToggleShortcutsHelp_Click" ToolTip="راهنمای کلیدهای میانبر (F1)" Margin="2,0">
+                        <materialDesign:PackIcon Kind="KeyboardOutline" Width="19" Height="19"/>
                     </Button>
 
                     <!-- Bookmarks (H) -->
-                    <Button Style="{StaticResource PlayerIconBtn}" Click="ToggleBookmarksDrawer_Click" ToolTip="نشانک‌ها (H)" Margin="3,0">
-                        <materialDesign:PackIcon Kind="BookmarkMultipleOutline" Width="22" Height="22"/>
+                    <Button Style="{StaticResource PlayerIconBtn}" Click="ToggleBookmarksDrawer_Click" ToolTip="نشانک‌ها (H)" Margin="2,0">
+                        <materialDesign:PackIcon Kind="BookmarkMultipleOutline" Width="19" Height="19"/>
                     </Button>
 
                     <!-- Playlist / Episodes Drawer (F6) -->
-                    <Button Style="{StaticResource PlayerIconBtn}" Click="TogglePlaylistDrawer_Click" ToolTip="لیست قسمت‌ها / پلی‌لیست (F6)" Margin="3,0">
-                        <materialDesign:PackIcon Kind="PlaylistPlay" Width="24" Height="24"/>
+                    <Button Style="{StaticResource PlayerIconBtn}" Click="TogglePlaylistDrawer_Click" ToolTip="لیست قسمت‌ها / پلی‌لیست (F6)" Margin="2,0">
+                        <materialDesign:PackIcon Kind="PlaylistPlay" Width="20" Height="20"/>
                     </Button>
                 </StackPanel>
             </Grid>
         </Border>
 
         <!-- ── 3. On-Screen Display (OSD) Notification Badge ── -->
-        <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,75,0,0"
+        <Border VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,60,0,0"
                 Background="#CC0B1329" BorderBrush="#6638BDF8" BorderThickness="1.5"
-                CornerRadius="14" Padding="20,10"
+                CornerRadius="12" Padding="16,8"
                 Visibility="{Binding ShowOsd, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Border.Effect>
-                <DropShadowEffect BlurRadius="18" Color="#38BDF8" Opacity="0.5"/>
+                <DropShadowEffect BlurRadius="16" Color="#38BDF8" Opacity="0.5"/>
             </Border.Effect>
-            <TextBlock Text="{Binding OsdMessage}" Foreground="#F8FAFC" FontSize="15" FontWeight="Bold" TextAlignment="Center"/>
+            <TextBlock Text="{Binding OsdMessage}" Foreground="#F8FAFC" FontSize="13.5" FontWeight="Bold" TextAlignment="Center"/>
         </Border>
 
         <!-- ── 4. Floating Bottom Control Bar (Auto-Hide) ── -->
-        <Border VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Margin="24,0,24,20"
-                Style="{StaticResource GlassControlBarStyle}" Padding="20,14"
+        <Border VerticalAlignment="Bottom" HorizontalAlignment="Center" Width="Auto" MaxWidth="880" Margin="16,0,16,12"
+                Style="{StaticResource GlassControlBarStyle}" Padding="14,6"
                 Visibility="{Binding ShowControls, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Grid>
                 <Grid.RowDefinitions>
@@ -142,7 +142,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- 4.1 Seekbar & Time Row -->
-                <Grid Grid.Row="0" Margin="0,0,0,10">
+                <Grid Grid.Row="0" Margin="0,0,0,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/> <!-- Current Time -->
                         <ColumnDefinition Width="*"/>    <!-- Seek Slider -->
@@ -150,8 +150,8 @@
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Column="0" Text="{Binding CurrentTimeFormatted}" 
-                               Foreground="#94A3B8" FontSize="13" FontWeight="SemiBold" 
-                               VerticalAlignment="Center" Margin="0,0,12,0"/>
+                               Foreground="#94A3B8" FontSize="11.5" FontWeight="SemiBold" 
+                               VerticalAlignment="Center" Margin="0,0,8,0"/>
 
                     <Slider Grid.Column="1" 
                             Minimum="0.0" Maximum="1.0" 
@@ -163,8 +163,8 @@
                             Style="{DynamicResource MaterialDesignSlider}"/>
 
                     <TextBlock Grid.Column="2" Text="{Binding TotalDurationFormatted}" 
-                               Foreground="#94A3B8" FontSize="13" FontWeight="SemiBold" 
-                               VerticalAlignment="Center" Margin="12,0,0,0"/>
+                               Foreground="#94A3B8" FontSize="11.5" FontWeight="SemiBold" 
+                               VerticalAlignment="Center" Margin="8,0,0,0"/>
                 </Grid>
 
                 <!-- 4.2 Playback Control Buttons Row -->
@@ -178,8 +178,8 @@
                     <!-- Left: Volume Controls -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                         <!-- Mute Button -->
-                        <Button Command="{Binding ToggleMuteCommand}" Style="{StaticResource PlayerIconBtn}" ToolTip="قطع/وصل صدا (M)" Margin="2,0">
-                            <materialDesign:PackIcon Width="22" Height="22">
+                        <Button Command="{Binding ToggleMuteCommand}" Style="{StaticResource PlayerIconBtn}" ToolTip="قطع/وصل صدا (M)" Margin="1,0">
+                            <materialDesign:PackIcon Width="18" Height="18">
                                 <materialDesign:PackIcon.Style>
                                     <Style TargetType="materialDesign:PackIcon">
                                         <Setter Property="Kind" Value="VolumeHigh"/>
@@ -196,34 +196,34 @@
 
                         <!-- Volume Slider -->
                         <Slider Minimum="0" Maximum="200" Value="{Binding Volume, Mode=TwoWay}" 
-                                Width="90" VerticalAlignment="Center" Cursor="Hand" Margin="6,0"
+                                Width="65" VerticalAlignment="Center" Cursor="Hand" Margin="4,0"
                                 ValueChanged="VolumeSlider_ValueChanged"
                                 ToolTip="{Binding Volume, StringFormat='ولوم: {0}%'}"/>
                         
-                        <TextBlock Text="{Binding Volume, StringFormat='{}{0}%'}" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" Width="32"/>
+                        <TextBlock Text="{Binding Volume, StringFormat='{}{0}%'}" Foreground="#94A3B8" FontSize="10" VerticalAlignment="Center" Width="28"/>
                     </StackPanel>
 
                     <!-- Center: Previous, -5s, Play/Pause, +5s, Next -->
-                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12,0">
                         <!-- Prev File / Episode -->
-                        <Button Command="{Binding PlayPreviousCommand}" Style="{StaticResource PlayerIconBtn}" ToolTip="قسمت/فایل قبلی (PgUp)" Margin="4,0">
-                            <materialDesign:PackIcon Kind="SkipPrevious" Width="26" Height="26"/>
+                        <Button Command="{Binding PlayPreviousCommand}" Style="{StaticResource PlayerIconBtn}" ToolTip="قسمت/فایل قبلی (PgUp)" Margin="2,0">
+                            <materialDesign:PackIcon Kind="SkipPrevious" Width="20" Height="20"/>
                         </Button>
 
                         <!-- Seek -5s -->
-                        <Button Click="SeekBackward5s_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="۵ ثانیه عقب (←)" Margin="4,0">
-                            <materialDesign:PackIcon Kind="Rewind5" Width="26" Height="26"/>
+                        <Button Click="SeekBackward5s_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="۵ ثانیه عقب (←)" Margin="2,0">
+                            <materialDesign:PackIcon Kind="Rewind5" Width="20" Height="20"/>
                         </Button>
 
                         <!-- Play / Pause Big Primary Button -->
                         <Button Command="{Binding TogglePlayPauseCommand}" 
-                                Width="52" Height="52" Margin="8,0"
+                                Width="38" Height="38" Margin="6,0"
                                 Background="#38BDF8" Foreground="#0B1329"
                                 BorderThickness="0" Cursor="Hand"
                                 ToolTip="پخش / توقف (Space)">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <Border Background="{TemplateBinding Background}" CornerRadius="26" Effect="{DynamicResource MaterialDesignElevationShadow3}">
+                                    <Border Background="{TemplateBinding Background}" CornerRadius="19" Effect="{DynamicResource MaterialDesignElevationShadow2}">
                                         <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
                                     <ControlTemplate.Triggers>
@@ -233,7 +233,7 @@
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
                             </Button.Template>
-                            <materialDesign:PackIcon Width="30" Height="30">
+                            <materialDesign:PackIcon Width="20" Height="20">
                                 <materialDesign:PackIcon.Style>
                                     <Style TargetType="materialDesign:PackIcon">
                                         <Setter Property="Kind" Value="Pause"/>
@@ -248,41 +248,41 @@
                         </Button>
 
                         <!-- Seek +5s -->
-                        <Button Click="SeekForward5s_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="۵ ثانیه جلو (→)" Margin="4,0">
-                            <materialDesign:PackIcon Kind="FastForward5" Width="26" Height="26"/>
+                        <Button Click="SeekForward5s_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="۵ ثانیه جلو (→)" Margin="2,0">
+                            <materialDesign:PackIcon Kind="FastForward5" Width="20" Height="20"/>
                         </Button>
 
                         <!-- Next File / Episode -->
-                        <Button Command="{Binding PlayNextCommand}" Style="{StaticResource PlayerIconBtn}" ToolTip="قسمت/فایل بعدی (PgDn)" Margin="4,0">
-                            <materialDesign:PackIcon Kind="SkipNext" Width="26" Height="26"/>
+                        <Button Command="{Binding PlayNextCommand}" Style="{StaticResource PlayerIconBtn}" ToolTip="قسمت/فایل بعدی (PgDn)" Margin="2,0">
+                            <materialDesign:PackIcon Kind="SkipNext" Width="20" Height="20"/>
                         </Button>
                     </StackPanel>
 
                     <!-- Right: Audio Tracks, Subtitles, Speed, Aspect Ratio, Fullscreen -->
                     <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                         <!-- Audio Track Selector (A) -->
-                        <Button Click="OpenAudioTracksPopup_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="انتخاب ترک صوتی / دوبله (A)" Margin="3,0">
-                            <materialDesign:PackIcon Kind="Translate" Width="22" Height="22"/>
+                        <Button Click="OpenAudioTracksPopup_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="انتخاب ترک صوتی / دوبله (A)" Margin="2,0">
+                            <materialDesign:PackIcon Kind="Translate" Width="18" Height="18"/>
                         </Button>
 
                         <!-- Subtitle Selector (L) -->
-                        <Button Click="OpenSubtitlesPopup_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="انتخاب زیرنویس (L)" Margin="3,0">
-                            <materialDesign:PackIcon Kind="SubtitlesOutline" Width="22" Height="22"/>
+                        <Button Click="OpenSubtitlesPopup_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="انتخاب زیرنویس (L)" Margin="2,0">
+                            <materialDesign:PackIcon Kind="SubtitlesOutline" Width="18" Height="18"/>
                         </Button>
 
                         <!-- Playback Speed (X / C) -->
-                        <Button Click="ToggleSpeedMenu_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="سرعت پخش (X / C)" Margin="3,0">
-                            <TextBlock Text="{Binding PlaybackSpeed, StringFormat='{}{0:0.0}x'}" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                        <Button Click="ToggleSpeedMenu_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="سرعت پخش (X / C)" Margin="2,0">
+                            <TextBlock Text="{Binding PlaybackSpeed, StringFormat='{}{0:0.0}x'}" FontWeight="Bold" FontSize="11" VerticalAlignment="Center"/>
                         </Button>
 
                         <!-- Aspect Ratio (J / 1-7, 9) -->
-                        <Button Click="ToggleAspectRatioMenu_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="نسبت تصویر (J)" Margin="3,0">
-                            <materialDesign:PackIcon Kind="AspectRatio" Width="22" Height="22"/>
+                        <Button Click="ToggleAspectRatioMenu_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="نسبت تصویر (J)" Margin="2,0">
+                            <materialDesign:PackIcon Kind="AspectRatio" Width="18" Height="18"/>
                         </Button>
 
                         <!-- Fullscreen Toggle (Enter / F) -->
-                        <Button Command="{Binding ToggleFullscreenCommand}" Style="{StaticResource PlayerIconBtn}" ToolTip="تمام‌صفحه (Enter / F)" Margin="3,0">
-                            <materialDesign:PackIcon Kind="Fullscreen" Width="24" Height="24"/>
+                        <Button Command="{Binding ToggleFullscreenCommand}" Style="{StaticResource PlayerIconBtn}" ToolTip="تمام‌صفحه (Enter / F)" Margin="2,0">
+                            <materialDesign:PackIcon Kind="Fullscreen" Width="19" Height="19"/>
                         </Button>
                     </StackPanel>
                 </Grid>
