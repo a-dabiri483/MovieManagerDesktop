@@ -5,7 +5,14 @@
              xmlns:converters="clr-namespace:MovieManagerDesktop.Converters"
              xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
              Background="{DynamicResource Background}"
-             FlowDirection="RightToLeft">
+             FlowDirection="RightToLeft"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
+             TextOptions.TextFormattingMode="Display"
+             TextOptions.TextRenderingMode="ClearType"
+             TextOptions.TextHintingMode="Fixed"
+             RenderOptions.ClearTypeHint="Enabled"
+             RenderOptions.BitmapScalingMode="HighQuality">
 
     <UserControl.Resources>
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />

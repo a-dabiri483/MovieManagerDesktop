@@ -6,12 +6,19 @@
         xmlns:views="clr-namespace:MovieManagerDesktop.Views"
         xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
         Title="MovieManager" Height="820" Width="1280"
-        MinHeight="650" MinWidth="950"
+        MinHeight="550" MinWidth="800"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         WindowStartupLocation="CenterScreen"
         Icon="Assets/logo.png"
         FontFamily="{StaticResource AppFontFamily}"
         FlowDirection="RightToLeft"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        TextOptions.TextHintingMode="Fixed"
+        RenderOptions.ClearTypeHint="Enabled"
+        RenderOptions.BitmapScalingMode="HighQuality"
         MouseMove="Window_MouseMove">
 
     <Window.DataContext>

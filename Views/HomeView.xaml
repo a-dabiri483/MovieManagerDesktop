@@ -12,6 +12,9 @@
               FontFamily="{DynamicResource AppFontFamily}"
               TextOptions.TextFormattingMode="Display"
               TextOptions.TextRenderingMode="ClearType"
+              TextOptions.TextHintingMode="Fixed"
+              RenderOptions.ClearTypeHint="Enabled"
+              RenderOptions.BitmapScalingMode="HighQuality"
               UseLayoutRounding="True"
               SnapsToDevicePixels="True"
               FlowDirection="RightToLeft">

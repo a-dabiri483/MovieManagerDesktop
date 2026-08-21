@@ -2,6 +2,7 @@ using MovieManagerDesktop.Services;
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace MovieManagerDesktop.Controls
@@ -29,6 +30,11 @@ namespace MovieManagerDesktop.Controls
         {
             if (d is Image image)
             {
+                RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
+                RenderOptions.SetEdgeMode(image, EdgeMode.Aliased);
+                image.UseLayoutRounding = true;
+                image.SnapsToDevicePixels = true;
+
                 var url = e.NewValue as string;
                 if (string.IsNullOrWhiteSpace(url))
                 {
