@@ -78,7 +78,7 @@
             </Style.Triggers>
         </Style>
 
-        <!-- Continue Watching Card Style (Exact Match to Library Card) -->
+        <!-- Continue Watching Card Style (Elevated & Anti-Blur Hover) -->
         <Style x:Key="ContinueWatchingCard" TargetType="Border">
             <Setter Property="Width" Value="165"/>
             <Setter Property="Background" Value="#E60F172A"/>
@@ -86,13 +86,19 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="16"/>
             <Setter Property="Padding" Value="6"/>
-            <Setter Property="Margin" Value="0,0,14,0"/>
+            <Setter Property="Margin" Value="0,10,14,10"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="ClipToBounds" Value="True"/>
+            <Setter Property="UseLayoutRounding" Value="True"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality"/>
+            <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled"/>
             <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
             <Setter Property="RenderTransform">
                 <Setter.Value>
-                    <ScaleTransform ScaleX="1" ScaleY="1"/>
+                    <TransformGroup>
+                        <ScaleTransform ScaleX="1" ScaleY="1"/>
+                        <TranslateTransform X="0" Y="0"/>
+                    </TransformGroup>
                 </Setter.Value>
             </Setter>
             <Setter Property="Effect">
@@ -102,21 +108,29 @@
             </Setter>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
-                    <Setter Property="BorderBrush" Value="#80EB3B5A"/>
-                    <Setter Property="Background" Value="#F01E293B"/>
+                    <Setter Property="BorderBrush" Value="#99EB3B5A"/>
+                    <Setter Property="Background" Value="#F51E293B"/>
+                    <Setter Property="Panel.ZIndex" Value="50"/>
+                    <Setter Property="Effect">
+                        <Setter.Value>
+                            <DropShadowEffect BlurRadius="26" ShadowDepth="8" Opacity="0.7" Color="#000000"/>
+                        </Setter.Value>
+                    </Setter>
                     <Trigger.EnterActions>
                         <BeginStoryboard>
                             <Storyboard>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.03" Duration="0:0:0.12"/>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.03" Duration="0:0:0.12"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)" To="1.06" Duration="0:0:0.14"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)" To="1.06" Duration="0:0:0.14"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)" To="-7" Duration="0:0:0.14"/>
                             </Storyboard>
                         </BeginStoryboard>
                     </Trigger.EnterActions>
                     <Trigger.ExitActions>
                         <BeginStoryboard>
                             <Storyboard>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.12"/>
-                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.12"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)" To="1" Duration="0:0:0.14"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)" To="1" Duration="0:0:0.14"/>
+                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[1].(TranslateTransform.Y)" To="0" Duration="0:0:0.14"/>
                             </Storyboard>
                         </BeginStoryboard>
                     </Trigger.ExitActions>
@@ -211,10 +225,29 @@
                         <Border Width="4" Height="20" Background="{DynamicResource PrimaryGradientBrush}" CornerRadius="2" Margin="0,0,8,0"/>
                         <!-- Section Title -->
                         <TextBlock Text="ادامه تماشا" FontSize="18" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
-                        <!-- Popcorn Icon Badge (Guaranteed to render perfectly on all Windows versions) -->
-                        <Border Width="28" Height="28" CornerRadius="14" Background="#25FFB800" Margin="8,0,0,0" VerticalAlignment="Center">
-                            <materialDesign:PackIcon Kind="Popcorn" Width="17" Height="17" Foreground="#FFB800" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        </Border>
+                        
+                        <!-- Colorful Cinema Popcorn Box (Exact match to Android 🍿 reference) -->
+                        <Viewbox Width="26" Height="26" Margin="8,0,0,0" VerticalAlignment="Center">
+                            <Canvas Width="36" Height="36">
+                                <!-- Popcorn Clouds (Top Golden Puffs) -->
+                                <Ellipse Canvas.Left="6" Canvas.Top="4" Width="10" Height="9" Fill="#F6BD60"/>
+                                <Ellipse Canvas.Left="20" Canvas.Top="4" Width="10" Height="9" Fill="#F6BD60"/>
+                                <Ellipse Canvas.Left="12" Canvas.Top="1" Width="12" Height="10" Fill="#FFE6A7"/>
+                                <Ellipse Canvas.Left="4" Canvas.Top="8" Width="9" Height="8" Fill="#EE9B00"/>
+                                <Ellipse Canvas.Left="23" Canvas.Top="8" Width="9" Height="8" Fill="#EE9B00"/>
+                                <Ellipse Canvas.Left="10" Canvas.Top="7" Width="16" Height="9" Fill="#FFD166"/>
+
+                                <!-- Red Popcorn Cup Body (Trapezoid) -->
+                                <Polygon Points="6,14 30,14 26,34 10,34" Fill="#E63946"/>
+
+                                <!-- White Vertical Stripes -->
+                                <Polygon Points="11,14 15,14 14,34 12,34" Fill="#FFFFFF"/>
+                                <Polygon Points="21,14 25,14 24,34 22,34" Fill="#FFFFFF"/>
+
+                                <!-- Top Cup Rim -->
+                                <Rectangle Canvas.Left="5" Canvas.Top="13" Width="26" Height="2" RadiusX="1" RadiusY="1" Fill="#C1121F"/>
+                            </Canvas>
+                        </Viewbox>
                     </StackPanel>
 
                     <!-- Left / Right Navigation Scroll Buttons -->
@@ -237,7 +270,7 @@
                               HorizontalScrollBarVisibility="Hidden" 
                               VerticalScrollBarVisibility="Disabled" 
                               PreviewMouseWheel="ContinueWatchingScrollViewer_PreviewMouseWheel"
-                              Padding="4,4,4,12">
+                              Padding="4,8,4,16">
                     <ItemsControl ItemsSource="{Binding ContinueWatchingItems}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
@@ -301,9 +334,9 @@
                                                 </Border>
                                             </StackPanel>
 
-                                            <!-- Top-Left in RTL (Top Opposite Corner): Purple Episode Badge (S1 E3 / S7 E6) or IMDb Rating Capsule -->
+                                            <!-- Top-Left in RTL (Top Opposite Corner): Purple Episode Badge (S1 E2 / S7 E6) or IMDb Rating Capsule -->
                                             <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8,8,0,0" Panel.ZIndex="12">
-                                                <!-- Purple Capsule Pill (Exact Match to User Screenshot) -->
+                                                <!-- Purple Capsule Pill (Exact Match to User Reference Screenshot) -->
                                                 <Border Visibility="{Binding HasCompactEpisodeTag, Converter={StaticResource BooleanToVisibilityConverter}}"
                                                         Background="#7C3AED" CornerRadius="12" Padding="8,3" Margin="0,0,0,4">
                                                     <Border.Effect>
@@ -325,24 +358,11 @@
                                                 </Border>
                                             </StackPanel>
 
-                                            <!-- Bottom-Inside-Poster Overlay: Episode Info on Right, Type Badge on Left (No Date) -->
-                                            <DockPanel VerticalAlignment="Bottom" Margin="8,0,8,10" Panel.ZIndex="10" LastChildFill="False">
-                                                <!-- Watched Episode / Quality on Right (Instead of Year Date) -->
-                                                <Border DockPanel.Dock="Right" Background="#C00F172A" BorderBrush="#35FFFFFF" BorderThickness="0.8" CornerRadius="5" Padding="6,2"
-                                                        Visibility="{Binding HasEpisodeInfo, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                        HorizontalAlignment="Right" VerticalAlignment="Center">
-                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                        <materialDesign:PackIcon Kind="TelevisionPlay" Width="11" Height="11" Foreground="#94A3B8" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                                        <TextBlock Text="{Binding DisplayEpisodeInfo}" FontSize="10" FontWeight="Bold" Foreground="#F1F5F9" VerticalAlignment="Center"/>
-                                                    </StackPanel>
-                                                </Border>
-
-                                                <!-- Type Badge on Left (فیلم / سریال) - Hugging text width -->
-                                                <Border DockPanel.Dock="Left" Background="{Binding TypeBadgeBg}" BorderBrush="{Binding TypeBadgeBorder}" BorderThickness="0.8" CornerRadius="5" Padding="6,1.5"
-                                                        HorizontalAlignment="Left" VerticalAlignment="Center">
-                                                    <TextBlock Text="{Binding DisplayType}" FontSize="9.5" FontWeight="Bold" Foreground="{Binding TypeBadgeFg}"/>
-                                                </Border>
-                                            </DockPanel>
+                                            <!-- Bottom-Inside-Poster Overlay: Clean Type Badge (فیلم / سریال) -->
+                                            <Border VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,8,8" Panel.ZIndex="10"
+                                                    Background="{Binding TypeBadgeBg}" BorderBrush="{Binding TypeBadgeBorder}" BorderThickness="0.8" CornerRadius="5" Padding="7,2">
+                                                <TextBlock Text="{Binding DisplayType}" FontSize="9.5" FontWeight="Bold" Foreground="{Binding TypeBadgeFg}"/>
+                                            </Border>
 
                                             <!-- Center Play Button Overlay -->
                                             <Border Width="46" Height="46" CornerRadius="23" Background="#CC0F172A" 
