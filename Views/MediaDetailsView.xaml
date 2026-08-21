@@ -499,47 +499,49 @@
                                     <ItemsControl Grid.Column="0" ItemsSource="{Binding Seasons}" Margin="0,0,12,0">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border CornerRadius="8" 
-                                                        Margin="0,0,0,8" 
-                                                        Padding="10,8" 
-                                                        Cursor="Hand"
-                                                        BorderThickness="1.5">
-                                                    <Border.InputBindings>
-                                                        <MouseBinding MouseAction="LeftClick" 
-                                                                      Command="{Binding DataContext.SelectSeasonCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
-                                                                      CommandParameter="{Binding}"/>
-                                                    </Border.InputBindings>
-                                                    <Border.Style>
-                                                        <Style TargetType="Border">
-                                                            <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
-                                                            <Setter Property="BorderBrush" Value="{DynamicResource NormalBorder}"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                                                                    <Setter Property="Background" Value="#2D1525"/>
-                                                                    <Setter Property="BorderBrush" Value="#EB3B5A"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Border.Style>
-                                                    
-                                                    <DockPanel>
-                                                        <!-- Season Badge -->
-                                                        <Border DockPanel.Dock="Right" Background="#1E293B" CornerRadius="5" Padding="6,3" Margin="0,0,8,0" VerticalAlignment="Center">
-                                                            <TextBlock Text="{Binding SeasonTag}" Foreground="{DynamicResource PrimaryText}" FontWeight="Bold" FontSize="12"/>
-                                                        </Border>
+                                                <Button Command="{Binding DataContext.SelectSeasonCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                        CommandParameter="{Binding}"
+                                                        Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,0,8"
+                                                        HorizontalContentAlignment="Stretch" Cursor="Hand">
+                                                    <Button.Template>
+                                                        <ControlTemplate TargetType="Button">
+                                                            <Border CornerRadius="8" 
+                                                                    Padding="10,8" 
+                                                                    BorderThickness="1.5">
+                                                                <Border.Style>
+                                                                    <Style TargetType="Border">
+                                                                        <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+                                                                        <Setter Property="BorderBrush" Value="{DynamicResource NormalBorder}"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                                                <Setter Property="Background" Value="#2D1525"/>
+                                                                                <Setter Property="BorderBrush" Value="#EB3B5A"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Border.Style>
+                                                                
+                                                                <DockPanel>
+                                                                    <!-- Season Badge -->
+                                                                    <Border DockPanel.Dock="Right" Background="#1E293B" CornerRadius="5" Padding="6,3" Margin="0,0,8,0" VerticalAlignment="Center">
+                                                                        <TextBlock Text="{Binding SeasonTag}" Foreground="{DynamicResource PrimaryText}" FontWeight="Bold" FontSize="12"/>
+                                                                    </Border>
 
-                                                        <!-- Watched Checkmark Indicator -->
-                                                        <materialDesign:PackIcon DockPanel.Dock="Left" Kind="CheckCircle" Width="16" Height="16" 
-                                                                                 Foreground="#4CAF50" VerticalAlignment="Center"
-                                                                                 Visibility="{Binding AllWatched, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                                    <!-- Watched Checkmark Indicator -->
+                                                                    <materialDesign:PackIcon DockPanel.Dock="Left" Kind="CheckCircle" Width="16" Height="16" 
+                                                                                             Foreground="#4CAF50" VerticalAlignment="Center"
+                                                                                             Visibility="{Binding AllWatched, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
-                                                        <!-- Title and Count -->
-                                                        <StackPanel VerticalAlignment="Center">
-                                                            <TextBlock Text="{Binding SeasonTitle}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
-                                                            <TextBlock Text="{Binding EpisodesCountText}" FontSize="10.5" Foreground="{DynamicResource SecondaryText}" Margin="0,1,0,0"/>
-                                                        </StackPanel>
-                                                    </DockPanel>
-                                                </Border>
+                                                                    <!-- Title and Count -->
+                                                                    <StackPanel VerticalAlignment="Center">
+                                                                        <TextBlock Text="{Binding SeasonTitle}" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource PrimaryText}"/>
+                                                                        <TextBlock Text="{Binding EpisodesCountText}" FontSize="10.5" Foreground="{DynamicResource SecondaryText}" Margin="0,1,0,0"/>
+                                                                    </StackPanel>
+                                                                </DockPanel>
+                                                            </Border>
+                                                        </ControlTemplate>
+                                                    </Button.Template>
+                                                </Button>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>

@@ -1328,25 +1328,54 @@ namespace MovieManagerDesktop.ViewModels
 
         private void MediaPlayer_EndReached(object? sender, EventArgs e)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            // LibVLC fires EndReached on native thread.
+            // Dispatch asynchronously to prevent deadlock with LibVLC core pipeline.
+            Task.Run(async () =>
             {
-                IsPlaying = false;
-                if (_currentPlaylistIndex < Playlist.Count - 1)
+                try
                 {
-                    PlayNext();
+                    await Task.Delay(150);
+
+                    await Application.Current.Dispatcher.InvokeAsync(() =>
+                    {
+                        IsPlaying = false;
+                        if (CurrentMedia != null)
+                        {
+                            CurrentMedia.IsWatched = true;
+                            CurrentMedia.WatchProgressPercent = 100;
+                            if (TotalDurationMs > 0)
+                            {
+                                CurrentMedia.WatchProgressSeconds = TotalDurationMs / 1000L;
+                            }
+                            MarkMediaAsWatched(CurrentMedia);
+                        }
+
+                        if (_currentPlaylistIndex < Playlist.Count - 1)
+                        {
+                            PlayNext();
+                        }
+                        else
+                        {
+                            ShowOsdNotification("پایان پخش ویدیو");
+                        }
+                    });
                 }
-                else
+                catch (Exception ex)
                 {
-                    ShowOsdNotification("پایان پخش ویدیو");
+                    LoggerService.Error("Error handling MediaPlayer_EndReached", ex);
                 }
             });
         }
 
         private void MediaPlayer_EncounteredError(object? sender, EventArgs e)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            Task.Run(async () =>
             {
-                ToastService.Instance.ShowError("خطا در پردازش و پخش جریان ویدیو.");
+                await Application.Current.Dispatcher.InvokeAsync(() =>
+                {
+                    IsPlaying = false;
+                    ToastService.Instance.ShowError("خطا در پردازش و پخش جریان ویدیو.");
+                });
             });
         }
 

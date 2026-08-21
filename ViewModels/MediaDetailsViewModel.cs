@@ -568,6 +568,10 @@ namespace MovieManagerDesktop.ViewModels
         private void SelectSeason(VideoSeasonGroup? season)
         {
             if (season == null) return;
+            foreach (var s in Seasons)
+            {
+                s.IsSelected = (s == season);
+            }
             SelectedSeason = season;
         }
 
