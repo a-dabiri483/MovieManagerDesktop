@@ -88,7 +88,7 @@
             </Border>
         </Grid>
         
-        <Grid Margin="30,8,30,65">
+        <Grid Margin="24,6,24,10">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -237,7 +237,7 @@
                             <Image controls:CachedImage.SourceUrl="{Binding Media.PosterUrl}" Stretch="UniformToFill" />
 
                             <!-- Floating Badges (Top Corner in RTL): Dubbed (Green Mic) & Subtitle (Yellow CC) -->
-                            <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="14,14,0,0">
+                            <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="22,14,0,0">
                                 <!-- Dubbed Badge (Dark Glass Circle + Neon Green Mic) -->
                                 <Border Visibility="{Binding HasDubbing, Converter={StaticResource BooleanToVisibilityConverter}}"
                                         Background="#E60F172A" BorderBrush="#334155" BorderThickness="1.2"
@@ -290,7 +290,7 @@
                 </StackPanel>
                 
                 <!-- Details Column -->
-                <ScrollViewer x:Name="DetailsScrollViewer" Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,10,0" ScrollChanged="DetailsScrollViewer_ScrollChanged">
+                <ScrollViewer x:Name="DetailsScrollViewer" Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="14,0,16,0" ScrollChanged="DetailsScrollViewer_ScrollChanged">
                     <StackPanel>
                         <!-- Metadata Badges Row (IMDb Rating, Year, Quality, Type) -->
                         <WrapPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -346,7 +346,7 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                             
-                        <!-- Compact Overview (خلاصه داستان جمع و جور) -->
+                        <!-- Compact Overview (خلاصه داستان کامل و پاسخگو) -->
                         <Border Background="{DynamicResource CardBackground}" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" CornerRadius="10" Padding="14,8" Margin="0,0,0,10">
                             <StackPanel>
                                 <DockPanel Margin="0,0,0,6" LastChildFill="False">
@@ -364,7 +364,7 @@
                                         </StackPanel>
                                     </Button>
                                 </DockPanel>
-                                <TextBlock Text="{Binding Media.Overview}" Foreground="{DynamicResource SecondaryText}" FontSize="12" LineHeight="19" MaxHeight="40" TextTrimming="CharacterEllipsis" TextWrapping="Wrap" TextAlignment="Justify"/>
+                                <TextBlock Text="{Binding Media.Overview}" Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20" TextWrapping="Wrap" TextAlignment="Justify"/>
                             </StackPanel>
                         </Border>
 
