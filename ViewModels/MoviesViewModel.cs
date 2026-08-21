@@ -776,7 +776,7 @@ namespace MovieManagerDesktop.ViewModels
             var result = MessageBox.Show($"آیا از حذف {selected.Count} مورد انتخاب شده اطمینان دارید؟", "حذف گروهی", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (result == MessageBoxResult.Yes)
             {
-                await RunBulkActionAsync("حذف", (db, f) => db.VideoFiles.Remove(f));
+                await RunBulkMediaActionAsync("حذف", (db, f) => db.VideoFiles.Remove(f));
                 ExitSelectionMode();
             }
         }
@@ -784,19 +784,37 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private async Task ToggleFavoritesSelectedAsync()
         {
-            await RunBulkActionAsync("تغییر علاقه‌مندی", (db, f) => f.IsFavorite = !f.IsFavorite);
+            var selected = Movies.Where(m => m.IsSelected).ToList();
+            if (selected.Count == 0) return;
+
+            bool targetState = selected.Any(s => !s.IsFavorite);
+            await RunBulkMediaActionAsync("علاقه‌مندی", (db, f) => f.IsFavorite = targetState);
         }
 
         [RelayCommand]
         private async Task ToggleWatchedSelectedAsync()
         {
-            await RunBulkActionAsync("وضعیت مشاهده", (db, f) => f.IsWatched = !f.IsWatched);
+            var selected = Movies.Where(m => m.IsSelected).ToList();
+            if (selected.Count == 0) return;
+
+            // If any selected item is not fully watched, mark all as watched. Otherwise unmark.
+            bool targetState = selected.Any(s => !s.IsWatched);
+            await RunBulkMediaActionAsync("وضعیت مشاهده", (db, f) =>
+            {
+                f.IsWatched = targetState;
+                f.WatchProgressPercent = targetState ? 100 : 0;
+                f.WatchProgressSeconds = 0;
+            });
         }
 
         [RelayCommand]
         private async Task ToggleHiddenSelectedAsync()
         {
-            await RunBulkActionAsync("مخفی‌سازی", (db, f) => f.IsHidden = !f.IsHidden);
+            var selected = Movies.Where(m => m.IsSelected).ToList();
+            if (selected.Count == 0) return;
+
+            bool targetState = selected.Any(s => !s.IsHidden);
+            await RunBulkMediaActionAsync("مخفی‌سازی", (db, f) => f.IsHidden = targetState);
         }
 
         [RelayCommand]
@@ -904,7 +922,7 @@ namespace MovieManagerDesktop.ViewModels
             }
         }
 
-        private async Task RunBulkActionAsync(string actionName, Action<AppDbContext, VideoFile> action)
+        private async Task RunBulkMediaActionAsync(string actionName, Action<AppDbContext, VideoFile> action)
         {
             var selected = Movies.Where(m => m.IsSelected).ToList();
             if (selected.Count == 0) return;
@@ -918,24 +936,40 @@ namespace MovieManagerDesktop.ViewModels
                 await Task.Run(() =>
                 {
                     using var db = new AppDbContext();
-                    var selectedIds = selected.Select(s => s.File.Id).ToList();
-                    var dbFiles = db.VideoFiles.Where(v => selectedIds.Contains(v.Id)).ToList();
+                    
+                    var seriesTitles = selected
+                        .Where(s => s.File.MediaType == "Series")
+                        .Select(s => (s.File.FormattedTitle ?? "").ToLowerInvariant())
+                        .Where(t => !string.IsNullOrEmpty(t))
+                        .Distinct()
+                        .ToList();
 
-                    int total = dbFiles.Count;
+                    var movieIds = selected
+                        .Where(s => s.File.MediaType != "Series")
+                        .Select(s => s.File.Id)
+                        .ToList();
+
+                    var allMatchingFiles = db.VideoFiles
+                        .Where(v => (v.MediaType == "Series" && seriesTitles.Contains((v.FormattedTitle ?? "").ToLower())) || movieIds.Contains(v.Id))
+                        .ToList();
+
+                    int total = allMatchingFiles.Count;
                     for (int i = 0; i < total; i++)
                     {
-                        action(db, dbFiles[i]);
+                        action(db, allMatchingFiles[i]);
                     }
                     db.SaveChanges();
+                    CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger.Default.Send(new MovieManagerDesktop.Messages.MediaUpdatedMessage());
                 });
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"خطا در انجام عملیات گروهی: {ex.Message}", "خطا", MessageBoxButton.OK, MessageBoxImage.Error);
+                ToastService.Instance.ShowError($"خطا در انجام عملیات گروهی: {ex.Message}");
             }
             finally
             {
                 IsBulkActionRunning = false;
+                ExitSelectionMode();
                 await LoadMoviesAsync();
             }
         }

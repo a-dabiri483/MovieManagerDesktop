@@ -1,6 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using MovieManagerDesktop.Data;
+using MovieManagerDesktop.Messages;
 using MovieManagerDesktop.Models;
 using MovieManagerDesktop.Services;
 using System;
@@ -185,32 +187,44 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         public async Task ToggleWatchedAsync()
         {
-            IsWatched = !IsWatched;
+            bool targetState = !IsWatched;
+            IsWatched = targetState;
             await Task.Run(() =>
             {
                 using var db = new AppDbContext();
-                var list = db.VideoFiles.Where(v => v.FormattedTitle == File.FormattedTitle || v.Id == File.Id).ToList();
+                string titleLower = (File.FormattedTitle ?? "").ToLower();
+                var list = db.VideoFiles
+                    .Where(v => (v.MediaType == "Series" && (v.FormattedTitle ?? "").ToLower() == titleLower) || v.Id == File.Id)
+                    .ToList();
                 foreach (var item in list)
                 {
-                    item.IsWatched = IsWatched;
+                    item.IsWatched = targetState;
+                    item.WatchProgressPercent = targetState ? 100 : 0;
+                    item.WatchProgressSeconds = 0;
                 }
                 db.SaveChanges();
+                WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
             });
         }
 
         [RelayCommand]
         public async Task ToggleHiddenAsync()
         {
-            IsHidden = !IsHidden;
+            bool targetState = !IsHidden;
+            IsHidden = targetState;
             await Task.Run(() =>
             {
                 using var db = new AppDbContext();
-                var list = db.VideoFiles.Where(v => v.FormattedTitle == File.FormattedTitle || v.Id == File.Id).ToList();
+                string titleLower = (File.FormattedTitle ?? "").ToLower();
+                var list = db.VideoFiles
+                    .Where(v => (v.MediaType == "Series" && (v.FormattedTitle ?? "").ToLower() == titleLower) || v.Id == File.Id)
+                    .ToList();
                 foreach (var item in list)
                 {
-                    item.IsHidden = IsHidden;
+                    item.IsHidden = targetState;
                 }
                 db.SaveChanges();
+                WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
             });
         }
 
