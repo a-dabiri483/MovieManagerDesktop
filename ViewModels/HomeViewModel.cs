@@ -177,14 +177,13 @@ namespace MovieManagerDesktop.ViewModels
                     topGenresText = string.Join("، ", genres);
                 }
 
-                // Continue Watching:
-                // 1. Movies with progress > 0 and not fully watched
+                // Continue Watching: ONLY media actually played by the user with the player (LastPlayedAt != null)
+                // 1. Movies with LastPlayedAt and not finished
                 var continueMovies = allFiles
-                    .Where(f => f.MediaType != "Series" && f.WatchProgressPercent > 0 && f.WatchProgressPercent < 95 && !f.IsWatched)
+                    .Where(f => f.MediaType != "Series" && f.LastPlayedAt.HasValue && !f.IsWatched && f.WatchProgressPercent < 95)
                     .ToList();
 
-                // 2. Series:
-                // Group all series by FormattedTitle
+                // 2. Series with at least one episode played
                 var seriesGroups = allFiles
                     .Where(f => f.MediaType == "Series")
                     .GroupBy(f => (!string.IsNullOrWhiteSpace(f.FormattedTitle) ? f.FormattedTitle : f.FileName).ToLowerInvariant());
@@ -193,8 +192,10 @@ namespace MovieManagerDesktop.ViewModels
                 foreach (var sGroup in seriesGroups)
                 {
                     var eps = sGroup.OrderBy(e => e.Season ?? 1).ThenBy(e => e.Episode ?? 1).ToList();
-                    bool hasAnyActivity = eps.Any(e => e.IsWatched || e.WatchProgressPercent > 0 || e.LastPlayedAt.HasValue);
-                    if (hasAnyActivity)
+                    bool hasBeenPlayed = eps.Any(e => e.LastPlayedAt.HasValue);
+                    bool allWatched = eps.Count > 0 && eps.All(e => e.IsWatched);
+
+                    if (hasBeenPlayed && !allWatched)
                     {
                         var seriesLastPlayed = eps.Max(e => e.LastPlayedAt);
                         // Check if there is an in-progress episode
@@ -225,8 +226,7 @@ namespace MovieManagerDesktop.ViewModels
 
                 var combinedContinueWatching = continueMovies
                     .Concat(continueSeries)
-                    .OrderByDescending(f => f.LastPlayedAt ?? (f.WatchProgressPercent > 0 ? DateTime.Now.AddDays(-1) : DateTime.MinValue))
-                    .ThenByDescending(f => f.DateAdded)
+                    .OrderByDescending(f => f.LastPlayedAt ?? DateTime.MinValue)
                     .Take(20)
                     .ToList();
 

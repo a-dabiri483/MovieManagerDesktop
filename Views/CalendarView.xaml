@@ -84,84 +84,89 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Border Margin="3" CornerRadius="12" MinHeight="85" Cursor="Hand"
+                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding DataContext.SelectDayCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                            CommandParameter="{Binding}"
                             Visibility="{Binding DayNumber, Converter={StaticResource ZeroToVisibilityConverter}, ConverterParameter=Inverse}">
-                        <Border.InputBindings>
-                            <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.SelectDayCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" />
-                        </Border.InputBindings>
-                        <Border.Style>
-                            <Style TargetType="Border">
-                                <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
-                                <Setter Property="BorderThickness" Value="1"/>
-                                <Setter Property="BorderBrush" Value="{DynamicResource LightBorder}"/>
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding IsToday}" Value="True">
-                                        <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
-                                        <Setter Property="BorderThickness" Value="2"/>
-                                        <Setter Property="Background" Value="#25EB3B5A"/>
-                                    </DataTrigger>
-                                    <DataTrigger Binding="{Binding IsFriday}" Value="True">
-                                        <Setter Property="BorderBrush" Value="#40FF4757"/>
-                                    </DataTrigger>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
-                                        <Setter Property="BorderBrush" Value="#60EB3B5A"/>
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Border.Style>
-                        
-                        <Grid>
-                            <!-- Background Poster (semi-transparent) -->
-                            <Image controls:CachedImage.SourceUrl="{Binding FirstPosterUrl}" Stretch="UniformToFill" Opacity="0.22"
-                                   Visibility="{Binding FirstPosterUrl, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}">
-                                <Image.Clip>
-                                    <RectangleGeometry RadiusX="12" RadiusY="12" Rect="0,0,200,200"/>
-                                </Image.Clip>
-                            </Image>
-                            
-                            <StackPanel Margin="8">
-                                <!-- Day Number -->
-                                <TextBlock Text="{Binding DayNumber, Converter={StaticResource PersianNumberConverter}}" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Margin="3" CornerRadius="12" MinHeight="85">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+                                            <Setter Property="BorderThickness" Value="1"/>
+                                            <Setter Property="BorderBrush" Value="{DynamicResource LightBorder}"/>
                                             <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsToday}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                                                    <Setter Property="BorderThickness" Value="2"/>
+                                                    <Setter Property="Background" Value="#25EB3B5A"/>
+                                                </DataTrigger>
                                                 <DataTrigger Binding="{Binding IsFriday}" Value="True">
-                                                    <Setter Property="Foreground" Value="#FF4757"/>
+                                                    <Setter Property="BorderBrush" Value="#40FF4757"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
+                                                    <Setter Property="BorderBrush" Value="#60EB3B5A"/>
                                                 </DataTrigger>
                                             </Style.Triggers>
                                         </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
-                                
-                                <!-- Release Dots -->
-                                <ItemsControl ItemsSource="{Binding Releases}" Margin="0,4,0,0">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" />
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Ellipse Width="7" Height="7" Margin="1.5">
-                                                <Ellipse.Style>
-                                                    <Style TargetType="Ellipse">
-                                                        <Setter Property="Fill" Value="{DynamicResource PrimaryColor}"/>
+                                    </Border.Style>
+                                    
+                                    <Grid>
+                                        <!-- Background Poster (semi-transparent) -->
+                                        <Image controls:CachedImage.SourceUrl="{Binding FirstPosterUrl}" Stretch="UniformToFill" Opacity="0.22"
+                                               Visibility="{Binding FirstPosterUrl, Converter={StaticResource StringNullOrEmptyToVisibilityConverter}}">
+                                            <Image.Clip>
+                                                <RectangleGeometry RadiusX="12" RadiusY="12" Rect="0,0,200,200"/>
+                                            </Image.Clip>
+                                        </Image>
+                                        
+                                        <StackPanel Margin="8">
+                                            <!-- Day Number -->
+                                            <TextBlock Text="{Binding DayNumber, Converter={StaticResource PersianNumberConverter}}" FontSize="15" FontWeight="Bold" HorizontalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="{DynamicResource PrimaryText}"/>
                                                         <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding MediaType}" Value="Series">
-                                                                <Setter Property="Fill" Value="{DynamicResource PurpleAccent}"/>
+                                                            <DataTrigger Binding="{Binding IsFriday}" Value="True">
+                                                                <Setter Property="Foreground" Value="#FF4757"/>
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
-                                                </Ellipse.Style>
-                                            </Ellipse>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                            
+                                            <!-- Release Dots -->
+                                            <ItemsControl ItemsSource="{Binding Releases}" Margin="0,4,0,0">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Ellipse Width="7" Height="7" Margin="1.5">
+                                                            <Ellipse.Style>
+                                                                <Style TargetType="Ellipse">
+                                                                    <Setter Property="Fill" Value="{DynamicResource PrimaryColor}"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding MediaType}" Value="Series">
+                                                                            <Setter Property="Fill" Value="{DynamicResource PurpleAccent}"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Ellipse.Style>
+                                                        </Ellipse>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>

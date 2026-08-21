@@ -115,96 +115,112 @@
                     </StackPanel>
 
                     <!-- Card 1: منابع داده و وب سرویس API -->
-                    <Border Style="{StaticResource SettingsActionCard}">
-                        <Grid Background="Transparent">
-                            <Grid.InputBindings>
-                                <MouseBinding MouseAction="LeftClick" Command="{Binding OpenDataSourcesCommand}"/>
-                            </Grid.InputBindings>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <!-- Pink Icon -->
-                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#25EB3B5A" Margin="0,0,16,0">
-                                <materialDesign:PackIcon Kind="FolderSettingsOutline" Width="26" Height="26" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="منابع داده و وب سرویس API" FontSize="15.5" FontWeight="Black" Foreground="White"/>
-                                <TextBlock Text="مدیریت کلیدهای TMDb/OMDb، تست اتصال و انتخاب سرور اصلی" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                        </Grid>
-                    </Border>
+                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding OpenDataSourcesCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource SettingsActionCard}">
+                                    <Grid Background="Transparent">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Pink Icon -->
+                                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#25EB3B5A" Margin="0,0,16,0">
+                                            <materialDesign:PackIcon Kind="FolderSettingsOutline" Width="26" Height="26" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="منابع داده و وب سرویس API" FontSize="15.5" FontWeight="Black" Foreground="White"/>
+                                            <TextBlock Text="مدیریت کلیدهای TMDb/OMDb، تست اتصال و انتخاب سرور اصلی" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                     <!-- Card 2: سیستم چند پراکسی (ضد تحریم) -->
-                    <Border Style="{StaticResource SettingsActionCard}">
-                        <Grid Background="Transparent">
-                            <Grid.InputBindings>
-                                <MouseBinding MouseAction="LeftClick" Command="{Binding OpenProxyCommand}"/>
-                            </Grid.InputBindings>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <!-- Teal Icon -->
-                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#250FB9B1" Margin="0,0,16,0">
-                                <materialDesign:PackIcon Kind="Earth" Width="26" Height="26" Foreground="{DynamicResource TealAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="سیستم چند پراکسی (ضد تحریم)" FontSize="15.5" FontWeight="Black" Foreground="White"/>
-                                <TextBlock Text="فعال‌سازی سرویس ضد تحریم، مدیریت ورکر کلودفلر و تست پینگ" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                        </Grid>
-                    </Border>
+                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding OpenProxyCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource SettingsActionCard}">
+                                    <Grid Background="Transparent">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Teal Icon -->
+                                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#250FB9B1" Margin="0,0,16,0">
+                                            <materialDesign:PackIcon Kind="Earth" Width="26" Height="26" Foreground="{DynamicResource TealAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="سیستم چند پراکسی (ضد تحریم)" FontSize="15.5" FontWeight="Black" Foreground="White"/>
+                                            <TextBlock Text="فعال‌سازی سرویس ضد تحریم، مدیریت ورکر کلودفلر و تست پینگ" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                     <!-- Card 3: پشتیبان‌گیری و بازیابی -->
-                    <Border Style="{StaticResource SettingsActionCard}">
-                        <Grid Background="Transparent">
-                            <Grid.InputBindings>
-                                <MouseBinding MouseAction="LeftClick" Command="{Binding OpenBackupCommand}"/>
-                            </Grid.InputBindings>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <!-- Blue Icon -->
-                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#253867D6" Margin="0,0,16,0">
-                                <materialDesign:PackIcon Kind="CloudUploadOutline" Width="26" Height="26" Foreground="{DynamicResource NetworkBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="پشتیبان‌گیری و بازیابی" FontSize="15.5" FontWeight="Black" Foreground="White"/>
-                                <TextBlock Text="پشتیبان‌گیری آفلاین JSON، همگام‌سازی ابری با گوگل درایو و بکاپ خودکار" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                        </Grid>
-                    </Border>
+                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding OpenBackupCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource SettingsActionCard}">
+                                    <Grid Background="Transparent">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Blue Icon -->
+                                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#253867D6" Margin="0,0,16,0">
+                                            <materialDesign:PackIcon Kind="CloudUploadOutline" Width="26" Height="26" Foreground="{DynamicResource NetworkBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="پشتیبان‌گیری و بازیابی" FontSize="15.5" FontWeight="Black" Foreground="White"/>
+                                            <TextBlock Text="پشتیبان‌گیری آفلاین JSON، همگام‌سازی ابری با گوگل درایو و بکاپ خودکار" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                     <!-- Card 4: تنظیمات پلیر ویدیو -->
-                    <Border Style="{StaticResource SettingsActionCard}">
-                        <Grid Background="Transparent">
-                            <Grid.InputBindings>
-                                <MouseBinding MouseAction="LeftClick" Command="{Binding OpenPlayerCommand}"/>
-                            </Grid.InputBindings>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <!-- Sky/Cyan Icon -->
-                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#2538BDF8" Margin="0,0,16,0">
-                                <materialDesign:PackIcon Kind="PlayCircleOutline" Width="26" Height="26" Foreground="#38BDF8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="پلیر ویدیو (داخلی / خارجی)" FontSize="15.5" FontWeight="Black" Foreground="White"/>
-                                <TextBlock Text="انتخاب بین پلیر داخلی برنامه (با میانبرهای کامل PotPlayer) یا پلیر خارجی" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                        </Grid>
-                    </Border>
+                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding OpenPlayerCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource SettingsActionCard}">
+                                    <Grid Background="Transparent">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Sky/Cyan Icon -->
+                                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#2538BDF8" Margin="0,0,16,0">
+                                            <materialDesign:PackIcon Kind="PlayCircleOutline" Width="26" Height="26" Foreground="#38BDF8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="پلیر ویدیو (داخلی / خارجی)" FontSize="15.5" FontWeight="Black" Foreground="White"/>
+                                            <TextBlock Text="انتخاب بین پلیر داخلی برنامه (با میانبرهای کامل PotPlayer) یا پلیر خارجی" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </StackPanel>
 
                 <!-- ================= RIGHT COLUMN (شخصی‌سازی، آموزش و دیتابیس) ================= -->
@@ -217,73 +233,85 @@
                     </StackPanel>
 
                     <!-- Card 4: شخصی‌سازی -->
-                    <Border Style="{StaticResource SettingsActionCard}">
-                        <Grid Background="Transparent">
-                            <Grid.InputBindings>
-                                <MouseBinding MouseAction="LeftClick" Command="{Binding OpenPersonalizationCommand}"/>
-                            </Grid.InputBindings>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <!-- Magenta Icon -->
-                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#258854D0" Margin="0,0,16,0">
-                                <materialDesign:PackIcon Kind="PaletteOutline" Width="26" Height="26" Foreground="{DynamicResource PurpleAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="شخصی‌سازی" FontSize="15.5" FontWeight="Black" Foreground="White"/>
-                                <TextBlock Text="تم تاریک/روشن، ترجمه، تقویم شمسی جلالی و فیلترهای نمایش" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                        </Grid>
-                    </Border>
+                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding OpenPersonalizationCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource SettingsActionCard}">
+                                    <Grid Background="Transparent">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Magenta Icon -->
+                                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#258854D0" Margin="0,0,16,0">
+                                            <materialDesign:PackIcon Kind="PaletteOutline" Width="26" Height="26" Foreground="{DynamicResource PurpleAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="شخصی‌سازی" FontSize="15.5" FontWeight="Black" Foreground="White"/>
+                                            <TextBlock Text="تم تاریک/روشن، ترجمه، تقویم شمسی جلالی و فیلترهای نمایش" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                     <!-- Card 5: آموزش -->
-                    <Border Style="{StaticResource SettingsActionCard}">
-                        <Grid Background="Transparent">
-                            <Grid.InputBindings>
-                                <MouseBinding MouseAction="LeftClick" Command="{Binding OpenEducationCommand}"/>
-                            </Grid.InputBindings>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <!-- Indigo Icon -->
-                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#25575FCF" Margin="0,0,16,0">
-                                <materialDesign:PackIcon Kind="School" Width="26" Height="26" Foreground="#7D88F5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="آموزش و نکات مهم" FontSize="15.5" FontWeight="Black" Foreground="White"/>
-                                <TextBlock Text="راهنمای جامع کار با نرم‌افزار: اسکن، سازماندهی، ردیاب، ترجمه و ترفندها" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                        </Grid>
-                    </Border>
+                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding OpenEducationCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource SettingsActionCard}">
+                                    <Grid Background="Transparent">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Indigo Icon -->
+                                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#25575FCF" Margin="0,0,16,0">
+                                            <materialDesign:PackIcon Kind="School" Width="26" Height="26" Foreground="#7D88F5" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="آموزش و نکات مهم" FontSize="15.5" FontWeight="Black" Foreground="White"/>
+                                            <TextBlock Text="راهنمای جامع کار با نرم‌افزار: اسکن، سازماندهی، ردیاب، ترجمه و ترفندها" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                     <!-- Card 6: درباره -->
-                    <Border Style="{StaticResource SettingsActionCard}">
-                        <Grid Background="Transparent">
-                            <Grid.InputBindings>
-                                <MouseBinding MouseAction="LeftClick" Command="{Binding OpenAboutCommand}"/>
-                            </Grid.InputBindings>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <!-- Blue Icon -->
-                            <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#253867D6" Margin="0,0,16,0">
-                                <materialDesign:PackIcon Kind="InformationOutline" Width="26" Height="26" Foreground="{DynamicResource NetworkBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="درباره نرم‌افزار" FontSize="15.5" FontWeight="Black" Foreground="White"/>
-                                <TextBlock Text="نسخه ۲.۰.۰ پرو، مشخصات پلتفرم دسکتاپ و تیم توسعه" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                        </Grid>
-                    </Border>
+                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding OpenAboutCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource SettingsActionCard}">
+                                    <Grid Background="Transparent">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Blue Icon -->
+                                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#253867D6" Margin="0,0,16,0">
+                                            <materialDesign:PackIcon Kind="InformationOutline" Width="26" Height="26" Foreground="{DynamicResource NetworkBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="درباره نرم‌افزار" FontSize="15.5" FontWeight="Black" Foreground="White"/>
+                                            <TextBlock Text="نسخه ۲.۰.۰ پرو، مشخصات پلتفرم دسکتاپ و تیم توسعه" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                     <!-- Database Management Card -->
                     <Border Style="{StaticResource SettingsGroupCard}" Margin="0,4,0,0">
@@ -884,24 +912,29 @@
                         <DataTemplate>
                             <Border Width="450" VerticalAlignment="Top" Style="{StaticResource SettingsGroupCard}" Padding="16,14" Margin="0,0,16,14" Visibility="{Binding IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <StackPanel>
-                                    <Grid Background="Transparent" Cursor="Hand">
-                                        <Grid.InputBindings>
-                                            <MouseBinding MouseAction="LeftClick" Command="{Binding DataContext.ToggleTopicExpandedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
-                                        </Grid.InputBindings>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <materialDesign:PackIcon Grid.Column="0" Kind="ChevronDown" Width="22" Height="22" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Title}" FontSize="14.5" FontWeight="Black" Foreground="White"/>
-                                            <TextBlock Text="{Binding Description}" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,3,0,0" LineHeight="18" TextWrapping="Wrap"/>
-                                        </StackPanel>
-                                        <Border Grid.Column="2" Width="42" Height="42" CornerRadius="14" Background="#20FFFFFF" Margin="10,0,0,0">
-                                            <materialDesign:PackIcon Kind="{Binding IconKind}" Width="22" Height="22" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                    </Grid>
+                                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                                            Command="{Binding DataContext.ToggleTopicExpandedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                            CommandParameter="{Binding}">
+                                        <Button.Template>
+                                            <ControlTemplate TargetType="Button">
+                                                <Grid Background="Transparent">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <materialDesign:PackIcon Grid.Column="0" Kind="ChevronDown" Width="22" Height="22" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                        <TextBlock Text="{Binding Title}" FontSize="14.5" FontWeight="Black" Foreground="White"/>
+                                                        <TextBlock Text="{Binding Description}" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,3,0,0" LineHeight="18" TextWrapping="Wrap"/>
+                                                    </StackPanel>
+                                                    <Border Grid.Column="2" Width="42" Height="42" CornerRadius="14" Background="#20FFFFFF" Margin="10,0,0,0">
+                                                        <materialDesign:PackIcon Kind="{Binding IconKind}" Width="22" Height="22" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                    </Border>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </Button.Template>
+                                    </Button>
 
                                     <!-- Expandable Content -->
                                     <StackPanel Visibility="{Binding IsExpanded, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,12,0,0">
