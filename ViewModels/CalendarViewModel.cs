@@ -122,10 +122,36 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (day == null || day.DayNumber == 0 || day.Releases.Count == 0) return;
             
-            // Open DayDetailWindow
-            var window = new MovieManagerDesktop.Views.DayDetailWindow(day);
-            window.Owner = System.Windows.Application.Current.MainWindow;
-            window.ShowDialog();
+            try
+            {
+                var window = new MovieManagerDesktop.Views.DayDetailWindow(day);
+                var activeWindow = System.Windows.Application.Current.Windows.OfType<System.Windows.Window>().FirstOrDefault(w => w.IsActive && w != window)
+                                  ?? System.Windows.Application.Current.MainWindow;
+
+                if (activeWindow != null && activeWindow != window && activeWindow.IsLoaded)
+                {
+                    window.Owner = activeWindow;
+                    window.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterOwner;
+                }
+                else
+                {
+                    window.WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen;
+                }
+
+                window.ShowDialog();
+            }
+            catch
+            {
+                try
+                {
+                    var fallback = new MovieManagerDesktop.Views.DayDetailWindow(day)
+                    {
+                        WindowStartupLocation = System.Windows.WindowStartupLocation.CenterScreen
+                    };
+                    fallback.ShowDialog();
+                }
+                catch { }
+            }
         }
 
         private string GetMonthKey()

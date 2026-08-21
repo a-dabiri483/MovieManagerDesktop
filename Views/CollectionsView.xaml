@@ -176,13 +176,14 @@
                     <Grid Width="{Binding DataContext.PosterSize, RelativeSource={RelativeSource AncestorType=UserControl}}" Margin="6,6,6,12">
                         
                         <!-- Card Container -->
-                        <Border CornerRadius="16" Padding="6" Cursor="Hand" Background="#E60F172A" BorderBrush="#334155" BorderThickness="1">
-                            <Border.InputBindings>
-                                <MouseBinding Gesture="LeftClick" Command="{Binding OpenCollectionMoviesCommand}"/>
-                            </Border.InputBindings>
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="16" ShadowDepth="3" Opacity="0.45" Color="Black"/>
-                            </Border.Effect>
+                        <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                                Command="{Binding OpenCollectionMoviesCommand}">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border CornerRadius="16" Padding="6" Background="#E60F172A" BorderBrush="#334155" BorderThickness="1">
+                                        <Border.Effect>
+                                            <DropShadowEffect BlurRadius="16" ShadowDepth="3" Opacity="0.45" Color="Black"/>
+                                        </Border.Effect>
 
                             <StackPanel>
                                 
@@ -240,8 +241,11 @@
                                 </StackPanel>
                             </StackPanel>
                         </Border>
-                    </Grid>
-                </DataTemplate>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+        </Grid>
+    </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
     </Grid>

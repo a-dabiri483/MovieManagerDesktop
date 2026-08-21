@@ -492,92 +492,108 @@
 
                 <UniformGrid Columns="2">
                     <!-- 1. اسکن حافظه (Pink Icon) -->
-                    <Border Style="{StaticResource AndroidActionCard}">
-                        <Border.InputBindings>
-                            <MouseBinding Gesture="LeftClick" Command="{Binding GoToScanCommand}"/>
-                        </Border.InputBindings>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#EB3B5A" Margin="0,0,14,0">
-                                <materialDesign:PackIcon Kind="Magnify" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="اسکن حافظه" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                                <TextBlock Text="اسکن خودکار فایل‌های ویدیویی" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                        </Grid>
-                    </Border>
+                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding GoToScanCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource AndroidActionCard}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#EB3B5A" Margin="0,0,14,0">
+                                            <materialDesign:PackIcon Kind="Magnify" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="اسکن حافظه" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                                            <TextBlock Text="اسکن خودکار فایل‌های ویدیویی" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                     <!-- 2. جستجوی دستی (Purple Icon) -->
-                    <Border Style="{StaticResource AndroidActionCard}">
-                        <Border.InputBindings>
-                            <MouseBinding Gesture="LeftClick" Command="{Binding GoToManualSearchCommand}"/>
-                        </Border.InputBindings>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#8854D0" Margin="0,0,14,0">
-                                <materialDesign:PackIcon Kind="PlaylistEdit" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="جستجوی دستی" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                                <TextBlock Text="جستجوی فیلم و سریال در TMDb" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                        </Grid>
-                    </Border>
+                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding GoToManualSearchCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource AndroidActionCard}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#8854D0" Margin="0,0,14,0">
+                                            <materialDesign:PackIcon Kind="PlaylistEdit" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="جستجوی دستی" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                                            <TextBlock Text="جستجوی فیلم و سریال در TMDb" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                     <!-- 3. آمار و تحلیل (Teal Icon) -->
-                    <Border Style="{StaticResource AndroidActionCard}">
-                        <Border.InputBindings>
-                            <MouseBinding Gesture="LeftClick" Command="{Binding GoToAnalyticsCommand}"/>
-                        </Border.InputBindings>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#0FB9B1" Margin="0,0,14,0">
-                                <materialDesign:PackIcon Kind="ChartBoxOutline" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="آمار و تحلیل" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                                <TextBlock Text="مشاهده آمار تماشا و ژانرهای مورد علاقه" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                        </Grid>
-                    </Border>
+                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding GoToAnalyticsCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource AndroidActionCard}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#0FB9B1" Margin="0,0,14,0">
+                                            <materialDesign:PackIcon Kind="ChartBoxOutline" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="آمار و تحلیل" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                                            <TextBlock Text="مشاهده آمار تماشا و ژانرهای مورد علاقه" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                     <!-- 4. ردیاب سریال (Blue Icon) -->
-                    <Border Style="{StaticResource AndroidActionCard}">
-                        <Border.InputBindings>
-                            <MouseBinding Gesture="LeftClick" Command="{Binding GoToTrackerCommand}"/>
-                        </Border.InputBindings>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#3867D6" Margin="0,0,14,0">
-                                <materialDesign:PackIcon Kind="TelevisionClassic" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="ردیاب سریال" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                                <TextBlock Text="پیگیری وضعیت مشاهده فصل‌ها و یادآور" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                        </Grid>
-                    </Border>
+                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding GoToTrackerCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource AndroidActionCard}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#3867D6" Margin="0,0,14,0">
+                                            <materialDesign:PackIcon Kind="TelevisionClassic" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="ردیاب سریال" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                                            <TextBlock Text="پیگیری وضعیت مشاهده فصل‌ها و یادآور" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </UniformGrid>
             </StackPanel>
 
@@ -601,70 +617,82 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- مجموعه‌ها (Orange Icon) -->
-                    <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource AndroidActionCard}">
-                        <Border.InputBindings>
-                            <MouseBinding Gesture="LeftClick" Command="{Binding GoToCollectionsCommand}"/>
-                        </Border.InputBindings>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#FA8231" Margin="0,0,14,0">
-                                <materialDesign:PackIcon Kind="AnimationPlayOutline" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="مجموعه‌ها" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                                <TextBlock Text="فیلم‌های مرتبط و سری‌ها" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                        </Grid>
-                    </Border>
+                    <Button Grid.Row="0" Grid.Column="0" Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding GoToCollectionsCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource AndroidActionCard}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#FA8231" Margin="0,0,14,0">
+                                            <materialDesign:PackIcon Kind="AnimationPlayOutline" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="مجموعه‌ها" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                                            <TextBlock Text="فیلم‌های مرتبط و سری‌ها" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                     <!-- بازیگران (Purple Icon) -->
-                    <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource AndroidActionCard}">
-                        <Border.InputBindings>
-                            <MouseBinding Gesture="LeftClick" Command="{Binding GoToActorsCommand}"/>
-                        </Border.InputBindings>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#8854D0" Margin="0,0,14,0">
-                                <materialDesign:PackIcon Kind="AccountGroup" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="بازیگران" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                                <TextBlock Text="مرور بر اساس بازیگر" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                        </Grid>
-                    </Border>
+                    <Button Grid.Row="0" Grid.Column="1" Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding GoToActorsCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource AndroidActionCard}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#8854D0" Margin="0,0,14,0">
+                                            <materialDesign:PackIcon Kind="AccountGroup" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="بازیگران" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                                            <TextBlock Text="مرور بر اساس بازیگر" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                     <!-- کارگردان‌ها (Emerald - Wide) -->
-                    <Border Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource AndroidActionCard}">
-                        <Border.InputBindings>
-                            <MouseBinding Gesture="LeftClick" Command="{Binding GoToDirectorsCommand}"/>
-                        </Border.InputBindings>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#26DE81" Margin="0,0,14,0">
-                                <materialDesign:PackIcon Kind="ClapperboardOutline" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="کارگردان‌ها" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                                <TextBlock Text="مرور بر اساس کارگردان" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                        </Grid>
-                    </Border>
+                    <Button Grid.Row="1" Grid.ColumnSpan="2" Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding GoToDirectorsCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource AndroidActionCard}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#26DE81" Margin="0,0,14,0">
+                                            <materialDesign:PackIcon Kind="ClapperboardOutline" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="کارگردان‌ها" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                                            <TextBlock Text="مرور بر اساس کارگردان" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
                 </Grid>
             </StackPanel>
 
@@ -678,25 +706,30 @@
                 </StackPanel>
 
                 <Border Style="{StaticResource AndroidActionCard}" CornerRadius="20" Padding="20,18">
-                    <Border.InputBindings>
-                        <MouseBinding Gesture="LeftClick" Command="{Binding GoToCinemaHubCommand}"/>
-                    </Border.InputBindings>
                     <StackPanel>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#EB3B5A" Margin="0,0,14,0">
-                                <materialDesign:PackIcon Kind="MoviePlay" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Border>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                <TextBlock Text="دنیای سینما و باکس آفیس" FontSize="15.5" FontWeight="Bold" Foreground="White"/>
-                                <TextBlock Text="اخبار روز سینمای ایران و جهان، جدول فروش باکس آفیس و ..." FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                            </StackPanel>
-                            <materialDesign:PackIcon Grid.Column="2" Kind="ArrowLeft" Width="22" Height="22" Foreground="#EB3B5A" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                        </Grid>
+                        <!-- Main Clickable Header -->
+                        <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                                Command="{Binding GoToCinemaHubCommand}">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Grid Background="Transparent">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="52" Height="52" CornerRadius="16" Background="#EB3B5A" Margin="0,0,14,0">
+                                            <materialDesign:PackIcon Kind="MoviePlay" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="دنیای سینما و باکس آفیس" FontSize="15.5" FontWeight="Bold" Foreground="White"/>
+                                            <TextBlock Text="اخبار روز سینمای ایران و جهان، جدول فروش باکس آفیس و ..." FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ArrowLeft" Width="22" Height="22" Foreground="#EB3B5A" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                    </Grid>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
 
                         <Grid Margin="0,16,0,0">
                             <Grid.ColumnDefinitions>
@@ -705,35 +738,47 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
 
-                            <Border Grid.Column="0" Height="38" CornerRadius="12" Background="#20EB3B5A" BorderBrush="#50EB3B5A" BorderThickness="1" Margin="4,0" Cursor="Hand">
-                                <Border.InputBindings>
-                                    <MouseBinding Gesture="LeftClick" Command="{Binding GoToCinemaNewsCommand}"/>
-                                </Border.InputBindings>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="NewspaperVariantOutline" Width="16" Height="16" Foreground="#EB3B5A" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                    <TextBlock Text="اخبار سینما" FontSize="12.5" FontWeight="Bold" Foreground="#EB3B5A"/>
-                                </StackPanel>
-                            </Border>
+                            <Button Grid.Column="0" Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                                    Command="{Binding GoToCinemaNewsCommand}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Height="38" CornerRadius="12" Background="#20EB3B5A" BorderBrush="#50EB3B5A" BorderThickness="1" Margin="4,0">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <materialDesign:PackIcon Kind="NewspaperVariantOutline" Width="16" Height="16" Foreground="#EB3B5A" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                <TextBlock Text="اخبار سینما" FontSize="12.5" FontWeight="Bold" Foreground="#EB3B5A"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
 
-                            <Border Grid.Column="1" Height="38" CornerRadius="12" Background="#20FFB800" BorderBrush="#50FFB800" BorderThickness="1" Margin="4,0" Cursor="Hand">
-                                <Border.InputBindings>
-                                    <MouseBinding Gesture="LeftClick" Command="{Binding GoToBoxOfficeCommand}"/>
-                                </Border.InputBindings>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="TrophyOutline" Width="16" Height="16" Foreground="#FFB800" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                    <TextBlock Text="باکس آفیس" FontSize="12.5" FontWeight="Bold" Foreground="#FFB800"/>
-                                </StackPanel>
-                            </Border>
+                            <Button Grid.Column="1" Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                                    Command="{Binding GoToBoxOfficeCommand}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Height="38" CornerRadius="12" Background="#20FFB800" BorderBrush="#50FFB800" BorderThickness="1" Margin="4,0">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <materialDesign:PackIcon Kind="TrophyOutline" Width="16" Height="16" Foreground="#FFB800" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                <TextBlock Text="باکس آفیس" FontSize="12.5" FontWeight="Bold" Foreground="#FFB800"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
 
-                            <Border Grid.Column="2" Height="38" CornerRadius="12" Background="#200FB9B1" BorderBrush="#500FB9B1" BorderThickness="1" Margin="4,0" Cursor="Hand">
-                                <Border.InputBindings>
-                                    <MouseBinding Gesture="LeftClick" Command="{Binding GoToReleasesCommand}"/>
-                                </Border.InputBindings>
-                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="TimerSand" Width="16" Height="16" Foreground="#0FB9B1" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                    <TextBlock Text="اکران‌ها" FontSize="12.5" FontWeight="Bold" Foreground="#0FB9B1"/>
-                                </StackPanel>
-                            </Border>
+                            <Button Grid.Column="2" Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                                    Command="{Binding GoToReleasesCommand}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Height="38" CornerRadius="12" Background="#200FB9B1" BorderBrush="#500FB9B1" BorderThickness="1" Margin="4,0">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <materialDesign:PackIcon Kind="TimerSand" Width="16" Height="16" Foreground="#0FB9B1" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                <TextBlock Text="اکران‌ها" FontSize="12.5" FontWeight="Bold" Foreground="#0FB9B1"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
                         </Grid>
                     </StackPanel>
                 </Border>
