@@ -160,10 +160,27 @@ namespace MovieManagerDesktop
             // Removed parallax effect
         }
 
-        private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void Window_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ChangedButton == MouseButton.Left && e.ButtonState == MouseButtonState.Pressed)
             {
+                if (e.OriginalSource is DependencyObject depObj)
+                {
+                    // Do not initiate drag if clicking interactive controls or list items
+                    if (FindVisualParent<System.Windows.Controls.Primitives.ButtonBase>(depObj) != null ||
+                        FindVisualParent<System.Windows.Controls.Primitives.TextBoxBase>(depObj) != null ||
+                        FindVisualParent<System.Windows.Controls.Primitives.ScrollBar>(depObj) != null ||
+                        FindVisualParent<System.Windows.Controls.Slider>(depObj) != null ||
+                        FindVisualParent<System.Windows.Controls.ComboBox>(depObj) != null ||
+                        FindVisualParent<System.Windows.Controls.PasswordBox>(depObj) != null ||
+                        FindVisualParent<System.Windows.Controls.ListBoxItem>(depObj) != null ||
+                        FindVisualParent<System.Windows.Controls.ListViewItem>(depObj) != null ||
+                        FindVisualParent<System.Windows.Controls.TreeViewItem>(depObj) != null)
+                    {
+                        return;
+                    }
+                }
+
                 try
                 {
                     this.DragMove();
@@ -173,6 +190,22 @@ namespace MovieManagerDesktop
                     // Ignore drag exceptions if interrupted
                 }
             }
+        }
+
+        private static T? FindVisualParent<T>(DependencyObject child) where T : DependencyObject
+        {
+            DependencyObject? parentObj = child;
+            while (parentObj != null)
+            {
+                if (parentObj is T parent)
+                    return parent;
+
+                if (parentObj is System.Windows.Media.Visual || parentObj is System.Windows.Media.Media3D.Visual3D)
+                    parentObj = System.Windows.Media.VisualTreeHelper.GetParent(parentObj);
+                else
+                    parentObj = LogicalTreeHelper.GetParent(parentObj);
+            }
+            return null;
         }
 
         private void BtnMinimize_Click(object sender, RoutedEventArgs e)

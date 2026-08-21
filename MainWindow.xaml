@@ -20,7 +20,7 @@
         RenderOptions.ClearTypeHint="Enabled"
         RenderOptions.BitmapScalingMode="HighQuality"
         MouseMove="Window_MouseMove"
-        MouseLeftButtonDown="Window_MouseLeftButtonDown">
+        PreviewMouseLeftButtonDown="Window_PreviewMouseLeftButtonDown">
 
     <Window.DataContext>
         <viewmodels:MainViewModel />

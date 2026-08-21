@@ -38,6 +38,7 @@
             </Style>
 
             <Style TargetType="{x:Type Image}">
+                <Setter Property="FlowDirection" Value="LeftToRight"/>
                 <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality"/>
                 <Setter Property="RenderOptions.EdgeMode" Value="Aliased"/>
                 <Setter Property="UseLayoutRounding" Value="True"/>
