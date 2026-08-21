@@ -28,6 +28,25 @@ namespace MovieManagerDesktop.Services
                 return;
             }
 
+            if (playlist == null && file.MediaType == "Series")
+            {
+                try
+                {
+                    using var db = new AppDbContext();
+                    var allEpisodes = db.VideoFiles
+                        .Where(v => v.MediaType == "Series" && v.FormattedTitle.ToLower() == file.FormattedTitle.ToLower())
+                        .OrderBy(v => v.Season ?? 1)
+                        .ThenBy(v => v.Episode ?? 1)
+                        .ToList();
+                    if (allEpisodes.Count > 0)
+                    {
+                        playlist = allEpisodes;
+                        initialIndex = Math.Max(0, playlist.FindIndex(e => e.Id == file.Id || e.FilePath == file.FilePath));
+                    }
+                }
+                catch { }
+            }
+
             file.LastPlayedAt = DateTime.Now;
             Task.Run(() =>
             {

@@ -69,6 +69,14 @@ namespace MovieManagerDesktop.ViewModels
         public HomeViewModel()
         {
             LoadHomeDataDirect();
+
+            WeakReferenceMessenger.Default.Register<MediaUpdatedMessage>(this, (r, m) =>
+            {
+                System.Windows.Application.Current?.Dispatcher?.InvokeAsync(() =>
+                {
+                    LoadHomeDataDirect();
+                });
+            });
         }
 
         public void LoadHomeDataDirect()
@@ -149,50 +157,66 @@ namespace MovieManagerDesktop.ViewModels
                 }
 
                 // Size
-                string fileSize = "0 GB";
                 long totalBytes = allFiles.Sum(f => f.FileSizeBytes);
-                if (totalBytes > 0)
-                {
-                    double tb = totalBytes / 1024.0 / 1024.0 / 1024.0 / 1024.0;
-                    double gb = totalBytes / 1024.0 / 1024.0 / 1024.0;
-                    fileSize = tb >= 1.0 ? $"{tb:0.##} TB" : $"{gb:0.##} GB";
-                }
+                string fileSize = FormatBytes(totalBytes);
 
-                // Top Genres
-                string topGenresText = "موردی یافت نشد";
                 var genres = allFiles
-                    .Where(f => !string.IsNullOrEmpty(f.Genres) && f.Genres != "N/A")
-                    .SelectMany(f => f.Genres!.Split(new[] { ',', '،' }, StringSplitOptions.RemoveEmptyEntries))
-                    .Select(g => g.Trim())
-                    .Where(g => !string.IsNullOrEmpty(g))
-                    .Select(GenreTranslatorService.Translate)
+                    .Where(f => !string.IsNullOrEmpty(f.Genres))
+                    .SelectMany(f => f.Genres!.Split(new[] { ',', '،', '/' }, StringSplitOptions.RemoveEmptyEntries))
+                    .Select(g => GenreTranslatorService.Translate(g.Trim()))
+                    .Where(g => !string.IsNullOrWhiteSpace(g))
                     .GroupBy(g => g)
                     .OrderByDescending(g => g.Count())
-                    .Take(3)
+                    .Take(4)
                     .Select(g => g.Key)
                     .ToList();
 
+                string topGenresText = "ثبت نشده";
                 if (genres.Any())
                 {
                     topGenresText = string.Join("، ", genres);
                 }
 
-                // Continue Watching: items with progress > 0 and < 100
-                var continueWatchingRaw = allFiles
-                    .Where(f => f.WatchProgressPercent > 0 && f.WatchProgressPercent < 100)
+                // Continue Watching:
+                // 1. Movies with progress > 0 and not fully watched
+                var continueMovies = allFiles
+                    .Where(f => f.MediaType != "Series" && f.WatchProgressPercent > 0 && f.WatchProgressPercent < 95 && !f.IsWatched)
                     .ToList();
 
-                // Group series by title, keep only 1 item per series (the most recently played or highest ep)
-                var continueWatchingGrouped = continueWatchingRaw
-                    .GroupBy(f => string.Equals(f.MediaType, "Series", StringComparison.OrdinalIgnoreCase) 
-                        ? (!string.IsNullOrWhiteSpace(f.FormattedTitle) ? f.FormattedTitle : f.FileName).ToLowerInvariant() 
-                        : f.Id.ToString())
-                    .Select(g => g.OrderByDescending(f => f.LastPlayedAt ?? DateTime.MinValue)
-                                  .ThenByDescending(f => f.Season ?? 0)
-                                  .ThenByDescending(f => f.LastPlayedEpisode ?? f.Episode ?? 0)
-                                  .ThenByDescending(f => f.DateAdded)
-                                  .First())
-                    .OrderByDescending(f => f.LastPlayedAt ?? f.DateAdded)
+                // 2. Series:
+                // Group all series by FormattedTitle
+                var seriesGroups = allFiles
+                    .Where(f => f.MediaType == "Series")
+                    .GroupBy(f => (!string.IsNullOrWhiteSpace(f.FormattedTitle) ? f.FormattedTitle : f.FileName).ToLowerInvariant());
+
+                var continueSeries = new List<VideoFile>();
+                foreach (var sGroup in seriesGroups)
+                {
+                    var eps = sGroup.OrderBy(e => e.Season ?? 1).ThenBy(e => e.Episode ?? 1).ToList();
+                    bool hasAnyActivity = eps.Any(e => e.IsWatched || e.WatchProgressPercent > 0 || e.LastPlayedAt.HasValue);
+                    if (hasAnyActivity)
+                    {
+                        // Check if there is an in-progress episode
+                        var inProgressEp = eps.FirstOrDefault(e => !e.IsWatched && e.WatchProgressPercent > 0 && e.WatchProgressPercent < 95);
+                        if (inProgressEp != null)
+                        {
+                            continueSeries.Add(inProgressEp);
+                        }
+                        else
+                        {
+                            // Otherwise find next unwatched episode
+                            var nextUnwatchedEp = eps.FirstOrDefault(e => !e.IsWatched);
+                            if (nextUnwatchedEp != null)
+                            {
+                                continueSeries.Add(nextUnwatchedEp);
+                            }
+                        }
+                    }
+                }
+
+                var combinedContinueWatching = continueMovies
+                    .Concat(continueSeries)
+                    .OrderByDescending(f => f.LastPlayedAt ?? (f.WatchProgressPercent > 0 ? DateTime.Now.AddDays(-1) : f.DateAdded))
                     .Take(20)
                     .ToList();
 
@@ -216,13 +240,25 @@ namespace MovieManagerDesktop.ViewModels
 
                 // Update Continue Watching collection
                 ContinueWatchingItems.Clear();
-                foreach (var item in continueWatchingGrouped)
+                foreach (var item in combinedContinueWatching)
                 {
                     ContinueWatchingItems.Add(item);
                 }
                 HasContinueWatching = ContinueWatchingItems.Count > 0;
             }
             catch { }
+        }
+
+        private string FormatBytes(long bytes)
+        {
+            string[] Suffix = { "B", "KB", "MB", "GB", "TB" };
+            int i;
+            double dblSByte = bytes;
+            for (i = 0; i < Suffix.Length && bytes >= 1024; i++, bytes /= 1024)
+            {
+                dblSByte = bytes / 1024.0;
+            }
+            return $"{dblSByte:0.##} {Suffix[i]}";
         }
 
         [RelayCommand]

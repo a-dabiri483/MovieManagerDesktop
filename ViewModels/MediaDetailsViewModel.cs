@@ -415,14 +415,17 @@ namespace MovieManagerDesktop.ViewModels
 
                 bool allWatched = total > 0 && watched == total;
                 IsWatched = allWatched;
-                Media.IsWatched = allWatched;
 
-                var dbMedia = db.VideoFiles.FirstOrDefault(v => v.Id == Media.Id);
-                if (dbMedia != null)
+                if (IsMovie)
                 {
-                    dbMedia.WatchProgressPercent = OverallProgressPercent;
-                    dbMedia.IsWatched = allWatched;
-                    db.SaveChanges();
+                    Media.IsWatched = allWatched;
+                    var dbMedia = db.VideoFiles.FirstOrDefault(v => v.Id == Media.Id);
+                    if (dbMedia != null)
+                    {
+                        dbMedia.WatchProgressPercent = OverallProgressPercent;
+                        dbMedia.IsWatched = allWatched;
+                        db.SaveChanges();
+                    }
                 }
             }
             finally
