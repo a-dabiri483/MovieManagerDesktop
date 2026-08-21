@@ -291,7 +291,7 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
-        private void EditScannedGroup(ScannedGroupViewModel group)
+        private void OpenEditDialog(ScannedGroupViewModel group)
         {
             if (group == null) return;
             
@@ -305,7 +305,7 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
-        private async Task OpenSelectExistingDialogAsync(ScannedGroupViewModel group)
+        private void OpenSelectExistingDialog(ScannedGroupViewModel group)
         {
             if (group == null) return;
             
