@@ -15,6 +15,7 @@
     <Resource Include="Assets\bg.png" />
     <Resource Include="Assets\bg_new.png" />
     <Resource Include="Assets\logo.png" />
+    <Resource Include="Assets\Posters\*.webp" />
 
     <Content Include="Assets\folder_template.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
