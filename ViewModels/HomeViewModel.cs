@@ -8,6 +8,7 @@ using MovieManagerDesktop.Services;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
@@ -59,6 +60,11 @@ namespace MovieManagerDesktop.ViewModels
 
         [ObservableProperty]
         private VideoFile? _featuredVideoFile;
+
+        [ObservableProperty]
+        private bool _hasContinueWatching = false;
+
+        public ObservableCollection<VideoFile> ContinueWatchingItems { get; } = new();
 
         public HomeViewModel()
         {
@@ -171,6 +177,24 @@ namespace MovieManagerDesktop.ViewModels
                     topGenresText = string.Join("، ", genres);
                 }
 
+                // Continue Watching: items with progress > 0 and < 100
+                var continueWatchingRaw = allFiles
+                    .Where(f => f.WatchProgressPercent > 0 && f.WatchProgressPercent < 100)
+                    .ToList();
+
+                // Group series by title, keep only the latest episode per series
+                var continueWatchingGrouped = continueWatchingRaw
+                    .GroupBy(f => f.MediaType == "Series" 
+                        ? (f.FormattedTitle ?? f.FileName).ToLowerInvariant() 
+                        : f.Id.ToString())
+                    .Select(g => g.OrderByDescending(f => f.Season ?? 0)
+                                  .ThenByDescending(f => f.LastPlayedEpisode ?? f.Episode ?? 0)
+                                  .ThenByDescending(f => f.DateAdded)
+                                  .First())
+                    .OrderByDescending(f => f.DateAdded)
+                    .Take(20)
+                    .ToList();
+
                 TotalCount = totalFilesCount;
                 MovieCount = movies;
                 SeriesCount = series;
@@ -188,8 +212,37 @@ namespace MovieManagerDesktop.ViewModels
                 AverageRating = avgRating;
                 TotalFileSize = fileSize;
                 TopGenres = topGenresText;
+
+                // Update Continue Watching collection
+                ContinueWatchingItems.Clear();
+                foreach (var item in continueWatchingGrouped)
+                {
+                    ContinueWatchingItems.Add(item);
+                }
+                HasContinueWatching = ContinueWatchingItems.Count > 0;
             }
             catch { }
+        }
+
+        [RelayCommand]
+        private void PlayContinueWatching(VideoFile? file)
+        {
+            if (file != null)
+            {
+                PlaybackService.PlayMedia(file);
+            }
+        }
+
+        [RelayCommand]
+        private void OpenContinueWatchingDetails(VideoFile? file)
+        {
+            if (file != null)
+            {
+                if (file.MediaType == "Series")
+                    WeakReferenceMessenger.Default.Send(new NavigationMessage(new SeriesDetailViewModel(file)));
+                else
+                    WeakReferenceMessenger.Default.Send(new NavigationMessage(new MediaDetailsViewModel(file)));
+            }
         }
 
         [RelayCommand]
