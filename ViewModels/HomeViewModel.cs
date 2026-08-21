@@ -247,10 +247,7 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (file != null)
             {
-                if (file.MediaType == "Series")
-                    WeakReferenceMessenger.Default.Send(new NavigationMessage(new SeriesDetailViewModel(file)));
-                else
-                    WeakReferenceMessenger.Default.Send(new NavigationMessage(new MediaDetailsViewModel(file)));
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(new MediaDetailsViewModel(file, this)));
             }
         }
 
@@ -349,10 +346,7 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (FeaturedVideoFile != null)
             {
-                if (FeaturedVideoFile.MediaType == "Series")
-                    WeakReferenceMessenger.Default.Send(new NavigationMessage(new SeriesDetailViewModel(FeaturedVideoFile)));
-                else
-                    WeakReferenceMessenger.Default.Send(new NavigationMessage(new MediaDetailsViewModel(FeaturedVideoFile)));
+                WeakReferenceMessenger.Default.Send(new NavigationMessage(new MediaDetailsViewModel(FeaturedVideoFile, this)));
             }
             else
             {
