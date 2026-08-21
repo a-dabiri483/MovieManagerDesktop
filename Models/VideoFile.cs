@@ -141,5 +141,17 @@ namespace MovieManagerDesktop.Models
 
         [System.ComponentModel.DataAnnotations.Schema.NotMapped]
         public bool HasRating => Rating.HasValue && Rating.Value > 0;
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public bool IsSeries => string.Equals(MediaType, "Series", StringComparison.OrdinalIgnoreCase);
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public string DisplayType => IsSeries ? "سریال" : "فیلم";
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public string DisplayYear => !string.IsNullOrWhiteSpace(Year) && Year != "0" ? Year : (FirstAirDate?.Year.ToString() ?? "");
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public bool HasDisplayYear => !string.IsNullOrWhiteSpace(DisplayYear);
     }
 }
