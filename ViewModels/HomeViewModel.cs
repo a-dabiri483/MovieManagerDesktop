@@ -341,14 +341,7 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void PlayFeatured()
         {
-            if (FeaturedVideoFile != null)
-            {
-                PlaybackService.PlayMedia(FeaturedVideoFile);
-            }
-            else
-            {
-                GoToMovies();
-            }
+            OpenFeaturedDetails();
         }
 
         [RelayCommand]
