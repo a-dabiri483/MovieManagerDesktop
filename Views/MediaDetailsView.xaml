@@ -476,7 +476,7 @@
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <!-- Right Column in RTL: Season Tabs Stack -->
-                                        <ColumnDefinition Width="165"/>
+                                        <ColumnDefinition Width="180"/>
                                         <!-- Left Column in RTL: Selected Season Episodes 2-Column Grid -->
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
@@ -513,7 +513,7 @@
                                                                 
                                                                 <Grid VerticalAlignment="Center">
                                                                     <Grid.ColumnDefinitions>
-                                                                        <!-- Right in RTL: S1 / S2 Pill Badge -->
+                                                                        <!-- Right in RTL: S1 / S2 Pill Badge + Mini Dub/Sub -->
                                                                         <ColumnDefinition Width="Auto"/>
                                                                         <!-- Middle: Title and Episode count -->
                                                                         <ColumnDefinition Width="*"/>
@@ -521,10 +521,26 @@
                                                                         <ColumnDefinition Width="Auto"/>
                                                                     </Grid.ColumnDefinitions>
 
-                                                                    <!-- Season Badge -->
-                                                                    <Border Grid.Column="0" Background="#1E293B" CornerRadius="6" Padding="6,3" Margin="0,0,8,0" VerticalAlignment="Center">
-                                                                        <TextBlock Text="{Binding SeasonTag}" Foreground="{DynamicResource PrimaryText}" FontWeight="Bold" FontSize="11"/>
-                                                                    </Border>
+                                                                    <!-- Season Badge and Dub/Sub Badges -->
+                                                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,8,0">
+                                                                        <Border Background="#1E293B" CornerRadius="6" Padding="6,3" Margin="0,0,4,0" VerticalAlignment="Center">
+                                                                            <TextBlock Text="{Binding SeasonTag}" Foreground="{DynamicResource PrimaryText}" FontWeight="Bold" FontSize="11"/>
+                                                                        </Border>
+
+                                                                        <!-- Dubbed Icon (Green Mic) -->
+                                                                        <Border Visibility="{Binding HasDubbing, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                                Background="#2000E676" CornerRadius="9" Width="18" Height="18" Margin="0,0,3,0"
+                                                                                ToolTip="دوبله فارسی" VerticalAlignment="Center">
+                                                                            <materialDesign:PackIcon Kind="Microphone" Width="11" Height="11" Foreground="#00E676" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+
+                                                                        <!-- Subtitle Icon (Yellow CC) -->
+                                                                        <Border Visibility="{Binding HasSubtitle, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                                Background="#20FFD166" CornerRadius="9" Width="18" Height="18"
+                                                                                ToolTip="زیرنویس فارسی" VerticalAlignment="Center">
+                                                                            <materialDesign:PackIcon Kind="ClosedCaption" Width="11" Height="11" Foreground="#FFD166" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                                        </Border>
+                                                                    </StackPanel>
 
                                                                     <!-- Title and Count -->
                                                                     <StackPanel Grid.Column="1" VerticalAlignment="Center">

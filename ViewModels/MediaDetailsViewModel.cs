@@ -28,6 +28,8 @@ namespace MovieManagerDesktop.ViewModels
         public string WatchedSummaryText => $"{Episodes.Count(e => e.IsWatched)} از {Episodes.Count} قسمت";
         public double SeasonProgressPercent => Episodes.Count > 0 ? ((double)Episodes.Count(e => e.IsWatched) / Episodes.Count * 100) : 0;
         public bool AllWatched => Episodes.Count > 0 && Episodes.All(e => e.IsWatched);
+        public bool HasDubbing => Episodes.Any(e => MediaDetailsViewModel.CheckDubbing(e));
+        public bool HasSubtitle => Episodes.Any(e => MediaDetailsViewModel.CheckSubtitle(e));
 
         public void NotifyWatchedChanged()
         {
@@ -35,6 +37,8 @@ namespace MovieManagerDesktop.ViewModels
             OnPropertyChanged(nameof(SeasonProgressPercent));
             OnPropertyChanged(nameof(AllWatched));
             OnPropertyChanged(nameof(IsWatched));
+            OnPropertyChanged(nameof(HasDubbing));
+            OnPropertyChanged(nameof(HasSubtitle));
         }
     }
 
@@ -179,10 +183,50 @@ namespace MovieManagerDesktop.ViewModels
             }
 
             LoadEpisodes();
+
+            // Real-time synchronization when episodes are played or watched
+            WeakReferenceMessenger.Default.Register<MediaUpdatedMessage>(this, (r, m) =>
+            {
+                System.Windows.Application.Current?.Dispatcher?.InvokeAsync(() =>
+                {
+                    RefreshEpisodesWatchedState();
+                });
+            });
         }
 
-        private static bool CheckDubbing(VideoFile file, IEnumerable<VideoFile>? allEpisodes = null)
+        public void RefreshEpisodesWatchedState()
         {
+            if (Media.MediaType != "Series") return;
+            try
+            {
+                using var db = new AppDbContext();
+                var episodesInDb = db.VideoFiles
+                    .Where(v => v.MediaType == "Series" && v.FormattedTitle.ToLower() == Media.FormattedTitle.ToLower())
+                    .ToList();
+
+                foreach (var season in Seasons)
+                {
+                    foreach (var ep in season.Episodes)
+                    {
+                        var dbEp = episodesInDb.FirstOrDefault(d => d.Id == ep.Id || d.FilePath == ep.FilePath);
+                        if (dbEp != null)
+                        {
+                            ep.IsWatched = dbEp.IsWatched;
+                            ep.WatchProgressPercent = dbEp.WatchProgressPercent;
+                            ep.WatchProgressSeconds = dbEp.WatchProgressSeconds;
+                        }
+                    }
+                    season.NotifyWatchedChanged();
+                }
+
+                UpdateProgressAndContinueWatching(db);
+            }
+            catch { }
+        }
+
+        public static bool CheckDubbing(VideoFile file, IEnumerable<VideoFile>? allEpisodes = null)
+        {
+            if (file == null) return false;
             if (file.HasDubbing) return true;
             var list = new List<VideoFile> { file };
             if (allEpisodes != null) list.AddRange(allEpisodes);
@@ -200,7 +244,7 @@ namespace MovieManagerDesktop.ViewModels
             return false;
         }
 
-        private static bool CheckSubtitle(VideoFile file, IEnumerable<VideoFile>? allEpisodes = null)
+        public static bool CheckSubtitle(VideoFile file, IEnumerable<VideoFile>? allEpisodes = null)
         {
             if (file.HasSubtitle) return true;
             var list = new List<VideoFile> { file };
