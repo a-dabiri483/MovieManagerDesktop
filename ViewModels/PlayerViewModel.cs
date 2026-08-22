@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -424,10 +425,16 @@ namespace MovieManagerDesktop.ViewModels
         private bool _hasMarkedWatched = false;
         private long _pendingResumeSeconds = 0;
         private DateTime _lastProgressSaveTime = DateTime.MinValue;
-        private DateTime _seekDebounceUntil = DateTime.MinValue;
+
+        // 🎯 Serialized Seek Queue
         private long _targetSeekMs = -1;
-        private long _pendingSeekTargetMs = -1;
         private DateTime _lastSeekTime = DateTime.MinValue;
+        private DateTime _seekDebounceUntil = DateTime.MinValue;
+        private bool _seekInFlight = false;
+        private long _queuedSeekTargetMs = -1;
+        private DateTime _lastSeekIssueTime = DateTime.MinValue;
+        private long _vlcTimeAtSeekIssue = -1;
+
         private DateTime _lastSubEnforceTime = DateTime.MinValue;
         private string? _loadedSubtitlePath = null;
         private string? _lastActiveSubtitlePath = null;
@@ -472,7 +479,7 @@ namespace MovieManagerDesktop.ViewModels
 
             _uiTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(50)
+                Interval = TimeSpan.FromMilliseconds(20)
             };
             _uiTimer.Tick += UiTimer_Tick;
             _uiTimer.Start();
@@ -597,11 +604,22 @@ namespace MovieManagerDesktop.ViewModels
 
                 var vlcArgs = new List<string>
                 {
-                    "--avcodec-hw=any", 
+                    "--avcodec-hw=d3d11va,dxva2,any", 
                     "--directx-hw-yuv", 
                     "--no-sub-autodetect-file",
                     "--no-video-title-show",
                     "--input-fast-seek",
+                    "--no-drop-late-frames",
+                    "--no-skip-frames",
+                    "--file-caching=150",
+                    "--network-caching=300",
+                    "--clock-jitter=0",
+                    "--clock-synchro=0",
+                    "--avcodec-threads=0",
+                    "--avcodec-fast",
+                    "--avcodec-skiploopfilter=4",
+                    "--no-audio-time-stretch",
+                    "--sub-track=-1",
                     "--no-spu",
                     "--no-osd",
                     "--no-spdif",
@@ -959,7 +977,8 @@ namespace MovieManagerDesktop.ViewModels
             _repeatPointB = null;
             IsRepeatAbActive = false;
             _targetSeekMs = -1;
-            _pendingSeekTargetMs = -1;
+            _queuedSeekTargetMs = -1;
+            _seekInFlight = false;
             _lastActiveSubtitlePath = null;
 
             if (media.WatchProgressSeconds > 5 && media.WatchProgressPercent < 92)
@@ -974,6 +993,9 @@ namespace MovieManagerDesktop.ViewModels
             try
             {
                 var vlcMedia = new Media(_libVLC, media.FilePath, FromType.FromPath);
+                vlcMedia.AddOption(":no-sub-autodetect-file");
+                vlcMedia.AddOption(":spu=-1");
+                vlcMedia.AddOption(":file-caching=150");
                 _mediaPlayer.Media = vlcMedia;
                 _mediaPlayer.Play();
                 IsPlaying = true;
@@ -1166,7 +1188,8 @@ namespace MovieManagerDesktop.ViewModels
                 if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return;
                 _loadedSubtitlePath = filePath;
                 _lastActiveSubtitlePath = filePath;
-                _activeSubtitleCues = SubtitleTranslatorService.ParseSubtitleFile(filePath);
+                var parsed = SubtitleTranslatorService.ParseSubtitleFile(filePath);
+                _activeSubtitleCues = parsed.OrderBy(c => c.StartMs).ToList();
 
                 foreach (var t in SubtitleTracks)
                 {
@@ -1176,39 +1199,88 @@ namespace MovieManagerDesktop.ViewModels
             catch { }
         }
 
+        private SubtitleCue? FindSubtitleCue(long timeMs)
+        {
+            if (_activeSubtitleCues.Count == 0) return null;
+
+            int low = 0;
+            int high = _activeSubtitleCues.Count - 1;
+
+            while (low <= high)
+            {
+                int mid = (low + high) / 2;
+                var cue = _activeSubtitleCues[mid];
+
+                if (timeMs >= cue.StartMs && timeMs <= cue.EndMs)
+                {
+                    return cue;
+                }
+                else if (timeMs < cue.StartMs)
+                {
+                    high = mid - 1;
+                }
+                else
+                {
+                    low = mid + 1;
+                }
+            }
+
+            if (high >= 0 && high < _activeSubtitleCues.Count)
+            {
+                var cue = _activeSubtitleCues[high];
+                if (timeMs >= cue.StartMs && timeMs <= cue.EndMs) return cue;
+            }
+
+            return null;
+        }
+
         private void UiTimer_Tick(object? sender, EventArgs e)
         {
-            if (_mediaPlayer == null || _isUserSeeking) return;
+            if (_mediaPlayer == null) return;
 
             try
             {
-                if ((DateTime.UtcNow - _lastSubEnforceTime).TotalMilliseconds >= 500)
-                {
-                    _lastSubEnforceTime = DateTime.UtcNow;
-                    EnforceDisableInternalSubtitles();
-                }
+                long vlcTime = _mediaPlayer.Time;
 
-                if (DateTime.UtcNow > _seekDebounceUntil)
+                if (_seekInFlight)
                 {
-                    long vlcTime = _mediaPlayer.Time;
-                    if (vlcTime >= 0)
+                    // 🎯 آیا Seek قبلی تسویه شده؟
+                    // ۱. زمان VLC به محدوده هدف رسیده باشد
+                    // ۲. یا زمان VLC نسبت به زمان شروع Seek جابه‌جا شده باشد (نشان‌دهنده رندر فریم جدید)
+                    // ۳. یا سقف زمانی ۲۰۰ میلی‌ثانیه تمام شده باشد
+                    bool timeReachedTarget = vlcTime >= 0 && Math.Abs(vlcTime - _targetSeekMs) <= 1500;
+                    bool vlcFrameAdvanced = vlcTime >= 0 && _vlcTimeAtSeekIssue >= 0 && Math.Abs(vlcTime - _vlcTimeAtSeekIssue) > 800;
+                    bool issueTimeout = (DateTime.UtcNow - _lastSeekIssueTime).TotalMilliseconds > 200;
+
+                    bool settled = timeReachedTarget || vlcFrameAdvanced;
+
+                    if (settled || issueTimeout)
                     {
-                        if (_pendingSeekTargetMs >= 0)
+                        if (_queuedSeekTargetMs >= 0 && _queuedSeekTargetMs != _targetSeekMs)
                         {
-                            // 🎯 فقط وقتی VLC به مقصدِ پرش رسید (یا بعد از ۳ ثانیه ناامیدی)، زمان را بروزرسانی کن
-                            bool settled = Math.Abs(vlcTime - _pendingSeekTargetMs) <= 800;
-                            bool timeout = (DateTime.UtcNow - _lastSeekTime).TotalMilliseconds > 3000;
-                            if (settled || timeout)
-                            {
-                                _pendingSeekTargetMs = -1;
-                                CurrentTimeMs = vlcTime;
-                            }
-                            // در غیر این صورت: CurrentTimeMs را با زمان قدیمی بازنویسی نکن!
+                            // 🎯 اعمال هدف صفشده (کلیکهایی که حین Seek قبلی آمده بودند)
+                            _targetSeekMs = _queuedSeekTargetMs;
+                            _queuedSeekTargetMs = -1;
+                            _lastSeekIssueTime = DateTime.UtcNow;
+                            _lastSeekTime = DateTime.UtcNow;
+                            _vlcTimeAtSeekIssue = vlcTime;
+                            _seekDebounceUntil = DateTime.UtcNow.AddMilliseconds(150);
+                            _mediaPlayer.Time = _targetSeekMs;
                         }
                         else
                         {
-                            CurrentTimeMs = vlcTime;
+                            _queuedSeekTargetMs = -1;
+                            _seekInFlight = false;
                         }
+                    }
+                    // 🎯 تا قبل از تسویه، CurrentTimeMs را از VLC بازنویسی نکن!
+                }
+                else
+                {
+                    // 🎯 حالت عادی پخش: بروزرسانی زمان از VLC
+                    if (DateTime.UtcNow > _seekDebounceUntil && vlcTime >= 0)
+                    {
+                        CurrentTimeMs = vlcTime;
                     }
                 }
 
@@ -1216,29 +1288,39 @@ namespace MovieManagerDesktop.ViewModels
 
                 if (TotalDurationMs > 0)
                 {
-                    // Instant Subtitle Cue Sync
+                    // Instant Subtitle Cue Sync via Fast O(log N) Binary Search
                     if (_activeSubtitleCues.Count > 0)
                     {
                         long adjustedTime = CurrentTimeMs + (long)(SubtitleDelaySeconds * 1000.0);
-                        var cue = _activeSubtitleCues
-                            .Where(c => adjustedTime >= c.StartMs && adjustedTime <= c.EndMs)
-                            .OrderByDescending(c => c.StartMs)
-                            .FirstOrDefault();
+                        var cue = FindSubtitleCue(adjustedTime);
 
                         if (cue != null)
                         {
-                            CurrentSubtitleText = cue.Text;
-                            HasSubtitleText = true;
+                            if (CurrentSubtitleText != cue.Text)
+                            {
+                                CurrentSubtitleText = cue.Text;
+                            }
+                            if (!HasSubtitleText)
+                            {
+                                HasSubtitleText = true;
+                            }
                         }
                         else
                         {
-                            CurrentSubtitleText = string.Empty;
-                            HasSubtitleText = false;
+                            if (HasSubtitleText)
+                            {
+                                CurrentSubtitleText = string.Empty;
+                                HasSubtitleText = false;
+                            }
                         }
                     }
                     else
                     {
-                        HasSubtitleText = false;
+                        if (HasSubtitleText)
+                        {
+                            HasSubtitleText = false;
+                            CurrentSubtitleText = string.Empty;
+                        }
                     }
 
                     // Check initial resume from last position
@@ -1254,8 +1336,11 @@ namespace MovieManagerDesktop.ViewModels
                         _pendingResumeSeconds = 0;
                     }
 
-                    Progress = (double)CurrentTimeMs / TotalDurationMs;
-                    CurrentTimeFormatted = FormatTime(CurrentTimeMs);
+                    if (!_isUserSeeking && DateTime.UtcNow > _seekDebounceUntil)
+                    {
+                        Progress = (double)CurrentTimeMs / TotalDurationMs;
+                        CurrentTimeFormatted = FormatTime(CurrentTimeMs);
+                    }
                     TotalDurationFormatted = FormatTime(TotalDurationMs);
 
                     // A-B Repeat Loop Check
@@ -1500,13 +1585,9 @@ namespace MovieManagerDesktop.ViewModels
             long length = _mediaPlayer.Length > 0 ? _mediaPlayer.Length : TotalDurationMs;
             if (length <= 0) return;
 
+            // 🎯 زنجیره از آخرین هدف قصدشده (نه زمان VLC که عقب است)
             long baseTime;
-            if (_pendingSeekTargetMs >= 0)
-            {
-                // 🎯 پرش قبلی هنوز در VLC تسویه نشده؛ از هدف قبلی زنجیره کن، نه از زمان قدیمی
-                baseTime = _targetSeekMs;
-            }
-            else if ((DateTime.UtcNow - _lastSeekTime).TotalMilliseconds < 500 && _targetSeekMs >= 0)
+            if (_targetSeekMs >= 0 && (DateTime.UtcNow - _lastSeekTime).TotalMilliseconds < 3000)
             {
                 baseTime = _targetSeekMs;
             }
@@ -1517,42 +1598,61 @@ namespace MovieManagerDesktop.ViewModels
 
             _targetSeekMs = Math.Clamp(baseTime + (seconds * 1000L), 0, Math.Max(0, length - 1000L));
             _lastSeekTime = DateTime.UtcNow;
-            _pendingSeekTargetMs = _targetSeekMs;
 
-            // 🎯 فقط یک دستور Seek (حذف Position اضافه)
-            _mediaPlayer.Time = _targetSeekMs;
-
+            // 🎯 UI فوراً بروزرسانی شود (پیشنمایش فوری)
             CurrentTimeMs = _targetSeekMs;
-            _seekDebounceUntil = DateTime.UtcNow.AddMilliseconds(500);
-
             Progress = (double)_targetSeekMs / length;
             CurrentTimeFormatted = FormatTime(_targetSeekMs);
             string sign = seconds > 0 ? "+" : "";
             ShowOsdNotification($"⏱ پرش: {sign}{seconds}s ➔ {CurrentTimeFormatted}");
+
+            IssueSeek();
         }
 
-        public void SeekTo(double newProgress)
+        /// <summary>
+        /// 🎯 ارسال کنترلشده Seek به libvlc — اگر Seek در حال انجام باشد، هدف صف میشود
+        /// </summary>
+        private void IssueSeek()
+        {
+            if (_mediaPlayer == null || _targetSeekMs < 0) return;
+
+            if (_seekInFlight)
+            {
+                // 🎯 Seek قبلی هنوز تسویه نشده؛ هدف جدید را صف کن (هرگز گم نمیشود)
+                _queuedSeekTargetMs = _targetSeekMs;
+            }
+            else
+            {
+                _seekInFlight = true;
+                _queuedSeekTargetMs = -1;
+                _lastSeekIssueTime = DateTime.UtcNow;
+                _vlcTimeAtSeekIssue = _mediaPlayer.Time;
+                _seekDebounceUntil = DateTime.UtcNow.AddMilliseconds(150);
+                _mediaPlayer.Time = _targetSeekMs;
+            }
+        }
+
+        public void SeekTo(double newProgress, bool isFinal = false)
         {
             if (_mediaPlayer == null) return;
             long length = _mediaPlayer.Length > 0 ? _mediaPlayer.Length : TotalDurationMs;
             if (length <= 0) return;
-
             newProgress = Math.Clamp(newProgress, 0.0, 1.0);
-            long targetTime = (long)(newProgress * length);
-            _targetSeekMs = targetTime;
-            _pendingSeekTargetMs = targetTime;
+
+            _targetSeekMs = (long)(newProgress * length);
             _lastSeekTime = DateTime.UtcNow;
-
-            _mediaPlayer.Time = targetTime;
-            CurrentTimeMs = targetTime;
-            _seekDebounceUntil = DateTime.UtcNow.AddMilliseconds(350);
-
+            CurrentTimeMs = _targetSeekMs;
             Progress = newProgress;
-            CurrentTimeFormatted = FormatTime(targetTime);
+            CurrentTimeFormatted = FormatTime(_targetSeekMs);
+            IssueSeek();
         }
 
         public void StartSeek() => _isUserSeeking = true;
-        public void EndSeek() => _isUserSeeking = false;
+        public void EndSeek()
+        {
+            _isUserSeeking = false;
+            IssueSeek();  // 🎯 استفاده از IssueSeek به جای set_time مستقیم
+        }
 
         [RelayCommand]
         public void IncreaseSpeed()

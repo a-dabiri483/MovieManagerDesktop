@@ -117,18 +117,29 @@ namespace MovieManagerDesktop.Services
             public List<TvSeason> TvSeasons { get; set; } = new();
             public List<TvEpisode> TvEpisodes { get; set; } = new();
             public SettingsModel Settings { get; set; } = new();
+            public string BackupVersion { get; set; } = "2.0";
+            public DateTime CreatedAt { get; set; } = DateTime.Now;
         }
 
-        private static async Task<string> GenerateBackupJsonAsync(SettingsModel settings)
+        public static async Task<string> GenerateBackupJsonAsync(SettingsModel? settings = null)
         {
+            settings ??= SettingsManager.LoadSettings();
             using var db = new AppDbContext();
+            var videoFiles = await db.VideoFiles.AsNoTracking().ToListAsync();
+            var tvSeasons = await db.TvSeasons.AsNoTracking().ToListAsync();
+            var tvEpisodes = await db.TvEpisodes.AsNoTracking().ToListAsync();
+
+            LoggerService.Info($"[Backup] 💾 Collecting records: {videoFiles.Count} media items, {tvSeasons.Count} seasons, {tvEpisodes.Count} episodes.");
+
             var backupModel = new FullBackupModel
             {
-                VideoFiles = await db.VideoFiles.ToListAsync(),
-                TvSeasons = await db.TvSeasons.ToListAsync(),
-                TvEpisodes = await db.TvEpisodes.ToListAsync(),
-                Settings = settings
+                VideoFiles = videoFiles,
+                TvSeasons = tvSeasons,
+                TvEpisodes = tvEpisodes,
+                Settings = settings,
+                CreatedAt = DateTime.Now
             };
+
             return JsonSerializer.Serialize(backupModel, new JsonSerializerOptions { WriteIndented = true });
         }
 
@@ -211,23 +222,54 @@ namespace MovieManagerDesktop.Services
             return Directory.Exists(TokenStorePath) && Directory.GetFiles(TokenStorePath).Length > 0;
         }
 
-        private static async Task<DriveService> GetDriveServiceAsync()
+        private const string DefaultCredentialsBase64 = "eyJpbnN0YWxsZWQiOnsiY2xpZW50X2lkIjoiMTAyMzA5NTI4Njg1Ny1sYzF0YTVmajVyb2UyaTEybnBzODJrNGowcDk4bjdhMi5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsInByb2plY3RfaWQiOiJtb3ZpZW1hbmFnZXJiYWNrdXAiLCJhdXRoX3VyaSI6Imh0dHBzOi8vYWNjb3VudHMuZ29vZ2xlLmNvbS9vL29hdXRoMi9hdXRoIiwidG9rZW5fdXJpIjoiaHR0cHM6Ly9vYXV0aDIuZ29vZ2xlYXBpcy5jb20vdG9rZW4iLCJhdXRoX3Byb3ZpZGVyX3g1MDlfY2VydF91cmwiOiJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9vYXV0aDIvdjEvY2VydHMiLCJjbGllbnRfc2VjcmV0IjoiR09DU1BYLThwTk1JLWVtLU9jYjdDUFJueXM0MFRGMkowT0ciLCJyZWRpcmVjdF91cmlzIjpbImh0dHA6Ly9sb2NhbGhvc3QiXX19";
+
+        private static Stream GetCredentialsStream()
         {
-            if (!System.IO.File.Exists(CredentialsFile))
+            // 1. Check App base directory
+            string basePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, CredentialsFile);
+            if (System.IO.File.Exists(basePath))
             {
-                throw new FileNotFoundException($"برای ارتباط با گوگل درایو فایل {CredentialsFile} نیاز است. لطفاً آن را در پوشه اصلی برنامه قرار دهید.");
+                return new System.IO.FileStream(basePath, FileMode.Open, FileAccess.Read);
             }
 
-            UserCredential credential;
-            using (var stream = new FileStream(CredentialsFile, FileMode.Open, FileAccess.Read))
+            // 2. Check current working directory
+            if (System.IO.File.Exists(CredentialsFile))
             {
-                credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
-                    GoogleClientSecrets.FromStream(stream).Secrets,
-                    Scopes,
-                    "user",
-                    CancellationToken.None,
-                    new FileDataStore(TokenStorePath, true));
+                return new System.IO.FileStream(CredentialsFile, FileMode.Open, FileAccess.Read);
             }
+
+            // 3. Check AppData folder
+            string appDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "MovieManager", CredentialsFile);
+            if (System.IO.File.Exists(appDataPath))
+            {
+                return new System.IO.FileStream(appDataPath, FileMode.Open, FileAccess.Read);
+            }
+
+            // 4. Try WPF Application Resource
+            try
+            {
+                var sri = System.Windows.Application.GetResourceStream(new Uri("pack://application:,,,/credentials.json", UriKind.RelativeOrAbsolute));
+                if (sri != null && sri.Stream != null)
+                {
+                    return sri.Stream;
+                }
+            }
+            catch { }
+
+            // 5. Fallback to embedded default JSON bytes
+            return new MemoryStream(Convert.FromBase64String(DefaultCredentialsBase64));
+        }
+
+        private static async Task<DriveService> GetDriveServiceAsync()
+        {
+            using var stream = GetCredentialsStream();
+            var credential = await GoogleWebAuthorizationBroker.AuthorizeAsync(
+                GoogleClientSecrets.FromStream(stream).Secrets,
+                Scopes,
+                "user",
+                CancellationToken.None,
+                new FileDataStore(TokenStorePath, true));
 
             return new DriveService(new BaseClientService.Initializer()
             {
@@ -238,11 +280,14 @@ namespace MovieManagerDesktop.Services
 
         public static async Task ConnectToGoogleDriveAsync()
         {
+            LoggerService.Info("[Cloud] 🔑 Connecting to Google Drive OAuth...");
             await GetDriveServiceAsync();
+            LoggerService.Info("[Cloud] ✔ Google Drive authorization successful.");
         }
 
         public static async Task RunGoogleDriveBackupAsync(string filePath, IProgress<double> progress = null, IProgress<string> textProgress = null)
         {
+            LoggerService.Info($"[Cloud] ☁️ Preparing backup upload to Google Drive: {Path.GetFileName(filePath)}");
             if (textProgress != null) textProgress.Report("در حال برقراری ارتباط با گوگل درایو...");
             var service = await GetDriveServiceAsync();
 
@@ -297,6 +342,7 @@ namespace MovieManagerDesktop.Services
                 
                 if (response.Status == Google.Apis.Upload.UploadStatus.Completed)
                 {
+                    LoggerService.Info($"[Cloud] ✔ Google Drive backup uploaded successfully: {Path.GetFileName(filePath)} ({fileLength / 1024f:F1} KB)");
                     if (progress != null) progress.Report(100.0);
                     if (textProgress != null) textProgress.Report("آپلود تکمیل شد.");
                 }

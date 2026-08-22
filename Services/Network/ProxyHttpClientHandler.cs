@@ -94,63 +94,92 @@ namespace MovieManagerDesktop.Services.Network
         }
 
         /// <summary>
-        /// Detects if VPN or System Proxy / TUN interface is active on Windows.
+        /// Accurately detects if a real VPN, WireGuard, TUN/TAP, or System Proxy is actively connected on Windows.
+        /// Ignores disconnected virtual NICs, filter drivers, and packet schedulers.
         /// </summary>
-        public static bool IsVpnActive()
+        public static bool IsVpnActive(out string vpnDescription)
         {
+            vpnDescription = string.Empty;
             try
             {
-                // 1. Check system web proxy (used by Clash, v2rayN, Sing-box, Nekoray, etc.)
-                var defaultProxy = WebRequest.DefaultWebProxy;
-                if (defaultProxy != null)
+                // 1. Check Windows Registry for active System Proxy (used by Clash, v2rayN, Sing-box, Nekoray, etc.)
+                try
                 {
-                    var testUri = new Uri("https://api.themoviedb.org");
-                    var proxyUri = defaultProxy.GetProxy(testUri);
-                    if (proxyUri != null && proxyUri != testUri)
+                    using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Internet Settings");
+                    if (key != null)
                     {
-                        return true;
+                        var proxyEnable = key.GetValue("ProxyEnable");
+                        if (proxyEnable is int pe && pe == 1)
+                        {
+                            var proxyServer = key.GetValue("ProxyServer") as string;
+                            if (!string.IsNullOrWhiteSpace(proxyServer))
+                            {
+                                vpnDescription = $"System Proxy ({proxyServer})";
+                                return true;
+                            }
+                        }
                     }
                 }
+                catch { }
 
-                // 2. Check active network adapters for VPN, Tunnel, or TAP/TUN adapters
+                // 2. Check active network adapters that are UP and have a valid IP assignment
                 var interfaces = NetworkInterface.GetAllNetworkInterfaces();
                 foreach (var ni in interfaces)
                 {
                     if (ni.OperationalStatus != OperationalStatus.Up)
                         continue;
 
-                    if (ni.NetworkInterfaceType == NetworkInterfaceType.Ppp ||
-                        ni.NetworkInterfaceType == NetworkInterfaceType.Tunnel)
+                    string name = ni.Name.ToLowerInvariant();
+                    string desc = ni.Description.ToLowerInvariant();
+
+                    // Exclude lightweight filter drivers, packet schedulers, loopback, virtual switches
+                    if (desc.Contains("filter") || desc.Contains("scheduler") || desc.Contains("lightweight") ||
+                        desc.Contains("hyper-v") || desc.Contains("loopback") || desc.Contains("miniport") ||
+                        name.Contains("filter") || name.Contains("loopback") || name.Contains("vswitch") ||
+                        desc.Contains("kernel debug") || desc.Contains("direct virtual adapter"))
                     {
+                        continue;
+                    }
+
+                    // Check if this interface has at least one valid IPv4 address (not 127.0.0.1 or 169.254.x.x APIPA)
+                    var ipProps = ni.GetIPProperties();
+                    bool hasValidIp = false;
+                    foreach (var unicast in ipProps.UnicastAddresses)
+                    {
+                        if (unicast.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                        {
+                            string ip = unicast.Address.ToString();
+                            if (!ip.StartsWith("127.") && !ip.StartsWith("169.254."))
+                            {
+                                hasValidIp = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!hasValidIp)
+                        continue;
+
+                    // If it is a PPP connection (IKEv2, SSTP, L2TP, PPTP) that is UP with a valid IP
+                    if (ni.NetworkInterfaceType == NetworkInterfaceType.Ppp)
+                    {
+                        vpnDescription = $"{ni.Name} (PPP)";
                         return true;
                     }
 
-                    string desc = (ni.Description + " " + ni.Name).ToLowerInvariant();
-                    if (desc.Contains("vpn") ||
-                        desc.Contains("wireguard") ||
-                        desc.Contains("wintun") ||
-                        desc.Contains("tap") ||
-                        desc.Contains("tun") ||
-                        desc.Contains("wiresock") ||
-                        desc.Contains("windscribe") ||
-                        desc.Contains("tunnelbear") ||
-                        desc.Contains("openvpn") ||
-                        desc.Contains("clash") ||
-                        desc.Contains("sing-box") ||
-                        desc.Contains("v2ray") ||
-                        desc.Contains("xray") ||
-                        desc.Contains("tailscale") ||
-                        desc.Contains("zerotier") ||
-                        desc.Contains("proton") ||
-                        desc.Contains("nord") ||
-                        desc.Contains("express") ||
-                        desc.Contains("hiddify") ||
-                        desc.Contains("nekoray") ||
-                        desc.Contains("shadowsocks") ||
-                        desc.Contains("anyconnect") ||
-                        desc.Contains("fortinet") ||
-                        desc.Contains("ikev2"))
+                    // Check specific VPN adapter names / hardware descriptions
+                    if (name.Contains("wireguard") || name.Contains("wintun") || name.Contains("windscribe") ||
+                        name.Contains("tunnelbear") || name.Contains("openvpn") || name.Contains("clash") ||
+                        name.Contains("sing-box") || name.Contains("v2ray") || name.Contains("xray") ||
+                        name.Contains("tailscale") || name.Contains("zerotier") || name.Contains("proton") ||
+                        name.Contains("nord") || name.Contains("expressvpn") || name.Contains("hiddify") ||
+                        name.Contains("nekoray") || name.Contains("shadowsocks") || name.Contains("anyconnect") ||
+                        name.Contains("fortinet") || name.Contains("vpn") ||
+                        desc.Contains("wireguard") || desc.Contains("wintun") || desc.Contains("tap-windows") ||
+                        desc.Contains("openvpn") || desc.Contains("windscribe") || desc.Contains("tunnelbear") ||
+                        desc.Contains("wintun userspace") || desc.Contains("vpn adapter"))
                     {
+                        vpnDescription = ni.Name;
                         return true;
                     }
                 }
@@ -162,6 +191,8 @@ namespace MovieManagerDesktop.Services.Network
 
             return false;
         }
+
+        public static bool IsVpnActive() => IsVpnActive(out _);
 
         private static string GetCacheKey(string host)
         {
@@ -252,7 +283,7 @@ namespace MovieManagerDesktop.Services.Network
                 return await base.SendAsync(request, cancellationToken);
             }
 
-            bool vpnActive = IsVpnActive();
+            bool vpnActive = IsVpnActive(out string vpnName);
             bool isPermanentlyBlockedInIran = cacheKey == "youtube" || cacheKey == "cinemanews";
 
             RouteDecision decision;
@@ -285,7 +316,8 @@ namespace MovieManagerDesktop.Services.Network
             if (!decision.UseProxy || vpnActive)
             {
                 // ── Step 1: Direct request with DoH & Anti-DPI ──
-                LoggerService.Info($"[Network] ➜ Direct DoH/Anti-DPI request {(vpnActive ? "[VPN Active]" : "")}: {safeUrl}");
+                string vpnTag = vpnActive ? $" [VPN: {vpnName}]" : "";
+                LoggerService.Info($"[Network] ➜ Direct DoH/Anti-DPI request{vpnTag}: {safeUrl}");
                 var sw = Stopwatch.StartNew();
                 try
                 {

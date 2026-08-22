@@ -32,6 +32,13 @@ namespace MovieManagerDesktop
         {
             InitializeComponent();
             
+            try
+            {
+                var iconUri = new Uri("pack://application:,,,/Assets/logo.png", UriKind.RelativeOrAbsolute);
+                this.Icon = System.Windows.Media.Imaging.BitmapFrame.Create(iconUri);
+            }
+            catch { }
+
             // Set window max height to working area height so it doesn't cover taskbar when maximized;
             this.SourceInitialized += MainWindow_SourceInitialized;
             this.Closing += MainWindow_Closing;
@@ -133,21 +140,35 @@ namespace MovieManagerDesktop
         {
             try
             {
-                var icoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "logo.ico");
-                if (!File.Exists(icoPath)) return;
-
                 var hwnd = new WindowInteropHelper(this).Handle;
                 if (hwnd == IntPtr.Zero) return;
 
-                // Let Windows pick the best size from multi-layer ICO (0,0 = default system size)
-                _hIconBig = LoadImage(IntPtr.Zero, icoPath, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE);
-                if (_hIconBig != IntPtr.Zero)
-                    SendMessage(hwnd, WM_SETICON, (IntPtr)ICON_BIG, _hIconBig);
+                var icoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "logo.ico");
+                if (File.Exists(icoPath))
+                {
+                    _hIconBig = LoadImage(IntPtr.Zero, icoPath, IMAGE_ICON, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE);
+                    if (_hIconBig != IntPtr.Zero)
+                        SendMessage(hwnd, WM_SETICON, (IntPtr)ICON_BIG, _hIconBig);
 
-                // Load small icon - let Windows pick from ICO
-                _hIconSmall = LoadImage(IntPtr.Zero, icoPath, IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
-                if (_hIconSmall != IntPtr.Zero)
-                    SendMessage(hwnd, WM_SETICON, (IntPtr)ICON_SMALL, _hIconSmall);
+                    _hIconSmall = LoadImage(IntPtr.Zero, icoPath, IMAGE_ICON, 16, 16, LR_LOADFROMFILE);
+                    if (_hIconSmall != IntPtr.Zero)
+                        SendMessage(hwnd, WM_SETICON, (IntPtr)ICON_SMALL, _hIconSmall);
+                }
+                else
+                {
+                    // Fallback: extract icon associated with the current executable
+                    var exePath = Environment.ProcessPath;
+                    if (!string.IsNullOrEmpty(exePath) && File.Exists(exePath))
+                    {
+                        using var sysIcon = System.Drawing.Icon.ExtractAssociatedIcon(exePath);
+                        if (sysIcon != null)
+                        {
+                            var hIcon = sysIcon.Handle;
+                            SendMessage(hwnd, WM_SETICON, (IntPtr)ICON_BIG, hIcon);
+                            SendMessage(hwnd, WM_SETICON, (IntPtr)ICON_SMALL, hIcon);
+                        }
+                    }
+                }
             }
             catch
             {

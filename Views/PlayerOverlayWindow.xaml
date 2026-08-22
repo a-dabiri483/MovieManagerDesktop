@@ -101,6 +101,34 @@
             </Setter>
         </Style>
 
+        <!-- Player Repeat Button Style for Smooth Continuous Seeking -->
+        <Style x:Key="PlayerIconRepeatBtn" TargetType="RepeatButton">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="#EEEEEE"/>
+            <Setter Property="Padding" Value="6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RepeatButton">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#30FFFFFF"/>
+                                <Setter Property="Foreground" Value="#00FFF0"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#5000ADB5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- Big Play Button Style -->
         <Style x:Key="BigPlayBtn" TargetType="Button">
             <Setter Property="Background" Value="#00ADB5"/>
@@ -345,10 +373,12 @@
                             <materialDesign:PackIcon Kind="SkipPrevious" Width="26" Height="26"/>
                         </Button>
 
-                        <!-- Seek -5s -->
-                        <Button Click="SeekBackward5s_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="۵ ثانیه عقب (←)" Margin="4,0">
+                        <!-- Seek -5s (Click or Hold to Continuously Seek) -->
+                        <RepeatButton Click="SeekBackward5s_Click" Style="{StaticResource PlayerIconRepeatBtn}" 
+                                      Delay="120" Interval="70"
+                                      ToolTip="۵ ثانیه عقب (← / نگه دارید برای حرکت ممتد)" Margin="4,0">
                             <materialDesign:PackIcon Kind="Rewind5" Width="26" Height="26"/>
-                        </Button>
+                        </RepeatButton>
 
                         <!-- Main Play / Pause Button -->
                         <Button Command="{Binding TogglePlayPauseCommand}" Style="{StaticResource BigPlayBtn}" ToolTip="پخش / توقف (Space)" Margin="10,0">
@@ -366,10 +396,12 @@
                             </materialDesign:PackIcon>
                         </Button>
 
-                        <!-- Seek +5s -->
-                        <Button Click="SeekForward5s_Click" Style="{StaticResource PlayerIconBtn}" ToolTip="۵ ثانیه جلو (→)" Margin="4,0">
+                        <!-- Seek +5s (Click or Hold to Continuously Seek) -->
+                        <RepeatButton Click="SeekForward5s_Click" Style="{StaticResource PlayerIconRepeatBtn}" 
+                                      Delay="120" Interval="70"
+                                      ToolTip="۵ ثانیه جلو (→ / نگه دارید برای حرکت ممتد)" Margin="4,0">
                             <materialDesign:PackIcon Kind="FastForward5" Width="26" Height="26"/>
-                        </Button>
+                        </RepeatButton>
 
                         <!-- Next File / Episode -->
                         <Button Command="{Binding PlayNextCommand}" Style="{StaticResource PlayerIconBtn}" ToolTip="قسمت/فایل بعدی (PgDn)" Margin="4,0">
