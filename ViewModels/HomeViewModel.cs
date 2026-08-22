@@ -62,6 +62,9 @@ namespace MovieManagerDesktop.ViewModels
         private VideoFile? _featuredVideoFile;
 
         [ObservableProperty]
+        private bool _hasFeaturedMedia = false;
+
+        [ObservableProperty]
         private bool _hasContinueWatching = false;
 
         public ObservableCollection<VideoFile> ContinueWatchingItems { get; } = new();
@@ -243,6 +246,7 @@ namespace MovieManagerDesktop.ViewModels
                 FeaturedGenres = featuredGenres;
                 FeaturedRating = featuredRating;
                 FeaturedMediaType = featuredMediaType;
+                HasFeaturedMedia = featuredCandidate != null && totalFilesCount > 0;
 
                 AverageRating = avgRating;
                 TotalFileSize = fileSize;

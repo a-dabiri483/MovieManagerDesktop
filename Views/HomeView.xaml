@@ -140,68 +140,141 @@
     </UserControl.Resources>
 
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-        <StackPanel Margin="32,16,32,100" MaxWidth="1150" HorizontalAlignment="Center">
+        <StackPanel Margin="28,16,28,100" HorizontalAlignment="Stretch">
 
             <!-- ================================================ -->
-            <!-- 1. HERO FEATURED CINEMA BANNER -->
+            <!-- 1. HERO FEATURED / WELCOME CINEMA BANNER -->
             <!-- ================================================ -->
-            <Border Height="380" CornerRadius="24" ClipToBounds="True" Margin="6,0,6,24" BorderBrush="#40EB3B5A" BorderThickness="1.5" Background="#15182E"
-                    RenderOptions.BitmapScalingMode="HighQuality"
-                    RenderOptions.EdgeMode="Aliased"
-                    SnapsToDevicePixels="True">
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="28" ShadowDepth="4" Opacity="0.55" Color="#000000"/>
-                </Border.Effect>
-                <Grid>
-                    <!-- Featured Movie Backdrop Image -->
-                    <Image Source="{Binding FeaturedBackdropUrl}" Stretch="UniformToFill" 
-                           RenderOptions.BitmapScalingMode="HighQuality"
-                           RenderOptions.EdgeMode="Aliased"
-                           SnapsToDevicePixels="True"/>
+            <Grid Margin="6,0,6,24">
+                <!-- 1.1 FEATURED MOVIE BANNER (When files exist) -->
+                <Border Height="380" CornerRadius="24" ClipToBounds="True" BorderBrush="#40EB3B5A" BorderThickness="1.5" Background="#15182E"
+                        RenderOptions.BitmapScalingMode="HighQuality"
+                        RenderOptions.EdgeMode="Aliased"
+                        SnapsToDevicePixels="True"
+                        Visibility="{Binding HasFeaturedMedia, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="28" ShadowDepth="4" Opacity="0.55" Color="#000000"/>
+                    </Border.Effect>
+                    <Grid>
+                        <!-- Featured Movie Backdrop Image -->
+                        <Image Source="{Binding FeaturedBackdropUrl}" Stretch="UniformToFill" 
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               RenderOptions.EdgeMode="Aliased"
+                               SnapsToDevicePixels="True"/>
 
-                    <!-- Dark Gradient Vignette Overlay -->
-                    <Border>
-                        <Border.Background>
-                            <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
-                                <GradientStop Color="#000A0B16" Offset="0"/>
-                                <GradientStop Color="#300A0B16" Offset="0.4"/>
-                                <GradientStop Color="#C00A0B16" Offset="0.75"/>
-                                <GradientStop Color="#FF0A0B16" Offset="1"/>
-                            </LinearGradientBrush>
-                        </Border.Background>
-                    </Border>
+                        <!-- Dark Gradient Vignette Overlay -->
+                        <Border>
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                    <GradientStop Color="#000A0B16" Offset="0"/>
+                                    <GradientStop Color="#300A0B16" Offset="0.4"/>
+                                    <GradientStop Color="#C00A0B16" Offset="0.75"/>
+                                    <GradientStop Color="#FF0A0B16" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
 
-                    <!-- Hero Content Area -->
-                    <Grid Margin="36,26" VerticalAlignment="Bottom">
-                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom">
-                            <!-- Title -->
-                            <TextBlock Text="{Binding FeaturedTitle}" Foreground="White" FontSize="30" FontWeight="Black" TextAlignment="Center" Margin="0,0,0,8">
+                        <!-- Hero Content Area -->
+                        <Grid Margin="36,26" VerticalAlignment="Bottom">
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Bottom">
+                                <!-- Title -->
+                                <TextBlock Text="{Binding FeaturedTitle}" Foreground="White" FontSize="30" FontWeight="Black" TextAlignment="Center" Margin="0,0,0,8">
+                                    <TextBlock.Effect>
+                                        <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.9" Color="Black"/>
+                                    </TextBlock.Effect>
+                                </TextBlock>
+
+                                <!-- Genre Line -->
+                                <TextBlock Text="{Binding FeaturedGenres}" Foreground="#E2E8F0" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,20">
+                                    <TextBlock.Effect>
+                                        <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.9" Color="Black"/>
+                                    </TextBlock.Effect>
+                                </TextBlock>
+
+                                <!-- Single Action Button (پخش -> ورود به صفحه جزییات) -->
+                                <Button Command="{Binding PlayFeaturedCommand}" Height="46" Padding="40,0" materialDesign:ButtonAssist.CornerRadius="16" Background="{DynamicResource PrimaryGradientBrush}" BorderThickness="0" Cursor="Hand" HorizontalAlignment="Center">
+                                    <Button.Effect>
+                                        <DropShadowEffect Color="#EB3B5A" BlurRadius="20" ShadowDepth="0" Opacity="0.75"/>
+                                    </Button.Effect>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="پخش" Foreground="White" FontSize="15.5" FontWeight="Black" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                        <materialDesign:PackIcon Kind="Play" Width="22" Height="22" Foreground="White" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- 1.2 ONBOARDING WELCOME CARD (When library is empty on first run) -->
+                <Border Height="320" CornerRadius="24" ClipToBounds="True" BorderBrush="#35EB3B5A" BorderThickness="1.5">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasFeaturedMedia}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#1A1C36" Offset="0"/>
+                            <GradientStop Color="#0D1022" Offset="0.5"/>
+                            <GradientStop Color="#16122B" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="30" ShadowDepth="4" Opacity="0.6" Color="#000000"/>
+                    </Border.Effect>
+                    <Grid>
+                        <!-- Ambient Glow Circles -->
+                        <Ellipse Width="380" Height="220" Fill="#1AEB3B5A" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-50,-50,0">
+                            <Ellipse.Effect>
+                                <BlurEffect Radius="80"/>
+                            </Ellipse.Effect>
+                        </Ellipse>
+                        <Ellipse Width="320" Height="200" Fill="#188854D0" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="-40,0,0,-40">
+                            <Ellipse.Effect>
+                                <BlurEffect Radius="70"/>
+                            </Ellipse.Effect>
+                        </Ellipse>
+
+                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="30">
+                            <!-- Glowing Icon Badge -->
+                            <Border Width="64" Height="64" CornerRadius="32" Background="#20EB3B5A" BorderBrush="#60EB3B5A" BorderThickness="1.5" Margin="0,0,0,14" HorizontalAlignment="Center">
+                                <Border.Effect>
+                                    <DropShadowEffect Color="#EB3B5A" BlurRadius="20" ShadowDepth="0" Opacity="0.55"/>
+                                </Border.Effect>
+                                <materialDesign:PackIcon Kind="MovieFilterOutline" Width="32" Height="32" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+
+                            <!-- Welcome Headline -->
+                            <TextBlock Text="به مدیریت فیلم و سریال خوش آمدید" Foreground="White" FontSize="24" FontWeight="Black" TextAlignment="Center" Margin="0,0,0,8">
                                 <TextBlock.Effect>
-                                    <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.9" Color="Black"/>
+                                    <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.8" Color="Black"/>
                                 </TextBlock.Effect>
                             </TextBlock>
 
-                            <!-- Genre Line -->
-                            <TextBlock Text="{Binding FeaturedGenres}" Foreground="#E2E8F0" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,0,0,20">
-                                <TextBlock.Effect>
-                                    <DropShadowEffect BlurRadius="8" ShadowDepth="1" Opacity="0.9" Color="Black"/>
-                                </TextBlock.Effect>
-                            </TextBlock>
+                            <!-- Subtitle / Guide -->
+                            <TextBlock Text="هنوز ویدیویی در کتابخانه شما ثبت نشده است. برای سازماندهی و شناسایی خودکار پوسترها و اطلاعات، کافیست پوشه فیلم‌های خود را اسکن کنید." 
+                                       Foreground="#CBD5E1" FontSize="13.5" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="650" Margin="0,0,0,20"/>
 
-                            <!-- Single Action Button (پخش -> ورود به صفحه جزییات) -->
-                            <Button Command="{Binding PlayFeaturedCommand}" Height="46" Padding="40,0" materialDesign:ButtonAssist.CornerRadius="16" Background="{DynamicResource PrimaryGradientBrush}" BorderThickness="0" Cursor="Hand" HorizontalAlignment="Center">
+                            <!-- CTA Start Scan Button -->
+                            <Button Command="{Binding GoToScanCommand}" Height="46" Padding="34,0" materialDesign:ButtonAssist.CornerRadius="16" Background="{DynamicResource PrimaryGradientBrush}" BorderThickness="0" Cursor="Hand" HorizontalAlignment="Center">
                                 <Button.Effect>
                                     <DropShadowEffect Color="#EB3B5A" BlurRadius="20" ShadowDepth="0" Opacity="0.75"/>
                                 </Button.Effect>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <TextBlock Text="پخش" Foreground="White" FontSize="15.5" FontWeight="Black" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                                    <materialDesign:PackIcon Kind="Play" Width="22" Height="22" Foreground="White" VerticalAlignment="Center"/>
+                                    <materialDesign:PackIcon Kind="Magnify" Width="20" Height="20" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="شروع اسکن حافظه" Foreground="White" FontSize="15" FontWeight="Black" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>
                     </Grid>
-                </Grid>
-            </Border>
+                </Border>
+            </Grid>
 
             <!-- ================================================ -->
             <!-- 2. CONTINUE WATCHING SECTION (ادامه تماشا 🍿) -->
