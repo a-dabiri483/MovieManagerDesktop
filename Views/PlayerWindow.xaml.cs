@@ -33,9 +33,9 @@ namespace MovieManagerDesktop.Views
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            if (ViewModel?.MediaPlayer != null)
+            if (ViewModel?.Player != null)
             {
-                VlcVideoView.MediaPlayer = ViewModel.MediaPlayer;
+                FlyleafVideoView.Player = ViewModel.Player;
             }
 
             if (ViewModel != null)

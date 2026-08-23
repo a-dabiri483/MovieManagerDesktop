@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
+             xmlns:fl="clr-namespace:FlyleafLib.Controls.WPF;assembly=FlyleafLib.Controls.WPF"
              xmlns:converters="clr-namespace:MovieManagerDesktop.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="800" d:DesignWidth="1200"
@@ -88,12 +88,15 @@
     </UserControl.Resources>
 
     <Grid Background="Black" ClipToBounds="True">
-        <!-- ── 1. Video Surface (LibVLCSharp VideoView) ── -->
-        <vlc:VideoView x:Name="VlcVideoView" 
-                       Background="Black"
-                       MouseLeftButtonDown="VlcVideoView_MouseLeftButtonDown"
-                       MouseDoubleClick="VlcVideoView_MouseDoubleClick"
-                       MouseWheel="VlcVideoView_MouseWheel"/>
+        <!-- ── 1. Video Surface (Flyleaf Direct3D 11 Video Surface) ── -->
+        <fl:FlyleafME x:Name="FlyleafVideoView" 
+                      Player="{Binding Player}"
+                      Background="Black"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      MouseLeftButtonDown="FlyleafVideoView_MouseLeftButtonDown"
+                      MouseDoubleClick="FlyleafVideoView_MouseDoubleClick"
+                      MouseWheel="FlyleafVideoView_MouseWheel"/>
 
         <!-- ── 2. Top Bar (Title & Quick Tools) ── -->
         <Border VerticalAlignment="Top" HorizontalAlignment="Stretch"

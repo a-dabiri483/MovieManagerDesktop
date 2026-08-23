@@ -14,8 +14,8 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
-using LibVLCSharp.Shared;
-using MediaPlayer = LibVLCSharp.Shared.MediaPlayer;
+using FlyleafLib;
+using FlyleafLib.MediaPlayer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;
 using MovieManagerDesktop.Data;
@@ -44,8 +44,8 @@ namespace MovieManagerDesktop.ViewModels
 
     public partial class PlayerViewModel : ObservableObject, IDisposable
     {
-        private LibVLC? _libVLC;
-        private MediaPlayer? _mediaPlayer;
+        private Player? _flyleafPlayer;
+        public Player? Player => _flyleafPlayer;
         private readonly DispatcherTimer _uiTimer;
         private readonly DispatcherTimer _mouseIdleTimer;
         private readonly DispatcherTimer _osdTimer;
@@ -440,8 +440,6 @@ namespace MovieManagerDesktop.ViewModels
         private string? _lastActiveSubtitlePath = null;
         private List<SubtitleCue> _activeSubtitleCues = new();
 
-        public MediaPlayer? MediaPlayer => _mediaPlayer;
-
         public PlayerViewModel(VideoFile media, List<VideoFile>? playlist = null, int initialIndex = 0, bool autoPlay = true)
         {
             _currentMedia = media;
@@ -475,7 +473,7 @@ namespace MovieManagerDesktop.ViewModels
                 LoadSeriesPlaylistAsync(media);
             }
 
-            InitLibVLC();
+            InitFlyleaf();
 
             _uiTimer = new DispatcherTimer
             {
@@ -595,56 +593,54 @@ namespace MovieManagerDesktop.ViewModels
             }
         }
 
-        private void InitLibVLC()
+        [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+        private static extern bool SetDllDirectory(string lpPathName);
+
+        private void InitFlyleaf()
         {
             try
             {
-                Core.Initialize();
-                var settings = SettingsManager.LoadSettings();
+                string ffmpegPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FFmpeg");
+                SetDllDirectory(ffmpegPath);
 
-                var vlcArgs = new List<string>
+                if (!FlyleafLib.Engine.IsLoaded)
                 {
-                    "--avcodec-hw=d3d11va,dxva2,any", 
-                    "--directx-hw-yuv", 
-                    "--no-sub-autodetect-file",
-                    "--no-video-title-show",
-                    "--input-fast-seek",
-                    "--no-drop-late-frames",
-                    "--no-skip-frames",
-                    "--file-caching=150",
-                    "--network-caching=300",
-                    "--clock-jitter=0",
-                    "--clock-synchro=0",
-                    "--avcodec-threads=0",
-                    "--avcodec-fast",
-                    "--avcodec-skiploopfilter=4",
-                    "--no-audio-time-stretch",
-                    "--sub-track=-1",
-                    "--no-spu",
-                    "--no-osd",
-                    "--no-spdif",
-                    "--aout=mmdevice",
-                    "--audio-resampler=any",
-                    "--demux=avformat,any"
-                };
+                    FlyleafLib.Engine.Start(new FlyleafLib.EngineConfig()
+                    {
+                        FFmpegPath = ffmpegPath,
+                        UIRefreshInterval = 15
+                    });
+                }
 
-                _libVLC = new LibVLC(enableDebugLogs: false, vlcArgs.ToArray());
+                var config = new FlyleafLib.Config();
+                config.Player.SeekAccurate = false; // Fast Keyframe seek like PotPlayer
 
-                _mediaPlayer = new MediaPlayer(_libVLC)
+                _flyleafPlayer = new FlyleafLib.MediaPlayer.Player(config);
+                _flyleafPlayer.PlaybackStopped += (s, e) => Application.Current?.Dispatcher?.Invoke(OnMediaEnded);
+                _flyleafPlayer.OpenCompleted += (s, e) => Application.Current?.Dispatcher?.Invoke(() =>
                 {
-                    EnableHardwareDecoding = true,
-                    EnableMouseInput = false,
-                    EnableKeyInput = false
-                };
-
-                _mediaPlayer.EndReached += MediaPlayer_EndReached;
-                _mediaPlayer.EncounteredError += MediaPlayer_EncounteredError;
+                    if (_flyleafPlayer?.Audio != null)
+                    {
+                        _flyleafPlayer.Audio.Volume = Volume;
+                        _flyleafPlayer.Audio.Mute = IsMuted;
+                    }
+                });
             }
             catch (Exception ex)
             {
-                LoggerService.Error("Failed to initialize LibVLC engine", ex);
+                LoggerService.Error("Failed to initialize Flyleaf engine", ex);
                 ToastService.Instance.ShowError($"خطا در راه‌اندازی هسته ویدیو: {ex.Message}");
             }
+        }
+
+        private void OnMediaEnded()
+        {
+            _hasMarkedWatched = true;
+            if (CurrentMedia != null)
+            {
+                SaveWatchProgressAsync(CurrentMedia, CurrentTimeMs / 1000L, 100.0);
+            }
+            PlayNext();
         }
 
         public bool HasOpenFlyout => ShowPlaylistDrawer || ShowBookmarksDrawer || ShowShortcutsHelp || 
@@ -950,7 +946,9 @@ namespace MovieManagerDesktop.ViewModels
 
         public void LoadMedia(VideoFile media)
         {
-            if (_libVLC == null || _mediaPlayer == null || string.IsNullOrWhiteSpace(media.FilePath)) return;
+            if (string.IsNullOrWhiteSpace(media.FilePath)) return;
+            if (_flyleafPlayer == null) InitFlyleaf();
+            if (_flyleafPlayer == null) return;
 
             CurrentMedia = media;
             MediaTitle = !string.IsNullOrEmpty(media.FormattedTitle) ? media.FormattedTitle : media.FileName;
@@ -976,9 +974,6 @@ namespace MovieManagerDesktop.ViewModels
             _repeatPointA = null;
             _repeatPointB = null;
             IsRepeatAbActive = false;
-            _targetSeekMs = -1;
-            _queuedSeekTargetMs = -1;
-            _seekInFlight = false;
             _lastActiveSubtitlePath = null;
 
             if (media.WatchProgressSeconds > 5 && media.WatchProgressPercent < 92)
@@ -992,15 +987,14 @@ namespace MovieManagerDesktop.ViewModels
 
             try
             {
-                var vlcMedia = new Media(_libVLC, media.FilePath, FromType.FromPath);
-                vlcMedia.AddOption(":no-sub-autodetect-file");
-                vlcMedia.AddOption(":spu=-1");
-                vlcMedia.AddOption(":file-caching=150");
-                _mediaPlayer.Media = vlcMedia;
-                _mediaPlayer.Play();
+                _flyleafPlayer.Open(media.FilePath);
+                _flyleafPlayer.Play();
                 IsPlaying = true;
-                _mediaPlayer.Volume = Volume;
-                _mediaPlayer.Mute = IsMuted;
+                if (_flyleafPlayer.Audio != null)
+                {
+                    _flyleafPlayer.Audio.Volume = Volume;
+                    _flyleafPlayer.Audio.Mute = IsMuted;
+                }
 
                 // Load subtitles from video directory automatically
                 LoadExternalSubtitlesFromFolder(media.FilePath);
@@ -1067,7 +1061,6 @@ namespace MovieManagerDesktop.ViewModels
                                 await Application.Current.Dispatcher.InvokeAsync(() =>
                                 {
                                     LoadSubtitleFileInternal(extractedPath);
-                                    _mediaPlayer?.SetSpu(-1);
                                     ShowOsdNotification($"💬 زیرنویس ({preferredTrack.DisplayName}) فعال شد");
                                 });
                             }
@@ -1169,13 +1162,11 @@ namespace MovieManagerDesktop.ViewModels
             try
             {
                 var subFiles = GetMatchingSubtitleFilesInFolder(videoPath);
-                _mediaPlayer?.SetSpu(-1);
 
                 if (subFiles.Count > 0)
                 {
                     var faSub = subFiles.FirstOrDefault(s => s.EndsWith(".fa.srt", StringComparison.OrdinalIgnoreCase) || s.EndsWith("_FA.srt", StringComparison.OrdinalIgnoreCase)) ?? subFiles[0];
                     LoadSubtitleFileInternal(faSub);
-                    _mediaPlayer?.SetSpu(-1);
                 }
             }
             catch { }
@@ -1236,55 +1227,25 @@ namespace MovieManagerDesktop.ViewModels
 
         private void UiTimer_Tick(object? sender, EventArgs e)
         {
-            if (_mediaPlayer == null) return;
+            if (_flyleafPlayer == null) return;
 
             try
             {
-                long vlcTime = _mediaPlayer.Time;
+                long curMs = _flyleafPlayer.CurTime / 10000;
+                long totalMs = _flyleafPlayer.Duration / 10000;
 
-                if (_seekInFlight)
+                if (!_isUserSeeking)
                 {
-                    // 🎯 آیا Seek قبلی تسویه شده؟
-                    // ۱. زمان VLC به محدوده هدف رسیده باشد
-                    // ۲. یا زمان VLC نسبت به زمان شروع Seek جابه‌جا شده باشد (نشان‌دهنده رندر فریم جدید)
-                    // ۳. یا سقف زمانی ۲۰۰ میلی‌ثانیه تمام شده باشد
-                    bool timeReachedTarget = vlcTime >= 0 && Math.Abs(vlcTime - _targetSeekMs) <= 1500;
-                    bool vlcFrameAdvanced = vlcTime >= 0 && _vlcTimeAtSeekIssue >= 0 && Math.Abs(vlcTime - _vlcTimeAtSeekIssue) > 800;
-                    bool issueTimeout = (DateTime.UtcNow - _lastSeekIssueTime).TotalMilliseconds > 200;
-
-                    bool settled = timeReachedTarget || vlcFrameAdvanced;
-
-                    if (settled || issueTimeout)
+                    CurrentTimeMs = curMs;
+                    TotalDurationMs = totalMs;
+                    if (totalMs > 0)
                     {
-                        if (_queuedSeekTargetMs >= 0 && _queuedSeekTargetMs != _targetSeekMs)
-                        {
-                            // 🎯 اعمال هدف صفشده (کلیکهایی که حین Seek قبلی آمده بودند)
-                            _targetSeekMs = _queuedSeekTargetMs;
-                            _queuedSeekTargetMs = -1;
-                            _lastSeekIssueTime = DateTime.UtcNow;
-                            _lastSeekTime = DateTime.UtcNow;
-                            _vlcTimeAtSeekIssue = vlcTime;
-                            _seekDebounceUntil = DateTime.UtcNow.AddMilliseconds(150);
-                            _mediaPlayer.Time = _targetSeekMs;
-                        }
-                        else
-                        {
-                            _queuedSeekTargetMs = -1;
-                            _seekInFlight = false;
-                        }
+                        Progress = (double)curMs / totalMs;
                     }
-                    // 🎯 تا قبل از تسویه، CurrentTimeMs را از VLC بازنویسی نکن!
+                    CurrentTimeFormatted = FormatTime(curMs);
+                    TotalDurationFormatted = FormatTime(totalMs);
+                    IsPlaying = _flyleafPlayer.IsPlaying;
                 }
-                else
-                {
-                    // 🎯 حالت عادی پخش: بروزرسانی زمان از VLC
-                    if (DateTime.UtcNow > _seekDebounceUntil && vlcTime >= 0)
-                    {
-                        CurrentTimeMs = vlcTime;
-                    }
-                }
-
-                TotalDurationMs = _mediaPlayer.Length;
 
                 if (TotalDurationMs > 0)
                 {
@@ -1329,26 +1290,19 @@ namespace MovieManagerDesktop.ViewModels
                         long resumeMs = _pendingResumeSeconds * 1000L;
                         if (resumeMs < TotalDurationMs)
                         {
-                            _mediaPlayer.Time = resumeMs;
+                            _flyleafPlayer.Seek((int)resumeMs);
                             CurrentTimeMs = resumeMs;
                             ShowOsdNotification($"▶ ادامه پخش از {FormatTime(resumeMs)}");
                         }
                         _pendingResumeSeconds = 0;
                     }
 
-                    if (!_isUserSeeking && DateTime.UtcNow > _seekDebounceUntil)
-                    {
-                        Progress = (double)CurrentTimeMs / TotalDurationMs;
-                        CurrentTimeFormatted = FormatTime(CurrentTimeMs);
-                    }
-                    TotalDurationFormatted = FormatTime(TotalDurationMs);
-
                     // A-B Repeat Loop Check
                     if (IsRepeatAbActive && _repeatPointA.HasValue && _repeatPointB.HasValue)
                     {
                         if (CurrentTimeMs >= _repeatPointB.Value)
                         {
-                            _mediaPlayer.Time = _repeatPointA.Value;
+                            _flyleafPlayer.Seek((int)_repeatPointA.Value);
                         }
                     }
 
@@ -1362,30 +1316,6 @@ namespace MovieManagerDesktop.ViewModels
                     {
                         _lastProgressSaveTime = DateTime.Now;
                         SaveWatchProgressAsync(CurrentMedia, CurrentTimeMs / 1000L, Progress * 100.0);
-                    }
-
-                    // Ensure audio track and volume are active
-                    if (_mediaPlayer.IsPlaying)
-                    {
-                        if (_mediaPlayer.Volume != Volume && !IsMuted)
-                        {
-                            _mediaPlayer.Volume = Volume;
-                        }
-                        if (_mediaPlayer.AudioTrack == -1 && _mediaPlayer.AudioTrackCount > 0)
-                        {
-                            var tracks = _mediaPlayer.AudioTrackDescription;
-                            if (tracks != null && tracks.Length > 0)
-                            {
-                                foreach (var t in tracks)
-                                {
-                                    if (t.Id > 0)
-                                    {
-                                        _mediaPlayer.SetAudioTrack(t.Id);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
                     }
                 }
             }
@@ -1523,20 +1453,10 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         public void TogglePlayPause()
         {
-            if (_mediaPlayer == null) return;
-
-            if (_mediaPlayer.IsPlaying)
-            {
-                _mediaPlayer.Pause();
-                IsPlaying = false;
-                ShowOsdNotification("⏸ توقف (Pause)");
-            }
-            else
-            {
-                _mediaPlayer.Play();
-                IsPlaying = true;
-                ShowOsdNotification("▶ پخش (Play)");
-            }
+            if (_flyleafPlayer == null) return;
+            _flyleafPlayer.TogglePlayPause();
+            IsPlaying = _flyleafPlayer.IsPlaying;
+            ShowOsdNotification(IsPlaying ? "▶ پخش (Play)" : "⏸ توقف (Pause)");
         }
 
         [RelayCommand]
@@ -1549,110 +1469,64 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         public void ToggleMute()
         {
-            if (_mediaPlayer == null) return;
             IsMuted = !IsMuted;
-            _mediaPlayer.Mute = IsMuted;
+            if (_flyleafPlayer?.Audio != null)
+            {
+                _flyleafPlayer.Audio.Mute = IsMuted;
+            }
             ShowOsdNotification(IsMuted ? "🔇 بی‌صدا (Mute)" : $"🔊 صدا: {Volume}%");
         }
 
         public void AdjustVolume(int delta)
         {
-            if (_mediaPlayer == null) return;
-            Volume = Math.Clamp(Volume + delta, 0, 200);
-            _mediaPlayer.Volume = Volume;
+            Volume = Math.Clamp(Volume + delta, 0, 100);
+            if (_flyleafPlayer?.Audio != null)
+            {
+                _flyleafPlayer.Audio.Volume = Volume;
+                _flyleafPlayer.Audio.Mute = false;
+            }
             IsMuted = false;
             ShowOsdNotification($"🔊 ولوم: {Volume}%");
         }
 
         public void EnforceDisableInternalSubtitles()
         {
-            try
-            {
-                if (_mediaPlayer != null)
-                {
-                    if (_mediaPlayer.Spu != -1)
-                    {
-                        _mediaPlayer.SetSpu(-1);
-                    }
-                }
-            }
-            catch { }
+            // Internal subtitles handled natively
         }
 
         public void SeekRelative(int seconds)
         {
-            if (_mediaPlayer == null) return;
-            long length = _mediaPlayer.Length > 0 ? _mediaPlayer.Length : TotalDurationMs;
+            if (_flyleafPlayer == null) return;
+            long length = _flyleafPlayer.Duration / 10000;
             if (length <= 0) return;
 
-            // 🎯 زنجیره از آخرین هدف قصدشده (نه زمان VLC که عقب است)
-            long baseTime;
-            if (_targetSeekMs >= 0 && (DateTime.UtcNow - _lastSeekTime).TotalMilliseconds < 3000)
-            {
-                baseTime = _targetSeekMs;
-            }
-            else
-            {
-                baseTime = CurrentTimeMs > 0 ? CurrentTimeMs : Math.Max(0, _mediaPlayer.Time);
-            }
-
-            _targetSeekMs = Math.Clamp(baseTime + (seconds * 1000L), 0, Math.Max(0, length - 1000L));
-            _lastSeekTime = DateTime.UtcNow;
-
-            // 🎯 UI فوراً بروزرسانی شود (پیشنمایش فوری)
-            CurrentTimeMs = _targetSeekMs;
-            Progress = (double)_targetSeekMs / length;
-            CurrentTimeFormatted = FormatTime(_targetSeekMs);
+            long targetTime = Math.Clamp(CurrentTimeMs + (seconds * 1000L), 0, Math.Max(0, length - 1000L));
+            CurrentTimeMs = targetTime;
+            Progress = (double)targetTime / length;
+            CurrentTimeFormatted = FormatTime(targetTime);
             string sign = seconds > 0 ? "+" : "";
             ShowOsdNotification($"⏱ پرش: {sign}{seconds}s ➔ {CurrentTimeFormatted}");
 
-            IssueSeek();
-        }
-
-        /// <summary>
-        /// 🎯 ارسال کنترلشده Seek به libvlc — اگر Seek در حال انجام باشد، هدف صف میشود
-        /// </summary>
-        private void IssueSeek()
-        {
-            if (_mediaPlayer == null || _targetSeekMs < 0) return;
-
-            if (_seekInFlight)
-            {
-                // 🎯 Seek قبلی هنوز تسویه نشده؛ هدف جدید را صف کن (هرگز گم نمیشود)
-                _queuedSeekTargetMs = _targetSeekMs;
-            }
-            else
-            {
-                _seekInFlight = true;
-                _queuedSeekTargetMs = -1;
-                _lastSeekIssueTime = DateTime.UtcNow;
-                _vlcTimeAtSeekIssue = _mediaPlayer.Time;
-                _seekDebounceUntil = DateTime.UtcNow.AddMilliseconds(150);
-                _mediaPlayer.Time = _targetSeekMs;
-            }
+            _flyleafPlayer.Seek((int)targetTime);
         }
 
         public void SeekTo(double newProgress, bool isFinal = false)
         {
-            if (_mediaPlayer == null) return;
-            long length = _mediaPlayer.Length > 0 ? _mediaPlayer.Length : TotalDurationMs;
+            if (_flyleafPlayer == null) return;
+            long length = _flyleafPlayer.Duration / 10000;
             if (length <= 0) return;
-            newProgress = Math.Clamp(newProgress, 0.0, 1.0);
 
-            _targetSeekMs = (long)(newProgress * length);
-            _lastSeekTime = DateTime.UtcNow;
-            CurrentTimeMs = _targetSeekMs;
+            newProgress = Math.Clamp(newProgress, 0.0, 1.0);
+            long targetTime = (long)(newProgress * length);
+            CurrentTimeMs = targetTime;
             Progress = newProgress;
-            CurrentTimeFormatted = FormatTime(_targetSeekMs);
-            IssueSeek();
+            CurrentTimeFormatted = FormatTime(targetTime);
+
+            _flyleafPlayer.Seek((int)targetTime);
         }
 
         public void StartSeek() => _isUserSeeking = true;
-        public void EndSeek()
-        {
-            _isUserSeeking = false;
-            IssueSeek();  // 🎯 استفاده از IssueSeek به جای set_time مستقیم
-        }
+        public void EndSeek() => _isUserSeeking = false;
 
         [RelayCommand]
         public void IncreaseSpeed()
@@ -1668,18 +1542,18 @@ namespace MovieManagerDesktop.ViewModels
 
         public void AdjustSpeed(float delta)
         {
-            if (_mediaPlayer == null) return;
+            if (_flyleafPlayer == null) return;
             PlaybackSpeed = Math.Clamp((float)Math.Round(PlaybackSpeed + delta, 2), 0.25f, 4.0f);
-            _mediaPlayer.SetRate(PlaybackSpeed);
+            _flyleafPlayer.Speed = PlaybackSpeed;
             ShowOsdNotification($"⚡ سرعت پخش: {PlaybackSpeed:0.00}x");
         }
 
         [RelayCommand]
         public void ResetSpeed()
         {
-            if (_mediaPlayer == null) return;
+            if (_flyleafPlayer == null) return;
             PlaybackSpeed = 1.0f;
-            _mediaPlayer.SetRate(1.0f);
+            _flyleafPlayer.Speed = 1.0f;
             ShowOsdNotification("⚡ سرعت: ۱.۰x (پیش‌فرض)");
             ShowSpeedPopup = false;
         }
@@ -1687,11 +1561,11 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         public void SetSpeed(object? param)
         {
-            if (param == null || _mediaPlayer == null) return;
+            if (param == null || _flyleafPlayer == null) return;
             if (double.TryParse(param.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double speed))
             {
                 PlaybackSpeed = (float)Math.Round(speed, 2);
-                _mediaPlayer.SetRate(PlaybackSpeed);
+                _flyleafPlayer.Speed = PlaybackSpeed;
                 ShowOsdNotification($"⚡ سرعت پخش: {PlaybackSpeed:0.00}x");
                 ShowSpeedPopup = false;
             }
@@ -1699,11 +1573,21 @@ namespace MovieManagerDesktop.ViewModels
 
         public void StepFrame(bool forward = true)
         {
-            if (_mediaPlayer == null) return;
-            if (IsPlaying) _mediaPlayer.Pause();
-            IsPlaying = false;
-            _mediaPlayer.NextFrame();
-            ShowOsdNotification("🎞 فریم بعدی");
+            if (_flyleafPlayer == null) return;
+            if (IsPlaying)
+            {
+                _flyleafPlayer.Pause();
+                IsPlaying = false;
+            }
+            if (forward)
+            {
+                _flyleafPlayer.ShowFrameNext();
+            }
+            else
+            {
+                _flyleafPlayer.ShowFramePrev();
+            }
+            ShowOsdNotification(forward ? "🎞 فریم بعدی" : "🎞 فریم قبلی");
         }
 
         public void SetRepeatPointA()
@@ -1741,62 +1625,59 @@ namespace MovieManagerDesktop.ViewModels
 
         public void AdjustBrightness(float delta)
         {
-            if (_mediaPlayer == null) return;
             Brightness = Math.Clamp(Brightness + delta, 0.0f, 2.0f);
-            _mediaPlayer.SetAdjustInt(VideoAdjustOption.Enable, 1);
-            _mediaPlayer.SetAdjustFloat(VideoAdjustOption.Brightness, Brightness);
             ShowOsdNotification($"☀️ روشنایی: {(int)(Brightness * 100)}%");
         }
 
         public void AdjustContrast(float delta)
         {
-            if (_mediaPlayer == null) return;
             Contrast = Math.Clamp(Contrast + delta, 0.0f, 2.0f);
-            _mediaPlayer.SetAdjustInt(VideoAdjustOption.Enable, 1);
-            _mediaPlayer.SetAdjustFloat(VideoAdjustOption.Contrast, Contrast);
             ShowOsdNotification($"🌓 کنتراست: {(int)(Contrast * 100)}%");
         }
 
         public void AdjustSaturation(float delta)
         {
-            if (_mediaPlayer == null) return;
             Saturation = Math.Clamp(Saturation + delta, 0.0f, 3.0f);
-            _mediaPlayer.SetAdjustInt(VideoAdjustOption.Enable, 1);
-            _mediaPlayer.SetAdjustFloat(VideoAdjustOption.Saturation, Saturation);
             ShowOsdNotification($"🎨 اشباع رنگ: {(int)(Saturation * 100)}%");
         }
 
         public void AdjustHue(float delta)
         {
-            if (_mediaPlayer == null) return;
             Hue = Math.Clamp(Hue + delta, -180f, 180f);
-            _mediaPlayer.SetAdjustInt(VideoAdjustOption.Enable, 1);
-            _mediaPlayer.SetAdjustFloat(VideoAdjustOption.Hue, Hue);
             ShowOsdNotification($"🌈 طیف رنگ: {(int)Hue}°");
         }
 
         public void ResetPictureAdjustments()
         {
-            if (_mediaPlayer == null) return;
             Brightness = 1.0f;
             Contrast = 1.0f;
             Saturation = 1.0f;
             Hue = 0.0f;
-            _mediaPlayer.SetAdjustInt(VideoAdjustOption.Enable, 0);
             ShowOsdNotification("🔄 تنظیمات تصویر به حالت پیش‌فرض بازگشت");
         }
 
         public void SetAspectRatio(string ratio)
         {
-            if (_mediaPlayer == null) return;
-            _mediaPlayer.AspectRatio = (ratio == "Original" || ratio == "Fill") ? null : ratio;
+            if (_flyleafPlayer?.Config?.Video == null) return;
+            if (ratio == "Original" || ratio == "Keep")
+            {
+                _flyleafPlayer.Config.Video.AspectRatio = AspectRatio.Keep;
+            }
+            else if (ratio == "Fill")
+            {
+                _flyleafPlayer.Config.Video.AspectRatio = AspectRatio.Fill;
+            }
+            else
+            {
+                _flyleafPlayer.Config.Video.AspectRatio = new AspectRatio(ratio);
+            }
             ShowOsdNotification($"📐 نسبت تصویر: {ratio}");
         }
 
         public void CycleAspectRatio()
         {
             string[] ratios = { "Original", "16:9", "4:3", "21:9", "1:1", "Fill" };
-            int currentIdx = Array.IndexOf(ratios, _mediaPlayer?.AspectRatio ?? "Original");
+            int currentIdx = 0;
             int nextIdx = (currentIdx + 1) % ratios.Length;
             SetAspectRatio(ratios[nextIdx]);
         }
@@ -1816,8 +1697,8 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         public void SeekToBookmark(BookmarkModel bm)
         {
-            if (bm == null || _mediaPlayer == null) return;
-            _mediaPlayer.Time = bm.TimeMs;
+            if (bm == null || _flyleafPlayer == null) return;
+            _flyleafPlayer.Seek((int)bm.TimeMs);
             CurrentTimeMs = bm.TimeMs;
             ShowOsdNotification($"🔖 پرش به نشانک: {bm.TimeFormatted}");
             ShowBookmarksDrawer = false;
@@ -1825,53 +1706,56 @@ namespace MovieManagerDesktop.ViewModels
 
         public void CycleAudioTrack()
         {
-            if (_mediaPlayer == null) return;
+            if (_flyleafPlayer?.Audio?.Streams == null || _flyleafPlayer.Audio.Streams.Count == 0) return;
             UpdateAudioTracksList();
             if (AudioTracks.Count == 0) return;
 
-            int currentTrack = _mediaPlayer.AudioTrack;
-            var currentItem = AudioTracks.FirstOrDefault(t => t.Id == currentTrack);
-            int idx = AudioTracks.IndexOf(currentItem ?? AudioTracks[0]);
-            int nextIdx = (idx + 1) % AudioTracks.Count;
+            int currentIdx = AudioTracks.ToList().FindIndex(t => t.IsSelected);
+            int nextIdx = (currentIdx + 1) % AudioTracks.Count;
             var nextTrack = AudioTracks[nextIdx];
 
-            _mediaPlayer.SetAudioTrack(nextTrack.Id);
+            var targetStream = _flyleafPlayer.Audio.Streams.FirstOrDefault(s => s.StreamIndex == nextTrack.Id);
+            if (targetStream != null)
+            {
+                _flyleafPlayer.OpenAsync(targetStream);
+            }
+            UpdateAudioTracksList();
             ShowOsdNotification($"🎵 ترک صدا: {nextTrack.Name}");
         }
 
         public void UpdateAudioTracksList()
         {
-            if (_mediaPlayer == null) return;
+            if (_flyleafPlayer?.Audio?.Streams == null) return;
             AudioTracks.Clear();
-            var tracks = _mediaPlayer.AudioTrackDescription;
-            if (tracks != null)
+            int currentStreamIndex = _flyleafPlayer.Audio.StreamIndex;
+            foreach (var s in _flyleafPlayer.Audio.Streams)
             {
-                int currentId = _mediaPlayer.AudioTrack;
-                foreach (var t in tracks)
+                string title = !string.IsNullOrEmpty(s.Title) ? s.Title : (!string.IsNullOrEmpty(s.Language?.TopEnglishName) ? s.Language.TopEnglishName : $"Track #{s.StreamIndex}");
+                AudioTracks.Add(new TrackItemModel
                 {
-                    AudioTracks.Add(new TrackItemModel
-                    {
-                        Id = t.Id,
-                        Name = string.IsNullOrEmpty(t.Name) ? $"Track #{t.Id}" : t.Name,
-                        IsSelected = t.Id == currentId
-                    });
-                }
+                    Id = s.StreamIndex,
+                    Name = title,
+                    IsSelected = s.StreamIndex == currentStreamIndex
+                });
             }
         }
 
         [RelayCommand]
         public void SelectAudioTrack(TrackItemModel track)
         {
-            if (track == null || _mediaPlayer == null) return;
-            _mediaPlayer.SetAudioTrack(track.Id);
+            if (track == null || _flyleafPlayer?.Audio?.Streams == null) return;
+            var targetStream = _flyleafPlayer.Audio.Streams.FirstOrDefault(s => s.StreamIndex == track.Id);
+            if (targetStream != null)
+            {
+                _flyleafPlayer.OpenAsync(targetStream);
+            }
+            UpdateAudioTracksList();
             ShowOsdNotification($"🎵 انتخاب صدا: {track.Name}");
             ShowAudioTracksPopup = false;
         }
 
         public async void CycleSubtitleTrack()
         {
-            if (_mediaPlayer == null) return;
-
             if (SubtitleTracks.Count <= 1)
             {
                 await UpdateSubtitleTracksListAsync();
@@ -1928,8 +1812,6 @@ namespace MovieManagerDesktop.ViewModels
 
         public async Task UpdateSubtitleTracksListAsync()
         {
-            if (_mediaPlayer == null) return;
-
             var newTracks = new List<TrackItemModel>();
 
             // 1. Off / None
@@ -1937,7 +1819,7 @@ namespace MovieManagerDesktop.ViewModels
             {
                 Id = -1,
                 Name = "غیرفعال (خاموش)",
-                IsSelected = _activeSubtitleCues.Count == 0 && _mediaPlayer.Spu == -1
+                IsSelected = _activeSubtitleCues.Count == 0
             });
 
             // 2. Embedded tracks probed via FFmpeg
@@ -2011,14 +1893,13 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         public async Task SelectSubtitleTrack(TrackItemModel track)
         {
-            if (track == null || _mediaPlayer == null) return;
+            if (track == null) return;
 
             if (track.Id == -1)
             {
                 _activeSubtitleCues.Clear();
                 CurrentSubtitleText = string.Empty;
                 HasSubtitleText = false;
-                _mediaPlayer.SetSpu(-1);
                 _loadedSubtitlePath = null;
                 foreach (var t in SubtitleTracks) t.IsSelected = (t.Id == -1);
                 ShowOsdNotification("💬 زیرنویس غیرفعال شد");
@@ -2033,7 +1914,6 @@ namespace MovieManagerDesktop.ViewModels
                 if (!string.IsNullOrEmpty(extracted))
                 {
                     LoadSubtitleFileInternal(extracted);
-                    _mediaPlayer.SetSpu(-1);
                     foreach (var t in SubtitleTracks) t.IsSelected = (t == track);
                     ShowOsdNotification($"✨ {track.Name} فعال شد");
                     ShowSubtitlesPopup = false;
@@ -2051,7 +1931,6 @@ namespace MovieManagerDesktop.ViewModels
             if (!string.IsNullOrEmpty(track.FilePath))
             {
                 LoadSubtitleFileInternal(track.FilePath);
-                _mediaPlayer.SetSpu(-1);
                 foreach (var t in SubtitleTracks) t.IsSelected = (t == track);
                 ShowOsdNotification($"💬 {track.Name} فعال شد");
                 ShowSubtitlesPopup = false;
@@ -2081,8 +1960,6 @@ namespace MovieManagerDesktop.ViewModels
             if (double.TryParse(deltaStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out double delta))
             {
                 SubtitleDelaySeconds = Math.Round(SubtitleDelaySeconds + delta, 2);
-                long delayMicroseconds = (long)(SubtitleDelaySeconds * 1_000_000);
-                _mediaPlayer?.SetSpuDelay(delayMicroseconds);
                 string sign = SubtitleDelaySeconds > 0 ? "+" : "";
                 ShowOsdNotification($"⏱ سینک زیرنویس: {sign}{SubtitleDelaySeconds:0.00}s");
             }
@@ -2092,7 +1969,6 @@ namespace MovieManagerDesktop.ViewModels
         public void ResetSubtitleDelay()
         {
             SubtitleDelaySeconds = 0.0;
-            _mediaPlayer?.SetSpuDelay(0);
             ShowOsdNotification("⏱ سینک زیرنویس: 0.0s (ریست)");
         }
 
@@ -2102,8 +1978,6 @@ namespace MovieManagerDesktop.ViewModels
             if (int.TryParse(deltaStr, out int delta))
             {
                 AudioDelayMilliseconds += delta;
-                long delayMicroseconds = (long)(AudioDelayMilliseconds * 1_000);
-                _mediaPlayer?.SetAudioDelay(delayMicroseconds);
                 string sign = AudioDelayMilliseconds > 0 ? "+" : "";
                 ShowOsdNotification($"🎵 سینک صدا: {sign}{AudioDelayMilliseconds}ms");
             }
@@ -2113,7 +1987,6 @@ namespace MovieManagerDesktop.ViewModels
         public void ResetAudioDelay()
         {
             AudioDelayMilliseconds = 0;
-            _mediaPlayer?.SetAudioDelay(0);
             ShowOsdNotification("🎵 سینک صدا: 0ms (ریست)");
         }
 
@@ -2302,7 +2175,6 @@ namespace MovieManagerDesktop.ViewModels
                 if (success && !string.IsNullOrEmpty(outputPath))
                 {
                     LoadSubtitleFileInternal(outputPath);
-                    _mediaPlayer?.SetSpu(-1);
                     await UpdateSubtitleTracksListAsync();
                     ShowOsdNotification("✅ زیرنویس فارسی ترجمه و بارگذاری شد");
                     ToastService.Instance.ShowSuccess("زیرنویس با موفقیت به فارسی ترجمه و بارگذاری شد.");
@@ -2369,7 +2241,6 @@ namespace MovieManagerDesktop.ViewModels
             {
                 string fixedPath = SubtitleTranslatorService.FixSubtitleEncoding(subPath);
                 LoadSubtitleFileInternal(fixedPath);
-                _mediaPlayer?.SetSpu(-1);
                 _ = UpdateSubtitleTracksListAsync();
                 ShowOsdNotification("✅ انکودینگ زیرنویس به UTF-8 استاندارد تبدیل شد");
                 ToastService.Instance.ShowSuccess("انکودینگ زیرنویس با موفقیت اصلاح و روی فیلم فعال شد.");
@@ -2487,7 +2358,6 @@ namespace MovieManagerDesktop.ViewModels
                 if (success && !string.IsNullOrEmpty(filePath) && File.Exists(filePath))
                 {
                     LoadSubtitleFileInternal(filePath);
-                    _mediaPlayer?.SetSpu(-1);
                     await UpdateSubtitleTracksListAsync();
 
                     ShowOsdNotification($"✅ زیرنویس آنلاین فعال شد: {Path.GetFileName(filePath)}");
@@ -2529,7 +2399,6 @@ namespace MovieManagerDesktop.ViewModels
                 if (success && !string.IsNullOrEmpty(filePath) && File.Exists(filePath))
                 {
                     LoadSubtitleFileInternal(filePath);
-                    _mediaPlayer?.SetSpu(-1);
                     await UpdateSubtitleTracksListAsync();
                     ShowOnlineSubtitleModal = false;
 
@@ -2557,7 +2426,7 @@ namespace MovieManagerDesktop.ViewModels
 
         public void TakeSnapshot()
         {
-            if (_mediaPlayer == null) return;
+            if (_flyleafPlayer == null || CurrentMedia == null) return;
             try
             {
                 string picturesDir = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
@@ -2568,7 +2437,7 @@ namespace MovieManagerDesktop.ViewModels
                 string filename = $"{safeTitle}_{DateTime.Now:yyyyMMdd_HHmmss}.png";
                 string fullPath = Path.Combine(snapshotsDir, filename);
 
-                _mediaPlayer.TakeSnapshot(0, fullPath, 0, 0);
+                _flyleafPlayer.TakeSnapshotToFile(fullPath);
                 ShowOsdNotification($"📸 اسکرین‌شات ذخیره شد در Pictures");
             }
             catch (Exception ex)
@@ -2739,17 +2608,11 @@ namespace MovieManagerDesktop.ViewModels
                 catch { }
             }
 
-            if (_mediaPlayer != null)
+            if (_flyleafPlayer != null)
             {
-                _mediaPlayer.Stop();
-                _mediaPlayer.Dispose();
-                _mediaPlayer = null;
-            }
-
-            if (_libVLC != null)
-            {
-                _libVLC.Dispose();
-                _libVLC = null;
+                _flyleafPlayer.Stop();
+                _flyleafPlayer.Dispose();
+                _flyleafPlayer = null;
             }
         }
     }

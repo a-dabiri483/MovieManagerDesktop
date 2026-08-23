@@ -23,9 +23,12 @@ namespace MovieManagerDesktop.Views
         {
             _parentWindow = Window.GetWindow(this);
 
-            if (ViewModel != null && ViewModel.MediaPlayer != null)
+            if (ViewModel != null)
             {
-                VlcVideoView.MediaPlayer = ViewModel.MediaPlayer;
+                if (ViewModel.Player != null)
+                {
+                    FlyleafVideoView.Player = ViewModel.Player;
+                }
 
                 ViewModel.PropertyChanged += ViewModel_PropertyChanged;
             }
@@ -104,7 +107,7 @@ namespace MovieManagerDesktop.Views
             }
         }
 
-        private void VlcVideoView_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        private void FlyleafVideoView_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount == 1)
             {
@@ -112,13 +115,13 @@ namespace MovieManagerDesktop.Views
             }
         }
 
-        private void VlcVideoView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void FlyleafVideoView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             ViewModel?.ToggleFullscreen();
             e.Handled = true;
         }
 
-        private void VlcVideoView_MouseWheel(object sender, MouseWheelEventArgs e)
+        private void FlyleafVideoView_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (ViewModel != null)
             {
@@ -148,9 +151,9 @@ namespace MovieManagerDesktop.Views
 
         private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (ViewModel != null && ViewModel.MediaPlayer != null)
+            if (ViewModel != null)
             {
-                ViewModel.MediaPlayer.Volume = (int)e.NewValue;
+                ViewModel.Volume = (int)e.NewValue;
             }
         }
 
