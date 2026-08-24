@@ -16,7 +16,7 @@ namespace MovieManagerDesktop.ViewModels
 
         partial void OnCurrentViewModelChanged(ObservableObject? value)
         {
-            IsPlayerActive = value is PlayerViewModel;
+            IsPlayerActive = false;
         }
 
         private HomeViewModel? _homeViewModel;

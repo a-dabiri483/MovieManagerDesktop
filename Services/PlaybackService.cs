@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Windows;
 using CommunityToolkit.Mvvm.Messaging;
 using MovieManagerDesktop.Data;
 using MovieManagerDesktop.Messages;
 using MovieManagerDesktop.Models;
-using MovieManagerDesktop.ViewModels;
 
 namespace MovieManagerDesktop.Services
 {
@@ -26,25 +24,6 @@ namespace MovieManagerDesktop.Services
             {
                 ToastService.Instance.ShowError("فایل ویدیو در این مسیر یافت نشد! از بخش «ترمیم هوشمند» برای اصلاح مسیر استفاده کنید.");
                 return;
-            }
-
-            if (playlist == null && file.MediaType == "Series")
-            {
-                try
-                {
-                    using var db = new AppDbContext();
-                    var allEpisodes = db.VideoFiles
-                        .Where(v => v.MediaType == "Series" && v.FormattedTitle.ToLower() == file.FormattedTitle.ToLower())
-                        .OrderBy(v => v.Season ?? 1)
-                        .ThenBy(v => v.Episode ?? 1)
-                        .ToList();
-                    if (allEpisodes.Count > 0)
-                    {
-                        playlist = allEpisodes;
-                        initialIndex = Math.Max(0, playlist.FindIndex(e => e.Id == file.Id || e.FilePath == file.FilePath));
-                    }
-                }
-                catch { }
             }
 
             file.LastPlayedAt = DateTime.Now;
@@ -65,22 +44,13 @@ namespace MovieManagerDesktop.Services
             });
 
             var settings = SettingsManager.LoadSettings();
-
             if (settings.UseInternalPlayer)
             {
-                // Open In-App Player in Dedicated Window
-                Application.Current.Dispatcher.Invoke(() =>
-                {
-                    var playerWindow = new Views.PlayerWindow(file, playlist, initialIndex);
-                    playerWindow.Show();
-                    playerWindow.Activate();
-                });
+                bool started = MpvPlaybackService.PlayMedia(file, playlist, initialIndex);
+                if (started) return;
             }
-            else
-            {
-                // Play with External Player
-                PlayWithExternalPlayer(file.FilePath, settings);
-            }
+
+            PlayWithExternalPlayer(file.FilePath, settings);
         }
 
         public static void PlayWithExternalPlayer(string filePath, SettingsModel settings)
@@ -123,7 +93,7 @@ namespace MovieManagerDesktop.Services
             catch (Exception ex)
             {
                 LoggerService.Error("Error starting external video player", ex);
-                ToastService.Instance.ShowError($"خطا در اجرای پلیر خارجی: {ex.Message}");
+                ToastService.Instance.ShowError($"خطا در اجرای پلیر: {ex.Message}");
             }
         }
 

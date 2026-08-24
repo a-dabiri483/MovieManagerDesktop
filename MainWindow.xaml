@@ -99,9 +99,6 @@
         <DataTemplate DataType="{x:Type viewmodels:CinemaHubViewModel}">
             <views:CinemaHubView />
         </DataTemplate>
-        <DataTemplate DataType="{x:Type viewmodels:PlayerViewModel}">
-            <views:PlayerView />
-        </DataTemplate>
 
         <!-- Android Bottom Nav Item Style -->
         <Style x:Key="AndroidBottomNavRadioStyle" TargetType="RadioButton">

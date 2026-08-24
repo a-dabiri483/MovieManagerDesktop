@@ -22,29 +22,7 @@ public partial class App : Application
 
         // Sync encrypted proxies in background on launch
         _ = MovieManagerDesktop.Services.SettingsManager.SyncEncryptedProxiesAsync();
-
-        // Initialize Flyleaf Ultra-Fast DirectX 11 Video Engine
-        try
-        {
-            if (!FlyleafLib.Engine.IsLoaded)
-            {
-                string ffmpegPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "FFmpeg");
-                SetDllDirectory(ffmpegPath);
-                FlyleafLib.Engine.Start(new FlyleafLib.EngineConfig()
-                {
-                    FFmpegPath = ffmpegPath,
-                    UIRefreshInterval = 15
-                });
-            }
-        }
-        catch (Exception ex)
-        {
-            MovieManagerDesktop.Services.LoggerService.Error("Failed to initialize Flyleaf engine", ex);
-        }
     }
-
-    [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
-    private static extern bool SetDllDirectory(string lpPathName);
 
     private void ApplyTheme(string themeName, bool isDarkTheme)
     {

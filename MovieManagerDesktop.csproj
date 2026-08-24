@@ -36,17 +36,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </Content>
-    <None Update="FFmpeg\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </None>
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-    <PackageReference Include="FlyleafLib" Version="3.10.4" />
-    <PackageReference Include="FlyleafLib.Controls.WPF" Version="1.6.4" />
-
     <PackageReference Include="FuzzySharp" Version="2.0.2" />
     <PackageReference Include="Google.Apis.Drive.v3" Version="1.75.0.4192" />
     <PackageReference Include="MaterialDesignThemes" Version="5.3.3-ci1443" />
