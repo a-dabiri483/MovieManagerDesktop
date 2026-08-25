@@ -1,6 +1,6 @@
 ; Script generated for MovieManager Desktop Installer
 #define MyAppName "MovieManager"
-#define MyAppVersion "2.0.0"
+#define MyAppVersion "2.5.0"
 #define MyAppPublisher "MovieManager Team"
 #define MyAppURL "https://github.com/a-dabiri483/MovieManagerDesktop"
 #define MyAppExeName "MovieManagerDesktop.exe"
@@ -19,7 +19,7 @@ DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=setup_output
-OutputBaseFilename=MovieManager_Setup_v2.0
+OutputBaseFilename=MovieManager_Setup_v2.5
 SetupIconFile=Assets\logo.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
@@ -34,16 +34,14 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checkedonce
 
 [Files]
-; Main Executable
-Source: "{#MyAppSourceDir}\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-; LibVLC folder (Native video/audio engine with all plugins and codecs)
-Source: "bin\Release\net10.0-windows\win-x64\libvlc\*"; DestDir: "{app}\libvlc"; Flags: ignoreversion recursesubdirs createallsubdirs
+; Main Application Files & Libraries from publish output
+Source: "{#MyAppSourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "MPVPlayer\*,*.pdb,*.log,*.txt"
+
+; MPV Native Player with all codecs, scripts, and configs
+Source: "MPVPlayer\*"; DestDir: "{app}\MPVPlayer"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.log,*.txt"
+
 ; Assets (Folder templates, icons)
-Source: "{#MyAppSourceDir}\Assets\*"; DestDir: "{app}\Assets"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "Posters\*,*.pdb"
-; Direct source logo.ico
-Source: "Assets\logo.ico"; DestDir: "{app}\Assets"; Flags: ignoreversion
-; Google Drive credentials
-Source: "credentials.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "Assets\*"; DestDir: "{app}\Assets"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "Posters\*,*.pdb"
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\Assets\logo.ico"

@@ -46,6 +46,9 @@ MPVPlayer/*.a
 MPVPlayer/*.lib
 MPVPlayer/*.def
 MPVPlayer/*.pc
+MPVPlayer/*.pdb
+MPVPlayer/*.deps.json
+MPVPlayer/*.runtimeconfig.json
 
 # OAuth credentials
 credentials.json

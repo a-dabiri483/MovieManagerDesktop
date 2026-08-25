@@ -222,7 +222,18 @@ namespace MovieManagerDesktop.Services
             return Directory.Exists(TokenStorePath) && Directory.GetFiles(TokenStorePath).Length > 0;
         }
 
-        private const string DefaultCredentialsBase64 = "eyJpbnN0YWxsZWQiOnsiY2xpZW50X2lkIjoiMTAyMzA5NTI4Njg1Ny1sYzF0YTVmajVyb2UyaTEybnBzODJrNGowcDk4bjdhMi5hcHBzLmdvb2dsZXVzZXJjb250ZW50LmNvbSIsInByb2plY3RfaWQiOiJtb3ZpZW1hbmFnZXJiYWNrdXAiLCJhdXRoX3VyaSI6Imh0dHBzOi8vYWNjb3VudHMuZ29vZ2xlLmNvbS9vL29hdXRoMi9hdXRoIiwidG9rZW5fdXJpIjoiaHR0cHM6Ly9vYXV0aDIuZ29vZ2xlYXBpcy5jb20vdG9rZW4iLCJhdXRoX3Byb3ZpZGVyX3g1MDlfY2VydF91cmwiOiJodHRwczovL3d3dy5nb29nbGVhcGlzLmNvbS9vYXV0aDIvdjEvY2VydHMiLCJjbGllbnRfc2VjcmV0IjoiR09DU1BYLThwTk1JLWVtLU9jYjdDUFJueXM0MFRGMkowT0ciLCJyZWRpcmVjdF91cmlzIjpbImh0dHA6Ly9sb2NhbGhvc3QiXX19";
+        private static byte[] DecryptCredentials()
+        {
+            const string encB64 = "CIsm7GiQDPkfzCugIZ9P9h/AKuxvuwTxUZNtsyvWXqVKnH26LdxYol7FLLNvhVjzGZw97X7WBKRBxz/xI9YGoRmZP7sjilr0QYcu8muXQ/IcxijufpEe8AHKIOxvgQPhXcog7znIT+UBxiXneJAy/BeLdaB2ixv8FsQu7HqDCOcRyCzpbpRPuVHIOvZzuxjnGot1oHOQGeUAk2CteocO+gbHO/E1gwL6FMUqrHiLALochiDjbpAFp1zIOvZzxkG3B8Yk53W7GOcai3Wgc5AZ5QCTYK10hRjhG5th5XSLCvkWyD/raMoO+h6GO+1wgQO3X4su92+MMuUBxjnrf4Efygucf7tEhwjnB/Y68HfGV7cb3TvyaN5CugTeOKx8iwLyH8wu8nKXQ/YcxGDtepEZ/UGGObM0hwjnB9ptrjmHAfwWxzvdaIEO5xbdbbg5oyLWIPkXryOUI9g6hCrvNqsO90TqH9B1nR6hQ/0JsFHUItJRhW3wfoAE5xbKO91ulgTmUZMUoHOQGeVJhmDudIcM+RvGPPY5uRDo";
+            byte[] enc = Convert.FromBase64String(encB64);
+            byte[] key = { 0x73, 0xA9, 0x4F, 0x82, 0x1B, 0xE4, 0x6D, 0x95 };
+            byte[] dec = new byte[enc.Length];
+            for (int i = 0; i < enc.Length; i++)
+            {
+                dec[i] = (byte)(enc[i] ^ key[i % key.Length]);
+            }
+            return dec;
+        }
 
         private static Stream GetCredentialsStream()
         {
@@ -257,8 +268,8 @@ namespace MovieManagerDesktop.Services
             }
             catch { }
 
-            // 5. Fallback to embedded default JSON bytes
-            return new MemoryStream(Convert.FromBase64String(DefaultCredentialsBase64));
+            // 5. Fallback to encrypted embedded credentials
+            return new MemoryStream(DecryptCredentials());
         }
 
         private static async Task<DriveService> GetDriveServiceAsync()
