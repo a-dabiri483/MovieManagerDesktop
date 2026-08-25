@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -141,52 +142,105 @@ namespace MovieManagerDesktop.Services.Network
 
         private static async Task<IPAddress[]> QueryDoHAsync(string hostname, CancellationToken cancellationToken)
         {
-            foreach (var (providerUrl, nameParam, typeParam, acceptHeader) in DohProviders)
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            linkedCts.CancelAfter(TimeSpan.FromMilliseconds(2200));
+
+            var tasks = DohProviders.Select(p => QuerySingleProviderAsync(p, hostname, linkedCts.Token)).ToList();
+
+            while (tasks.Count > 0)
             {
+                var completedTask = await Task.WhenAny(tasks);
+                tasks.Remove(completedTask);
+
                 try
                 {
-                    using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                    cts.CancelAfter(TimeSpan.FromMilliseconds(2200));
-
-                    string queryUrl = $"{providerUrl}?{nameParam}={Uri.EscapeDataString(hostname)}&{typeParam}=A";
-                    using var req = new HttpRequestMessage(HttpMethod.Get, queryUrl);
-                    req.Headers.TryAddWithoutValidation("Accept", acceptHeader);
-
-                    var resp = await DohClient.SendAsync(req, cts.Token);
-                    if (!resp.IsSuccessStatusCode) continue;
-
-                    string json = await resp.Content.ReadAsStringAsync(cts.Token);
-                    using var doc = JsonDocument.Parse(json);
-                    
-                    if (doc.RootElement.TryGetProperty("Answer", out var answers) && answers.ValueKind == JsonValueKind.Array)
+                    var result = await completedTask;
+                    if (result.Length > 0)
                     {
-                        var ips = new List<IPAddress>();
-                        foreach (var ans in answers.EnumerateArray())
-                        {
-                            if (ans.TryGetProperty("type", out var t) && t.GetInt32() == 1 && // Type A
-                                ans.TryGetProperty("data", out var d))
-                            {
-                                string data = d.GetString() ?? "";
-                                if (IPAddress.TryParse(data, out var parsedIp))
-                                {
-                                    ips.Add(parsedIp);
-                                }
-                            }
-                        }
-
-                        if (ips.Count > 0)
-                        {
-                            return ips.ToArray();
-                        }
+                        linkedCts.Cancel(); // Cancel remaining slower queries
+                        return result;
                     }
                 }
                 catch
                 {
-                    // Try next DoH provider
+                    // Ignore failed provider and wait for others
                 }
             }
 
             return Array.Empty<IPAddress>();
+        }
+
+        private static async Task<IPAddress[]> QuerySingleProviderAsync((string Url, string NameParam, string TypeParam, string Accept) provider, string hostname, CancellationToken cancellationToken)
+        {
+            try
+            {
+                string queryUrl = $"{provider.Url}?{provider.NameParam}={Uri.EscapeDataString(hostname)}&{provider.TypeParam}=A";
+                using var req = new HttpRequestMessage(HttpMethod.Get, queryUrl);
+                req.Headers.TryAddWithoutValidation("Accept", provider.Accept);
+                req.Headers.TryAddWithoutValidation("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+
+                using var resp = await DohClient.SendAsync(req, cancellationToken);
+                if (!resp.IsSuccessStatusCode) return Array.Empty<IPAddress>();
+
+                string json = await resp.Content.ReadAsStringAsync(cancellationToken);
+                using var doc = JsonDocument.Parse(json);
+
+                if (doc.RootElement.TryGetProperty("Answer", out var answers) && answers.ValueKind == JsonValueKind.Array)
+                {
+                    var ips = new List<IPAddress>();
+                    foreach (var ans in answers.EnumerateArray())
+                    {
+                        if (ans.TryGetProperty("type", out var t) && t.GetInt32() == 1 && // Type A
+                            ans.TryGetProperty("data", out var d))
+                        {
+                            string data = d.GetString() ?? "";
+                            if (IPAddress.TryParse(data, out var parsedIp) && !IsBogusIp(parsedIp))
+                            {
+                                ips.Add(parsedIp);
+                            }
+                        }
+                    }
+
+                    return ips.ToArray();
+                }
+            }
+            catch
+            {
+                // Return empty on timeout or failure
+            }
+
+            return Array.Empty<IPAddress>();
+        }
+
+        private static bool IsBogusIp(IPAddress ip)
+        {
+            if (IPAddress.IsLoopback(ip) || ip.Equals(IPAddress.Any) || ip.Equals(IPAddress.None))
+                return true;
+
+            var bytes = ip.GetAddressBytes();
+            if (bytes.Length == 4)
+            {
+                // 10.0.0.0/8
+                if (bytes[0] == 10) return true;
+                // 127.0.0.0/8
+                if (bytes[0] == 127) return true;
+                // 0.0.0.0/8
+                if (bytes[0] == 0) return true;
+                // 192.168.0.0/16
+                if (bytes[0] == 192 && bytes[1] == 168) return true;
+                // 169.254.0.0/16
+                if (bytes[0] == 169 && bytes[1] == 254) return true;
+                // 172.16.0.0/12 (172.16.x.x - 172.31.x.x)
+                if (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31) return true;
+                // 10.10.34.x (Iran filter landing IP)
+                if (bytes[0] == 10 && bytes[1] == 10 && bytes[2] == 34) return true;
+            }
+
+            string str = ip.ToString().ToLowerInvariant();
+            if (str.Contains("10.10.34.") || str.Contains("10:10:34:") || str.StartsWith("2001:4188:") || str == "::1")
+                return true;
+
+            return false;
         }
     }
 }

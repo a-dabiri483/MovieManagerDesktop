@@ -177,7 +177,11 @@ namespace MovieManagerDesktop.Services
                 proxies.AddRange(settings.InternalEncryptedProxies.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim()));
             }
 
-            return proxies.Where(p => !string.IsNullOrWhiteSpace(p) && p.StartsWith("http", StringComparison.OrdinalIgnoreCase)).Distinct().ToList();
+            return proxies
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Select(p => !p.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !p.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ? "https://" + p : p)
+                .Distinct()
+                .ToList();
         }
 
         public static void SaveSettings(SettingsModel settings)

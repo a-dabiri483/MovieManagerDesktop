@@ -13,6 +13,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="MpvMenuHelper\**" />
+    <None Include="MpvMenuHelper\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Assets\bg.png" />
     <Resource Include="Assets\bg_new.png" />
     <Resource Include="Assets\logo.png" />

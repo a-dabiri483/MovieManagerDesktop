@@ -457,6 +457,13 @@ namespace MovieManagerDesktop.Services.Network
                     string trimmedProxy = proxySetting.Trim();
                     if (string.IsNullOrWhiteSpace(trimmedProxy)) continue;
 
+                    // Ensure scheme exists (http:// or https://)
+                    if (!trimmedProxy.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && 
+                        !trimmedProxy.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    {
+                        trimmedProxy = "https://" + trimmedProxy;
+                    }
+
                     string proxyLabel = ProxyLabel(trimmedProxy);
 
                     string proxyUrlBase;
@@ -475,26 +482,42 @@ namespace MovieManagerDesktop.Services.Network
                         finalProxyUrl = proxyUrlBase + "url=" + Uri.EscapeDataString(originalUrlStr);
                     }
 
-                    var newRequest = new HttpRequestMessage(request.Method, finalProxyUrl);
-                    foreach (var header in request.Headers)
+                    if (!Uri.TryCreate(finalProxyUrl, UriKind.Absolute, out var targetUri) || 
+                        (targetUri.Scheme != Uri.UriSchemeHttp && targetUri.Scheme != Uri.UriSchemeHttps))
                     {
-                        if (header.Key.Equals("Host", StringComparison.OrdinalIgnoreCase)) continue;
-                        newRequest.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                        LoggerService.Warning($"[Network]   ✖ Invalid proxy URL format: {finalProxyUrl}, skipping...");
+                        continue;
                     }
 
-                    if (request.Content != null)
+                    HttpRequestMessage newRequest;
+                    try
                     {
-                        var ms = new MemoryStream();
-                        await request.Content.CopyToAsync(ms);
-                        ms.Position = 0;
-                        newRequest.Content = new StreamContent(ms);
-                        foreach (var header in request.Content.Headers)
+                        newRequest = new HttpRequestMessage(request.Method, targetUri);
+                        foreach (var header in request.Headers)
                         {
-                            newRequest.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                            if (header.Key.Equals("Host", StringComparison.OrdinalIgnoreCase)) continue;
+                            newRequest.Headers.TryAddWithoutValidation(header.Key, header.Value);
                         }
-                    }
 
-                    newRequest.Options.Set(new HttpRequestOptionsKey<bool>("Proxied"), true);
+                        if (request.Content != null)
+                        {
+                            var ms = new MemoryStream();
+                            await request.Content.CopyToAsync(ms);
+                            ms.Position = 0;
+                            newRequest.Content = new StreamContent(ms);
+                            foreach (var header in request.Content.Headers)
+                            {
+                                newRequest.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                            }
+                        }
+
+                        newRequest.Options.Set(new HttpRequestOptionsKey<bool>("Proxied"), true);
+                    }
+                    catch (Exception ex)
+                    {
+                        LoggerService.Warning($"[Network]   ✖ Failed to construct proxy request: {ex.Message}");
+                        continue;
+                    }
 
                     var sw = Stopwatch.StartNew();
                     try
