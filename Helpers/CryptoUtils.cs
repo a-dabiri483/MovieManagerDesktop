@@ -68,7 +68,7 @@ namespace MovieManagerDesktop.Helpers
         public static string GetObfuscatedSourceUrl()
         {
             // Reverse-obfuscated URL to protect against plaintext binary scraping
-            char[] chars = "txt.seixorp/niam/gifnoCppA/384iribad-a/moc.tnetnocresubuhtig.war//:sptth".ToCharArray();
+            char[] chars = "txt.seixorp/niam@gifnoCppA/384iribad-a/hg/ten.rviledsj.yltsaf//:sptth".ToCharArray();
             Array.Reverse(chars);
             return new string(chars);
         }
