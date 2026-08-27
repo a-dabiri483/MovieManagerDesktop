@@ -68,7 +68,9 @@ namespace MpvMenuHelper
             {
                 string pipeName = args.Length > 1 ? args[1] : "mpvsocket";
                 string subPath = args.Length > 2 ? args[2] : "";
-                Application.Run(new SubtitleTranslateForm(pipeName, subPath));
+                string videoPath = args.Length > 3 ? args[3] : "";
+                string sid = args.Length > 4 ? args[4] : "";
+                Application.Run(new SubtitleTranslateForm(pipeName, subPath, videoPath, sid));
             }
             else
             {

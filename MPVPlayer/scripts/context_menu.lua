@@ -46,10 +46,12 @@ end
 local function open_translate_dialog()
     local pipe_name = mp.get_property("input-ipc-server") or "mpvsocket"
     local sub_path = mp.get_property("current-tracks/sub/external-filename") or ""
+    local video_path = mp.get_property("path") or ""
+    local sid = mp.get_property("sid") or ""
     mp.command_native_async({
         name = "subprocess",
         playback_only = false,
-        args = {"MpvMenuHelper.exe", "translate", pipe_name, sub_path}
+        args = {"MpvMenuHelper.exe", "translate", pipe_name, sub_path, video_path, sid}
     })
 end
 

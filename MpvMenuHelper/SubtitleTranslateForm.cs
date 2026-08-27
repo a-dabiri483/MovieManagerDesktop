@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace MpvMenuHelper
 {
@@ -11,17 +12,22 @@ namespace MpvMenuHelper
     {
         private readonly MpvIpcClient _ipc;
         private string _subFilePath;
+        private string _videoPath;
+        private string _sid;
 
         private TextBox _txtFilePath;
         private ProgressBar _progBar;
         private Label _lblStatus;
         private Button _btnTranslate;
+        private Button _btnExtract;
         private CancellationTokenSource? _cts;
 
-        public SubtitleTranslateForm(string pipeName, string currentSubPath = "")
+        public SubtitleTranslateForm(string pipeName, string currentSubPath = "", string videoPath = "", string sid = "")
         {
             _ipc = new MpvIpcClient(pipeName);
             _subFilePath = currentSubPath;
+            _videoPath = videoPath;
+            _sid = sid;
 
             InitializeComponent();
         }
@@ -29,7 +35,7 @@ namespace MpvMenuHelper
         private void InitializeComponent()
         {
             this.Text = "ترجمه هوشمند زیرنویس";
-            this.Size = new Size(460, 310);
+            this.Size = new Size(460, 360);
             this.FormBorderStyle = FormBorderStyle.None;
             this.StartPosition = FormStartPosition.CenterScreen;
             this.TopMost = true;
@@ -39,6 +45,14 @@ namespace MpvMenuHelper
             this.RightToLeftLayout = true;
             this.ShowInTaskbar = false;
             this.DoubleBuffered = true;
+
+            this.Shown += async (s, e) =>
+            {
+                if (_btnExtract != null && _btnExtract.Visible)
+                {
+                    await StartExtractionAsync();
+                }
+            };
 
             // Header panel for dragging
             var pnlHeader = new Panel
@@ -160,7 +174,29 @@ namespace MpvMenuHelper
             pnlFilePick.Controls.Add(_txtFilePath);
             pnlFilePick.Controls.Add(btnBrowse);
             pnlContent.Controls.Add(pnlFilePick);
-            top += 44;
+            top += 40;
+
+            _btnExtract = new Button
+            {
+                Text = "🎬 استخراج زیرنویس داخلی انتخاب شده از پلیر",
+                Font = new Font("Segoe UI", 9.5F, FontStyle.Bold),
+                ForeColor = Color.White,
+                BackColor = Color.FromArgb(40, 140, 210),
+                FlatStyle = FlatStyle.Flat,
+                Size = new Size(410, 34),
+                Location = new Point(16, top),
+                Cursor = Cursors.Hand,
+                Visible = string.IsNullOrEmpty(_subFilePath) && !string.IsNullOrEmpty(_videoPath) && !string.IsNullOrEmpty(_sid)
+            };
+            _btnExtract.FlatAppearance.BorderSize = 0;
+            _btnExtract.FlatAppearance.MouseOverBackColor = Color.FromArgb(60, 160, 230);
+            _btnExtract.Click += async (s, e) => await StartExtractionAsync();
+            pnlContent.Controls.Add(_btnExtract);
+            
+            if (_btnExtract.Visible)
+            {
+                top += 44;
+            }
 
             // Status Label
             _lblStatus = new Label
@@ -204,7 +240,7 @@ namespace MpvMenuHelper
             };
             _btnTranslate.FlatAppearance.BorderSize = 0;
             _btnTranslate.FlatAppearance.MouseOverBackColor = Color.FromArgb(240, 70, 85);
-            _btnTranslate.Click += async (s, e) => await StartTranslationAsync();
+            _btnTranslate.Click += BtnTranslate_Click;
 
             var btnCancel = new Button
             {
@@ -238,30 +274,56 @@ namespace MpvMenuHelper
             };
         }
 
-        private async Task StartTranslationAsync()
+        private string GetTargetLanguage()
         {
-            string targetPath = _txtFilePath.Text.Trim();
-            if (string.IsNullOrEmpty(targetPath) || !File.Exists(targetPath))
+            try
             {
-                MessageBox.Show("لطفاً ابتدا یک فایل زیرنویس معتبر انتخاب کنید.", "خطا", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                string settingsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "appsettings.json");
+                if (File.Exists(settingsPath))
+                {
+                    string json = File.ReadAllText(settingsPath);
+                    using var doc = System.Text.Json.JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("TranslateToLanguage", out var prop))
+                    {
+                        return prop.GetString() ?? "fa";
+                    }
+                }
+            }
+            catch { }
+            return "fa";
+        }
+
+        private async void BtnTranslate_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(_txtFilePath.Text))
+            {
+                MessageBox.Show("لطفا ابتدا یک فایل زیرنویس انتخاب کنید.", "خطا", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            _btnTranslate.Enabled = false;
-            _progBar.Value = 0;
             _cts = new CancellationTokenSource();
+            _btnTranslate.Enabled = false;
+            _btnExtract.Enabled = false;
+            _progBar.Style = ProgressBarStyle.Blocks;
+            _progBar.Value = 0;
+            _lblStatus.Text = "در حال ارتباط با مترجم هوشمند...";
+            _lblStatus.ForeColor = Color.White;
 
-            var progress = new Progress<(int current, int total, string status)>(p =>
-            {
-                int percent = (int)((double)p.current / p.total * 100);
-                _progBar.Value = Math.Min(100, Math.Max(0, percent));
-                _lblStatus.Text = $"{p.status} ({percent}%)";
-            });
+            string targetPath = _txtFilePath.Text;
 
             try
             {
-                _lblStatus.Text = "در حال شروع ترجمه خط به خط...";
-                string translatedFile = await Task.Run(() => SubtitleTranslator.TranslateSrtFileAsync(targetPath, "fa", progress, _cts.Token));
+                string targetLang = GetTargetLanguage();
+                string langName = targetLang.ToLower() == "en" ? "انگلیسی" : "فارسی";
+                
+                var progress = new Progress<(int current, int total, string status)>(p =>
+                {
+                    int percent = p.total > 0 ? (int)((double)p.current / p.total * 100) : 0;
+                    _progBar.Value = Math.Min(100, Math.Max(0, percent));
+                    _lblStatus.Text = $"{p.status} ({percent}%)";
+                });
+
+                string translatedFile = await Task.Run(() => SubtitleTranslator.TranslateSrtFileAsync(targetPath, targetLang, progress, _cts.Token));
 
                 _progBar.Value = 100;
                 _lblStatus.ForeColor = Color.FromArgb(80, 220, 120);
@@ -282,6 +344,95 @@ namespace MpvMenuHelper
             finally
             {
                 _btnTranslate.Enabled = true;
+            }
+        }
+        private string GetFFmpegPath()
+        {
+            var possiblePaths = new[]
+            {
+                "ffmpeg.exe",
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "ffmpeg.exe"),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "ffmpeg.exe"),
+                @"C:\Users\ALI\CascadeProjects\MovieManagerDesktop\ffmpeg7.1_extracted\ffmpeg-n7.1-latest-win64-gpl-shared-7.1\bin\ffmpeg.exe",
+                @"C:\Users\ALI\CascadeProjects\MovieManagerDesktop\ffmpeg_extracted\ffmpeg-master-latest-win64-gpl-shared\bin\ffmpeg.exe",
+                @"C:\Users\ALI\CascadeProjects\MovieManager\ffmpeg_folder\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe"
+            };
+
+            foreach (var p in possiblePaths)
+            {
+                if (File.Exists(p)) return p;
+            }
+            return "ffmpeg.exe";
+        }
+
+        private async Task StartExtractionAsync()
+        {
+            if (string.IsNullOrEmpty(_videoPath) || string.IsNullOrEmpty(_sid) || !int.TryParse(_sid, out int sidInt)) return;
+            
+            _btnExtract.Enabled = false;
+            _lblStatus.Text = "در حال استخراج زیرنویس با FFmpeg...";
+            _lblStatus.ForeColor = Color.FromArgb(40, 140, 210);
+            _progBar.Style = ProgressBarStyle.Marquee;
+
+            try
+            {
+                int ffmpegIndex = sidInt - 1;
+                if (ffmpegIndex < 0) throw new Exception("شناسه زیرنویس نامعتبر است.");
+
+                string ffmpegPath = GetFFmpegPath();
+                string cacheDir = Path.Combine(Path.GetTempPath(), "MovieManagerDesktop", "ExtractedSubs");
+                Directory.CreateDirectory(cacheDir);
+
+                string safeName = Path.GetFileNameWithoutExtension(_videoPath);
+                string outPath = Path.Combine(cacheDir, $"{safeName}_sub_{ffmpegIndex}.srt");
+
+                if (File.Exists(outPath) && new FileInfo(outPath).Length > 20)
+                {
+                    _subFilePath = outPath;
+                    _txtFilePath.Text = outPath;
+                    _lblStatus.Text = "زیرنویس از قبل استخراج شده بود.";
+                    _lblStatus.ForeColor = Color.FromArgb(80, 220, 120);
+                }
+                else
+                {
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = ffmpegPath,
+                        Arguments = $"-nostdin -y -hide_banner -loglevel error -i \"{_videoPath}\" -map 0:s:{ffmpegIndex} -c:s srt \"{outPath}\"",
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    };
+
+                    using var proc = Process.Start(psi);
+                    if (proc != null)
+                    {
+                        await proc.WaitForExitAsync();
+                        if (File.Exists(outPath) && new FileInfo(outPath).Length > 10)
+                        {
+                            _subFilePath = outPath;
+                            _txtFilePath.Text = outPath;
+                            _lblStatus.Text = "✅ زیرنویس با موفقیت استخراج شد! شروع ترجمه...";
+                            _lblStatus.ForeColor = Color.FromArgb(80, 220, 120);
+                            
+                            // Start translation automatically!
+                            BtnTranslate_Click(this, EventArgs.Empty);
+                        }
+                        else
+                        {
+                            throw new Exception("زیرنویس استخراج نشد یا خالی است.");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _lblStatus.ForeColor = Color.FromArgb(240, 80, 90);
+                _lblStatus.Text = "❌ خطا در استخراج: " + ex.Message;
+                _btnExtract.Enabled = true;
+                _progBar.Style = ProgressBarStyle.Continuous;
             }
         }
     }

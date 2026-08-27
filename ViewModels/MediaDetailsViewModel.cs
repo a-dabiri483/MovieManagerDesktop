@@ -726,8 +726,36 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (episode != null)
             {
-                var playlist = Episodes?.ToList() ?? new List<VideoFile> { episode };
-                int idx = playlist.IndexOf(episode);
+                var playlist = Seasons
+                    .SelectMany(s => s.Episodes)
+                    .Where(e => !string.IsNullOrEmpty(e.FilePath) && System.IO.File.Exists(e.FilePath))
+                    .OrderBy(e => e.Season ?? 1)
+                    .ThenBy(e => e.Episode ?? 1)
+                    .ThenBy(e => e.FileName)
+                    .ToList();
+
+                if (playlist.Count <= 1)
+                {
+                    try
+                    {
+                        using var db = new AppDbContext();
+                        var dbEpisodes = db.VideoFiles
+                            .Where(v => (v.TmdbId != null && Media.TmdbId != null && v.TmdbId == Media.TmdbId) ||
+                                        (v.FormattedTitle != null && v.FormattedTitle.ToLower() == Media.FormattedTitle.ToLower()))
+                            .OrderBy(v => v.Season ?? 1)
+                            .ThenBy(v => v.Episode ?? 1)
+                            .ThenBy(v => v.FileName)
+                            .ToList();
+
+                        if (dbEpisodes.Count > 1)
+                        {
+                            playlist = dbEpisodes;
+                        }
+                    }
+                    catch { }
+                }
+
+                int idx = playlist.FindIndex(e => (e.Id > 0 && e.Id == episode.Id) || string.Equals(e.FilePath, episode.FilePath, System.StringComparison.OrdinalIgnoreCase));
                 PlaybackService.PlayMedia(episode, playlist, Math.Max(0, idx));
             }
         }

@@ -50,8 +50,8 @@ namespace MovieManagerDesktop.Services
 
             try
             {
-                // 1. Auto-discover all Series episodes if playlist not explicitly provided
-                if (playlist == null && (file.MediaType == "Series" || file.Season != null || file.Episode != null))
+                // 1. Auto-discover all Series episodes if playlist not explicitly provided or only has 1 item
+                if ((playlist == null || playlist.Count <= 1) && (file.MediaType == "Series" || file.Season != null || file.Episode != null || !string.IsNullOrWhiteSpace(file.FormattedTitle)))
                 {
                     try
                     {
@@ -67,10 +67,12 @@ namespace MovieManagerDesktop.Services
                                 .ThenBy(v => v.FileName)
                                 .ToList();
                         }
-                        else if (!string.IsNullOrWhiteSpace(file.FormattedTitle))
+                        
+                        if (episodes.Count <= 1 && !string.IsNullOrWhiteSpace(file.FormattedTitle))
                         {
+                            string titleLower = file.FormattedTitle.ToLowerInvariant();
                             episodes = db.VideoFiles
-                                .Where(v => v.FormattedTitle == file.FormattedTitle)
+                                .Where(v => v.FormattedTitle != null && v.FormattedTitle.ToLower() == titleLower)
                                 .OrderBy(v => v.Season ?? 1)
                                 .ThenBy(v => v.Episode ?? 1)
                                 .ThenBy(v => v.FileName)
@@ -82,19 +84,54 @@ namespace MovieManagerDesktop.Services
                             string? dir = Path.GetDirectoryName(file.FilePath);
                             if (!string.IsNullOrEmpty(dir))
                             {
+                                string searchDir = dir;
+                                string dirName = Path.GetFileName(dir).ToLowerInvariant();
+                                if (dirName.Contains("season") || dirName.Contains("فصل") || dirName.StartsWith("s0") || dirName.StartsWith("s1") || dirName.StartsWith("s2"))
+                                {
+                                    string? parent = Directory.GetParent(dir)?.FullName;
+                                    if (!string.IsNullOrEmpty(parent))
+                                    {
+                                        searchDir = parent;
+                                    }
+                                }
+
                                 episodes = db.VideoFiles
-                                    .Where(v => v.FilePath.StartsWith(dir))
+                                    .Where(v => v.FilePath.StartsWith(searchDir))
                                     .OrderBy(v => v.Season ?? 1)
                                     .ThenBy(v => v.Episode ?? 1)
                                     .ThenBy(v => v.FileName)
                                     .ToList();
+
+                                if (episodes.Count <= 1 && Directory.Exists(searchDir))
+                                {
+                                    var diskFiles = Directory.GetFiles(searchDir, "*.*", SearchOption.AllDirectories)
+                                        .Where(f => f.EndsWith(".mkv", StringComparison.OrdinalIgnoreCase) || 
+                                                    f.EndsWith(".mp4", StringComparison.OrdinalIgnoreCase) || 
+                                                    f.EndsWith(".avi", StringComparison.OrdinalIgnoreCase) ||
+                                                    f.EndsWith(".ts", StringComparison.OrdinalIgnoreCase))
+                                        .OrderBy(f => f)
+                                        .ToList();
+
+                                    if (diskFiles.Count > 1)
+                                    {
+                                        episodes = diskFiles.Select(f => new VideoFile
+                                        {
+                                            FilePath = f,
+                                            FileName = Path.GetFileName(f),
+                                            FormattedTitle = file.FormattedTitle,
+                                            TmdbId = file.TmdbId,
+                                            PosterUrl = file.PosterUrl,
+                                            BackdropUrl = file.BackdropUrl
+                                        }).ToList();
+                                    }
+                                }
                             }
                         }
 
                         if (episodes.Count > 0)
                         {
                             playlist = episodes;
-                            initialIndex = Math.Max(0, playlist.FindIndex(e => e.Id == file.Id || e.FilePath == file.FilePath));
+                            initialIndex = Math.Max(0, playlist.FindIndex(e => (e.Id > 0 && e.Id == file.Id) || string.Equals(e.FilePath, file.FilePath, StringComparison.OrdinalIgnoreCase)));
                         }
                     }
                     catch { }

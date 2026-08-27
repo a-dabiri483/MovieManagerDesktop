@@ -40,7 +40,7 @@ namespace MpvMenuHelper
                 throw new InvalidDataException("فرمت فایل زیرنویس معتبر نیست یا زیرنویس خالی است.");
             }
 
-            int batchSize = 15;
+            int batchSize = 200;
             int totalBatches = (cues.Count + batchSize - 1) / batchSize;
             var translatedCues = new List<SubtitleCue>();
 
@@ -78,7 +78,7 @@ namespace MpvMenuHelper
                     });
                 }
 
-                await Task.Delay(100, cancellationToken); // Rate limit protection
+                await Task.Delay(1000, cancellationToken); // Rate limit protection
             }
 
             // Save to temp or adjacent directory
@@ -112,42 +112,73 @@ namespace MpvMenuHelper
 
         private static async Task<string> TranslateBatchAsync(string text, string targetLang, CancellationToken ct)
         {
-            try
+            string url = $"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={targetLang}&dt=t";
+
+            HttpResponseMessage? response = null;
+            int maxRetries = 3;
+            
+            for (int i = 0; i < maxRetries; i++)
             {
-                string encoded = Uri.EscapeDataString(text);
-                string url = $"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={targetLang}&dt=t&q={encoded}";
-
-                var request = new HttpRequestMessage(HttpMethod.Get, url);
-                request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
-
-                var response = await _httpClient.SendAsync(request, ct);
-                response.EnsureSuccessStatusCode();
-
-                string json = await response.Content.ReadAsStringAsync(ct);
-                using var doc = JsonDocument.Parse(json);
-
-                var sb = new StringBuilder();
-                if (doc.RootElement.ValueKind == JsonValueKind.Array && doc.RootElement.GetArrayLength() > 0)
+                try
                 {
-                    var firstArray = doc.RootElement[0];
-                    if (firstArray.ValueKind == JsonValueKind.Array)
+                    var request = new HttpRequestMessage(HttpMethod.Post, url);
+                    request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+                    request.Content = new FormUrlEncodedContent(new[]
                     {
-                        foreach (var elem in firstArray.EnumerateArray())
+                        new KeyValuePair<string, string>("q", text)
+                    });
+                    
+                    response = await _httpClient.SendAsync(request, ct);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        break;
+                    }
+                    else if ((int)response.StatusCode == 429) // Too Many Requests
+                    {
+                        await Task.Delay(3000 * (i + 1), ct); // Exponential backoff
+                        continue;
+                    }
+                    else
+                    {
+                        response.EnsureSuccessStatusCode();
+                    }
+                }
+                catch (HttpRequestException) when (i < maxRetries - 1)
+                {
+                    await Task.Delay(3000 * (i + 1), ct);
+                }
+            }
+
+            if (response == null || !response.IsSuccessStatusCode)
+            {
+                string statusCodeStr = response != null ? $" (HTTP {(int)response.StatusCode})" : "";
+                throw new Exception($"خطا در ارتباط با سرور گوگل. لطفاً چند دقیقه صبر کنید یا فیلترشکن خود را تغییر دهید.{statusCodeStr}");
+            }
+
+            string json = await response.Content.ReadAsStringAsync(ct);
+            using var doc = JsonDocument.Parse(json);
+
+            var sb = new StringBuilder();
+            if (doc.RootElement.ValueKind == JsonValueKind.Array && doc.RootElement.GetArrayLength() > 0)
+            {
+                var firstArray = doc.RootElement[0];
+                if (firstArray.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var elem in firstArray.EnumerateArray())
+                    {
+                        if (elem.ValueKind == JsonValueKind.Array && elem.GetArrayLength() > 0)
                         {
-                            if (elem.ValueKind == JsonValueKind.Array && elem.GetArrayLength() > 0)
-                            {
-                                sb.Append(elem[0].GetString());
-                            }
+                            sb.Append(elem[0].GetString());
                         }
                     }
                 }
+            }
 
-                return sb.ToString();
-            }
-            catch
-            {
-                return text; // Fallback
-            }
+            string result = sb.ToString();
+            if (string.IsNullOrWhiteSpace(result)) 
+                throw new Exception("Translation API returned empty result.");
+                
+            return result;
         }
 
         private static List<SubtitleCue> ParseSrtCues(string[] lines)

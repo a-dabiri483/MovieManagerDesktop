@@ -522,15 +522,42 @@ namespace MovieManagerDesktop.ViewModels
 
             if (fileToPlay != null && !string.IsNullOrEmpty(fileToPlay.FilePath) && File.Exists(fileToPlay.FilePath))
             {
+                episodeItem.LocalFile = fileToPlay;
+
                 // Build playlist of all available local episodes for seamless next/previous
                 var playlist = Seasons
                     .SelectMany(s => s.Episodes)
-                    .Where(e => e.LocalFile != null && File.Exists(e.LocalFile.FilePath))
+                    .Where(e => e.LocalFile != null && !string.IsNullOrEmpty(e.LocalFile.FilePath) && File.Exists(e.LocalFile.FilePath))
                     .Select(e => e.LocalFile!)
                     .DistinctBy(f => f.FilePath)
+                    .OrderBy(f => f.Season ?? 1)
+                    .ThenBy(f => f.Episode ?? 1)
+                    .ThenBy(f => f.FileName)
                     .ToList();
 
-                int initialIndex = playlist.FindIndex(f => f.FilePath == fileToPlay.FilePath);
+                // If playlist is incomplete, query all episodes from database
+                if (playlist.Count <= 1)
+                {
+                    try
+                    {
+                        using var db = new AppDbContext();
+                        var dbEpisodes = db.VideoFiles
+                            .Where(v => (v.TmdbId != null && _series.TmdbId != null && v.TmdbId == _series.TmdbId) || 
+                                        (v.FormattedTitle != null && v.FormattedTitle.ToLower() == _series.FormattedTitle.ToLower()))
+                            .OrderBy(v => v.Season ?? 1)
+                            .ThenBy(v => v.Episode ?? 1)
+                            .ThenBy(v => v.FileName)
+                            .ToList();
+
+                        if (dbEpisodes.Count > 1)
+                        {
+                            playlist = dbEpisodes;
+                        }
+                    }
+                    catch { }
+                }
+
+                int initialIndex = playlist.FindIndex(f => string.Equals(f.FilePath, fileToPlay.FilePath, StringComparison.OrdinalIgnoreCase));
                 if (initialIndex < 0)
                 {
                     playlist.Insert(0, fileToPlay);

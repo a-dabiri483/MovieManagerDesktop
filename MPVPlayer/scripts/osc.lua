@@ -23,11 +23,11 @@ local user_opts = {
     barmargin = 0,              -- vertical margin of top/bottombar
     boxalpha = 80,              -- alpha of the background box,
                                 -- 0 (opaque) to 255 (fully transparent)
-    hidetimeout = 500,          -- duration in ms until the OSC hides if no
+    hidetimeout = 300,          -- duration in ms until the OSC hides if no
                                 -- mouse movement. enforced non-negative for the
                                 -- user, but internally negative is "always-on".
-    fadeduration = 200,         -- duration of fade out in ms, 0 = no fade
-    deadzonesize = 0.5,         -- size of deadzone
+    fadeduration = 150,         -- duration of fade out in ms, 0 = no fade
+    deadzonesize = 0,           -- size of deadzone (0 for exact boundary)
     minmousemove = 0,           -- minimum amount of pixels the mouse has to
                                 -- move between ticks to make the OSC show up
     layout = "bottombar",
@@ -1177,12 +1177,8 @@ local function window_controls(topbar)
     lo.geometry = alignment == "left" and first_geo or fourth_geo
     lo.style = osc_styles.wcButtons
 
-    -- deadzone below window controls
-    local sh_area_y0, sh_area_y1
-    sh_area_y0 = user_opts.barmargin
-    sh_area_y1 = wc_geo.y + get_align(1 - (2 * user_opts.deadzonesize),
-                                      osc_param.playresy - wc_geo.y, 0, 0)
-    add_area("showhide_wc", wc_geo.x, sh_area_y0, wc_geo.w, sh_area_y1)
+    -- exact boundary for top window controls toolbar
+    add_area("showhide_wc", 0, 0, osc_param.playresx, wc_geo.y + 4)
 
     if topbar then
         -- The title is already there as part of the top bar
@@ -1251,19 +1247,14 @@ layouts["box"] = function ()
     -- area for active mouse input
     add_area("input", get_hitbox_coords(posX, posY, 5, osc_geo.w, osc_geo.h))
 
-    -- area for show/hide
+    -- area for show/hide (exact bottom boundary)
     local sh_area_y0, sh_area_y1
     if user_opts.valign > 0 then
-        -- deadzone above OSC
-        sh_area_y0 = get_align(-1 + (2*user_opts.deadzonesize),
-            posY - (osc_geo.h / 2), 0, 0)
+        sh_area_y0 = posY - (osc_geo.h / 2) - 4
         sh_area_y1 = osc_param.playresy
     else
-        -- deadzone below OSC
         sh_area_y0 = 0
-        sh_area_y1 = (posY + (osc_geo.h / 2)) +
-            get_align(1 - (2*user_opts.deadzonesize),
-            osc_param.playresy - (posY + (osc_geo.h / 2)), 0, 0)
+        sh_area_y1 = posY + (osc_geo.h / 2) + 4
     end
     add_area("showhide", 0, sh_area_y0, osc_param.playresx, sh_area_y1)
 
@@ -1525,16 +1516,11 @@ layouts["slimbox"] = function ()
     -- area for show/hide
     local sh_area_y0, sh_area_y1
     if user_opts.valign > 0 then
-        -- deadzone above OSC
-        sh_area_y0 = get_align(-1 + (2*user_opts.deadzonesize),
-            posY - (osc_geo.h / 2), 0, 0)
+        sh_area_y0 = posY - (osc_geo.h / 2) - 4
         sh_area_y1 = osc_param.playresy
     else
-        -- deadzone below OSC
         sh_area_y0 = 0
-        sh_area_y1 = (posY + (osc_geo.h / 2)) +
-            get_align(1 - (2*user_opts.deadzonesize),
-            osc_param.playresy - (posY + (osc_geo.h / 2)), 0, 0)
+        sh_area_y1 = posY + (osc_geo.h / 2) + 4
     end
     add_area("showhide", 0, sh_area_y0, osc_param.playresx, sh_area_y1)
 
@@ -1662,14 +1648,13 @@ local function bar_layout(direction)
 
     local sh_area_y0, sh_area_y1
     if direction > 0 then
-        -- deadzone below OSC
+        -- exact top bar boundary
         sh_area_y0 = user_opts.barmargin
-        sh_area_y1 = osc_geo.y + get_align(1 - (2 * user_opts.deadzonesize),
-                                           osc_param.playresy - osc_geo.y, 0, 0)
+        sh_area_y1 = osc_geo.y + 4
     else
-        -- deadzone above OSC
-        sh_area_y0 = get_align(-1 + (2 * user_opts.deadzonesize), osc_geo.y, 0, 0)
-        sh_area_y1 = osc_param.playresy - user_opts.barmargin
+        -- exact bottom bar boundary
+        sh_area_y0 = osc_geo.y - 4
+        sh_area_y1 = osc_param.playresy
     end
     add_area("showhide", 0, sh_area_y0, osc_param.playresx, sh_area_y1)
 
@@ -2353,6 +2338,40 @@ local function element_has_action(element, action)
         element.eventresponder[action]
 end
 
+local function is_mouse_in_toolbar()
+    local mouseX, mouseY = get_virt_mouse_pos()
+    if mouseX == nil or mouseY == nil then return false end
+
+    -- Check Top Toolbar boundary
+    if osc_param.areas["showhide_wc"] then
+        for _, cords in ipairs(osc_param.areas["showhide_wc"]) do
+            if mouse_hit_coords(cords.x1, cords.y1, cords.x2, cords.y2) then
+                return true
+            end
+        end
+    end
+
+    -- Check Bottom Toolbar boundary
+    if osc_param.areas["showhide"] then
+        for _, cords in ipairs(osc_param.areas["showhide"]) do
+            if mouse_hit_coords(cords.x1, cords.y1, cords.x2, cords.y2) then
+                return true
+            end
+        end
+    end
+
+    -- Check input areas (buttons, sliders, etc.)
+    if osc_param.areas["input"] then
+        for _, cords in ipairs(osc_param.areas["input"]) do
+            if mouse_hit_coords(cords.x1, cords.y1, cords.x2, cords.y2) then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
 local function process_event(source, what)
     local action = string.format("%s%s", source,
         what and ("_" .. what) or "")
@@ -2405,13 +2424,12 @@ local function process_event(source, what)
         state.mouse_in_window = true
 
         local mouseX, mouseY = get_virt_mouse_pos()
-        if user_opts.minmousemove == 0 or
-            ((state.last_mouseX ~= nil and state.last_mouseY ~= nil) and
-                ((math.abs(mouseX - state.last_mouseX) >= user_opts.minmousemove)
-                    or (math.abs(mouseY - state.last_mouseY) >= user_opts.minmousemove)
-                )
-            ) then
+        if is_mouse_in_toolbar() then
             show_osc()
+        else
+            if state.active_element == nil and state.osc_visible then
+                hide_osc()
+            end
         end
         state.last_mouseX, state.last_mouseY = mouseX, mouseY
 
@@ -2593,7 +2611,7 @@ local function render()
     -- autohide
     if state.showtime ~= nil and get_hidetimeout() >= 0 then
         local timeout = state.showtime + (get_hidetimeout() / 1000) - now
-        if timeout <= 0 and get_touchtimeout() <= 0 then
+        if not is_mouse_in_toolbar() or (timeout <= 0 and get_touchtimeout() <= 0) then
             if state.active_element == nil and not mouse_over_osc then
                 hide_osc()
             end
@@ -2603,7 +2621,7 @@ local function render()
             if not state.hide_timer then
                 state.hide_timer = mp.add_timeout(0, tick)
             end
-            state.hide_timer.timeout = timeout
+            state.hide_timer.timeout = math.max(0.05, timeout)
             -- re-arm
             state.hide_timer:kill()
             state.hide_timer:resume()
