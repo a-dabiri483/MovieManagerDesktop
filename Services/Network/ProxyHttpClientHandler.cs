@@ -330,9 +330,9 @@ namespace MovieManagerDesktop.Services.Network
                     var response = await base.SendAsync(directRequest, cts.Token);
                     sw.Stop();
 
-                    if (!response.IsSuccessStatusCode || IsBlockedResponse(response))
+                    if (IsBlockedResponse(response))
                     {
-                        LoggerService.Warning($"[Network] ✖ BLOCKED or HTTP ERROR from {host} — Status: {(int)response.StatusCode} — {sw.ElapsedMilliseconds}ms — Switching to proxy...");
+                        LoggerService.Warning($"[Network] ✖ BLOCKED (403/HTML) from {host} — Status: {(int)response.StatusCode} — {sw.ElapsedMilliseconds}ms — Switching to proxy...");
                         response.Dispose();
                         if (!vpnActive) RecordFailureAndFlip(cacheKey);
                         return await ExecuteWithProxyAsync(request, decision.SuccessfulWorkerUrl, cacheKey, cancellationToken);
@@ -525,13 +525,9 @@ namespace MovieManagerDesktop.Services.Network
                         var response = await base.SendAsync(newRequest, cancellationToken);
                         sw.Stop();
 
-                        bool isValidApiError = response.StatusCode == HttpStatusCode.NotFound || 
-                                               response.StatusCode == HttpStatusCode.Unauthorized ||
-                                               response.StatusCode == HttpStatusCode.BadRequest;
-
-                        if ((response.IsSuccessStatusCode || isValidApiError) && !IsBlockedResponse(response))
+                        if (response.IsSuccessStatusCode && !IsBlockedResponse(response))
                         {
-                            LoggerService.Info($"[Network]   ✔ Proxy OK (or API Error) — {proxyLabel} — Status: {(int)response.StatusCode} — {sw.ElapsedMilliseconds}ms");
+                            LoggerService.Info($"[Network]   ✔ Proxy OK — {proxyLabel} — Status: {(int)response.StatusCode} — {sw.ElapsedMilliseconds}ms");
                             Cache[cacheKey] = new RouteDecision
                             {
                                 UseProxy = true,
