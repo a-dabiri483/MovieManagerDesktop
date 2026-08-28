@@ -184,7 +184,7 @@
                                     </Grid>
                                 </Button>
                                 
-                                <Button Command="{Binding RedownloadPosterCommand}" 
+                                <Button Command="{Binding ChangePosterCommand}" 
                                         Style="{StaticResource MaterialDesignFlatButton}" 
                                         Foreground="{DynamicResource PrimaryText}" 
                                         HorizontalContentAlignment="Right" Padding="15,10" Height="Auto">

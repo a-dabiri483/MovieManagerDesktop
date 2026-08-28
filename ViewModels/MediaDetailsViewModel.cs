@@ -769,18 +769,23 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private async Task ChangePosterAsync()
         {
-            if (Media.TmdbId == null || Media.TmdbId == 0)
+            if (Media == null) return;
+
+            int? tmdbId = Media.TmdbId;
+
+            if (!tmdbId.HasValue || tmdbId.Value <= 0)
             {
-                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowError("شناسه TMDB یافت نشد، امکان واکشی پوستر وجود ندارد"));
+                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowWarning("شناسه TMDB برای این مورد یافت نشد. لطفاً از گزینه «شناسایی دستی (TMDb)» استفاده کنید."));
                 return;
             }
 
             var service = new IdentifyMediaService();
-            var posters = await service.GetMediaPostersAsync(Media.TmdbId.Value, Media.MediaType ?? "Movie");
+            App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowInfo("در حال دریافت پوسترهای باکیفیت..."));
+            var posters = await service.GetMediaPostersAsync(tmdbId.Value, Media.MediaType ?? "Movie");
             
             if (posters == null || posters.Count == 0)
             {
-                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowError("پوستر جایگزینی یافت نشد"));
+                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowWarning("پوستر جایگزینی در سرور یافت نشد"));
                 return;
             }
 
@@ -789,22 +794,30 @@ namespace MovieManagerDesktop.ViewModels
             
             App.Current.Dispatcher.Invoke(() =>
             {
-                var dialog = new MovieManagerDesktop.Views.PosterSelectionDialog(vm);
-                dialog.ShowDialog();
-                
-                if (!string.IsNullOrEmpty(vm.SelectedPosterUrl))
+                try
                 {
-                    posterChanged = true;
+                    var dialog = new MovieManagerDesktop.Views.PosterSelectionDialog(vm);
+                    dialog.ShowDialog();
+                    
+                    if (!string.IsNullOrEmpty(vm.SelectedPosterUrl))
+                    {
+                        posterChanged = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LoggerService.Error("Failed to display poster dialog", ex);
                 }
             });
 
-            if (posterChanged)
+            if (posterChanged && !string.IsNullOrEmpty(vm.SelectedPosterUrl))
             {
+                App.Current.Dispatcher.Invoke(() => ToastService.Instance.ShowInfo("در حال دانلود و ذخیره پوستر انتخابی..."));
                 var savedPath = await service.DownloadAndSaveImageAsync(vm.SelectedPosterUrl, Media.FormattedTitle);
                 if (savedPath != null)
                 {
                     using var db = new AppDbContext();
-                    var dbFiles = db.VideoFiles.Where(v => v.FormattedTitle.ToLower() == Media.FormattedTitle.ToLower()).ToList();
+                    var dbFiles = db.VideoFiles.Where(v => v.FormattedTitle.ToLower() == Media.FormattedTitle.ToLower() || v.Id == Media.Id).ToList();
                     foreach (var dbFile in dbFiles)
                     {
                         dbFile.PosterUrl = savedPath;

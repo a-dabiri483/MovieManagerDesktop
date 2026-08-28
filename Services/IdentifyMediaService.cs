@@ -1319,7 +1319,7 @@ namespace MovieManagerDesktop.Services
                 string apiKey = SettingsManager.GetTmdbApiKey();
                 string type = mediaType.ToLower() == "series" ? "tv" : "movie";
                 
-                string url = $"https://api.themoviedb.org/3/{type}/{tmdbId}/images?api_key={apiKey}";
+                string url = $"https://api.themoviedb.org/3/{type}/{tmdbId}/images?api_key={apiKey}&include_image_language=en,null,fa,fr,de,es,it,ar,ja,ko,ru,zh";
                 LoggerService.Info($"[TMDB] دریافت لیست پوسترهای جایگزین: {url}");
                 var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 if (response.IsSuccessStatusCode)

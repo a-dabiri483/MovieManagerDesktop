@@ -699,12 +699,19 @@ namespace MovieManagerDesktop.ViewModels
             
             App.Current.Dispatcher.Invoke(() =>
             {
-                var dialog = new MovieManagerDesktop.Views.PosterSelectionDialog(vm);
-                dialog.ShowDialog();
-                
-                if (!string.IsNullOrEmpty(vm.SelectedPosterUrl))
+                try
                 {
-                    posterChanged = true;
+                    var dialog = new MovieManagerDesktop.Views.PosterSelectionDialog(vm);
+                    dialog.ShowDialog();
+                    
+                    if (!string.IsNullOrEmpty(vm.SelectedPosterUrl))
+                    {
+                        posterChanged = true;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LoggerService.Error("Failed to display poster dialog for series", ex);
                 }
             });
 

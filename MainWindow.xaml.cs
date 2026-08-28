@@ -39,9 +39,58 @@ namespace MovieManagerDesktop
             }
             catch { }
 
-            // Set window max height to working area height so it doesn't cover taskbar when maximized;
             this.SourceInitialized += MainWindow_SourceInitialized;
             this.Closing += MainWindow_Closing;
+            this.Loaded += MainWindow_Loaded;
+
+            MovieManagerDesktop.Services.NotificationCenterService.Instance.NewNotificationReceived += (s, e) => PlayBellWiggleAnimation();
+        }
+
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (MovieManagerDesktop.Services.NotificationCenterService.Instance.HasUnread)
+            {
+                PlayBellWiggleAnimation();
+            }
+        }
+
+        private void BtnNotificationBell_MouseEnter(object sender, MouseEventArgs e)
+        {
+            if (MovieManagerDesktop.Services.NotificationCenterService.Instance.HasUnread)
+            {
+                PlayBellWiggleAnimation();
+            }
+        }
+
+        private bool _isWiggling = false;
+
+        public async void PlayBellWiggleAnimation()
+        {
+            if (_isWiggling) return;
+            _isWiggling = true;
+
+            try
+            {
+                while (MovieManagerDesktop.Services.NotificationCenterService.Instance.HasUnread)
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        try
+                        {
+                            var sb = this.FindResource("BellWiggleStoryboard") as System.Windows.Media.Animation.Storyboard;
+                            sb?.Begin(this);
+                        }
+                        catch { }
+                    });
+
+                    // Wait for the animation to finish + a short pause
+                    await Task.Delay(2000);
+                }
+            }
+            finally
+            {
+                _isWiggling = false;
+            }
         }
 
         private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)

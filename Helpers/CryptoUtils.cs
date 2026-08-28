@@ -67,7 +67,15 @@ namespace MovieManagerDesktop.Helpers
 
         public static string GetObfuscatedSourceUrl()
         {
-            // Reverse-obfuscated URL to protect against plaintext binary scraping
+            // Primary URL: https://moviemanager.ir/web/admin_api.php?action=public_proxies
+            char[] chars = "seixorp_cilbup=noitca?php.ipa_nimda/bew/ri.reganameivom//:sptth".ToCharArray();
+            Array.Reverse(chars);
+            return new string(chars);
+        }
+
+        public static string GetBackupObfuscatedSourceUrl()
+        {
+            // Backup URL: https://raw.githubusercontent.com/a-dabiri483/AppConfig/main/proxies.txt
             char[] chars = "txt.seixorp/niam/gifnoCppA/384iribad-a/moc.tnetnocresubuhtig.war//:sptth".ToCharArray();
             Array.Reverse(chars);
             return new string(chars);

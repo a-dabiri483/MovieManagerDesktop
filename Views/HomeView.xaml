@@ -229,16 +229,22 @@
                         <DropShadowEffect BlurRadius="30" ShadowDepth="4" Opacity="0.6" Color="#000000"/>
                     </Border.Effect>
                     <Grid>
-                        <!-- Ambient Glow Circles -->
-                        <Ellipse Width="380" Height="220" Fill="#1AEB3B5A" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-50,-50,0">
-                            <Ellipse.Effect>
-                                <BlurEffect Radius="80"/>
-                            </Ellipse.Effect>
+                        <!-- Ambient Glow Circles (Fast native GPU RadialGradient without multi-pass blur shaders) -->
+                        <Ellipse Width="380" Height="220" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-50,-50,0">
+                            <Ellipse.Fill>
+                                <RadialGradientBrush>
+                                    <GradientStop Color="#25EB3B5A" Offset="0"/>
+                                    <GradientStop Color="#00EB3B5A" Offset="1"/>
+                                </RadialGradientBrush>
+                            </Ellipse.Fill>
                         </Ellipse>
-                        <Ellipse Width="320" Height="200" Fill="#188854D0" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="-40,0,0,-40">
-                            <Ellipse.Effect>
-                                <BlurEffect Radius="70"/>
-                            </Ellipse.Effect>
+                        <Ellipse Width="320" Height="200" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="-40,0,0,-40">
+                            <Ellipse.Fill>
+                                <RadialGradientBrush>
+                                    <GradientStop Color="#208854D0" Offset="0"/>
+                                    <GradientStop Color="#008854D0" Offset="1"/>
+                                </RadialGradientBrush>
+                            </Ellipse.Fill>
                         </Ellipse>
 
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="30">

@@ -304,6 +304,116 @@
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
+
+                <!-- Card 6: Library Compare & Diff -->
+                <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                        Command="{Binding OpenLibraryCompareCommand}">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Margin="8" CornerRadius="18"
+                                    Background="{DynamicResource CardBackground}"
+                                    BorderBrush="{DynamicResource LightBorder}"
+                                    BorderThickness="1" Padding="20">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
+                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Border Grid.Row="0" Width="56" Height="56" CornerRadius="16" 
+                                            Background="#25EB3B5A" HorizontalAlignment="Right" Margin="0,0,0,16">
+                                        <materialDesign:PackIcon Kind="FileCompare" Width="28" Height="28" 
+                                                                 Foreground="{DynamicResource PrimaryColor}"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+
+                                    <TextBlock Grid.Row="1" Text="مقایسه هوشمند آرشیوها" 
+                                               FontSize="16.5" FontWeight="Bold" 
+                                               Foreground="White" 
+                                               Margin="0,0,0,8"/>
+
+                                    <TextBlock Grid.Row="2" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">
+                                        مقایسه دیتابیس یا هارد دوستان با آرشیو شما، شناسایی فیلم‌های کسری (Missing) و ارتقای کیفیت‌ها.
+                                    </TextBlock>
+
+                                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,18,0,0">
+                                        <TextBlock Text="شروع ابزار" Foreground="{DynamicResource PrimaryColor}" FontWeight="Bold" FontSize="13"/>
+                                        <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource PrimaryColor}" 
+                                                                 Width="16" Height="16" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+
+                <!-- Card 7: Catalog & Report Exporter -->
+                <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                        Command="{Binding OpenCatalogExportCommand}">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Margin="8" CornerRadius="18"
+                                    Background="{DynamicResource CardBackground}"
+                                    BorderBrush="{DynamicResource LightBorder}"
+                                    BorderThickness="1" Padding="20">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
+                                                <Setter Property="BorderBrush" Value="#00D2D3"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Border Grid.Row="0" Width="56" Height="56" CornerRadius="16" 
+                                            Background="#2500D2D3" HorizontalAlignment="Right" Margin="0,0,0,16">
+                                        <materialDesign:PackIcon Kind="BookOpenPageVariantOutline" Width="28" Height="28" 
+                                                                 Foreground="#00D2D3"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+
+                                    <TextBlock Grid.Row="1" Text="تولید کاتالوگ و گزارش" 
+                                               FontSize="16.5" FontWeight="Bold" 
+                                               Foreground="White" 
+                                               Margin="0,0,0,8"/>
+
+                                    <TextBlock Grid.Row="2" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">
+                                        ایجاد سند رسمی Word همراه با عکس پوسترها، فایل‌های اکسل و کاتالوگ تعاملی وب برای ارسال به دیگران.
+                                    </TextBlock>
+
+                                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,18,0,0">
+                                        <TextBlock Text="شروع ابزار" Foreground="#00D2D3" FontWeight="Bold" FontSize="13"/>
+                                        <materialDesign:PackIcon Kind="ArrowLeft" Foreground="#00D2D3" 
+                                                                 Width="16" Height="16" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
             </UniformGrid>
         </StackPanel>
     </ScrollViewer>

@@ -36,5 +36,17 @@ namespace MovieManagerDesktop.ViewModels
         {
             WeakReferenceMessenger.Default.Send(new NavigationMessage(new AutoRelocatorViewModel()));
         }
+
+        [RelayCommand]
+        private void OpenLibraryCompare()
+        {
+            WeakReferenceMessenger.Default.Send(new NavigationMessage(new LibraryCompareToolViewModel()));
+        }
+
+        [RelayCommand]
+        private void OpenCatalogExport()
+        {
+            WeakReferenceMessenger.Default.Send(new NavigationMessage(new CatalogExportToolViewModel()));
+        }
     }
 }

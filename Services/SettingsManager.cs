@@ -42,6 +42,7 @@ namespace MovieManagerDesktop.Services
         // Internal Encrypted Proxies (Silent background anti-sanction sync)
         public string InternalEncryptedProxies { get; set; } = string.Empty;
         public DateTime InternalProxiesLastSyncTime { get; set; } = DateTime.MinValue;
+        public List<string> DismissedAnnouncementIds { get; set; } = new List<string>();
 
         // Personalization & Localization Settings
         public string DateFormatOverride { get; set; } = "jalali"; // "jalali" (شمسی) or "gregorian" (میلادی)
@@ -230,60 +231,72 @@ namespace MovieManagerDesktop.Services
                     return (true, count, "پروکسی‌های ضدتحریم قبلاً در ۲۴ ساعت گذشته به‌روزرسانی شده‌اند.");
                 }
 
-                string targetUrl = !string.IsNullOrWhiteSpace(customUrl) 
-                    ? customUrl 
-                    : (!string.IsNullOrWhiteSpace(settings.DynamicProxySourceUrl) 
-                        ? settings.DynamicProxySourceUrl 
-                        : CryptoUtils.GetObfuscatedSourceUrl());
+                var urlsToTry = new List<string>();
+                if (!string.IsNullOrWhiteSpace(customUrl))
+                {
+                    urlsToTry.Add(customUrl);
+                }
+                else
+                {
+                    if (!string.IsNullOrWhiteSpace(settings.DynamicProxySourceUrl))
+                    {
+                        urlsToTry.Add(settings.DynamicProxySourceUrl);
+                    }
+                    else
+                    {
+                        urlsToTry.Add(CryptoUtils.GetObfuscatedSourceUrl()); // Primary Site
+                        urlsToTry.Add(CryptoUtils.GetBackupObfuscatedSourceUrl()); // Backup GitHub
+                    }
+                }
 
-                // Prevent CDN caching
-                string cacheBuster = targetUrl.Contains("?") ? $"&_t={DateTime.UtcNow.Ticks}" : $"?_t={DateTime.UtcNow.Ticks}";
-                string requestUrl = targetUrl + cacheBuster;
-
-                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
                 client.DefaultRequestHeaders.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true, NoStore = true };
 
-                var response = await client.GetAsync(requestUrl);
-                if (!response.IsSuccessStatusCode)
+                string? lastError = null;
+                foreach (var targetUrl in urlsToTry.Distinct())
                 {
-                    return (false, 0, $"خطا در برقراری ارتباط با منبع پروکسی: {(int)response.StatusCode}");
+                    try
+                    {
+                        string cacheBuster = targetUrl.Contains("?") ? $"&_t={DateTime.UtcNow.Ticks}" : $"?_t={DateTime.UtcNow.Ticks}";
+                        string requestUrl = targetUrl + cacheBuster;
+
+                        var response = await client.GetAsync(requestUrl);
+                        if (!response.IsSuccessStatusCode)
+                        {
+                            lastError = $"HTTP {(int)response.StatusCode}";
+                            continue;
+                        }
+
+                        string encryptedText = (await response.Content.ReadAsStringAsync()).Trim();
+                        if (string.IsNullOrWhiteSpace(encryptedText)) continue;
+
+                        string? decrypted = CryptoUtils.Decrypt(encryptedText);
+                        if (string.IsNullOrWhiteSpace(decrypted)) continue;
+
+                        var proxyList = decrypted.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                            .Select(p => p.Trim())
+                            .Where(p => p.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                            .Distinct()
+                            .ToList();
+
+                        if (proxyList.Count > 0)
+                        {
+                            settings.InternalEncryptedProxies = string.Join(",", proxyList);
+                            settings.InternalProxiesLastSyncTime = DateTime.UtcNow;
+                            SaveSettings(settings);
+
+                            Network.ProxyHttpClientHandler.ClearCache();
+                            LoggerService.Info($"[ProxySync] Successfully synced and cached {proxyList.Count} internal proxies from {targetUrl}");
+                            return (true, proxyList.Count, "پروکسی‌ها با موفقیت همگام‌سازی شدند.");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        lastError = ex.Message;
+                    }
                 }
 
-                string encryptedText = (await response.Content.ReadAsStringAsync()).Trim();
-                if (string.IsNullOrWhiteSpace(encryptedText))
-                {
-                    settings.InternalEncryptedProxies = string.Empty;
-                    settings.InternalProxiesLastSyncTime = DateTime.UtcNow;
-                    SaveSettings(settings);
-                    Network.ProxyHttpClientHandler.ClearCache();
-                    return (true, 0, "لیست پروکسی‌ها در سرور گیت‌هاب خالی است.");
-                }
-
-                string? decrypted = CryptoUtils.Decrypt(encryptedText);
-                if (string.IsNullOrWhiteSpace(decrypted))
-                {
-                    return (false, 0, "رمزگشایی داده‌های پروکسی با خطا مواجه شد.");
-                }
-
-                var proxyList = decrypted.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries)
-                    .Select(p => p.Trim())
-                    .Where(p => p.StartsWith("http", StringComparison.OrdinalIgnoreCase))
-                    .Distinct()
-                    .ToList();
-
-                if (proxyList.Count == 0)
-                {
-                    return (true, 0, "هیچ سرور پروکسی فعالی در منبع یافت نشد.");
-                }
-
-                settings.InternalEncryptedProxies = string.Join(",", proxyList);
-                settings.InternalProxiesLastSyncTime = DateTime.UtcNow;
-                SaveSettings(settings);
-
-                Network.ProxyHttpClientHandler.ClearCache();
-                LoggerService.Info($"[ProxySync] Successfully synced and cached {proxyList.Count} internal proxies for 24 hours.");
-
-                return (true, proxyList.Count, $"{proxyList.Count} سرور پروکسی ضدتحریم با موفقیت همگام‌سازی شد.");
+                return (false, 0, $"خطا در دریافت پروکسی‌ها از تمام منابع: {lastError}");
             }
             catch (Exception ex)
             {
@@ -313,5 +326,79 @@ namespace MovieManagerDesktop.Services
             }
             return url;
         }
+
+        public static async Task<List<InAppAnnouncement>?> FetchPublicAnnouncementsAsync()
+        {
+            try
+            {
+                string url = "https://moviemanager.ir/web/admin_api.php?action=public_announcement";
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(6) };
+                client.DefaultRequestHeaders.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true, NoStore = true };
+
+                var response = await client.GetAsync(url);
+                if (!response.IsSuccessStatusCode) return null;
+
+                string json = await response.Content.ReadAsStringAsync();
+                if (string.IsNullOrWhiteSpace(json)) return null;
+
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                if (root.ValueKind == JsonValueKind.Array)
+                {
+                    var list = new List<InAppAnnouncement>();
+                    foreach (var item in root.EnumerateArray())
+                    {
+                        if (item.TryGetProperty("enabled", out var enabledElem) && enabledElem.GetBoolean())
+                        {
+                            list.Add(new InAppAnnouncement
+                            {
+                                Enabled = true,
+                                Id = item.TryGetProperty("id", out var idElem) ? idElem.GetString() ?? "" : "",
+                                Title = item.TryGetProperty("title", out var titleElem) ? titleElem.GetString() ?? "" : "",
+                                Message = item.TryGetProperty("message", out var msgElem) ? msgElem.GetString() ?? "" : "",
+                                Type = item.TryGetProperty("type", out var typeElem) ? typeElem.GetString() ?? "info" : "info",
+                                ActionTitle = item.TryGetProperty("action_title", out var atElem) ? atElem.GetString() ?? "" : "",
+                                ActionUrl = item.TryGetProperty("action_url", out var auElem) ? auElem.GetString() ?? "" : "",
+                                CreatedAt = item.TryGetProperty("created_at", out var createdElem) && DateTime.TryParse(createdElem.GetString(), out var dt) ? dt : DateTime.Now
+                            });
+                        }
+                    }
+                    return list;
+                }
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static void DismissAnnouncement(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id)) return;
+            var settings = LoadSettings();
+            if (!settings.DismissedAnnouncementIds.Contains(id))
+            {
+                settings.DismissedAnnouncementIds.Add(id);
+                // Keep list from growing unbounded (keep last 50)
+                if (settings.DismissedAnnouncementIds.Count > 50)
+                {
+                    settings.DismissedAnnouncementIds.RemoveAt(0);
+                }
+                SaveSettings(settings);
+            }
+        }
+    }
+
+    public class InAppAnnouncement
+    {
+        public bool Enabled { get; set; } = false;
+        public string Id { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Message { get; set; } = string.Empty;
+        public string Type { get; set; } = "info";
+        public string ActionTitle { get; set; } = string.Empty;
+        public string ActionUrl { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }

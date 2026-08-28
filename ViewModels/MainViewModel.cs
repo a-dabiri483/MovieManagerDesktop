@@ -2,6 +2,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using MovieManagerDesktop.Messages;
+using MovieManagerDesktop.Models;
+using MovieManagerDesktop.Services;
 using System.Windows;
 
 namespace MovieManagerDesktop.ViewModels
@@ -14,7 +16,7 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private bool _isPlayerActive = false;
 
-        partial void OnCurrentViewModelChanged(ObservableObject? value)
+        partial void OnCurrentViewModelChanged(ObservableObject value)
         {
             IsPlayerActive = false;
         }
@@ -111,6 +113,69 @@ namespace MovieManagerDesktop.ViewModels
         private void NavigateToCalendar()
         {
             CurrentViewModel = new CalendarViewModel();
+        }
+
+        public NotificationCenterService NotificationCenter => NotificationCenterService.Instance;
+
+        [ObservableProperty]
+        private bool _isNotificationPopupOpen = false;
+
+        [RelayCommand]
+        private void ToggleNotificationPopup()
+        {
+            IsNotificationPopupOpen = !IsNotificationPopupOpen;
+        }
+
+        [RelayCommand]
+        private void CloseNotificationPopup()
+        {
+            IsNotificationPopupOpen = false;
+        }
+
+        [RelayCommand]
+        private void MarkAllNotificationsRead()
+        {
+            NotificationCenter.MarkAllAsRead();
+        }
+
+        [RelayCommand]
+        private void MarkNotificationRead(AppNotificationItem item)
+        {
+            NotificationCenter.MarkAsRead(item);
+        }
+
+        [RelayCommand]
+        private void DismissNotification(AppNotificationItem item)
+        {
+            NotificationCenter.Remove(item);
+        }
+
+        [RelayCommand]
+        private void ClearAllNotifications()
+        {
+            NotificationCenter.ClearAll();
+        }
+
+        [RelayCommand]
+        private void OpenNotificationAction(AppNotificationItem item)
+        {
+            if (item != null && !string.IsNullOrWhiteSpace(item.ActionUrl))
+            {
+                try
+                {
+                    var psi = new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = item.ActionUrl,
+                        UseShellExecute = true
+                    };
+                    System.Diagnostics.Process.Start(psi);
+                }
+                catch { }
+            }
+            if (item != null)
+            {
+                NotificationCenter.MarkAsRead(item);
+            }
         }
     }
 }

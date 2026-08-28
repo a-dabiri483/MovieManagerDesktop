@@ -612,9 +612,6 @@
                                         <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.CardClickedCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                                         <MouseBinding Gesture="RightClick" Command="{Binding DataContext.ToggleSelectionCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                                     </Border.InputBindings>
-                                    <Border.Effect>
-                                        <DropShadowEffect BlurRadius="16" ShadowDepth="3" Opacity="0.45" Color="Black"/>
-                                    </Border.Effect>
 
                                     <StackPanel>
                                         
@@ -624,7 +621,7 @@
                                             <!-- Actual Poster Image with Bottom Gradient -->
                                             <Border CornerRadius="12" ClipToBounds="True" Background="#15FFFFFF">
                                                 <Grid>
-                                                    <Image Source="{Binding File.PosterUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                                    <Image Source="{Binding File.PosterUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="LowQuality"/>
                                                     
                                                     <!-- Dark Gradient Overlay at bottom of poster (for clear text contrast) -->
                                                     <Border VerticalAlignment="Bottom" Height="65">
@@ -646,9 +643,6 @@
                                                         Background="#D90F172A" BorderBrush="#40334155" BorderThickness="1"
                                                         CornerRadius="14" Width="28" Height="28" Margin="0,0,0,5"
                                                         ToolTip="دارای دوبله فارسی">
-                                                    <Border.Effect>
-                                                        <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.7" Color="Black"/>
-                                                    </Border.Effect>
                                                     <materialDesign:PackIcon Kind="Microphone" Width="15" Height="15" Foreground="#00E676" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 </Border>
 
@@ -657,9 +651,6 @@
                                                         Background="#D90F172A" BorderBrush="#40334155" BorderThickness="1"
                                                         CornerRadius="14" Width="28" Height="28"
                                                         ToolTip="دارای زیرنویس فارسی">
-                                                    <Border.Effect>
-                                                        <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.7" Color="Black"/>
-                                                    </Border.Effect>
                                                     <materialDesign:PackIcon Kind="ClosedCaption" Width="15" Height="15" Foreground="#FFD166" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                                 </Border>
                                             </StackPanel>
@@ -668,9 +659,6 @@
                                             <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8,8,0,0"
                                                     Background="#D90F172A" CornerRadius="12" Padding="7,3" BorderBrush="#40334155" BorderThickness="1"
                                                     Visibility="{Binding HasRating, Converter={StaticResource BoolToVisibilityConverter}}">
-                                                <Border.Effect>
-                                                    <DropShadowEffect BlurRadius="8" ShadowDepth="2" Opacity="0.7" Color="Black"/>
-                                                </Border.Effect>
                                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                     <materialDesign:PackIcon Kind="Star" Width="13" Height="13" Foreground="#FFD166" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                                     <TextBlock Text="{Binding RatingFormatted}" Foreground="#4ADE80" FontSize="11.5" FontWeight="Black" VerticalAlignment="Center"/>
