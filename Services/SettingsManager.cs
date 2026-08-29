@@ -331,7 +331,7 @@ namespace MovieManagerDesktop.Services
         {
             try
             {
-                string url = "https://moviemanager.ir/web/admin_api.php?action=public_announcement";
+                string url = "https://moviemanager.ir/web/admin_api.php?action=public_announcement&platform=desktop";
                 using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(6) };
                 client.DefaultRequestHeaders.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue { NoCache = true, NoStore = true };
 
