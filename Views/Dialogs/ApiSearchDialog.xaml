@@ -1,214 +1,417 @@
 <Window x:Class="MovieManagerDesktop.Views.Dialogs.ApiSearchDialog"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
-             xmlns:converters="clr-namespace:MovieManagerDesktop.Converters"
-             xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
-             d:DataContext="{d:DesignInstance Type=viewmodels:ApiSearchDialogViewModel}"
-             mc:Ignorable="d"
-             x:Name="Root"
-             Width="600" 
-             Height="500"
-             WindowStyle="None"
-             AllowsTransparency="True"
-             Background="Transparent"
-             WindowStartupLocation="CenterOwner"
-             FlowDirection="RightToLeft">
-             
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
+        xmlns:converters="clr-namespace:MovieManagerDesktop.Converters"
+        xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
+        d:DataContext="{d:DesignInstance Type=viewmodels:ApiSearchDialogViewModel}"
+        mc:Ignorable="d"
+        x:Name="Root"
+        Width="680" 
+        Height="560"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        WindowStartupLocation="CenterOwner"
+        FlowDirection="RightToLeft">
+        
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <materialDesign:BooleanToVisibilityConverter x:Key="InverseBooleanToVisibilityConverter" TrueValue="Collapsed" FalseValue="Visible"/>
+        
+        <!-- Filter Pill Style matching ManualSearchView & EditScannedGroup -->
+        <Style x:Key="FilterChipRadio" TargetType="RadioButton">
+            <Setter Property="Background" Value="#15FFFFFF"/>
+            <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource LightBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="18,6"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="14" 
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource PrimaryGradientBrush}"/>
+                                <Setter Property="BorderThickness" Value="0"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="FontWeight" Value="Bold"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
 
-    <Border Background="{DynamicResource MainBackground}" CornerRadius="8" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1">
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        
-        <!-- Header -->
-        <Border Grid.Row="0" 
-                Background="{DynamicResource SidebarBackground}" 
-                CornerRadius="8,8,0,0"
-                Padding="20,15"
-                MouseLeftButtonDown="Header_MouseLeftButtonDown">
-            <StackPanel Orientation="Horizontal">
-                <materialDesign:PackIcon Kind="CloudSearch" 
-                                         Foreground="{DynamicResource PrimaryText}" 
-                                         Width="24" Height="24" 
-                                         VerticalAlignment="Center" 
-                                         Margin="0,0,10,0"/>
-                <TextBlock Text="جستجو در سرور API" 
-                           Foreground="{DynamicResource PrimaryText}" 
-                           FontSize="18" 
-                           FontWeight="Bold" 
-                           VerticalAlignment="Center"/>
-            </StackPanel>
-        </Border>
-        
-        <!-- Search Bar -->
-        <Border Grid.Row="1" Padding="20">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,15">
-                    <RadioButton Content="فیلم" Style="{StaticResource MaterialDesignTabRadioButton}" 
-                                 IsChecked="{Binding IsSearchTypeMovie}" Foreground="{DynamicResource PrimaryText}" Margin="0,0,15,0" Padding="15,5" Background="{DynamicResource CardBackground}"/>
-                    <RadioButton Content="سریال" Style="{StaticResource MaterialDesignTabRadioButton}" 
-                                 IsChecked="{Binding IsSearchTypeSeries}" Foreground="{DynamicResource PrimaryText}" Margin="0,0,15,0" Padding="15,5" Background="{DynamicResource CardBackground}"/>
-                    <RadioButton Content="انیمه (AniList)" Style="{StaticResource MaterialDesignTabRadioButton}" 
-                                 IsChecked="{Binding IsSearchTypeAnime}" Foreground="{DynamicResource PrimaryText}" Padding="15,5" Background="{DynamicResource CardBackground}"/>
-                </StackPanel>
-                
-                <TextBox Grid.Row="1" Grid.Column="0" 
-                         Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
-                         Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                         materialDesign:HintAssist.Hint="نام فیلم/سریال مورد نظر را وارد کنید..."
-                         Foreground="{DynamicResource PrimaryText}"
-                         FontSize="14"
-                         VerticalAlignment="Center">
-                    <TextBox.InputBindings>
-                        <KeyBinding Key="Return" Command="{Binding SearchCommand}"/>
-                    </TextBox.InputBindings>
-                </TextBox>
-                
-                <Button Grid.Row="1" Grid.Column="1" 
-                        Command="{Binding SearchCommand}"
-                        Content="جستجو"
-                        Style="{StaticResource MaterialDesignRaisedButton}"
-                        Background="{DynamicResource PrimaryColor}"
-                        Foreground="#050510"
-                        Padding="25,0"
-                        Margin="10,0,0,0"/>
-            </Grid>
-        </Border>
-        
-        <!-- Results List -->
-        <Border Grid.Row="2" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource NormalBorder}">
-            <Grid>
-                <!-- Loading Indicator -->
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                            Visibility="{Binding IsSearching, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
-                                 Value="0"
-                                 IsIndeterminate="True"
-                                 HorizontalAlignment="Center"
-                                 Width="40" Height="40"
-                                 Foreground="{DynamicResource PrimaryColor}"/>
-                    <TextBlock Text="در حال دریافت اطلاعات از سرور..." Foreground="{DynamicResource SecondaryText}" Margin="0,12,0,0" FontSize="13"/>
-                </StackPanel>
+    <Border Background="{DynamicResource MainBackground}" 
+            CornerRadius="16" 
+            BorderBrush="{DynamicResource LightBorder}" 
+            BorderThickness="1"
+            ClipToBounds="True">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="25" ShadowDepth="4" Opacity="0.45" Color="Black"/>
+        </Border.Effect>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            
+            <!-- HEADER -->
+            <Border Grid.Row="0" 
+                    Background="{DynamicResource SidebarBackground}" 
+                    Padding="22,16"
+                    MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <!-- Empty State Message -->
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
-                            Visibility="{Binding SearchResults.Count, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
-                    <materialDesign:PackIcon Kind="MovieSearchOutline" Width="50" Height="50" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Opacity="0.6"/>
-                    <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource SecondaryText}" FontSize="14" Margin="0,10,0,0" TextAlignment="Center" MaxWidth="400" TextWrapping="Wrap"/>
-                </StackPanel>
-                
-                <!-- Results -->
-                <ListBox ItemsSource="{Binding SearchResults}"
-                         Background="Transparent"
-                         BorderThickness="0"
-                         HorizontalContentAlignment="Stretch"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         Visibility="{Binding IsSearching, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="Padding" Value="0"/>
-                            <Setter Property="Margin" Value="10,5"/>
-                            <Setter Property="Background" Value="Transparent"/>
-                            <Setter Property="BorderBrush" Value="{DynamicResource NormalBorder}"/>
-                            <Setter Property="BorderThickness" Value="1"/>
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ListBoxItem">
-                                        <Border Background="{TemplateBinding Background}"
-                                                BorderBrush="{TemplateBinding BorderBrush}"
-                                                BorderThickness="{TemplateBinding BorderThickness}"
-                                                CornerRadius="8"
-                                                Padding="10">
-                                            <ContentPresenter/>
-                                        </Border>
-                                        <ControlTemplate.Triggers>
-                                            <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
-                                                <Setter Property="Cursor" Value="Hand"/>
-                                            </Trigger>
-                                        </ControlTemplate.Triggers>
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Background="#20E50914" Width="42" Height="42" CornerRadius="12" Margin="0,0,14,0" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="DatabaseSearch" 
+                                                     Foreground="{DynamicResource PrimaryColor}" 
+                                                     Width="24" Height="24" 
+                                                     HorizontalAlignment="Center" 
+                                                     VerticalAlignment="Center"/>
+                        </Border>
+                        
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="جستجوی دستی و ویرایش اطلاعات" 
+                                       Foreground="{DynamicResource PrimaryText}" 
+                                       FontSize="17" 
+                                       FontWeight="Black"/>
+                            
+                            <!-- Header Subtitle & Realtime Status -->
+                            <Grid Margin="0,3,0,0">
+                                <!-- Searching Indicator in Header -->
+                                <StackPanel Orientation="Horizontal" 
+                                            Visibility="{Binding IsSearching, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <ProgressBar Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                                 Value="0" IsIndeterminate="True"
+                                                 Width="14" Height="14"
+                                                 Foreground="{DynamicResource PrimaryColor}"
+                                                 Margin="0,0,6,0"
+                                                 VerticalAlignment="Center"/>
+                                    <TextBlock Text="در حال دریافت اطلاعات از سرور..." 
+                                               Foreground="{DynamicResource PrimaryColor}" 
+                                               FontSize="12" 
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <!-- Status text when searched and done -->
+                                <TextBlock Text="{Binding StatusMessage}" 
+                                           Foreground="#00E5FF" 
+                                           FontSize="12" 
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                            <Style.Triggers>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding HasSearched}" Value="True"/>
+                                                        <Condition Binding="{Binding IsSearching}" Value="False"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <!-- Default Subtitle before search -->
+                                <TextBlock Text="جستجو و اتصال مشخصات آنلاین از پایگاه داده TMDb" 
+                                           Foreground="{DynamicResource SecondaryText}" 
+                                           FontSize="12" 
+                                           VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Visibility" Value="Visible"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding HasSearched}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsSearching}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Close Button in Header -->
+                    <Button Grid.Column="1" 
+                            Command="{Binding CancelCommand}"
+                            Background="#15FFFFFF"
+                            BorderThickness="0"
+                            Foreground="{DynamicResource PrimaryText}" 
+                            Width="34" Height="34"
+                            Padding="0"
+                            materialDesign:ButtonAssist.CornerRadius="17"
+                            ToolTip="بستن"
+                            Cursor="Hand"
+                            VerticalAlignment="Center">
+                        <materialDesign:PackIcon Kind="Close" Width="18" Height="18"/>
+                    </Button>
+                </Grid>
+            </Border>
+            
+            <!-- SEARCH CONTROLS & FILTER PILLS -->
+            <Border Grid.Row="1" Background="{DynamicResource CardBackground}" Padding="20,16" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="0,0,0,1">
+                <StackPanel>
+                    <!-- Type Filter Pills -->
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,14">
+                        <RadioButton Content="فیلم" Style="{StaticResource FilterChipRadio}" 
+                                     IsChecked="{Binding IsSearchTypeMovie}"/>
+                        <RadioButton Content="سریال" Style="{StaticResource FilterChipRadio}" 
+                                     IsChecked="{Binding IsSearchTypeSeries}"/>
+                        <RadioButton Content="انیمه (AniList)" Style="{StaticResource FilterChipRadio}" 
+                                     IsChecked="{Binding IsSearchTypeAnime}"/>
+                    </StackPanel>
+                    
+                    <!-- Search Input & Button -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <Border Grid.Column="0" 
+                                Background="#15FFFFFF" 
+                                CornerRadius="12" 
+                                BorderBrush="{DynamicResource LightBorder}" 
+                                BorderThickness="1" 
+                                Padding="12,2" 
+                                Margin="0,0,10,0">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="60"/>
-                                    <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 
-                                <Border Grid.Column="0" CornerRadius="4" ClipToBounds="True" Background="#33000000" Height="90">
-                                    <Image controls:CachedImage.SourceUrl="{Binding PosterUrl}" Stretch="UniformToFill"/>
-                                </Border>
+                                <materialDesign:PackIcon Grid.Column="0" 
+                                                         Kind="Magnify" 
+                                                         Width="22" Height="22" 
+                                                         Foreground="{DynamicResource SecondaryText}" 
+                                                         VerticalAlignment="Center" 
+                                                         Margin="0,0,8,0"/>
                                 
-                                <StackPanel Grid.Column="1" Margin="15,0">
-                                    <TextBlock Text="{Binding Title}" 
-                                               Foreground="{DynamicResource PrimaryText}"
-                                               FontSize="16" FontWeight="SemiBold"
-                                               TextWrapping="Wrap" MaxHeight="45"/>
-                                    
-                                    <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
-                                        <Border Background="#33FFFFFF" CornerRadius="4" Padding="6,2" Margin="0,0,5,0">
-                                            <TextBlock Text="{Binding ReleaseYear}" Foreground="{DynamicResource SecondaryText}" FontSize="12"/>
-                                        </Border>
-                                        <Border Background="#3300E5FF" CornerRadius="4" Padding="6,2" Margin="0,0,5,0">
-                                            <TextBlock Text="{Binding MediaType}" Foreground="#00E5FF" FontSize="12"/>
-                                        </Border>
-                                        <TextBlock Text="{Binding Id, StringFormat='ID: {0}'}" 
-                                                   Foreground="{DynamicResource SecondaryText}" 
-                                                   FontSize="12" VerticalAlignment="Center" Margin="5,0,0,0"/>
-                                    </StackPanel>
-                                </StackPanel>
-                                
-                                <Button Grid.Column="2" 
-                                        Content="انتخاب"
-                                        Command="{Binding DataContext.SelectResultCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                        CommandParameter="{Binding}"
-                                        Style="{StaticResource MaterialDesignRaisedButton}"
-                                        Background="{DynamicResource PrimaryColor}"
-                                        Foreground="#050510"
-                                        VerticalAlignment="Center"
-                                        Padding="15,5"/>
+                                <TextBox Grid.Column="1"
+                                         Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}"
+                                         Style="{StaticResource MaterialDesignTextBox}"
+                                         materialDesign:HintAssist.Hint="نام عنوان مورد نظر را به انگلیسی یا فارسی وارد کنید..."
+                                         Foreground="{DynamicResource PrimaryText}"
+                                         FontSize="14"
+                                         VerticalAlignment="Center"
+                                         BorderThickness="0"
+                                         Padding="0,6">
+                                    <TextBox.InputBindings>
+                                        <KeyBinding Key="Return" Command="{Binding SearchCommand}"/>
+                                    </TextBox.InputBindings>
+                                </TextBox>
                             </Grid>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </Grid>
-        </Border>
-        
-        <!-- Close Button -->
-        <Button HorizontalAlignment="Right" 
-                VerticalAlignment="Top" 
-                Margin="0,10,10,0"
-                Command="{Binding CancelCommand}"
-                Style="{StaticResource MaterialDesignIconForegroundButton}"
-                Foreground="{DynamicResource PrimaryText}" 
-                Width="30" Height="30">
-            <materialDesign:PackIcon Kind="Close"/>
-        </Button>
-    </Grid>
+                        </Border>
+                        
+                        <Button Grid.Column="1" 
+                                Command="{Binding SearchCommand}"
+                                Style="{StaticResource MaterialDesignRaisedButton}"
+                                Background="{DynamicResource PrimaryGradientBrush}"
+                                Foreground="White"
+                                FontWeight="Bold"
+                                FontSize="13.5"
+                                materialDesign:ButtonAssist.CornerRadius="12"
+                                Height="42"
+                                Padding="20,0"
+                                Cursor="Hand">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Magnify" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="جستجو" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+            </Border>
+            
+            <!-- RESULTS LIST -->
+            <Border Grid.Row="2" Background="{DynamicResource MainBackground}">
+                <Grid>
+                    <!-- Initial State (Before search) -->
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Visibility="{Binding HasSearched, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                        <Border Background="#10FFFFFF" Width="72" Height="72" CornerRadius="36" Margin="0,0,0,12" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="MovieSearchOutline" Width="36" Height="36" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.7"/>
+                        </Border>
+                        <TextBlock Text="نام عنوان را در کادر بالا وارد کرده و دکمه جستجو را بزنید" 
+                                   Foreground="{DynamicResource SecondaryText}" 
+                                   FontSize="13.5" 
+                                   TextAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Empty State (After search, 0 results found) -->
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <StackPanel.Style>
+                            <Style TargetType="StackPanel">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <MultiDataTrigger>
+                                        <MultiDataTrigger.Conditions>
+                                            <Condition Binding="{Binding HasSearched}" Value="True"/>
+                                            <Condition Binding="{Binding IsSearching}" Value="False"/>
+                                            <Condition Binding="{Binding SearchResults.Count}" Value="0"/>
+                                        </MultiDataTrigger.Conditions>
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </MultiDataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </StackPanel.Style>
+                        
+                        <Border Background="#15FF5252" Width="64" Height="64" CornerRadius="32" Margin="0,0,0,12" HorizontalAlignment="Center">
+                            <materialDesign:PackIcon Kind="AlertCircleOutline" Width="32" Height="32" Foreground="#FF5252" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <TextBlock Text="هیچ نتیجه‌ای مطابق با عبارت جستجو شده یافت نشد" 
+                                   Foreground="{DynamicResource PrimaryText}" 
+                                   FontSize="14" 
+                                   FontWeight="SemiBold"
+                                   TextAlignment="Center"/>
+                        <TextBlock Text="لطفاً املای کلمات را بررسی کنید یا نوع دسته‌بندی (فیلم/سریال) را تغییر دهید" 
+                                   Foreground="{DynamicResource SecondaryText}" 
+                                   FontSize="12" 
+                                   Margin="0,4,0,0"
+                                   TextAlignment="Center"/>
+                    </StackPanel>
+                    
+                    <!-- Results ListBox -->
+                    <ListBox ItemsSource="{Binding SearchResults}"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             HorizontalContentAlignment="Stretch"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             Padding="16,10"
+                             Visibility="{Binding IsSearching, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="Margin" Value="0,4,0,8"/>
+                                <Setter Property="Background" Value="{DynamicResource CardBackground}"/>
+                                <Setter Property="BorderBrush" Value="{DynamicResource NormalBorder}"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    CornerRadius="12"
+                                                    Padding="12,10">
+                                                <ContentPresenter/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="{DynamicResource HoverBackground}"/>
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                                                    <Setter Property="Cursor" Value="Hand"/>
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="65"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- Poster -->
+                                    <Border Grid.Column="0" CornerRadius="8" ClipToBounds="True" Background="#33000000" Height="95" BorderBrush="#20FFFFFF" BorderThickness="1">
+                                        <Image controls:CachedImage.SourceUrl="{Binding PosterUrl}" Stretch="UniformToFill"/>
+                                    </Border>
+                                    
+                                    <!-- Meta Info -->
+                                    <StackPanel Grid.Column="1" Margin="16,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Title}" 
+                                                   Foreground="{DynamicResource PrimaryText}"
+                                                   FontSize="16" 
+                                                   FontWeight="Bold"
+                                                   TextWrapping="Wrap" 
+                                                   MaxHeight="46"/>
+                                        
+                                        <WrapPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                            <Border Background="#20FFFFFF" CornerRadius="6" Padding="8,3" Margin="0,0,6,0">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <materialDesign:PackIcon Kind="Calendar" Width="14" Height="14" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                    <TextBlock Text="{Binding ReleaseYear}" Foreground="{DynamicResource SecondaryText}" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Border>
+                                            
+                                            <Border Background="#2000E5FF" CornerRadius="6" Padding="8,3" Margin="0,0,6,0">
+                                                <TextBlock Text="{Binding MediaType}" Foreground="#00E5FF" FontSize="11.5" FontWeight="SemiBold"/>
+                                            </Border>
+                                            
+                                            <Border Background="#15FFFFFF" CornerRadius="6" Padding="8,3">
+                                                <TextBlock Text="{Binding Id, StringFormat='ID: {0}'}" 
+                                                           Foreground="{DynamicResource SecondaryText}" 
+                                                           FontSize="11.5" 
+                                                           VerticalAlignment="Center"/>
+                                            </Border>
+                                        </WrapPanel>
+                                    </StackPanel>
+                                    
+                                    <!-- Select Button -->
+                                    <Button Grid.Column="2" 
+                                            Command="{Binding DataContext.SelectResultCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource MaterialDesignRaisedButton}"
+                                            Background="{DynamicResource PrimaryGradientBrush}"
+                                            Foreground="White"
+                                            FontWeight="Bold"
+                                            FontSize="12.5"
+                                            materialDesign:ButtonAssist.CornerRadius="10"
+                                            VerticalAlignment="Center"
+                                            Height="38"
+                                            Padding="16,0"
+                                            Cursor="Hand">
+                                        <StackPanel Orientation="Horizontal">
+                                            <materialDesign:PackIcon Kind="CheckCircleOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                            <TextBlock Text="انتخاب و اعمال" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+        </Grid>
     </Border>
 </Window>

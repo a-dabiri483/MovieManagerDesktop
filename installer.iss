@@ -35,7 +35,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 ; Main Application Files & Libraries from publish output
-Source: "{#MyAppSourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "MPVPlayer\*,*.pdb,*.log,*.txt"
+Source: "{#MyAppSourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "MPVPlayer\*,*.pdb,*.log,*.txt,*.db,*.db-shm,*.db-wal"
 
 ; MPV Native Player with all codecs, scripts, and configs
 Source: "MPVPlayer\*"; DestDir: "{app}\MPVPlayer"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*.log,*.txt"

@@ -174,9 +174,33 @@ namespace MovieManagerDesktop.Data
             catch { }
         }
 
+        public static string GetDatabasePath()
+        {
+            var appDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManager");
+            if (!Directory.Exists(appDataDir))
+            {
+                Directory.CreateDirectory(appDataDir);
+            }
+            
+            var targetDbPath = Path.Combine(appDataDir, "movies.db");
+            
+            // Auto-migration: If a legacy movies.db exists in BaseDirectory and target doesn't exist or is empty, copy it over!
+            try
+            {
+                var legacyDbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "movies.db");
+                if (File.Exists(legacyDbPath) && (!File.Exists(targetDbPath) || new FileInfo(targetDbPath).Length == 0))
+                {
+                    File.Copy(legacyDbPath, targetDbPath, true);
+                }
+            }
+            catch { }
+            
+            return targetDbPath;
+        }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            var dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "movies.db");
+            var dbPath = GetDatabasePath();
             optionsBuilder.UseSqlite($"Data Source={dbPath}");
         }
     }

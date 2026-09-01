@@ -302,6 +302,20 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
+        private void OpenTutorialWebsite()
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "https://moviemanager.ir",
+                    UseShellExecute = true
+                });
+            }
+            catch { }
+        }
+
+        [RelayCommand]
         private void GoToScan()
         {
             WeakReferenceMessenger.Default.Send(new NavigationMessage(new ScanViewModel()));

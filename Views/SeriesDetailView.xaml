@@ -74,6 +74,13 @@
                                 </Border>
                             </materialDesign:PopupBox.ToggleContent>
                             <StackPanel MinWidth="220">
+                                <Button Command="{Binding EditMetadataCommand}" Style="{StaticResource MaterialDesignFlatButton}" 
+                                        HorizontalContentAlignment="Right" Padding="15,10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="PencilOutline" Width="20" Height="20" VerticalAlignment="Center"/>
+                                        <TextBlock Text="ویرایش اطلاعات" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    </StackPanel>
+                                </Button>
                                 <Button Command="{Binding RefreshSeriesCommand}" Style="{StaticResource MaterialDesignFlatButton}" 
                                         HorizontalContentAlignment="Right" Padding="15,10">
                                     <StackPanel Orientation="Horizontal">

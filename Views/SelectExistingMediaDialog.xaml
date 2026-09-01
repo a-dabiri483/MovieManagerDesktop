@@ -42,15 +42,15 @@
                 MouseMove="Header_MouseMove"
                 MouseLeftButtonUp="Header_MouseLeftButtonUp">
             <StackPanel Orientation="Horizontal">
-                <materialDesign:PackIcon Kind="MovieEditOutline" Foreground="{DynamicResource PrimaryColor}" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBlock Text="انتخاب فیلم" Foreground="{DynamicResource PrimaryText}" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                <materialDesign:PackIcon Kind="PlaylistPlus" Foreground="{DynamicResource PrimaryColor}" Width="24" Height="24" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock Text="انتخاب از عناوین موجود (سریال یا فیلم)" Foreground="{DynamicResource PrimaryText}" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 
         <!-- Search Bar -->
         <Border Grid.Row="1" Padding="15,10,15,0">
             <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" 
-                     materialDesign:HintAssist.Hint="نام فیلم:" 
+                     materialDesign:HintAssist.Hint="جستجوی نام فیلم یا سریال..." 
                      Style="{StaticResource MaterialDesignFloatingHintTextBox}"
                      Foreground="{DynamicResource PrimaryText}"/>
         </Border>
@@ -70,14 +70,17 @@
                   SelectionMode="Single">
                   
             <DataGrid.Columns>
+                <!-- Type -->
+                <DataGridTextColumn Header="نوع" Binding="{Binding MediaType}" Width="65" IsReadOnly="True" />
+
                 <!-- Year -->
-                <DataGridTextColumn Header="سال" Binding="{Binding Year}" Width="60" IsReadOnly="True" />
+                <DataGridTextColumn Header="سال" Binding="{Binding Year}" Width="55" IsReadOnly="True" />
                 
                 <!-- Name -->
-                <DataGridTextColumn Header="نام" Binding="{Binding FormattedTitle}" Width="*" IsReadOnly="True" />
+                <DataGridTextColumn Header="نام اثر" Binding="{Binding FormattedTitle}" Width="*" IsReadOnly="True" />
                 
                 <!-- Select Button -->
-                <DataGridTemplateColumn Width="70">
+                <DataGridTemplateColumn Width="75">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Button Content="انتخاب" 

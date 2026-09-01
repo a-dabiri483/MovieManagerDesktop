@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using MaterialDesignThemes.Wpf;
 using MovieManagerDesktop.Data;
 using MovieManagerDesktop.Messages;
+using MovieManagerDesktop.Models;
 using MovieManagerDesktop.Services;
 using MovieManagerDesktop.Views;
 using System;
@@ -393,100 +394,99 @@ namespace MovieManagerDesktop.ViewModels
                 
                 using var db = new AppDbContext();
                 
-                // Merge with existing series/movie if same TmdbId is found in database
+                // Merge with existing series/movie if same TmdbId or FormattedTitle is found in database
+                VideoFile? existing = null;
                 if (identified.TmdbId.HasValue && identified.TmdbId > 0)
                 {
-                    var existing = db.VideoFiles.FirstOrDefault(v => v.TmdbId == identified.TmdbId && v.MediaType == identified.MediaType);
-                    if (existing != null)
+                    existing = db.VideoFiles.FirstOrDefault(v => v.TmdbId == identified.TmdbId && (v.MediaType == identified.MediaType || v.MediaType == representative.MediaType));
+                }
+                if (existing == null && !string.IsNullOrWhiteSpace(identified.FormattedTitle))
+                {
+                    string lowerTitle = identified.FormattedTitle.ToLower();
+                    existing = db.VideoFiles.FirstOrDefault(v => v.FormattedTitle.ToLower() == lowerTitle);
+                }
+
+                if (existing != null && !string.IsNullOrWhiteSpace(existing.FormattedTitle))
+                {
+                    foreach (var file in group.Files)
                     {
-                        if (identified.MediaType == "Movie")
+                        file.FormattedTitle = existing.FormattedTitle;
+                        if (!string.IsNullOrWhiteSpace(existing.MediaType))
                         {
-                            throw new InvalidOperationException("این فیلم قبلاً در دیتابیس ثبت شده است.");
-                        }
-                        else if (!string.IsNullOrWhiteSpace(existing.FormattedTitle))
-                        {
-                            foreach (var file in group.Files)
-                            {
-                                file.FormattedTitle = existing.FormattedTitle;
-                            }
-                        }
-                    }
-                    else if (!string.IsNullOrWhiteSpace(identified.FormattedTitle))
-                    {
-                        foreach (var file in group.Files)
-                        {
-                            file.FormattedTitle = identified.FormattedTitle;
+                            file.MediaType = existing.MediaType;
                         }
                     }
                 }
                 else if (!string.IsNullOrWhiteSpace(identified.FormattedTitle))
                 {
-                    string lowerTitle = identified.FormattedTitle.ToLower();
-                    var existing = db.VideoFiles.FirstOrDefault(v => v.FormattedTitle.ToLower() == lowerTitle && v.MediaType == identified.MediaType);
-                    if (existing != null)
+                    foreach (var file in group.Files)
                     {
-                        if (identified.MediaType == "Movie")
-                        {
-                            throw new InvalidOperationException("این فیلم قبلاً در دیتابیس ثبت شده است.");
-                        }
-                        else if (!string.IsNullOrWhiteSpace(existing.FormattedTitle))
-                        {
-                            foreach (var file in group.Files)
-                            {
-                                file.FormattedTitle = existing.FormattedTitle;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        foreach (var file in group.Files)
-                        {
-                            file.FormattedTitle = identified.FormattedTitle;
-                        }
+                        file.FormattedTitle = identified.FormattedTitle;
                     }
                 }
+
+                var alreadyExistingPaths = db.VideoFiles.Select(v => v.FilePath).ToHashSet();
+                int newlyAddedCount = 0;
 
                 foreach (var item in group.Files)
                 {
-                    item.TmdbId = identified.TmdbId;
-                    item.PosterUrl = identified.PosterUrl;
-                    item.Rating = identified.Rating;
-                    item.Overview = identified.Overview;
-                    item.BackdropUrl = identified.BackdropUrl;
-                    item.Genres = identified.Genres;
-                    item.Actors = identified.Actors;
-                    item.Director = identified.Director;
+                    if (alreadyExistingPaths.Contains(item.FilePath))
+                    {
+                        continue;
+                    }
+
+                    item.TmdbId = identified.TmdbId ?? existing?.TmdbId;
+                    item.PosterUrl = !string.IsNullOrWhiteSpace(identified.PosterUrl) ? identified.PosterUrl : existing?.PosterUrl;
+                    item.Rating = identified.Rating ?? existing?.Rating;
+                    item.Overview = !string.IsNullOrWhiteSpace(identified.Overview) ? identified.Overview : existing?.Overview;
+                    item.BackdropUrl = !string.IsNullOrWhiteSpace(identified.BackdropUrl) ? identified.BackdropUrl : existing?.BackdropUrl;
+                    item.Genres = !string.IsNullOrWhiteSpace(identified.Genres) ? identified.Genres : existing?.Genres;
+                    item.Actors = !string.IsNullOrWhiteSpace(identified.Actors) ? identified.Actors : existing?.Actors;
+                    item.Director = !string.IsNullOrWhiteSpace(identified.Director) ? identified.Director : existing?.Director;
+                    
                     if (!string.IsNullOrWhiteSpace(identified.Year)) item.Year = identified.Year;
                     else if (identified.FirstAirDate.HasValue) item.Year = identified.FirstAirDate.Value.Year.ToString();
+                    else if (!string.IsNullOrWhiteSpace(existing?.Year)) item.Year = existing.Year;
 
-                    item.FirstAirDate = identified.FirstAirDate;
-                    item.LastAirDate = identified.LastAirDate;
-                    item.NetworkName = identified.NetworkName;
-                    item.AirDay = identified.AirDay;
-                    item.AirTime = identified.AirTime;
-                    item.TotalSeasonsCount = identified.TotalSeasonsCount ?? identified.NumberOfSeasons;
-                    item.TotalEpisodesCount = identified.TotalEpisodesCount ?? identified.NumberOfEpisodes;
-                    item.NumberOfSeasons = identified.NumberOfSeasons ?? identified.TotalSeasonsCount;
-                    item.NumberOfEpisodes = identified.NumberOfEpisodes ?? identified.TotalEpisodesCount;
-                    item.NextEpisodeDate = identified.NextEpisodeDate;
-                    item.NextEpisodeSeason = identified.NextEpisodeSeason;
-                    item.NextEpisodeNumber = identified.NextEpisodeNumber;
-                    item.SeriesStatus = identified.SeriesStatus;
-                    item.CollectionName = identified.CollectionName;
+                    item.FirstAirDate = identified.FirstAirDate ?? existing?.FirstAirDate;
+                    item.LastAirDate = identified.LastAirDate ?? existing?.LastAirDate;
+                    item.NetworkName = identified.NetworkName ?? existing?.NetworkName;
+                    item.AirDay = identified.AirDay ?? existing?.AirDay;
+                    item.AirTime = identified.AirTime ?? existing?.AirTime;
+                    item.TotalSeasonsCount = identified.TotalSeasonsCount ?? identified.NumberOfSeasons ?? existing?.TotalSeasonsCount;
+                    item.TotalEpisodesCount = identified.TotalEpisodesCount ?? identified.NumberOfEpisodes ?? existing?.TotalEpisodesCount;
+                    item.NumberOfSeasons = identified.NumberOfSeasons ?? identified.TotalSeasonsCount ?? existing?.NumberOfSeasons;
+                    item.NumberOfEpisodes = identified.NumberOfEpisodes ?? identified.TotalEpisodesCount ?? existing?.NumberOfEpisodes;
+                    item.SeriesStatus = identified.SeriesStatus ?? existing?.SeriesStatus;
+                    item.CollectionName = identified.CollectionName ?? existing?.CollectionName;
+                    item.MediaType = existing?.MediaType ?? identified.MediaType ?? item.MediaType ?? "Series";
                     item.IsIdentified = true;
+                    
                     db.VideoFiles.Add(item);
+                    newlyAddedCount++;
                 }
-                await db.SaveChangesAsync();
-                
+
+                if (newlyAddedCount > 0)
+                {
+                    await db.SaveChangesAsync();
+                }
+
                 group.TitleOverride = group.Files.First().FormattedTitle;
                 group.Representative.FormattedTitle = group.TitleOverride;
-                group.Status = "ثبت شد";
+                group.Status = newlyAddedCount > 0 ? "ثبت شد" : "قبلاً ثبت شده";
                 group.IsRegistered = true;
                 group.IsError = false;
                 group.IsChecked = false;
                 ApplyFilters();
                 
-                ToastService.Instance.ShowSuccess($"«{group.TitleOverride}» با موفقیت در دیتابیس ثبت شد.");
+                if (newlyAddedCount > 0)
+                {
+                    ToastService.Instance.ShowSuccess($"«{group.TitleOverride}» ({newlyAddedCount} قسمت/فایل) با موفقیت در دیتابیس ثبت شد.");
+                }
+                else
+                {
+                    ToastService.Instance.ShowInfo($"فایل‌های «{group.TitleOverride}» قبلاً در دیتابیس ثبت شده بودند.");
+                }
 
                 // Notify other ViewModels (Home, Movies, Series Tracker) to refresh
                 WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
@@ -578,99 +578,99 @@ namespace MovieManagerDesktop.ViewModels
                                 return;
                             }
                             
+                            int newlyAddedCount = 0;
                             // Ensure safe sequential database access
                             await dbSemaphore.WaitAsync();
                             try
                             {
                                 using var db = new AppDbContext();
                                 
+                                VideoFile? existing = null;
                                 if (identified.TmdbId.HasValue && identified.TmdbId > 0)
                                 {
-                                    var existing = db.VideoFiles.FirstOrDefault(v => v.TmdbId == identified.TmdbId && v.MediaType == identified.MediaType);
-                                    if (existing != null)
+                                    existing = db.VideoFiles.FirstOrDefault(v => v.TmdbId == identified.TmdbId && (v.MediaType == identified.MediaType || v.MediaType == representative.MediaType));
+                                }
+                                if (existing == null && !string.IsNullOrWhiteSpace(identified.FormattedTitle))
+                                {
+                                    string lowerTitle = identified.FormattedTitle.ToLower();
+                                    existing = db.VideoFiles.FirstOrDefault(v => v.FormattedTitle.ToLower() == lowerTitle);
+                                }
+
+                                if (existing != null && !string.IsNullOrWhiteSpace(existing.FormattedTitle))
+                                {
+                                    foreach (var file in group.Files)
                                     {
-                                        if (identified.MediaType == "Movie")
+                                        file.FormattedTitle = existing.FormattedTitle;
+                                        if (!string.IsNullOrWhiteSpace(existing.MediaType))
                                         {
-                                            throw new InvalidOperationException("این فیلم قبلاً در دیتابیس ثبت شده است.");
+                                            file.MediaType = existing.MediaType;
                                         }
-                                        else if (!string.IsNullOrWhiteSpace(existing.FormattedTitle))
-                                        {
-                                            foreach (var file in group.Files)
-                                                file.FormattedTitle = existing.FormattedTitle;
-                                        }
-                                    }
-                                    else if (!string.IsNullOrWhiteSpace(identified.FormattedTitle))
-                                    {
-                                        foreach (var file in group.Files)
-                                            file.FormattedTitle = identified.FormattedTitle;
                                     }
                                 }
                                 else if (!string.IsNullOrWhiteSpace(identified.FormattedTitle))
                                 {
-                                    string lowerTitle = identified.FormattedTitle.ToLower();
-                                    var existing = db.VideoFiles.FirstOrDefault(v => v.FormattedTitle.ToLower() == lowerTitle && v.MediaType == identified.MediaType);
-                                    if (existing != null)
+                                    foreach (var file in group.Files)
                                     {
-                                        if (identified.MediaType == "Movie")
-                                        {
-                                            throw new InvalidOperationException("این فیلم قبلاً در دیتابیس ثبت شده است.");
-                                        }
-                                        else if (!string.IsNullOrWhiteSpace(existing.FormattedTitle))
-                                        {
-                                            foreach (var file in group.Files)
-                                                file.FormattedTitle = existing.FormattedTitle;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        foreach (var file in group.Files)
-                                            file.FormattedTitle = identified.FormattedTitle;
+                                        file.FormattedTitle = identified.FormattedTitle;
                                     }
                                 }
+
+                                var alreadyExistingPaths = db.VideoFiles.Select(v => v.FilePath).ToHashSet();
 
                                 foreach (var file in group.Files)
                                 {
-                                    file.TmdbId = identified.TmdbId;
-                                    file.PosterUrl = identified.PosterUrl;
-                                    file.Rating = identified.Rating;
-                                    file.Overview = identified.Overview;
-                                    file.BackdropUrl = identified.BackdropUrl;
-                                    file.Genres = identified.Genres;
-                                    file.Actors = identified.Actors;
-                                    file.Director = identified.Director;
+                                    if (alreadyExistingPaths.Contains(file.FilePath))
+                                    {
+                                        continue;
+                                    }
+
+                                    file.TmdbId = identified.TmdbId ?? existing?.TmdbId;
+                                    file.PosterUrl = !string.IsNullOrWhiteSpace(identified.PosterUrl) ? identified.PosterUrl : existing?.PosterUrl;
+                                    file.Rating = identified.Rating ?? existing?.Rating;
+                                    file.Overview = !string.IsNullOrWhiteSpace(identified.Overview) ? identified.Overview : existing?.Overview;
+                                    file.BackdropUrl = !string.IsNullOrWhiteSpace(identified.BackdropUrl) ? identified.BackdropUrl : existing?.BackdropUrl;
+                                    file.Genres = !string.IsNullOrWhiteSpace(identified.Genres) ? identified.Genres : existing?.Genres;
+                                    file.Actors = !string.IsNullOrWhiteSpace(identified.Actors) ? identified.Actors : existing?.Actors;
+                                    file.Director = !string.IsNullOrWhiteSpace(identified.Director) ? identified.Director : existing?.Director;
+                                    
                                     if (!string.IsNullOrWhiteSpace(identified.Year)) file.Year = identified.Year;
                                     else if (identified.FirstAirDate.HasValue) file.Year = identified.FirstAirDate.Value.Year.ToString();
+                                    else if (!string.IsNullOrWhiteSpace(existing?.Year)) file.Year = existing.Year;
 
-                                    file.FirstAirDate = identified.FirstAirDate;
-                                    file.LastAirDate = identified.LastAirDate;
-                                    file.NetworkName = identified.NetworkName;
-                                    file.AirDay = identified.AirDay;
-                                    file.AirTime = identified.AirTime;
-                                    file.TotalSeasonsCount = identified.TotalSeasonsCount ?? identified.NumberOfSeasons;
-                                    file.TotalEpisodesCount = identified.TotalEpisodesCount ?? identified.NumberOfEpisodes;
-                                    file.NumberOfSeasons = identified.NumberOfSeasons ?? identified.TotalSeasonsCount;
-                                    file.NumberOfEpisodes = identified.NumberOfEpisodes ?? identified.TotalEpisodesCount;
-                                    file.NextEpisodeDate = identified.NextEpisodeDate;
-                                    file.NextEpisodeSeason = identified.NextEpisodeSeason;
-                                    file.NextEpisodeNumber = identified.NextEpisodeNumber;
-                                    file.SeriesStatus = identified.SeriesStatus;
-                                    file.CollectionName = identified.CollectionName;
+                                    file.FirstAirDate = identified.FirstAirDate ?? existing?.FirstAirDate;
+                                    file.LastAirDate = identified.LastAirDate ?? existing?.LastAirDate;
+                                    file.NetworkName = identified.NetworkName ?? existing?.NetworkName;
+                                    file.AirDay = identified.AirDay ?? existing?.AirDay;
+                                    file.AirTime = identified.AirTime ?? existing?.AirTime;
+                                    file.TotalSeasonsCount = identified.TotalSeasonsCount ?? identified.NumberOfSeasons ?? existing?.TotalSeasonsCount;
+                                    file.TotalEpisodesCount = identified.TotalEpisodesCount ?? identified.NumberOfEpisodes ?? existing?.TotalEpisodesCount;
+                                    file.NumberOfSeasons = identified.NumberOfSeasons ?? identified.TotalSeasonsCount ?? existing?.NumberOfSeasons;
+                                    file.NumberOfEpisodes = identified.NumberOfEpisodes ?? identified.TotalEpisodesCount ?? existing?.NumberOfEpisodes;
+                                    file.SeriesStatus = identified.SeriesStatus ?? existing?.SeriesStatus;
+                                    file.CollectionName = identified.CollectionName ?? existing?.CollectionName;
+                                    file.MediaType = existing?.MediaType ?? identified.MediaType ?? file.MediaType ?? "Series";
                                     file.IsIdentified = true;
+                                    
                                     db.VideoFiles.Add(file);
+                                    newlyAddedCount++;
                                 }
-                                await db.SaveChangesAsync();
+
+                                if (newlyAddedCount > 0)
+                                {
+                                    await db.SaveChangesAsync();
+                                }
                             }
                             finally
                             {
                                 dbSemaphore.Release();
                             }
-                            
-                            Interlocked.Add(ref successCount, group.Files.Count);
+
+                            Interlocked.Add(ref successCount, newlyAddedCount > 0 ? newlyAddedCount : group.Files.Count);
                             
                             Application.Current.Dispatcher.Invoke(() => {
                                 group.TitleOverride = group.Files.First().FormattedTitle;
                                 group.Representative.FormattedTitle = group.TitleOverride;
-                                group.Status = "ثبت شد";
+                                group.Status = newlyAddedCount > 0 ? "ثبت شد" : "قبلاً ثبت شده";
                                 group.IsRegistered = true;
                                 group.IsError = false;
                                 group.IsChecked = false;

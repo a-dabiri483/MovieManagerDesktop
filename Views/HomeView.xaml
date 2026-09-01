@@ -248,35 +248,49 @@
                         </Ellipse>
 
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="30">
-                            <!-- Glowing Icon Badge -->
-                            <Border Width="64" Height="64" CornerRadius="32" Background="#20EB3B5A" BorderBrush="#60EB3B5A" BorderThickness="1.5" Margin="0,0,0,14" HorizontalAlignment="Center">
+                            <!-- Glowing App Logo Badge -->
+                            <Border Width="68" Height="68" CornerRadius="34" Background="#1AEB3B5A" BorderBrush="#50EB3B5A" BorderThickness="1.5" Margin="0,0,0,14" HorizontalAlignment="Center">
                                 <Border.Effect>
-                                    <DropShadowEffect Color="#EB3B5A" BlurRadius="20" ShadowDepth="0" Opacity="0.55"/>
+                                    <DropShadowEffect Color="#EB3B5A" BlurRadius="22" ShadowDepth="0" Opacity="0.6"/>
                                 </Border.Effect>
-                                <materialDesign:PackIcon Kind="MovieFilterOutline" Width="32" Height="32" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <Image Source="/Assets/logo.png" Width="44" Height="44" RenderOptions.BitmapScalingMode="HighQuality" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Border>
 
                             <!-- Welcome Headline -->
-                            <TextBlock Text="به مدیریت فیلم و سریال خوش آمدید" Foreground="White" FontSize="24" FontWeight="Black" TextAlignment="Center" Margin="0,0,0,8">
+                            <TextBlock Text="آموزش ویدیویی کار با برنامه و شروع به کار" Foreground="White" FontSize="23" FontWeight="Black" TextAlignment="Center" Margin="0,0,0,8">
                                 <TextBlock.Effect>
                                     <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.8" Color="Black"/>
                                 </TextBlock.Effect>
                             </TextBlock>
 
                             <!-- Subtitle / Guide -->
-                            <TextBlock Text="هنوز ویدیویی در کتابخانه شما ثبت نشده است. برای سازماندهی و شناسایی خودکار پوسترها و اطلاعات، کافیست پوشه فیلم‌های خود را اسکن کنید." 
-                                       Foreground="#CBD5E1" FontSize="13.5" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="650" Margin="0,0,0,20"/>
+                            <TextBlock Text="برای مشاهده آموزش‌های تصویری کار با برنامه و راهنمای افزودن فیلم‌ها، به وب‌سایت مراجعه فرمایید یا اسکن حافظه را آغاز کنید." 
+                                       Foreground="#CBD5E1" FontSize="13.5" FontWeight="SemiBold" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="680" Margin="0,0,0,22"/>
 
-                            <!-- CTA Start Scan Button -->
-                            <Button Command="{Binding GoToScanCommand}" Height="46" Padding="34,0" materialDesign:ButtonAssist.CornerRadius="16" Background="{DynamicResource PrimaryGradientBrush}" BorderThickness="0" Cursor="Hand" HorizontalAlignment="Center">
-                                <Button.Effect>
-                                    <DropShadowEffect Color="#EB3B5A" BlurRadius="20" ShadowDepth="0" Opacity="0.75"/>
-                                </Button.Effect>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="Magnify" Width="20" Height="20" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="شروع اسکن حافظه" Foreground="White" FontSize="15" FontWeight="Black" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Button>
+                            <!-- Action Buttons Row -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <!-- CTA Start Scan Button -->
+                                <Button Command="{Binding GoToScanCommand}" Height="46" Padding="28,0" materialDesign:ButtonAssist.CornerRadius="16" Background="{DynamicResource PrimaryGradientBrush}" BorderThickness="0" Cursor="Hand" Margin="0,0,12,0">
+                                    <Button.Effect>
+                                        <DropShadowEffect Color="#EB3B5A" BlurRadius="20" ShadowDepth="0" Opacity="0.75"/>
+                                    </Button.Effect>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="Magnify" Width="20" Height="20" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="شروع اسکن حافظه" Foreground="White" FontSize="14.5" FontWeight="Black" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- Watch Video Tutorials Website Button -->
+                                <Button Command="{Binding OpenTutorialWebsiteCommand}" Height="46" Padding="24,0" materialDesign:ButtonAssist.CornerRadius="16" Background="#25FFFFFF" BorderBrush="#45FFFFFF" BorderThickness="1" Cursor="Hand">
+                                    <Button.Effect>
+                                        <DropShadowEffect BlurRadius="12" ShadowDepth="1" Opacity="0.4" Color="Black"/>
+                                    </Button.Effect>
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="PlayCircleOutline" Width="20" Height="20" Foreground="#F59E0B" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="مشاهده آموزش‌ها در وب‌سایت" Foreground="White" FontSize="14.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
                         </StackPanel>
                     </Grid>
                 </Border>

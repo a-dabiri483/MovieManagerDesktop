@@ -649,6 +649,96 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
+        private void EditMetadata()
+        {
+            var initialQuery = !string.IsNullOrEmpty(Series.FormattedTitle) ? Series.FormattedTitle : Series.FileName;
+            var searchDialogViewModel = new ApiSearchDialogViewModel(initialQuery)
+            {
+                IsSearchTypeMovie = false,
+                IsSearchTypeSeries = true,
+                IsSearchTypeAnime = false
+            };
+            var searchDialog = new MovieManagerDesktop.Views.Dialogs.ApiSearchDialog { DataContext = searchDialogViewModel };
+
+            searchDialogViewModel.CloseAction = () => searchDialog.Close();
+            searchDialogViewModel.SelectAction = async (result) =>
+            {
+                if (result != null && result.Id != 0)
+                {
+                    try
+                    {
+                        IsLoading = true;
+                        ToastService.Instance.ShowInfo($"در حال اعمال سریال «{result.Title}»...");
+                        
+                        using var db = new AppDbContext();
+                        var oldTitle = (Series.FormattedTitle ?? "").ToLower();
+                        var oldTmdbId = Series.TmdbId;
+
+                        // Delete old seasons and episodes from database if TmdbId changed
+                        if (oldTmdbId.HasValue && oldTmdbId.Value != result.Id)
+                        {
+                            var oldSeasons = db.TvSeasons.Where(s => s.TmdbSeriesId == oldTmdbId.Value).ToList();
+                            var oldEpisodes = db.TvEpisodes.Where(e => e.TmdbSeriesId == oldTmdbId.Value).ToList();
+                            db.TvSeasons.RemoveRange(oldSeasons);
+                            db.TvEpisodes.RemoveRange(oldEpisodes);
+                        }
+
+                        // Update all video files matching this series
+                        var dbFiles = db.VideoFiles.Where(v => v.Id == Series.Id || (!string.IsNullOrEmpty(oldTitle) && v.FormattedTitle.ToLower() == oldTitle)).ToList();
+                        foreach (var dbFile in dbFiles)
+                        {
+                            dbFile.TmdbId = result.Id;
+                            dbFile.FormattedTitle = result.Title;
+                            dbFile.MediaType = "Series";
+                            dbFile.Overview = null;
+                            dbFile.Rating = null;
+                            dbFile.PosterUrl = null;
+                            dbFile.BackdropUrl = null;
+                            dbFile.Genres = null;
+                            dbFile.Actors = null;
+                            dbFile.Director = null;
+                            dbFile.FirstAirDate = null;
+                            dbFile.LastAirDate = null;
+                            dbFile.NetworkName = null;
+                            dbFile.SeriesStatus = null;
+                            dbFile.TotalSeasonsCount = null;
+                            dbFile.TotalEpisodesCount = null;
+                            dbFile.NextEpisodeDate = null;
+                            dbFile.NextEpisodeNumber = null;
+                        }
+                        await db.SaveChangesAsync();
+
+                        App.Current.Dispatcher.Invoke(() =>
+                        {
+                            Series.TmdbId = result.Id;
+                            Series.FormattedTitle = result.Title;
+                            OnPropertyChanged(nameof(Series));
+                        });
+
+                        await RefreshSeriesAsync();
+                        
+                        App.Current.Dispatcher.Invoke(() =>
+                        {
+                            WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
+                            ToastService.Instance.ShowSuccess($"اطلاعات سریال «{result.Title}» با موفقیت ویرایش و بروزرسانی شد.");
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        LoggerService.Error($"[SeriesDetail] Error updating series metadata: {ex.Message}", ex);
+                        ToastService.Instance.ShowError($"خطا در ویرایش اطلاعات سریال: {ex.Message}");
+                    }
+                    finally
+                    {
+                        IsLoading = false;
+                    }
+                }
+            };
+
+            WindowHelper.SafeShowDialog(searchDialog);
+        }
+
+        [RelayCommand]
         private void ToggleFavorite()
         {
             IsFavorite = !IsFavorite;

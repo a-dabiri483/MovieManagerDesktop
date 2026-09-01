@@ -930,6 +930,9 @@ namespace MovieManagerDesktop.ViewModels
         }
 
         [RelayCommand]
+        private void EditMetadata() => ManualIdentify();
+
+        [RelayCommand]
         private void ManualIdentify()
         {
             var searchDialogViewModel = new ApiSearchDialogViewModel(!string.IsNullOrEmpty(Media.FormattedTitle) ? Media.FormattedTitle : Media.FileName);

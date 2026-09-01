@@ -373,7 +373,8 @@ namespace MovieManagerDesktop.Services
             try
             {
                 var settings = SettingsManager.LoadSettings();
-                string source = settings.SelectedDataSource ?? "FM_DB";
+                string source = settings.SelectedDataSource ?? "TMDB_ONLY";
+                if (source == "FM_DB") source = "TMDB_ONLY";
                 string language = settings.TmdbLanguage ?? "fa-IR";
 
                 LoggerService.Info($"[اسکنر] شروع بررسی ارتباطات برای: {file.FormattedTitle}");
@@ -388,18 +389,6 @@ namespace MovieManagerDesktop.Services
                     LoggerService.Info($"[موتور جستجو] آیدی TMDB موجود است. درخواست مستقیم از TMDB...");
                     await IdentifyWithTmdb(file, SettingsManager.GetTmdbApiKey(), language);
                     configApiSuccess = !string.IsNullOrWhiteSpace(file.PosterUrl) && !string.IsNullOrWhiteSpace(file.Overview);
-                }
-                else if (source == "FM_DB")
-                {
-                    LoggerService.Info($"[موتور جستجو] درخواست از سرور رایگان FM_DB...");
-                    await IdentifyWithFmDb(file);
-                    
-                    if (file.TmdbId.HasValue && file.TmdbId > 0)
-                    {
-                        LoggerService.Info($"[موتور جستجو] اطلاعات پایه از FM_DB دریافت شد. تکمیل اطلاعات از TMDB...");
-                        await IdentifyWithTmdb(file, SettingsManager.GetTmdbApiKey(), language);
-                        configApiSuccess = !string.IsNullOrWhiteSpace(file.PosterUrl) && !string.IsNullOrWhiteSpace(file.Overview);
-                    }
                 }
                 else if (source == "TMDB_ONLY")
                 {
@@ -650,17 +639,10 @@ namespace MovieManagerDesktop.Services
                 }
                 else if (root.TryGetProperty("results", out results) && results.GetArrayLength() > 0)
                 {
-                    var validResults = results.EnumerateArray().Where(res => {
-                        if (res.TryGetProperty("vote_count", out var vc) && vc.ValueKind == JsonValueKind.Number)
-                        {
-                            return vc.GetInt32() >= 2 || !string.IsNullOrWhiteSpace(file.Year);
-                        }
-                        return !string.IsNullOrWhiteSpace(file.Year);
-                    }).ToList();
-
-                    if (validResults.Count > 0)
+                    var best = SelectBestMatch(results.EnumerateArray(), file.FormattedTitle, file.Year, file.MediaType);
+                    if (best.HasValue)
                     {
-                        firstMatch = validResults[0];
+                        firstMatch = best.Value;
                         hasMatch = true;
                     }
                 }
@@ -691,17 +673,10 @@ namespace MovieManagerDesktop.Services
                         
                         if (enRoot.TryGetProperty("results", out enRes) && enRes.GetArrayLength() > 0)
                         {
-                            var validEnResults = enRes.EnumerateArray().Where(res => {
-                                if (res.TryGetProperty("vote_count", out var vc) && vc.ValueKind == JsonValueKind.Number)
-                                {
-                                    return vc.GetInt32() >= 2 || !string.IsNullOrWhiteSpace(file.Year);
-                                }
-                                return !string.IsNullOrWhiteSpace(file.Year);
-                            }).ToList();
-
-                            if (validEnResults.Count > 0)
+                            var bestEn = SelectBestMatch(enRes.EnumerateArray(), file.FormattedTitle, file.Year, file.MediaType);
+                            if (bestEn.HasValue)
                             {
-                                firstMatch = validEnResults[0];
+                                firstMatch = bestEn.Value;
                                 hasMatch = true;
                                 root = enRoot.Clone(); // update root for following logic
                             }
@@ -1350,6 +1325,98 @@ namespace MovieManagerDesktop.Services
         public async Task<string?> DownloadAndSaveImageAsync(string url, string fileNamePrefix)
         {
             return await DownloadImageAsync(url, fileNamePrefix);
+        }
+
+        private static JsonElement? SelectBestMatch(IEnumerable<JsonElement> items, string targetTitle, string? targetYear, string mediaType)
+        {
+            var cleanTarget = CleanTitleForComparison(targetTitle);
+            var list = items.ToList();
+            if (list.Count == 0) return null;
+            if (list.Count == 1) return list[0];
+            if (string.IsNullOrWhiteSpace(cleanTarget)) return list.OrderByDescending(GetItemPopularity).First();
+
+            // 1. Exact match on clean title or original title
+            var exactMatches = list.Where(item =>
+            {
+                string title = GetItemTitle(item);
+                string oTitle = GetItemOriginalTitle(item);
+                return CleanTitleForComparison(title) == cleanTarget || CleanTitleForComparison(oTitle) == cleanTarget;
+            }).ToList();
+
+            if (exactMatches.Count > 0)
+            {
+                if (!string.IsNullOrWhiteSpace(targetYear))
+                {
+                    var yearMatch = exactMatches.FirstOrDefault(m => GetItemYear(m) == targetYear);
+                    if (yearMatch.ValueKind != JsonValueKind.Undefined && yearMatch.ValueKind != JsonValueKind.Null)
+                        return yearMatch;
+                }
+                // If multiple exact matches, pick the one with highest popularity
+                return exactMatches.OrderByDescending(GetItemPopularity).First();
+            }
+
+            // 2. StartsWith or Contains match
+            var partialMatches = list.Where(item =>
+            {
+                string t = CleanTitleForComparison(GetItemTitle(item));
+                string ot = CleanTitleForComparison(GetItemOriginalTitle(item));
+                return (!string.IsNullOrEmpty(t) && (t.StartsWith(cleanTarget) || cleanTarget.StartsWith(t))) ||
+                       (!string.IsNullOrEmpty(ot) && (ot.StartsWith(cleanTarget) || cleanTarget.StartsWith(ot)));
+            }).ToList();
+
+            if (partialMatches.Count > 0)
+            {
+                if (!string.IsNullOrWhiteSpace(targetYear))
+                {
+                    var yearMatch = partialMatches.FirstOrDefault(m => GetItemYear(m) == targetYear);
+                    if (yearMatch.ValueKind != JsonValueKind.Undefined && yearMatch.ValueKind != JsonValueKind.Null)
+                        return yearMatch;
+                }
+                return partialMatches.OrderByDescending(GetItemPopularity).First();
+            }
+
+            // 3. Fallback: highest popularity among list
+            return list.OrderByDescending(GetItemPopularity).First();
+        }
+
+        private static string CleanTitleForComparison(string? s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return string.Empty;
+            var chars = s.Where(c => char.IsLetterOrDigit(c)).ToArray();
+            return new string(chars).ToLowerInvariant();
+        }
+
+        private static string GetItemTitle(JsonElement item)
+        {
+            if (item.TryGetProperty("title", out var t) && t.ValueKind == JsonValueKind.String) return t.GetString() ?? "";
+            if (item.TryGetProperty("name", out var n) && n.ValueKind == JsonValueKind.String) return n.GetString() ?? "";
+            return "";
+        }
+
+        private static string GetItemOriginalTitle(JsonElement item)
+        {
+            if (item.TryGetProperty("original_title", out var t) && t.ValueKind == JsonValueKind.String) return t.GetString() ?? "";
+            if (item.TryGetProperty("original_name", out var n) && n.ValueKind == JsonValueKind.String) return n.GetString() ?? "";
+            return "";
+        }
+
+        private static string GetItemYear(JsonElement item)
+        {
+            if (item.TryGetProperty("release_date", out var rd) && rd.ValueKind == JsonValueKind.String && !string.IsNullOrEmpty(rd.GetString()) && rd.GetString()!.Length >= 4)
+                return rd.GetString()!.Substring(0, 4);
+            if (item.TryGetProperty("first_air_date", out var fad) && fad.ValueKind == JsonValueKind.String && !string.IsNullOrEmpty(fad.GetString()) && fad.GetString()!.Length >= 4)
+                return fad.GetString()!.Substring(0, 4);
+            return "";
+        }
+
+        private static double GetItemPopularity(JsonElement item)
+        {
+            double pop = 0;
+            if (item.TryGetProperty("popularity", out var p) && p.ValueKind == JsonValueKind.Number)
+                pop = p.GetDouble();
+            if (item.TryGetProperty("vote_count", out var vc) && vc.ValueKind == JsonValueKind.Number)
+                pop += vc.GetInt32() * 0.1;
+            return pop;
         }
     }
 }
