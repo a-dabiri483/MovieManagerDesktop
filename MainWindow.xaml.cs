@@ -42,12 +42,14 @@ namespace MovieManagerDesktop
             this.SourceInitialized += MainWindow_SourceInitialized;
             this.Closing += MainWindow_Closing;
             this.Loaded += MainWindow_Loaded;
+            this.Activated += (s, e) => MovieManagerDesktop.Services.MpvPlaybackService.SyncOfflineProgress();
 
             MovieManagerDesktop.Services.NotificationCenterService.Instance.NewNotificationReceived += (s, e) => PlayBellWiggleAnimation();
         }
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            MovieManagerDesktop.Services.MpvPlaybackService.SyncOfflineProgress();
             if (MovieManagerDesktop.Services.NotificationCenterService.Instance.HasUnread)
             {
                 PlayBellWiggleAnimation();

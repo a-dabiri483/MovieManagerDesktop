@@ -308,7 +308,7 @@ namespace MovieManagerDesktop.ViewModels
             {
                 System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
-                    FileName = "https://moviemanager.ir",
+                    FileName = "https://moviemanager.ir/tutorials.html",
                     UseShellExecute = true
                 });
             }

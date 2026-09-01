@@ -81,7 +81,15 @@ namespace MovieManagerDesktop.Services
                         var settings = SettingsManager.LoadSettings();
                         bool hasNewUnread = false;
 
-                        // Ensure they are ordered by CreatedAt so we insert them properly
+                        // 1. Remove any server announcements that were deleted from server
+                        var serverIds = announcements.Select(a => a.Id).Where(id => !string.IsNullOrWhiteSpace(id)).ToHashSet();
+                        var toRemove = Notifications.Where(n => !string.IsNullOrWhiteSpace(n.Id) && !serverIds.Contains(n.Id)).ToList();
+                        foreach (var item in toRemove)
+                        {
+                            Notifications.Remove(item);
+                        }
+
+                        // 2. Ensure they are ordered by CreatedAt so we insert them properly
                         foreach (var ann in announcements.OrderBy(a => a.CreatedAt))
                         {
                             if (string.IsNullOrWhiteSpace(ann.Id)) continue;
@@ -97,6 +105,8 @@ namespace MovieManagerDesktop.Services
                                 existing.Type = ann.Type;
                                 existing.ActionTitle = ann.ActionTitle;
                                 existing.ActionUrl = ann.ActionUrl;
+                                existing.ImageUrl = ann.ImageUrl;
+                                existing.IsPinned = ann.IsPinned;
                                 if (isDismissedInSettings && !existing.IsRead)
                                 {
                                     existing.IsRead = true;
@@ -112,6 +122,8 @@ namespace MovieManagerDesktop.Services
                                     Type = ann.Type,
                                     ActionTitle = ann.ActionTitle,
                                     ActionUrl = ann.ActionUrl,
+                                    ImageUrl = ann.ImageUrl,
+                                    IsPinned = ann.IsPinned,
                                     ReceivedAt = ann.CreatedAt,
                                     IsRead = isDismissedInSettings
                                 };
@@ -124,6 +136,7 @@ namespace MovieManagerDesktop.Services
                             }
                         }
 
+                        ReorderNotifications();
                         PruneReadNotifications();
                         SaveHistory();
                         UpdateUnreadCount();
@@ -134,6 +147,22 @@ namespace MovieManagerDesktop.Services
                         }
                     });
                 }
+                else if (announcements != null && announcements.Count == 0)
+                {
+                    Application.Current?.Dispatcher?.Invoke(() =>
+                    {
+                        var toRemove = Notifications.Where(n => !string.IsNullOrWhiteSpace(n.Id)).ToList();
+                        if (toRemove.Count > 0)
+                        {
+                            foreach (var item in toRemove)
+                            {
+                                Notifications.Remove(item);
+                            }
+                            SaveHistory();
+                            UpdateUnreadCount();
+                        }
+                    });
+                }
             }
             catch (Exception ex)
             {
@@ -141,7 +170,7 @@ namespace MovieManagerDesktop.Services
             }
         }
 
-        public void AddLocalNotification(string title, string message, string type = "info", string actionTitle = "", string actionUrl = "")
+        public void AddLocalNotification(string title, string message, string type = "info", string actionTitle = "", string actionUrl = "", string imageUrl = "", bool isPinned = false)
         {
             Application.Current?.Dispatcher?.Invoke(() =>
             {
@@ -152,16 +181,35 @@ namespace MovieManagerDesktop.Services
                     Type = type,
                     ActionTitle = actionTitle,
                     ActionUrl = actionUrl,
+                    ImageUrl = imageUrl,
+                    IsPinned = isPinned,
                     ReceivedAt = DateTime.Now,
                     IsRead = false
                 };
 
                 Notifications.Insert(0, item);
+                ReorderNotifications();
                 PruneReadNotifications();
                 SaveHistory();
                 UpdateUnreadCount();
                 TriggerWiggle(playSound: true);
             });
+        }
+
+        private void ReorderNotifications()
+        {
+            var sorted = Notifications.OrderByDescending(x => x.IsPinned)
+                                      .ThenByDescending(x => !x.IsRead)
+                                      .ThenByDescending(x => x.ReceivedAt)
+                                      .ToList();
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                int oldIndex = Notifications.IndexOf(sorted[i]);
+                if (oldIndex != i && oldIndex >= 0)
+                {
+                    Notifications.Move(oldIndex, i);
+                }
+            }
         }
 
         public void MarkAsRead(AppNotificationItem item)

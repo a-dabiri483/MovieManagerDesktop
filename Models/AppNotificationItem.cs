@@ -32,6 +32,14 @@ namespace MovieManagerDesktop.Models
         private string _actionUrl = string.Empty;
 
         [ObservableProperty]
+        [property: JsonPropertyName("image_url")]
+        private string _imageUrl = string.Empty;
+
+        [ObservableProperty]
+        [property: JsonPropertyName("is_pinned")]
+        private bool _isPinned = false;
+
+        [ObservableProperty]
         [property: JsonPropertyName("received_at")]
         private DateTime _receivedAt = DateTime.Now;
 
@@ -41,6 +49,9 @@ namespace MovieManagerDesktop.Models
 
         [JsonIgnore]
         public bool HasAction => !string.IsNullOrWhiteSpace(ActionUrl);
+
+        [JsonIgnore]
+        public bool HasImage => !string.IsNullOrWhiteSpace(ImageUrl);
 
         [JsonIgnore]
         public PackIconKind TypeIcon => Type?.ToLowerInvariant() switch

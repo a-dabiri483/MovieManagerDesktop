@@ -4,7 +4,10 @@ using CommunityToolkit.Mvvm.Messaging;
 using MovieManagerDesktop.Messages;
 using MovieManagerDesktop.Models;
 using MovieManagerDesktop.Services;
+using System;
+using System.ComponentModel;
 using System.Windows;
+using System.Windows.Data;
 
 namespace MovieManagerDesktop.ViewModels
 {
@@ -31,9 +34,31 @@ namespace MovieManagerDesktop.ViewModels
         private FavoritesViewModel GetFavoritesViewModel() => _favoritesViewModel ??= new FavoritesViewModel();
         private CollectionsViewModel GetCollectionsViewModel() => _collectionsViewModel ??= new CollectionsViewModel();
 
+        public NotificationCenterService NotificationCenter => NotificationCenterService.Instance;
+        public ICollectionView FilteredNotifications { get; }
+
+        [ObservableProperty]
+        private string _selectedNotificationTab = "all";
+
+        partial void OnSelectedNotificationTabChanged(string value)
+        {
+            FilteredNotifications?.Refresh();
+        }
+
+        [ObservableProperty]
+        private string _notificationSearchQuery = string.Empty;
+
+        partial void OnNotificationSearchQueryChanged(string value)
+        {
+            FilteredNotifications?.Refresh();
+        }
+
         public MainViewModel()
         {
             CurrentViewModel = GetHomeViewModel();
+
+            FilteredNotifications = CollectionViewSource.GetDefaultView(NotificationCenter.Notifications);
+            FilteredNotifications.Filter = NotificationFilter;
 
             // Register for navigation messages
             WeakReferenceMessenger.Default.Register<NavigationMessage>(this, (r, m) =>
@@ -50,7 +75,11 @@ namespace MovieManagerDesktop.ViewModels
                 {
                     CurrentViewModel = GetHomeViewModel();
                 }
-                else
+                else if (m.ViewModel != null && m.ViewModel.GetType() == typeof(CollectionsViewModel))
+                {
+                    CurrentViewModel = GetCollectionsViewModel();
+                }
+                else if (m.ViewModel != null)
                 {
                     CurrentViewModel = m.ViewModel;
                 }
@@ -63,6 +92,45 @@ namespace MovieManagerDesktop.ViewModels
                     _homeViewModel?.LoadHomeDataDirect();
                 });
             });
+        }
+
+        private bool NotificationFilter(object obj)
+        {
+            if (obj is not AppNotificationItem item) return false;
+
+            // Tab filter
+            bool matchesTab = SelectedNotificationTab switch
+            {
+                "update" => string.Equals(item.Type, "update", StringComparison.OrdinalIgnoreCase),
+                "news" => string.Equals(item.Type, "info", StringComparison.OrdinalIgnoreCase) || string.Equals(item.Type, "success", StringComparison.OrdinalIgnoreCase),
+                "warning" => string.Equals(item.Type, "warning", StringComparison.OrdinalIgnoreCase),
+                _ => true
+            };
+
+            if (!matchesTab) return false;
+
+            // Search filter
+            if (!string.IsNullOrWhiteSpace(NotificationSearchQuery))
+            {
+                string query = NotificationSearchQuery.Trim();
+                bool matchesSearch = (item.Title?.Contains(query, StringComparison.OrdinalIgnoreCase) == true) ||
+                                     (item.Message?.Contains(query, StringComparison.OrdinalIgnoreCase) == true);
+                if (!matchesSearch) return false;
+            }
+
+            return true;
+        }
+
+        [RelayCommand]
+        private void SelectNotificationTab(string tab)
+        {
+            SelectedNotificationTab = tab;
+        }
+
+        [RelayCommand]
+        private void ClearNotificationSearch()
+        {
+            NotificationSearchQuery = string.Empty;
         }
 
         [RelayCommand]
@@ -81,18 +149,7 @@ namespace MovieManagerDesktop.ViewModels
         private void NavigateToMovies()
         {
             CurrentViewModel = GetMoviesViewModel();
-        }
-
-        [RelayCommand]
-        private void NavigateToSettings()
-        {
-            CurrentViewModel = new SettingsViewModel();
-        }
-
-        [RelayCommand]
-        private void NavigateToHome()
-        {
-            CurrentViewModel = GetHomeViewModel();
+            _ = _moviesViewModel?.LoadMoviesAsync();
         }
 
         [RelayCommand]
@@ -115,7 +172,17 @@ namespace MovieManagerDesktop.ViewModels
             CurrentViewModel = new CalendarViewModel();
         }
 
-        public NotificationCenterService NotificationCenter => NotificationCenterService.Instance;
+        [RelayCommand]
+        private void NavigateToSettings()
+        {
+            CurrentViewModel = new SettingsViewModel();
+        }
+
+        [RelayCommand]
+        private void NavigateToHome()
+        {
+            CurrentViewModel = GetHomeViewModel();
+        }
 
         [ObservableProperty]
         private bool _isNotificationPopupOpen = false;
@@ -136,24 +203,28 @@ namespace MovieManagerDesktop.ViewModels
         private void MarkAllNotificationsRead()
         {
             NotificationCenter.MarkAllAsRead();
+            FilteredNotifications?.Refresh();
         }
 
         [RelayCommand]
         private void MarkNotificationRead(AppNotificationItem item)
         {
             NotificationCenter.MarkAsRead(item);
+            FilteredNotifications?.Refresh();
         }
 
         [RelayCommand]
         private void DismissNotification(AppNotificationItem item)
         {
             NotificationCenter.Remove(item);
+            FilteredNotifications?.Refresh();
         }
 
         [RelayCommand]
         private void ClearAllNotifications()
         {
             NotificationCenter.ClearAll();
+            FilteredNotifications?.Refresh();
         }
 
         [RelayCommand]
@@ -175,6 +246,7 @@ namespace MovieManagerDesktop.ViewModels
             if (item != null)
             {
                 NotificationCenter.MarkAsRead(item);
+                FilteredNotifications?.Refresh();
             }
         }
     }

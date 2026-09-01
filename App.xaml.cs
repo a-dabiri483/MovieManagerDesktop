@@ -20,6 +20,9 @@ public partial class App : Application
             db.Database.EnsureCreated();
         }
 
+        // Sync any offline playback progress from MPV
+        MovieManagerDesktop.Services.MpvPlaybackService.SyncOfflineProgress();
+
         // Sync encrypted proxies in background on launch
         _ = MovieManagerDesktop.Services.SettingsManager.SyncEncryptedProxiesAsync();
     }

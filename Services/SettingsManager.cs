@@ -350,6 +350,14 @@ namespace MovieManagerDesktop.Services
                     {
                         if (item.TryGetProperty("enabled", out var enabledElem) && enabledElem.GetBoolean())
                         {
+                            string img = "";
+                            if (item.TryGetProperty("image_url", out var imgElem)) img = imgElem.GetString() ?? "";
+                            else if (item.TryGetProperty("image", out var img2Elem)) img = img2Elem.GetString() ?? "";
+
+                            bool isPinned = false;
+                            if (item.TryGetProperty("pinned", out var pinElem)) isPinned = pinElem.GetBoolean();
+                            else if (item.TryGetProperty("is_pinned", out var pin2Elem)) isPinned = pin2Elem.GetBoolean();
+
                             list.Add(new InAppAnnouncement
                             {
                                 Enabled = true,
@@ -359,6 +367,8 @@ namespace MovieManagerDesktop.Services
                                 Type = item.TryGetProperty("type", out var typeElem) ? typeElem.GetString() ?? "info" : "info",
                                 ActionTitle = item.TryGetProperty("action_title", out var atElem) ? atElem.GetString() ?? "" : "",
                                 ActionUrl = item.TryGetProperty("action_url", out var auElem) ? auElem.GetString() ?? "" : "",
+                                ImageUrl = img,
+                                IsPinned = isPinned,
                                 CreatedAt = item.TryGetProperty("created_at", out var createdElem) && DateTime.TryParse(createdElem.GetString(), out var dt) ? dt : DateTime.Now
                             });
                         }
@@ -380,8 +390,8 @@ namespace MovieManagerDesktop.Services
             if (!settings.DismissedAnnouncementIds.Contains(id))
             {
                 settings.DismissedAnnouncementIds.Add(id);
-                // Keep list from growing unbounded (keep last 50)
-                if (settings.DismissedAnnouncementIds.Count > 50)
+                // Keep max 50 ids
+                while (settings.DismissedAnnouncementIds.Count > 50)
                 {
                     settings.DismissedAnnouncementIds.RemoveAt(0);
                 }
@@ -399,6 +409,8 @@ namespace MovieManagerDesktop.Services
         public string Type { get; set; } = "info";
         public string ActionTitle { get; set; } = string.Empty;
         public string ActionUrl { get; set; } = string.Empty;
+        public string ImageUrl { get; set; } = string.Empty;
+        public bool IsPinned { get; set; } = false;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 }

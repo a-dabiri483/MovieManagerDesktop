@@ -40,6 +40,42 @@ namespace MovieManagerDesktop.Services
             return null;
         }
 
+        public static string FormatMediaDisplayTitle(VideoFile vf, string? defaultSeriesTitle = null)
+        {
+            int? season = vf.Season;
+            int? episode = vf.Episode;
+
+            // If season/episode are not set in model, try to extract from filename
+            if (season == null || episode == null)
+            {
+                string fn = vf.FileName ?? Path.GetFileName(vf.FilePath) ?? "";
+                var m = System.Text.RegularExpressions.Regex.Match(
+                    fn, 
+                    @"(?:[sS](\d+)[eE](\d+)|(?:فصل|فصل\s*اول|فصل\s*دوم|فصل\s*سوم|فصل\s*چهارم)?\s*(\d+)?\s*(?:قسمت|اپیزود|قسمت\s*اول|قسمت\s*دوم)?\s*(\d+))",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                if (m.Success)
+                {
+                    if (season == null && int.TryParse(m.Groups[1].Value, out int s)) season = s;
+                    if (episode == null && int.TryParse(m.Groups[2].Value, out int e)) episode = e;
+                }
+            }
+
+            string baseName = !string.IsNullOrWhiteSpace(vf.FormattedTitle) 
+                ? vf.FormattedTitle 
+                : (!string.IsNullOrWhiteSpace(defaultSeriesTitle) ? defaultSeriesTitle : Path.GetFileNameWithoutExtension(vf.FilePath));
+
+            if (season != null && episode != null)
+            {
+                return $"{baseName} - فصل {season:D2} قسمت {episode:D2}";
+            }
+            else if (episode != null)
+            {
+                return $"{baseName} - قسمت {episode:D2}";
+            }
+            return baseName;
+        }
+
         public static bool PlayMedia(VideoFile file, List<VideoFile>? playlist = null, int initialIndex = 0)
         {
             string? mpvExe = FindMpvPath();
@@ -47,6 +83,9 @@ namespace MovieManagerDesktop.Services
             {
                 return false;
             }
+
+            // Sync any prior offline progress before launching
+            SyncOfflineProgress();
 
             try
             {
@@ -168,19 +207,10 @@ namespace MovieManagerDesktop.Services
                 args.Add($"--input-ipc-server=\\\\.\\pipe\\{pipeName}");
 
                 // 4. Window Title with episode info
-                string title;
-                if (file.Season != null && file.Episode != null)
-                {
-                    string seriesName = !string.IsNullOrWhiteSpace(file.FormattedTitle) ? file.FormattedTitle : file.FileName;
-                    title = $"{seriesName} - [فصل {file.Season:D2} قسمت {file.Episode:D2}]";
-                }
-                else
-                {
-                    title = !string.IsNullOrWhiteSpace(file.FormattedTitle) ? file.FormattedTitle : file.FileName;
-                }
+                string title = FormatMediaDisplayTitle(file);
                 args.Add($"--title=\"{title.Replace("\"", "\\\"")}\"");
 
-                // 5. Playlist queue with per-file resume position
+                // 5. Playlist queue with per-file resume position & forced formatted media title
                 var playlistMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
                 if (playlist != null && playlist.Count > 0)
@@ -191,13 +221,16 @@ namespace MovieManagerDesktop.Services
                         if (File.Exists(ep.FilePath))
                         {
                             playlistMap[ep.FilePath] = ep.Id;
+                            string epTitle = FormatMediaDisplayTitle(ep, file.FormattedTitle);
+                            string cleanEpTitle = epTitle.Replace("\"", "\\\"");
+
                             if (ep.WatchProgressSeconds > 5)
                             {
-                                args.Add($"--{{ --start={ep.WatchProgressSeconds} \"{ep.FilePath}\" --}}");
+                                args.Add($"--{{ --force-media-title=\"{cleanEpTitle}\" --start={ep.WatchProgressSeconds} \"{ep.FilePath}\" --}}");
                             }
                             else
                             {
-                                args.Add($"\"{ep.FilePath}\"");
+                                args.Add($"--{{ --force-media-title=\"{cleanEpTitle}\" \"{ep.FilePath}\" --}}");
                             }
                         }
                     }
@@ -205,13 +238,16 @@ namespace MovieManagerDesktop.Services
                 else
                 {
                     playlistMap[file.FilePath] = file.Id;
+                    string singleTitle = FormatMediaDisplayTitle(file);
+                    string cleanSingleTitle = singleTitle.Replace("\"", "\\\"");
+
                     if (file.WatchProgressSeconds > 5)
                     {
-                        args.Add($"--{{ --start={file.WatchProgressSeconds} \"{file.FilePath}\" --}}");
+                        args.Add($"--{{ --force-media-title=\"{cleanSingleTitle}\" --start={file.WatchProgressSeconds} \"{file.FilePath}\" --}}");
                     }
                     else
                     {
-                        args.Add($"\"{file.FilePath}\"");
+                        args.Add($"--{{ --force-media-title=\"{cleanSingleTitle}\" \"{file.FilePath}\" --}}");
                     }
                 }
 
@@ -436,6 +472,93 @@ namespace MovieManagerDesktop.Services
                 }
             }
             catch { }
+        }
+
+        public static void SyncOfflineProgress()
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    var candidates = new[]
+                    {
+                        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManager", "playback_sync.json"),
+                        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManagerDesktop", "playback_sync.json")
+                    };
+
+                    foreach (var syncPath in candidates)
+                    {
+                        if (!File.Exists(syncPath)) continue;
+
+                        string json = File.ReadAllText(syncPath);
+                        if (string.IsNullOrWhiteSpace(json)) continue;
+
+                        using var doc = JsonDocument.Parse(json);
+                        if (doc.RootElement.ValueKind != JsonValueKind.Object) continue;
+
+                        using var db = new AppDbContext();
+                        bool dbModified = false;
+
+                        foreach (var prop in doc.RootElement.EnumerateObject())
+                        {
+                            string filePath = prop.Name;
+                            var val = prop.Value;
+
+                            long timePos = val.TryGetProperty("timePos", out var tp) && tp.TryGetInt64(out var tVal) ? tVal : 0;
+                            long duration = val.TryGetProperty("duration", out var dur) && dur.TryGetInt64(out var dVal) ? dVal : 0;
+                            bool isWatched = val.TryGetProperty("isWatched", out var iw) && iw.GetBoolean();
+                            double percent = val.TryGetProperty("percent", out var per) && per.TryGetDouble(out var pVal) ? pVal : 0;
+
+                            if (timePos <= 0 && !isWatched) continue;
+
+                            string lowerPath = filePath.ToLowerInvariant();
+                            var dbItem = db.VideoFiles.FirstOrDefault(v => v.FilePath.ToLower() == lowerPath);
+                            if (dbItem != null)
+                            {
+                                bool updated = false;
+                                if (isWatched && !dbItem.IsWatched)
+                                {
+                                    dbItem.IsWatched = true;
+                                    dbItem.WatchProgressPercent = 100.0;
+                                    if (duration > 0)
+                                    {
+                                        dbItem.TotalDurationSeconds = duration;
+                                        dbItem.WatchProgressSeconds = duration;
+                                    }
+                                    updated = true;
+                                }
+                                else if (!dbItem.IsWatched && timePos > dbItem.WatchProgressSeconds)
+                                {
+                                    dbItem.WatchProgressSeconds = timePos;
+                                    if (duration > 0) dbItem.TotalDurationSeconds = duration;
+                                    if (percent > 0) dbItem.WatchProgressPercent = percent;
+                                    if (dbItem.WatchProgressPercent >= 85.0) dbItem.IsWatched = true;
+                                    updated = true;
+                                }
+
+                                if (updated)
+                                {
+                                    dbItem.LastPlayedAt = DateTime.Now;
+                                    dbModified = true;
+                                }
+                            }
+                        }
+
+                        if (dbModified)
+                        {
+                            db.SaveChanges();
+                            System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+                            {
+                                WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
+                            });
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LoggerService.Error("Failed to sync offline MPV playback progress", ex);
+                }
+            });
         }
     }
 }
