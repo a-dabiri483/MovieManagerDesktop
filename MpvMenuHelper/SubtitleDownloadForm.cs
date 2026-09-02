@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -15,20 +17,23 @@ namespace MpvMenuHelper
 {
     public class SubtitleDownloadForm : Form
     {
+        [DllImport("dwmapi.dll")]
+        private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);
+
         private readonly string _pipeName;
         private readonly string _videoPath;
         private readonly MpvIpcClient _ipc;
 
-        private TextBox txtSearch;
-        private ComboBox cmbLanguage;
-        private Button btnSearch;
-        private ListView lvSubtitles;
-        private Button btnDownload;
-        private Button btnCancel;
-        private Label lblStatus;
-        private ProgressBar progressBar;
+        private TextBox txtSearch = null!;
+        private ComboBox cmbLanguage = null!;
+        private Button btnSearch = null!;
+        private ListView lvSubtitles = null!;
+        private Label lblStatus = null!;
 
         private readonly List<SubResultItem> _searchResults = new();
+        private int _hoveredRowIndex = -1;
+        private int _hoveredColIndex = -1;
+        private bool _isDownloading = false;
 
         public SubtitleDownloadForm(string pipeName, string videoPath)
         {
@@ -36,35 +41,115 @@ namespace MpvMenuHelper
             _videoPath = videoPath;
             _ipc = new MpvIpcClient(pipeName);
 
+            this.SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
+
             InitializeComponent();
             ApplyDarkTheme();
 
-            // Auto populate search box from video filename
             string initialQuery = ExtractQueryFromPath(videoPath);
             txtSearch.Text = initialQuery;
 
             this.Load += async (s, e) =>
             {
+                AdjustListViewColumns();
                 if (!string.IsNullOrWhiteSpace(initialQuery))
                 {
                     await PerformSearchAsync();
                 }
             };
+
+            this.Resize += (s, e) => AdjustListViewColumns();
+        }
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            try
+            {
+                int useDarkMode = 1;
+                DwmSetWindowAttribute(this.Handle, 20, ref useDarkMode, sizeof(int));
+                DwmSetWindowAttribute(this.Handle, 19, ref useDarkMode, sizeof(int));
+
+                int cornerPref = 2;
+                DwmSetWindowAttribute(this.Handle, 33, ref cornerPref, sizeof(int));
+            }
+            catch { }
+        }
+
+        public static (string cleanTitle, int? season, int? episode) ParseSearchQuery(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return ("", null, null);
+
+            int? season = null;
+            int? episode = null;
+
+            // Match S01E01, S1E1, 1x01, Season 1 Episode 1, فصل 1 قسمت 1
+            var sEpMatch = Regex.Match(input, @"(?:[sS](\d+)\s*[eE](\d+)|(?:(\d+)x(\d+))|(?:فصل\s*(\d+)\s*قسمت\s*(\d+))|(?:Season\s*(\d+)\s*Episode\s*(\d+)))", RegexOptions.IgnoreCase);
+            if (sEpMatch.Success)
+            {
+                if (int.TryParse(sEpMatch.Groups[1].Value, out int s)) season = s;
+                else if (int.TryParse(sEpMatch.Groups[3].Value, out int s2)) season = s2;
+                else if (int.TryParse(sEpMatch.Groups[5].Value, out int s3)) season = s3;
+                else if (int.TryParse(sEpMatch.Groups[7].Value, out int s4)) season = s4;
+
+                if (int.TryParse(sEpMatch.Groups[2].Value, out int e)) episode = e;
+                else if (int.TryParse(sEpMatch.Groups[4].Value, out int e2)) episode = e2;
+                else if (int.TryParse(sEpMatch.Groups[6].Value, out int e3)) episode = e3;
+                else if (int.TryParse(sEpMatch.Groups[8].Value, out int e4)) episode = e4;
+            }
+            else
+            {
+                var sOnly = Regex.Match(input, @"(?:[sS]|Season\s*|فصل\s*)(\d+)", RegexOptions.IgnoreCase);
+                if (sOnly.Success && int.TryParse(sOnly.Groups[1].Value, out int sVal)) season = sVal;
+
+                var eOnly = Regex.Match(input, @"(?:[eE]|Episode\s*|قسمت\s*)(\d+)", RegexOptions.IgnoreCase);
+                if (eOnly.Success && int.TryParse(eOnly.Groups[1].Value, out int eVal)) episode = eVal;
+            }
+
+            // Strip video quality, codecs, release groups, resolutions (720, 1080, 480, 2160, 4k)
+            string cleaned = Regex.Replace(input, @"(?i)\b(?:1080p?|720p?|480p?|2160p?|576p?|4k|uhd|bluray|bdrip|brrip|web-?dl|webrip|web|hdtv|dvdrip|x264|x265|hevc|h264|h265|aac|dts|ac3|yify|pahe|psa|rarbg|eztv|galaxytv|amzn|nf|dsnp|proper|repack|remux|hdr|10bit|60fps|dual-audio|dubbed|farsi|persian|sub|softsub)\b", " ");
+            cleaned = Regex.Replace(cleaned, @"(?i)\b(?:720|1080|2160|480|576)\b", " ");
+            cleaned = Regex.Replace(cleaned, @"(?i)(?:[sS]\d+\s*[eE]\d+|\d+x\d+|Season\s*\d+|Episode\s*\d+|فصل\s*\d+|قسمت\s*\d+)", " ");
+            cleaned = Regex.Replace(cleaned, @"[\.\[\]\(\)\-_]", " ");
+            cleaned = Regex.Replace(cleaned, @"\s+", " ").Trim();
+
+            return (cleaned, season, episode);
         }
 
         private string ExtractQueryFromPath(string path)
         {
             if (string.IsNullOrWhiteSpace(path)) return "";
             string name = Path.GetFileNameWithoutExtension(path);
-            name = Regex.Replace(name, @"[\.\[\]\(\)\-_]", " ");
-            name = Regex.Replace(name, @"\b(?:1080p|720p|480p|2160p|4k|bluray|web-dl|webrip|x264|x265|hevc|yify|pahe|psa|rarbg|eztv|galaxytv)\b.*", "", RegexOptions.IgnoreCase);
-            return Regex.Replace(name, @"\s+", " ").Trim();
+            var (clean, season, episode) = ParseSearchQuery(name);
+            if (season != null && episode != null)
+                return $"{clean} S{season:D2}E{episode:D2}".Trim();
+            if (season != null)
+                return $"{clean} S{season:D2}".Trim();
+            return !string.IsNullOrWhiteSpace(clean) ? clean : name;
+        }
+
+        private void AdjustListViewColumns()
+        {
+            if (lvSubtitles != null && lvSubtitles.Columns.Count >= 4)
+            {
+                int totalWidth = lvSubtitles.ClientSize.Width;
+                int col0 = 100; // Language
+                int col1 = 100; // Download Button
+                int col3 = 110; // Source
+                int col2 = Math.Max(220, totalWidth - col0 - col1 - col3 - 4); // Title fills remainder
+
+                lvSubtitles.Columns[0].Width = col0;
+                lvSubtitles.Columns[1].Width = col1;
+                lvSubtitles.Columns[2].Width = col2;
+                lvSubtitles.Columns[3].Width = col3;
+            }
         }
 
         private void InitializeComponent()
         {
-            this.Text = "دانلود آنلاین زیرنویس (SubDL & SubSource)";
-            this.Size = new Size(720, 520);
+            this.Text = "دانلود آنلاین زیرنویس (SubDL & SubSource & OpenSubtitles)";
+            this.Size = new Size(860, 560);
+            this.MinimumSize = new Size(720, 460);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -72,34 +157,71 @@ namespace MpvMenuHelper
             this.RightToLeft = RightToLeft.Yes;
             this.RightToLeftLayout = true;
             this.Font = new Font("Segoe UI", 9.5f, FontStyle.Regular);
+            this.Padding = new Padding(16, 14, 16, 14);
 
-            var mainLayout = new TableLayoutPanel
+            // ==========================================
+            // 1. Top Search Bar Panel (Right: Search Btn | Center: Input | Left: Language Dropdown)
+            // ==========================================
+            var pnlTop = new Panel
+            {
+                Dock = DockStyle.Top,
+                Height = 44,
+                Padding = new Padding(0, 0, 0, 8)
+            };
+
+            // Search Button (Dock Right -> in RTL appears on right side)
+            btnSearch = new Button
+            {
+                Text = "🔍 جستجو",
+                Dock = DockStyle.Right,
+                Width = 105,
+                Cursor = Cursors.Hand,
+                Font = new Font("Segoe UI", 10f, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.FromArgb(235, 59, 90),
+                ForeColor = Color.White
+            };
+            btnSearch.FlatAppearance.BorderSize = 0;
+            btnSearch.Click += async (s, e) => await PerformSearchAsync();
+
+            // Language Dropdown (Dock Left -> in RTL appears on left side)
+            cmbLanguage = new ComboBox
+            {
+                Dock = DockStyle.Left,
+                Width = 145,
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                Font = new Font("Segoe UI", 10f),
+                DrawMode = DrawMode.OwnerDrawFixed,
+                ItemHeight = 26,
+                FlatStyle = FlatStyle.Popup
+            };
+            cmbLanguage.Items.AddRange(new object[] { "🇮🇷 همه زبان‌ها", "🇮🇷 فقط فارسی", "🇬🇧 فقط انگلیسی" });
+            cmbLanguage.SelectedIndex = 0;
+            cmbLanguage.DrawItem += (s, e) =>
+            {
+                if (e.Index < 0) return;
+                bool isSelected = (e.State & DrawItemState.Selected) != 0;
+                var bg = isSelected ? Color.FromArgb(56, 103, 214) : Color.FromArgb(32, 32, 48);
+                var fg = Color.White;
+
+                using var brush = new SolidBrush(bg);
+                e.Graphics.FillRectangle(brush, e.Bounds);
+
+                string text = cmbLanguage.Items[e.Index].ToString() ?? "";
+                TextRenderer.DrawText(e.Graphics, text, cmbLanguage.Font, e.Bounds, fg, TextFormatFlags.VerticalCenter | TextFormatFlags.Right | TextFormatFlags.RightToLeft);
+            };
+
+            var pnlSearchBoxWrap = new Panel
             {
                 Dock = DockStyle.Fill,
-                ColumnCount = 1,
-                RowCount = 4,
-                Padding = new Padding(16)
+                Padding = new Padding(10, 0, 10, 0)
             };
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50)); // Search bar
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); // List
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30)); // Progress/Status
-            mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 50)); // Buttons
-
-            // 1. Search Bar Panel
-            var pnlSearch = new TableLayoutPanel
-            {
-                Dock = DockStyle.Fill,
-                ColumnCount = 3,
-                RowCount = 1
-            };
-            pnlSearch.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 65));
-            pnlSearch.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20));
-            pnlSearch.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 15));
 
             txtSearch = new TextBox
             {
                 Dock = DockStyle.Fill,
-                Font = new Font("Segoe UI", 10.5f)
+                Font = new Font("Segoe UI", 11.5f),
+                BorderStyle = BorderStyle.FixedSingle
             };
             txtSearch.KeyDown += async (s, e) =>
             {
@@ -109,122 +231,266 @@ namespace MpvMenuHelper
                     await PerformSearchAsync();
                 }
             };
+            pnlSearchBoxWrap.Controls.Add(txtSearch);
 
-            cmbLanguage = new ComboBox
+            pnlTop.Controls.Add(pnlSearchBoxWrap);
+            pnlTop.Controls.Add(cmbLanguage);
+            pnlTop.Controls.Add(btnSearch);
+
+            // ==========================================
+            // 2. Status Bar (Dock Bottom)
+            // ==========================================
+            lblStatus = new Label
             {
-                Dock = DockStyle.Fill,
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Font = new Font("Segoe UI", 10f)
+                Text = "برای دانلود، روی دکمه «دانلود» هر زیرنویس یا ردیف آن کلیک کنید.",
+                Dock = DockStyle.Bottom,
+                Height = 32,
+                TextAlign = ContentAlignment.MiddleRight,
+                ForeColor = Color.FromArgb(164, 176, 190),
+                Font = new Font("Segoe UI", 9.5f),
+                Padding = new Padding(0, 6, 4, 0)
             };
-            cmbLanguage.Items.AddRange(new object[] { "🇮🇷 همه زبان‌ها", "🇮🇷 فقط فارسی", "🇬🇧 فقط انگلیسی" });
-            cmbLanguage.SelectedIndex = 0;
 
-            btnSearch = new Button
-            {
-                Text = "🔍 جستجو",
-                Dock = DockStyle.Fill,
-                Cursor = Cursors.Hand,
-                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold)
-            };
-            btnSearch.Click += async (s, e) => await PerformSearchAsync();
-
-            pnlSearch.Controls.Add(txtSearch, 0, 0);
-            pnlSearch.Controls.Add(cmbLanguage, 1, 0);
-            pnlSearch.Controls.Add(btnSearch, 2, 0);
-
-            // 2. ListView
+            // ==========================================
+            // 3. Custom OwnerDraw ListView with In-Row Download Buttons (Dock Fill)
+            // ==========================================
             lvSubtitles = new ListView
             {
                 Dock = DockStyle.Fill,
                 View = View.Details,
                 FullRowSelect = true,
-                GridLines = true,
+                GridLines = false,
                 MultiSelect = false,
-                Font = new Font("Segoe UI", 9.5f)
+                Font = new Font("Segoe UI", 10f),
+                OwnerDraw = true,
+                BorderStyle = BorderStyle.FixedSingle
             };
-            lvSubtitles.Columns.Add("زبان", 100, HorizontalAlignment.Right);
-            lvSubtitles.Columns.Add("عنوان و نسخه انتشار", 460, HorizontalAlignment.Right);
-            lvSubtitles.Columns.Add("منبع", 90, HorizontalAlignment.Center);
-            lvSubtitles.DoubleClick += async (s, e) => await PerformDownloadAsync();
+            lvSubtitles.Columns.Add("زبان", 100, HorizontalAlignment.Center);
+            lvSubtitles.Columns.Add("دانلود", 100, HorizontalAlignment.Center);
+            lvSubtitles.Columns.Add("عنوان و مشخصات نسخه انتشار", 530, HorizontalAlignment.Right);
+            lvSubtitles.Columns.Add("منبع", 110, HorizontalAlignment.Center);
 
-            // 3. Status
-            lblStatus = new Label
+            // Column Header Owner Draw
+            lvSubtitles.DrawColumnHeader += (s, e) =>
             {
-                Text = "برای جستجوی زیرنویس، عنوان را وارد کرده و دکمه جستجو را بزنید.",
-                Dock = DockStyle.Fill,
-                TextAlign = ContentAlignment.MiddleRight,
-                ForeColor = Color.LightGray
+                using (var bgBrush = new SolidBrush(Color.FromArgb(36, 36, 56)))
+                {
+                    e.Graphics.FillRectangle(bgBrush, e.Bounds);
+                }
+
+                using (var pen = new Pen(Color.FromArgb(235, 59, 90), 2))
+                {
+                    e.Graphics.DrawLine(pen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
+                }
+
+                using (var sepPen = new Pen(Color.FromArgb(48, 48, 72), 1))
+                {
+                    e.Graphics.DrawLine(sepPen, e.Bounds.Left, e.Bounds.Top + 4, e.Bounds.Left, e.Bounds.Bottom - 6);
+                }
+
+                using var font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
+                TextRenderer.DrawText(
+                    e.Graphics,
+                    e.Header?.Text ?? "",
+                    font,
+                    new Rectangle(e.Bounds.X + 6, e.Bounds.Y, e.Bounds.Width - 12, e.Bounds.Height),
+                    Color.FromArgb(220, 224, 230),
+                    TextFormatFlags.VerticalCenter | (e.Header?.TextAlign == HorizontalAlignment.Center ? TextFormatFlags.HorizontalCenter : TextFormatFlags.Right) | TextFormatFlags.RightToLeft
+                );
             };
 
-            // 4. Buttons Panel
-            var pnlButtons = new FlowLayoutPanel
+            // Item Owner Draw
+            lvSubtitles.DrawItem += (s, e) => { e.DrawDefault = false; };
+
+            // SubItem Owner Draw
+            lvSubtitles.DrawSubItem += (s, e) =>
             {
-                Dock = DockStyle.Fill,
-                FlowDirection = FlowDirection.LeftToRight
+                bool isSelected = (e.ItemState & ListViewItemStates.Selected) != 0;
+                var rowBg = isSelected ? Color.FromArgb(44, 48, 76) : (e.ItemIndex % 2 == 0 ? Color.FromArgb(20, 20, 32) : Color.FromArgb(25, 25, 40));
+
+                using (var bgBrush = new SolidBrush(rowBg))
+                {
+                    e.Graphics.FillRectangle(bgBrush, e.Bounds);
+                }
+
+                using (var sepPen = new Pen(Color.FromArgb(34, 34, 52), 1))
+                {
+                    e.Graphics.DrawLine(sepPen, e.Bounds.Left, e.Bounds.Bottom - 1, e.Bounds.Right, e.Bounds.Bottom - 1);
+                }
+
+                if (isSelected && e.ColumnIndex == 0)
+                {
+                    using var indBrush = new SolidBrush(Color.FromArgb(235, 59, 90));
+                    e.Graphics.FillRectangle(indBrush, e.Bounds.Right - 4, e.Bounds.Top, 4, e.Bounds.Height);
+                }
+
+                string text = e.SubItem?.Text ?? "";
+
+                if (e.ColumnIndex == 0) // Column 0: Language Badge Pill
+                {
+                    bool isFa = text.Contains("فارسی");
+                    Color badgeBg = isFa ? Color.FromArgb(22, 54, 38) : Color.FromArgb(24, 44, 76);
+                    Color badgeFg = isFa ? Color.FromArgb(46, 213, 115) : Color.FromArgb(112, 161, 255);
+                    Color badgeBorder = isFa ? Color.FromArgb(46, 213, 115, 80) : Color.FromArgb(112, 161, 255, 80);
+
+                    var pillRect = new Rectangle(e.Bounds.X + (e.Bounds.Width - 85) / 2, e.Bounds.Y + 3, 85, e.Bounds.Height - 7);
+                    using var path = GetRoundedRectangle(pillRect, 6);
+                    using var fill = new SolidBrush(badgeBg);
+                    using var stroke = new Pen(badgeBorder, 1);
+
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    e.Graphics.FillPath(fill, path);
+                    e.Graphics.DrawPath(stroke, path);
+                    e.Graphics.SmoothingMode = SmoothingMode.Default;
+
+                    using var badgeFont = new Font("Segoe UI", 8.5f, FontStyle.Bold);
+                    TextRenderer.DrawText(e.Graphics, text, badgeFont, pillRect, badgeFg, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                }
+                else if (e.ColumnIndex == 1) // Column 1: In-Row Download Button Pill
+                {
+                    bool isBtnHovered = (_hoveredRowIndex == e.ItemIndex && _hoveredColIndex == 1);
+                    Color btnBg = isBtnHovered ? Color.FromArgb(5, 150, 105) : Color.FromArgb(16, 185, 129);
+                    Color btnFg = Color.White;
+
+                    var btnRect = new Rectangle(e.Bounds.X + (e.Bounds.Width - 82) / 2, e.Bounds.Y + 3, 82, e.Bounds.Height - 7);
+                    using var path = GetRoundedRectangle(btnRect, 5);
+                    using var fill = new SolidBrush(btnBg);
+
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    e.Graphics.FillPath(fill, path);
+                    e.Graphics.SmoothingMode = SmoothingMode.Default;
+
+                    using var btnFont = new Font("Segoe UI", 9f, FontStyle.Bold);
+                    TextRenderer.DrawText(e.Graphics, "⬇️ دانلود", btnFont, btnRect, btnFg, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                }
+                else if (e.ColumnIndex == 3) // Column 3: Source Badge
+                {
+                    bool isSubdl = text.Contains("SubDL");
+                    bool isSubSource = text.Contains("SubSource");
+                    Color srcBg = isSubdl ? Color.FromArgb(44, 32, 20) : (isSubSource ? Color.FromArgb(36, 24, 52) : Color.FromArgb(20, 36, 48));
+                    Color srcFg = isSubdl ? Color.FromArgb(255, 165, 2) : (isSubSource ? Color.FromArgb(165, 94, 234) : Color.FromArgb(56, 189, 248));
+
+                    var srcRect = new Rectangle(e.Bounds.X + (e.Bounds.Width - 90) / 2, e.Bounds.Y + 4, 90, e.Bounds.Height - 9);
+                    using var path = GetRoundedRectangle(srcRect, 5);
+                    using var fill = new SolidBrush(srcBg);
+
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    e.Graphics.FillPath(fill, path);
+                    e.Graphics.SmoothingMode = SmoothingMode.Default;
+
+                    using var srcFont = new Font("Segoe UI", 8.5f, FontStyle.Bold);
+                    TextRenderer.DrawText(e.Graphics, text, srcFont, srcRect, srcFg, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                }
+                else // Column 2: Title & Release Info
+                {
+                    Color textFg = isSelected ? Color.White : Color.FromArgb(240, 242, 245);
+                    using var rowFont = new Font("Segoe UI", 9.5f, isSelected ? FontStyle.Bold : FontStyle.Regular);
+                    var textRect = new Rectangle(e.Bounds.X + 12, e.Bounds.Y, e.Bounds.Width - 24, e.Bounds.Height);
+                    TextRenderer.DrawText(e.Graphics, text, rowFont, textRect, textFg, TextFormatFlags.VerticalCenter | TextFormatFlags.Right | TextFormatFlags.EndEllipsis | TextFormatFlags.RightToLeft);
+                }
             };
 
-            btnDownload = new Button
+            // Interactive mouse events for in-row download buttons
+            lvSubtitles.MouseMove += (s, e) =>
             {
-                Text = "⬇️ دانلود و اعمال روی فیلم",
-                Size = new Size(180, 38),
-                Cursor = Cursors.Hand,
-                Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
-                Enabled = false
-            };
-            btnDownload.Click += async (s, e) => await PerformDownloadAsync();
+                var hit = lvSubtitles.HitTest(e.Location);
+                if (hit.Item != null && hit.SubItem != null)
+                {
+                    int colIndex = hit.Item.SubItems.IndexOf(hit.SubItem);
+                    if (colIndex == 1) // On Download button
+                    {
+                        lvSubtitles.Cursor = Cursors.Hand;
+                        if (_hoveredRowIndex != hit.Item.Index || _hoveredColIndex != 1)
+                        {
+                            _hoveredRowIndex = hit.Item.Index;
+                            _hoveredColIndex = 1;
+                            lvSubtitles.Invalidate(hit.Item.Bounds);
+                        }
+                        return;
+                    }
+                }
 
-            btnCancel = new Button
+                lvSubtitles.Cursor = Cursors.Default;
+                if (_hoveredRowIndex != -1 || _hoveredColIndex != -1)
+                {
+                    _hoveredRowIndex = -1;
+                    _hoveredColIndex = -1;
+                    lvSubtitles.Invalidate();
+                }
+            };
+
+            lvSubtitles.MouseLeave += (s, e) =>
             {
-                Text = "بستن",
-                Size = new Size(90, 38),
-                Cursor = Cursors.Hand
+                lvSubtitles.Cursor = Cursors.Default;
+                if (_hoveredRowIndex != -1 || _hoveredColIndex != -1)
+                {
+                    _hoveredRowIndex = -1;
+                    _hoveredColIndex = -1;
+                    lvSubtitles.Invalidate();
+                }
             };
-            btnCancel.Click += (s, e) => this.Close();
 
-            pnlButtons.Controls.Add(btnDownload);
-            pnlButtons.Controls.Add(btnCancel);
-
-            lvSubtitles.SelectedIndexChanged += (s, e) =>
+            lvSubtitles.MouseClick += async (s, e) =>
             {
-                btnDownload.Enabled = lvSubtitles.SelectedItems.Count > 0;
+                if (_isDownloading) return;
+                var hit = lvSubtitles.HitTest(e.Location);
+                if (hit.Item != null)
+                {
+                    int colIndex = hit.SubItem != null ? hit.Item.SubItems.IndexOf(hit.SubItem) : -1;
+                    if (colIndex == 1 && hit.Item.Tag is SubResultItem item)
+                    {
+                        await PerformDownloadItemAsync(item);
+                    }
+                }
             };
 
-            mainLayout.Controls.Add(pnlSearch, 0, 0);
-            mainLayout.Controls.Add(lvSubtitles, 0, 1);
-            mainLayout.Controls.Add(lblStatus, 0, 2);
-            mainLayout.Controls.Add(pnlButtons, 0, 3);
+            lvSubtitles.DoubleClick += async (s, e) =>
+            {
+                if (_isDownloading) return;
+                if (lvSubtitles.SelectedItems.Count > 0 && lvSubtitles.SelectedItems[0].Tag is SubResultItem item)
+                {
+                    await PerformDownloadItemAsync(item);
+                }
+            };
 
-            this.Controls.Add(mainLayout);
+            this.Controls.Add(lvSubtitles);
+            this.Controls.Add(lblStatus);
+            this.Controls.Add(pnlTop);
+        }
+
+        private static GraphicsPath GetRoundedRectangle(Rectangle bounds, int radius)
+        {
+            var path = new GraphicsPath();
+            int diameter = radius * 2;
+            var arc = new Rectangle(bounds.Location, new Size(diameter, diameter));
+
+            path.AddArc(arc, 180, 90);
+            arc.X = bounds.Right - diameter;
+            path.AddArc(arc, 270, 90);
+            arc.Y = bounds.Bottom - diameter;
+            path.AddArc(arc, 0, 90);
+            arc.X = bounds.Left;
+            path.AddArc(arc, 90, 90);
+            path.CloseFigure();
+            return path;
         }
 
         private void ApplyDarkTheme()
         {
-            this.BackColor = Color.FromArgb(24, 24, 36);
+            this.BackColor = Color.FromArgb(20, 20, 32);
             this.ForeColor = Color.White;
 
-            txtSearch.BackColor = Color.FromArgb(34, 34, 52);
+            txtSearch.BackColor = Color.FromArgb(28, 28, 44);
             txtSearch.ForeColor = Color.White;
 
-            cmbLanguage.BackColor = Color.FromArgb(34, 34, 52);
+            cmbLanguage.BackColor = Color.FromArgb(28, 28, 44);
             cmbLanguage.ForeColor = Color.White;
 
-            btnSearch.BackColor = Color.FromArgb(58, 134, 255);
+            btnSearch.BackColor = Color.FromArgb(235, 59, 90);
             btnSearch.ForeColor = Color.White;
-            btnSearch.FlatStyle = FlatStyle.Flat;
-            btnSearch.FlatAppearance.BorderSize = 0;
 
-            lvSubtitles.BackColor = Color.FromArgb(18, 18, 28);
+            lvSubtitles.BackColor = Color.FromArgb(16, 16, 26);
             lvSubtitles.ForeColor = Color.White;
-
-            btnDownload.BackColor = Color.FromArgb(46, 213, 115);
-            btnDownload.ForeColor = Color.Black;
-            btnDownload.FlatStyle = FlatStyle.Flat;
-            btnDownload.FlatAppearance.BorderSize = 0;
-
-            btnCancel.BackColor = Color.FromArgb(40, 40, 60);
-            btnCancel.ForeColor = Color.White;
-            btnCancel.FlatStyle = FlatStyle.Flat;
-            btnCancel.FlatAppearance.BorderSize = 0;
         }
 
         private async Task PerformSearchAsync()
@@ -233,9 +499,8 @@ namespace MpvMenuHelper
             if (string.IsNullOrWhiteSpace(query)) return;
 
             btnSearch.Enabled = false;
-            btnDownload.Enabled = false;
-            lblStatus.Text = "در حال جستجو در منابع زیرنویس...";
-            lblStatus.ForeColor = Color.FromArgb(0, 210, 211);
+            lblStatus.Text = "⏳ در حال جستجو در پایگاه‌های زیرنویس (SubDL & SubSource & OpenSubtitles)...";
+            lblStatus.ForeColor = Color.FromArgb(56, 189, 248);
             lvSubtitles.Items.Clear();
             _searchResults.Clear();
 
@@ -254,124 +519,165 @@ namespace MpvMenuHelper
                 foreach (var item in _searchResults)
                 {
                     var lvi = new ListViewItem(item.Language);
-                    lvi.SubItems.Add(item.Title);
-                    lvi.SubItems.Add(item.Source);
+                    lvi.SubItems.Add("⬇️ دانلود"); // Column 1
+                    lvi.SubItems.Add(item.Title);     // Column 2
+                    lvi.SubItems.Add(item.Source);    // Column 3
                     lvi.Tag = item;
                     lvSubtitles.Items.Add(lvi);
                 }
 
                 if (_searchResults.Count > 0)
                 {
-                    lblStatus.Text = $"{_searchResults.Count} زیرنویس پیدا شد. زیرنویس مورد نظر را انتخاب و دکمه دانلود را بزنید.";
+                    lblStatus.Text = $"✔ {_searchResults.Count} زیرنویس معتبر یافت شد. برای دانلود و الصاق خودکار به فیلم، روی دکمه «دانلود» کلیک کنید.";
                     lblStatus.ForeColor = Color.FromArgb(46, 213, 115);
                     lvSubtitles.Items[0].Selected = true;
                 }
                 else
                 {
-                    lblStatus.Text = "زیرنویسی برای این عنوان یافت نشد. لطفاً نام لاتین یا مشخصات دیگر را جستجو کنید.";
+                    lblStatus.Text = "❌ زیرنویسی برای این عبارت یافت نشد. لطفاً نام انگلیسی فیلم/سریال را دقیق‌تر وارد کنید.";
                     lblStatus.ForeColor = Color.FromArgb(255, 71, 87);
                 }
             }
             catch (Exception ex)
             {
-                lblStatus.Text = $"خطا در جستجو: {ex.Message}";
+                lblStatus.Text = $"⚠️ خطا در ارتباط با سرورهای زیرنویس: {ex.Message}";
                 lblStatus.ForeColor = Color.FromArgb(255, 71, 87);
             }
             finally
             {
                 btnSearch.Enabled = true;
+                AdjustListViewColumns();
             }
         }
 
-        private async Task PerformDownloadAsync()
+        private async Task PerformDownloadItemAsync(SubResultItem item)
         {
-            if (lvSubtitles.SelectedItems.Count == 0) return;
-            var item = (SubResultItem)lvSubtitles.SelectedItems[0].Tag;
+            if (_isDownloading) return;
+            _isDownloading = true;
 
-            btnDownload.Enabled = false;
             btnSearch.Enabled = false;
-            lblStatus.Text = "در حال دانلود، تبدیل انکودینگ و الصاق به فیلم...";
-            lblStatus.ForeColor = Color.FromArgb(0, 210, 211);
+            lblStatus.Text = "⏳ در حال دانلود، رفع انکودینگ کاراکترهای فارسی و فعال‌سازی فوری روی پلیر...";
+            lblStatus.ForeColor = Color.FromArgb(56, 189, 248);
 
             try
             {
                 string savedSrt = await DownloadAndSaveSubtitleInternalAsync(item, _videoPath);
                 
-                // Attach to MPV
-                string escapedPath = savedSrt.Replace("\\", "/").Replace("\"", "\\\"");
-                _ipc.SendCommand($"sub-add \"{escapedPath}\" \"select\"");
-                _ipc.SendCommand("set sub-visibility yes");
-                _ipc.SendCommand($"show-text \"زیرنویس فعال شد: {Path.GetFileName(savedSrt)}\" 3000");
+                // Activate in MPV via IPC
+                await _ipc.SendCommandAsync("sub-add", savedSrt, "select");
+                await _ipc.SendCommandAsync("set", "sub-visibility", "yes");
+                await _ipc.SendCommandAsync("show-text", $"زیرنویس فعال شد: {Path.GetFileName(savedSrt)}", 3000);
 
-                lblStatus.Text = $"✅ زیرنویس با موفقیت ذخیره و روی فیلم اعمال شد: {Path.GetFileName(savedSrt)}";
+                lblStatus.Text = $"✅ زیرنویس با موفقیت دانلود و روی فیلم فعال شد: {Path.GetFileName(savedSrt)}";
                 lblStatus.ForeColor = Color.FromArgb(46, 213, 115);
 
-                await Task.Delay(1200);
+                await Task.Delay(1100);
                 this.Close();
             }
             catch (Exception ex)
             {
-                lblStatus.Text = $"خطا در دانلود زیرنویس: {ex.Message}";
+                lblStatus.Text = $"❌ خطا در دانلود و استخراج فایل زیرنویس: {ex.Message}";
                 lblStatus.ForeColor = Color.FromArgb(255, 71, 87);
-                btnDownload.Enabled = true;
                 btnSearch.Enabled = true;
+                _isDownloading = false;
             }
         }
 
         // --- Network Helpers ---
-        private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(10) };
+        private static readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(15) };
         private const string SUBDL_KEY = "subdl_HHtBliLNdNumqWs29n7Z4E9GLQwyX0bL9MDFc6RTy34";
         private const string SUBSOURCE_KEY = "sk_68d68b32ef82a0a168e243815c66d85ca5ecfe2909507245e8ff695b27c10025";
+        private const string OPENSUBTITLES_KEY = "tf6Ebu6rUqT662SZlDWYWw5yJkS9Gz2g";
 
         private async Task<List<SubResultItem>> SearchOnlineSubtitlesInternalAsync(string rawQuery, string langFilter)
         {
             var results = new List<SubResultItem>();
+            var (cleanTitle, season, episode) = ParseSearchQuery(rawQuery);
+            if (string.IsNullOrWhiteSpace(cleanTitle)) cleanTitle = rawQuery.Trim();
+
             string subdlLangs = langFilter == "EN" ? "EN" : (langFilter == "FA" ? "FA" : "FA,EN");
 
-            // SubDL
+            // ==========================================
+            // 1. SubDL (Multi-tier: Exact Ep -> Season -> Title)
+            // ==========================================
             try
             {
-                string url = $"https://api.subdl.com/api/v1/subtitles?film_name={Uri.EscapeDataString(rawQuery)}&languages={subdlLangs}&api_key={SUBDL_KEY}&subs_per_page=30";
-                var resp = await _http.GetAsync(url);
-                if (resp.IsSuccessStatusCode)
+                var subdlQueries = new List<string>();
+                string encTitle = Uri.EscapeDataString(cleanTitle);
+
+                if (season != null && episode != null)
                 {
-                    string json = await resp.Content.ReadAsStringAsync();
-                    using var doc = JsonDocument.Parse(json);
-                    var root = doc.RootElement;
-                    if (root.TryGetProperty("status", out var st) && st.GetBoolean() &&
-                        root.TryGetProperty("subtitles", out var subsArr) && subsArr.ValueKind == JsonValueKind.Array)
+                    subdlQueries.Add($"https://api.subdl.com/api/v1/subtitles?film_name={encTitle}&type=tv&season_number={season}&episode_number={episode}&languages={subdlLangs}&api_key={SUBDL_KEY}&subs_per_page=30");
+                }
+                if (season != null)
+                {
+                    subdlQueries.Add($"https://api.subdl.com/api/v1/subtitles?film_name={encTitle}&type=tv&season_number={season}&languages={subdlLangs}&api_key={SUBDL_KEY}&subs_per_page=30");
+                }
+                subdlQueries.Add($"https://api.subdl.com/api/v1/subtitles?film_name={encTitle}&languages={subdlLangs}&api_key={SUBDL_KEY}&subs_per_page=30");
+
+                foreach (var url in subdlQueries)
+                {
+                    if (results.Count >= 25) break;
+
+                    try
                     {
-                        foreach (var sub in subsArr.EnumerateArray())
+                        var resp = await _http.GetAsync(url);
+                        if (!resp.IsSuccessStatusCode) continue;
+
+                        string json = await resp.Content.ReadAsStringAsync();
+                        using var doc = JsonDocument.Parse(json);
+                        var root = doc.RootElement;
+
+                        if (root.TryGetProperty("status", out var st) && st.GetBoolean() &&
+                            root.TryGetProperty("subtitles", out var subsArr) && subsArr.ValueKind == JsonValueKind.Array)
                         {
-                            string rel = sub.TryGetProperty("release_name", out var rn) ? rn.GetString() ?? "" : "";
-                            string lang = sub.TryGetProperty("lang", out var l) ? l.GetString() ?? "FA" : "FA";
-                            string u = sub.TryGetProperty("url", out var up) ? up.GetString() ?? "" : "";
-                            if (string.IsNullOrEmpty(u)) continue;
-
-                            string fullUrl = u.StartsWith("http") ? u : $"https://dl.subdl.com{u}";
-                            string langLabel = lang.Equals("FA", StringComparison.OrdinalIgnoreCase) ? "🇮🇷 فارسی" : "🇬🇧 English";
-
-                            results.Add(new SubResultItem
+                            foreach (var sub in subsArr.EnumerateArray())
                             {
-                                Title = string.IsNullOrWhiteSpace(rel) ? rawQuery : rel,
-                                Language = langLabel,
-                                LanguageCode = lang.ToLowerInvariant(),
-                                DownloadUrl = fullUrl,
-                                Source = "SubDL"
-                            });
+                                string rel = sub.TryGetProperty("release_name", out var rn) ? rn.GetString() ?? "" : "";
+                                string rawLang = sub.TryGetProperty("lang", out var l) ? l.GetString() ?? "FA" : "FA";
+                                string u = sub.TryGetProperty("url", out var up) ? up.GetString() ?? "" : "";
+                                if (string.IsNullOrEmpty(u)) continue;
+
+                                string fullUrl = u.StartsWith("http") ? u : $"https://dl.subdl.com{u}";
+                                if (results.Any(r => r.DownloadUrl == fullUrl)) continue;
+
+                                int? epNum = sub.TryGetProperty("episode", out var epP) && epP.ValueKind == JsonValueKind.Number ? epP.GetInt32() : null;
+                                int? sNum = sub.TryGetProperty("season", out var sP) && sP.ValueKind == JsonValueKind.Number ? sP.GetInt32() : null;
+
+                                bool isPersian = rawLang.Contains("fa", StringComparison.OrdinalIgnoreCase) ||
+                                                 rawLang.Contains("farsi", StringComparison.OrdinalIgnoreCase) ||
+                                                 rawLang.Contains("persian", StringComparison.OrdinalIgnoreCase);
+
+                                string langLabel = isPersian ? "🇮🇷 فارسی" : (rawLang.Contains("en", StringComparison.OrdinalIgnoreCase) ? "🇬🇧 English" : rawLang);
+
+                                results.Add(new SubResultItem
+                                {
+                                    Title = string.IsNullOrWhiteSpace(rel) ? cleanTitle : rel,
+                                    Language = langLabel,
+                                    LanguageCode = isPersian ? "fa" : "en",
+                                    DownloadUrl = fullUrl,
+                                    Source = "SubDL",
+                                    Season = sNum,
+                                    Episode = epNum,
+                                    ReleaseInfo = rel
+                                });
+                            }
                         }
                     }
+                    catch { }
                 }
             }
             catch { }
 
-            // SubSource fallback
-            if (results.Count < 5)
+            // ==========================================
+            // 2. SubSource
+            // ==========================================
+            if (results.Count < 20)
             {
                 try
                 {
                     string ssLang = langFilter == "EN" ? "english" : "persian";
-                    string sUrl = $"https://api.subsource.net/api/v1/movies/search?searchType=text&q={Uri.EscapeDataString(rawQuery)}";
+                    string sUrl = $"https://api.subsource.net/api/v1/movies/search?searchType=text&q={Uri.EscapeDataString(cleanTitle)}";
                     using var req = new HttpRequestMessage(HttpMethod.Get, sUrl);
                     req.Headers.Add("X-API-Key", SUBSOURCE_KEY);
                     req.Headers.Add("Accept", "application/json");
@@ -414,14 +720,20 @@ namespace MpvMenuHelper
                                             string dl = $"https://api.subsource.net/api/v1/subtitles/{sid}/download";
                                             string langLabel = ssLang == "persian" ? "🇮🇷 فارسی" : "🇬🇧 English";
 
-                                            results.Add(new SubResultItem
+                                            if (results.All(r => r.DownloadUrl != dl))
                                             {
-                                                Title = rel,
-                                                Language = langLabel,
-                                                LanguageCode = ssLang == "persian" ? "fa" : "en",
-                                                DownloadUrl = dl,
-                                                Source = "SubSource"
-                                            });
+                                                results.Add(new SubResultItem
+                                                {
+                                                    Title = rel,
+                                                    Language = langLabel,
+                                                    LanguageCode = ssLang == "persian" ? "fa" : "en",
+                                                    DownloadUrl = dl,
+                                                    Source = "SubSource",
+                                                    ReleaseInfo = rel,
+                                                    Season = season,
+                                                    Episode = episode
+                                                });
+                                            }
                                         }
                                     }
                                 }
@@ -432,7 +744,140 @@ namespace MpvMenuHelper
                 catch { }
             }
 
-            return results.OrderByDescending(r => r.Language.Contains("فارسی")).ToList();
+            // ==========================================
+            // 3. OpenSubtitles API
+            // ==========================================
+            if (results.Count < 20)
+            {
+                try
+                {
+                    string osLang = langFilter == "FA" ? "fa" : (langFilter == "EN" ? "en" : "fa,en");
+                    string osUrl = $"https://api.opensubtitles.com/api/v1/subtitles?query={Uri.EscapeDataString(cleanTitle)}&languages={osLang}";
+                    if (season != null) osUrl += $"&season_number={season}";
+                    if (episode != null) osUrl += $"&episode_number={episode}";
+
+                    using var osReq = new HttpRequestMessage(HttpMethod.Get, osUrl);
+                    osReq.Headers.Add("Api-Key", OPENSUBTITLES_KEY);
+                    osReq.Headers.Add("User-Agent", "MovieManagerDesktop v2.5");
+
+                    var osResp = await _http.SendAsync(osReq);
+                    if (osResp.IsSuccessStatusCode)
+                    {
+                        string osJson = await osResp.Content.ReadAsStringAsync();
+                        using var osDoc = JsonDocument.Parse(osJson);
+                        if (osDoc.RootElement.TryGetProperty("data", out var dataArr) && dataArr.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var osItem in dataArr.EnumerateArray().Take(15))
+                            {
+                                if (osItem.TryGetProperty("attributes", out var attr))
+                                {
+                                    string rawLang = attr.TryGetProperty("language", out var l) ? l.GetString() ?? "fa" : "fa";
+                                    string releaseName = attr.TryGetProperty("release", out var r) ? r.GetString() ?? "" : "";
+
+                                    int fileId = -1;
+                                    if (attr.TryGetProperty("files", out var filesArr) && filesArr.ValueKind == JsonValueKind.Array && filesArr.GetArrayLength() > 0)
+                                    {
+                                        fileId = filesArr[0].TryGetProperty("file_id", out var fId) ? fId.GetInt32() : -1;
+                                    }
+
+                                    if (fileId > 0)
+                                    {
+                                        bool isPersian = rawLang.Contains("fa", StringComparison.OrdinalIgnoreCase) ||
+                                                         rawLang.Contains("farsi", StringComparison.OrdinalIgnoreCase) ||
+                                                         rawLang.Contains("persian", StringComparison.OrdinalIgnoreCase);
+
+                                        string langLabel = isPersian ? "🇮🇷 فارسی" : "🇬🇧 English";
+                                        string titleText = string.IsNullOrWhiteSpace(releaseName) ? cleanTitle : releaseName;
+
+                                        results.Add(new SubResultItem
+                                        {
+                                            Title = titleText,
+                                            Language = langLabel,
+                                            LanguageCode = isPersian ? "fa" : "en",
+                                            DownloadUrl = $"https://api.opensubtitles.com/api/v1/download",
+                                            OpenSubFileId = fileId,
+                                            Source = "OpenSubtitles",
+                                            Season = season,
+                                            Episode = episode,
+                                            ReleaseInfo = releaseName
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            // Intelligently rank results: Exact Season & Episode first!
+            return results
+                .OrderByDescending(r => CalculateMatchScore(r, season, episode))
+                .ToList();
+        }
+
+        private static int CalculateMatchScore(SubResultItem item, int? targetSeason, int? targetEpisode)
+        {
+            int score = 0;
+            string text = $"{item.Title} {item.ReleaseInfo}";
+
+            // Language: Persian gets top priority
+            if (item.Language.Contains("فارسی") || item.LanguageCode.Contains("fa"))
+                score += 1000;
+
+            if (targetSeason.HasValue && targetEpisode.HasValue)
+            {
+                int s = targetSeason.Value;
+                int e = targetEpisode.Value;
+
+                // 1. Structured S/E
+                if (item.Season == s && item.Episode == e)
+                {
+                    score += 600; // Perfect match
+                }
+                else if (item.Season.HasValue && item.Season.Value != s)
+                {
+                    score -= 500; // Penalize wrong seasons (e.g. S22 vs S01)
+                }
+
+                // 2. Exact Episode Regex in title (e.g. S01E02, 1x02, 1x2, S1E2, 1-02)
+                string exactPatterns = $@"(?i)\b(?:s0?{s}e0?{e}|{s}x0?{e}|s0?{s}\s*-\s*0?{e}|season\s*0?{s}\s*episode\s*0?{e})\b";
+                if (Regex.IsMatch(text, exactPatterns))
+                {
+                    score += 700; // Definite exact title match
+                }
+
+                // Penalize wrong seasons found in title text
+                var seasonMatch = Regex.Match(text, @"(?i)\b(?:s(\d+)|(\d+)x)\b");
+                if (seasonMatch.Success)
+                {
+                    int foundSeason = -1;
+                    if (seasonMatch.Groups[1].Success) int.TryParse(seasonMatch.Groups[1].Value, out foundSeason);
+                    else if (seasonMatch.Groups[2].Success) int.TryParse(seasonMatch.Groups[2].Value, out foundSeason);
+
+                    if (foundSeason > 0 && foundSeason != s)
+                    {
+                        score -= 400; // Severe penalty for wrong season in title
+                    }
+                }
+
+                // Target Season Pack (e.g. Season 1 All Episodes)
+                string packPattern = $@"(?i)\b(?:season\s*0?{s}|s0?{s}\b|all\s*episodes|complete)";
+                if (Regex.IsMatch(text, packPattern) && !Regex.IsMatch(text, $@"(?i)\b(?:s0?[^{s}]|season\s*0?[^{s}])\b"))
+                {
+                    score += 250;
+                }
+            }
+            else if (targetSeason.HasValue)
+            {
+                int s = targetSeason.Value;
+                if (item.Season == s || Regex.IsMatch(text, $@"(?i)\b(?:s0?{s}|season\s*0?{s})\b"))
+                    score += 300;
+                else if (item.Season.HasValue && item.Season.Value != s)
+                    score -= 400;
+            }
+
+            return score;
         }
 
         private async Task<string> DownloadAndSaveSubtitleInternalAsync(SubResultItem item, string targetVideoPath)
@@ -441,15 +886,37 @@ namespace MpvMenuHelper
             string baseName = Path.GetFileNameWithoutExtension(targetVideoPath);
             string targetPath = Path.Combine(dir, $"{baseName}.{(item.LanguageCode.Contains("fa") ? "fa" : item.LanguageCode)}.srt");
 
-            using var req = new HttpRequestMessage(HttpMethod.Get, item.DownloadUrl);
-            if (item.Source == "SubSource") req.Headers.Add("X-API-Key", SUBSOURCE_KEY);
+            byte[] raw;
 
-            var resp = await _http.SendAsync(req);
-            resp.EnsureSuccessStatusCode();
+            if (item.Source == "OpenSubtitles" && item.OpenSubFileId.HasValue)
+            {
+                using var osReq = new HttpRequestMessage(HttpMethod.Post, "https://api.opensubtitles.com/api/v1/download");
+                osReq.Headers.Add("Api-Key", OPENSUBTITLES_KEY);
+                osReq.Headers.Add("User-Agent", "MovieManagerDesktop v2.5");
+                osReq.Content = new StringContent(JsonSerializer.Serialize(new { file_id = item.OpenSubFileId.Value }), Encoding.UTF8, "application/json");
 
-            byte[] raw = await resp.Content.ReadAsByteArrayAsync();
+                var osResp = await _http.SendAsync(osReq);
+                osResp.EnsureSuccessStatusCode();
+
+                string osJson = await osResp.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(osJson);
+                string directDlLink = doc.RootElement.GetProperty("link").GetString()!;
+
+                var dlResp = await _http.GetAsync(directDlLink);
+                dlResp.EnsureSuccessStatusCode();
+                raw = await dlResp.Content.ReadAsByteArrayAsync();
+            }
+            else
+            {
+                using var req = new HttpRequestMessage(HttpMethod.Get, item.DownloadUrl);
+                if (item.Source == "SubSource") req.Headers.Add("X-API-Key", SUBSOURCE_KEY);
+
+                var resp = await _http.SendAsync(req);
+                resp.EnsureSuccessStatusCode();
+                raw = await resp.Content.ReadAsByteArrayAsync();
+            }
+
             byte[] srtBytes = ExtractBytes(raw);
-
             string text = FixEncoding(srtBytes);
             await File.WriteAllTextAsync(targetPath, text, Encoding.UTF8);
 
@@ -512,6 +979,10 @@ namespace MpvMenuHelper
             public string LanguageCode { get; set; } = "fa";
             public string DownloadUrl { get; set; } = "";
             public string Source { get; set; } = "";
+            public int? Season { get; set; }
+            public int? Episode { get; set; }
+            public string? ReleaseInfo { get; set; }
+            public int? OpenSubFileId { get; set; }
         }
     }
 }

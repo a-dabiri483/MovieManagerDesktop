@@ -204,8 +204,12 @@ namespace MovieManagerDesktop.Services.Network
                 return "tvmaze";
             if (host.Contains("youtube.com", StringComparison.OrdinalIgnoreCase) || host.Contains("ytimg.com", StringComparison.OrdinalIgnoreCase))
                 return "youtube";
-            if (host.Contains("deadline.com", StringComparison.OrdinalIgnoreCase) || host.Contains("collider.com", StringComparison.OrdinalIgnoreCase) || host.Contains("variety.com", StringComparison.OrdinalIgnoreCase) || host.Contains("boxofficemojo.com", StringComparison.OrdinalIgnoreCase))
-                return "cinemanews";
+            if (host.Contains("boxofficemojo.com", StringComparison.OrdinalIgnoreCase))
+                return "boxofficemojo";
+            if (host.Contains("variety.com", StringComparison.OrdinalIgnoreCase))
+                return "variety";
+            if (host.Contains("deadline.com", StringComparison.OrdinalIgnoreCase))
+                return "deadline";
 
             return host.ToLowerInvariant();
         }
@@ -217,6 +221,22 @@ namespace MovieManagerDesktop.Services.Network
 
         private static bool IsBlockedResponse(HttpResponseMessage response)
         {
+            // If the target is a legitimate webpage or news feed (not an API), HTML is the expected content type
+            string? host = response.RequestMessage?.RequestUri?.Host;
+            if (!string.IsNullOrEmpty(host))
+            {
+                if (host.Contains("boxofficemojo", StringComparison.OrdinalIgnoreCase) ||
+                    host.Contains("cinemapress", StringComparison.OrdinalIgnoreCase) ||
+                    host.Contains("cinemacinema", StringComparison.OrdinalIgnoreCase) ||
+                    host.Contains("variety", StringComparison.OrdinalIgnoreCase) ||
+                    host.Contains("deadline", StringComparison.OrdinalIgnoreCase) ||
+                    host.Contains("wikipedia", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+            }
+
+            // For APIs (themoviedb.org, tvmaze, etc.) and images, HTML indicates an ISP filter/block page
             if (response.Content.Headers.ContentType?.MediaType?.Contains("html", StringComparison.OrdinalIgnoreCase) == true)
             {
                 return true;
@@ -283,24 +303,38 @@ namespace MovieManagerDesktop.Services.Network
                 return await base.SendAsync(request, cancellationToken);
             }
 
+            // Connection Order Rule:
+            // 1. If VPN is active -> Always Direct without proxy or DoH overhead
+            // 2. If VPN is off -> Try Direct with DoH & Anti-DPI first
+            // 3. Only if Direct DoH fails/blocked -> Fallback to Proxy servers
             bool vpnActive = IsVpnActive(out string vpnName);
-            bool isPermanentlyBlockedInIran = cacheKey == "youtube" || cacheKey == "cinemanews";
 
             RouteDecision decision;
             await _semaphore.WaitAsync(cancellationToken);
             try
             {
                 long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                if (Cache.TryGetValue(cacheKey, out var currentDecision) && currentDecision.ExpirationTime > now && !vpnActive)
+                if (vpnActive)
+                {
+                    // VPN is ON: Never use proxy
+                    decision = new RouteDecision
+                    {
+                        UseProxy = false,
+                        ExpirationTime = now + TTL_MS
+                    };
+                }
+                else if (Cache.TryGetValue(cacheKey, out var currentDecision) && currentDecision.ExpirationTime > now)
                 {
                     decision = currentDecision;
                 }
                 else
                 {
-                    bool initialUseProxy = isPermanentlyBlockedInIran && !vpnActive;
+                    // VPN is OFF: Default to Direct with DoH & Anti-DPI first!
+                    // (Only YouTube streams default to proxy if un-cached, as YouTube blocks raw Iranian IPs)
+                    bool defaultToProxy = cacheKey == "youtube";
                     decision = new RouteDecision 
                     { 
-                        UseProxy = initialUseProxy, 
+                        UseProxy = defaultToProxy, 
                         ExpirationTime = now + TTL_MS 
                     };
                     Cache[cacheKey] = decision;
@@ -528,7 +562,10 @@ namespace MovieManagerDesktop.Services.Network
                     var sw = Stopwatch.StartNew();
                     try
                     {
-                        var response = await base.SendAsync(newRequest, cancellationToken);
+                        using var proxyCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                        proxyCts.CancelAfter(TimeSpan.FromMilliseconds(4500));
+
+                        var response = await base.SendAsync(newRequest, proxyCts.Token);
                         sw.Stop();
 
                         if (response.IsSuccessStatusCode && !IsBlockedResponse(response))

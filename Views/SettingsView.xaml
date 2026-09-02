@@ -114,59 +114,7 @@
                         <TextBlock Text="عملیات و سرویس‌های آنلاین" FontSize="16" FontWeight="Bold" Foreground="White"/>
                     </StackPanel>
 
-                    <!-- Card 1: منابع داده و وب سرویس API -->
-                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
-                            Command="{Binding OpenDataSourcesCommand}">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Style="{StaticResource SettingsActionCard}">
-                                    <Grid Background="Transparent">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <!-- Pink Icon -->
-                                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#25EB3B5A" Margin="0,0,16,0">
-                                            <materialDesign:PackIcon Kind="FolderSettingsOutline" Width="26" Height="26" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="منابع داده و وب سرویس API" FontSize="15.5" FontWeight="Black" Foreground="White"/>
-                                            <TextBlock Text="مدیریت کلیدهای TMDb/OMDb، تست اتصال و انتخاب سرور اصلی" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                                        </StackPanel>
-                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                                    </Grid>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
 
-                    <!-- Card 2: سیستم چند پراکسی (ضد تحریم) -->
-                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
-                            Command="{Binding OpenProxyCommand}">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Style="{StaticResource SettingsActionCard}">
-                                    <Grid Background="Transparent">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <!-- Teal Icon -->
-                                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#250FB9B1" Margin="0,0,16,0">
-                                            <materialDesign:PackIcon Kind="Earth" Width="26" Height="26" Foreground="{DynamicResource TealAccent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="سیستم چند پراکسی (ضد تحریم)" FontSize="15.5" FontWeight="Black" Foreground="White"/>
-                                            <TextBlock Text="فعال‌سازی سرویس ضد تحریم، مدیریت ورکر کلودفلر و تست پینگ" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                                        </StackPanel>
-                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                                    </Grid>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
 
                     <!-- Card 3: پشتیبان‌گیری و بازیابی -->
                     <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"

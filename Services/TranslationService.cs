@@ -1,13 +1,26 @@
 using System;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace MovieManagerDesktop.Services
 {
     public class TranslationService
     {
-        private static readonly HttpClient _httpClient = new HttpClient(new MovieManagerDesktop.Services.Network.ProxyHttpClientHandler());
+        private static readonly HttpClient _httpClient;
+
+        static TranslationService()
+        {
+            _httpClient = new HttpClient(new MovieManagerDesktop.Services.Network.ProxyHttpClientHandler())
+            {
+                Timeout = TimeSpan.FromSeconds(10)
+            };
+            if (!_httpClient.DefaultRequestHeaders.Contains("User-Agent"))
+            {
+                _httpClient.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36");
+            }
+        }
         
         public static async Task<string> TranslateTextAsync(string text, string? targetLanguage = null)
         {
@@ -27,38 +40,72 @@ namespace MovieManagerDesktop.Services
                 }
 
                 string encodedQuery = Uri.EscapeDataString(text);
-                string url = $"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl={targetLanguage}&dt=t&q={encodedQuery}";
-                
-                var response = await _httpClient.GetAsync(url);
-                if (response.IsSuccessStatusCode)
+
+                // ── Strategy 1: Google Chrome Translate API (clients5 - High reliability, no 429) ──
+                try
                 {
-                    string jsonResult = await response.Content.ReadAsStringAsync();
-                    
-                    // The Google Translate API returns an array of arrays.
-                    // Example: [[["سلام دنیا","Hello world",null,null,1]],null,"en",null,null,null,1,[],[["en"],1,true],1,["en"]]
-                    using var doc = JsonDocument.Parse(jsonResult);
-                    var root = doc.RootElement;
-                    
-                    if (root.ValueKind == JsonValueKind.Array && root.GetArrayLength() > 0)
+                    string url1 = $"https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=auto&tl={targetLanguage}&q={encodedQuery}";
+                    var resp1 = await _httpClient.GetAsync(url1);
+                    if (resp1.IsSuccessStatusCode)
                     {
-                        var segments = root[0];
-                        if (segments.ValueKind == JsonValueKind.Array)
+                        string jsonResult = await resp1.Content.ReadAsStringAsync();
+                        using var doc = JsonDocument.Parse(jsonResult);
+                        var root = doc.RootElement;
+                        
+                        if (root.ValueKind == JsonValueKind.Array && root.GetArrayLength() > 0)
                         {
-                            string translatedText = "";
-                            foreach (var segment in segments.EnumerateArray())
+                            var first = root[0];
+                            if (first.ValueKind == JsonValueKind.Array && first.GetArrayLength() > 0)
                             {
-                                if (segment.ValueKind == JsonValueKind.Array && segment.GetArrayLength() > 0)
-                                {
-                                    if (segment[0].ValueKind == JsonValueKind.String)
-                                    {
-                                        translatedText += segment[0].GetString();
-                                    }
-                                }
+                                string? trans = first[0].GetString();
+                                if (!string.IsNullOrWhiteSpace(trans)) return trans.Trim();
                             }
-                            return translatedText.Trim();
+                            else if (first.ValueKind == JsonValueKind.String)
+                            {
+                                string? trans = first.GetString();
+                                if (!string.IsNullOrWhiteSpace(trans)) return trans.Trim();
+                            }
                         }
                     }
                 }
+                catch { }
+
+                // ── Strategy 2: Google Mobile Translate Web Scraper (/m) ──
+                try
+                {
+                    string url2 = $"https://translate.google.com/m?sl=auto&tl={targetLanguage}&q={encodedQuery}";
+                    var resp2 = await _httpClient.GetAsync(url2);
+                    if (resp2.IsSuccessStatusCode)
+                    {
+                        string html = await resp2.Content.ReadAsStringAsync();
+                        var match = Regex.Match(html, @"class=""result-container"">(.*?)</div>", RegexOptions.Singleline);
+                        if (match.Success)
+                        {
+                            string decoded = System.Net.WebUtility.HtmlDecode(match.Groups[1].Value.Trim());
+                            if (!string.IsNullOrWhiteSpace(decoded)) return decoded;
+                        }
+                    }
+                }
+                catch { }
+
+                // ── Strategy 3: MyMemory Translation API (Trusted free fallback) ──
+                try
+                {
+                    string url3 = $"https://api.mymemory.translated.net/get?q={encodedQuery}&langpair=en|{targetLanguage}";
+                    var resp3 = await _httpClient.GetAsync(url3);
+                    if (resp3.IsSuccessStatusCode)
+                    {
+                        string json = await resp3.Content.ReadAsStringAsync();
+                        using var doc = JsonDocument.Parse(json);
+                        if (doc.RootElement.TryGetProperty("responseData", out var respData) &&
+                            respData.TryGetProperty("translatedText", out var transProp))
+                        {
+                            string? t = transProp.GetString();
+                            if (!string.IsNullOrWhiteSpace(t)) return t.Trim();
+                        }
+                    }
+                }
+                catch { }
             }
             catch (Exception ex)
             {
