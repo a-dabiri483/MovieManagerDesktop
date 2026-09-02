@@ -92,7 +92,16 @@ namespace MovieManagerDesktop.ViewModels
 
         // Rating formatting
         public bool HasRating => File.Rating.HasValue && File.Rating.Value > 0;
-        public string RatingFormatted => HasRating ? File.Rating!.Value.ToString("0.0") : "";
+        public string RatingFormatted
+        {
+            get
+            {
+                if (!HasRating) return "";
+                double r = File.Rating!.Value;
+                if (r > 10.0) r = Math.Round(r / 10.0, 1);
+                return r.ToString("0.0");
+            }
+        }
 
         // Real Dubbing / Subtitle / Original Language Detection (Always 1 badge guaranteed)
         public bool HasDubbing

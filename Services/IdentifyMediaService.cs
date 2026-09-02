@@ -381,7 +381,7 @@ namespace MovieManagerDesktop.Services
 
                 bool configApiSuccess = false;
 
-                // 1. First Step: Configured API
+                // 1. First Step: Configured API (TMDb / OMDB)
                 LoggerService.Info($"[موتور جستجو] (مرحله 1) شروع جستجو در سرور تنظیمات ({source})...");
                 
                 if (file.TmdbId.HasValue && file.TmdbId > 0)
@@ -390,7 +390,7 @@ namespace MovieManagerDesktop.Services
                     await IdentifyWithTmdb(file, SettingsManager.GetTmdbApiKey(), language);
                     configApiSuccess = !string.IsNullOrWhiteSpace(file.PosterUrl) && !string.IsNullOrWhiteSpace(file.Overview);
                 }
-                else if (source == "TMDB_ONLY")
+                else if (source == "TMDB_ONLY" || source == "FM_DB")
                 {
                     LoggerService.Info($"[موتور جستجو] درخواست مستقیم از سرور اصلی TMDB...");
                     await IdentifyWithTmdb(file, SettingsManager.GetTmdbApiKey(), language);
@@ -403,11 +403,10 @@ namespace MovieManagerDesktop.Services
                     configApiSuccess = !string.IsNullOrWhiteSpace(file.PosterUrl) && !string.IsNullOrWhiteSpace(file.Overview);
                 }
 
-                // 2. Second Step: TVMaze (only if Configured API failed and it's a Series)
-                bool tvmazeSuccess = false;
+                // 2. Second Step (Fallback): TVMaze (only if TMDb/OMDb failed and it's a Series)
                 if (!configApiSuccess && file.MediaType == "Series")
                 {
-                    LoggerService.Info($"[موتور جستجو] (مرحله 2) سرور تنظیمات موفق نبود. سویچ به سرور جایگزین سریال (TVMaze)...");
+                    LoggerService.Info($"[موتور جستجو] (مرحله 2 - جایگزین) سرور اصلی ناموفق بود. جستجو در سرور سریال (TVMaze)...");
                     var tvmazeService = new TvMazeService();
                     var tvmazeData = await tvmazeService.SearchSeriesAsync(file.FormattedTitle);
                     if (tvmazeData != null && !string.IsNullOrEmpty(tvmazeData.Title))
@@ -428,37 +427,48 @@ namespace MovieManagerDesktop.Services
 
                         if (!file.TmdbId.HasValue || file.TmdbId <= 0) file.TmdbId = tvmazeData.Id;
                         
-                        tvmazeSuccess = true;
+                        configApiSuccess = !string.IsNullOrWhiteSpace(file.PosterUrl) && !string.IsNullOrWhiteSpace(file.Overview);
                     }
                 }
 
-                // 3. Fallback for BOTH Movies and Series: AniList
-                bool isAnimeFromTvMaze = file.Genres != null && file.Genres.Contains("Anime", StringComparison.OrdinalIgnoreCase);
-                bool primaryFailed = string.IsNullOrWhiteSpace(file.PosterUrl) && string.IsNullOrWhiteSpace(file.Overview);
-                
-                if (primaryFailed || isAnimeFromTvMaze)
+                // 3. Third Step (Fallback): AniList (only if TMDb and TVMaze failed, or if essential fields like Poster/Overview are missing)
+                if (!configApiSuccess || string.IsNullOrWhiteSpace(file.PosterUrl))
                 {
-                    if (isAnimeFromTvMaze)
-                        LoggerService.Info($"[موتور جستجو] سیستم تشخیص داد این عنوان یک انیمه است. دریافت اطلاعات تخصصی از سرور AniList...");
-                    else
-                        LoggerService.Info($"[موتور جستجو] (مرحله نهایی) سرورهای قبلی پاسخگو نبودند یا دیتایی نداشتند. درخواست از سرور انیمه (AniList)...");
+                    LoggerService.Info($"[موتور جستجو] (مرحله 3 - جایگزین) سرورهای قبلی کامل نبودند. جستجو در سرور انیمه (AniList GraphQL)...");
                         
                     var anilistService = new AnilistService();
                     var anilistData = await anilistService.SearchAnimeAsync(file.FormattedTitle, file.Year);
                     if (anilistData != null)
                     {
-                        if (!string.IsNullOrEmpty(anilistData.TitleEnglish)) file.FormattedTitle = anilistData.TitleEnglish;
-                        else if (!string.IsNullOrEmpty(anilistData.TitleRomaji)) file.FormattedTitle = anilistData.TitleRomaji;
+                        LoggerService.Info($"[AniList] ✔ اطلاعات با موفقیت از AniList دریافت شد: {anilistData.PreferredTitle}");
+                        if (string.IsNullOrWhiteSpace(file.FormattedTitle) || file.FormattedTitle == file.FileName)
+                        {
+                            file.FormattedTitle = anilistData.PreferredTitle;
+                        }
 
-                        if (!string.IsNullOrEmpty(anilistData.CoverImageUrl)) file.PosterUrl = anilistData.CoverImageUrl;
-                        if (!string.IsNullOrEmpty(anilistData.BannerImageUrl)) file.BackdropUrl = anilistData.BannerImageUrl;
-                        if (!string.IsNullOrEmpty(anilistData.Description)) file.Overview = anilistData.Description;
-                        if (anilistData.AverageScore > 0) file.Rating = anilistData.AverageScore;
-                        if (!string.IsNullOrEmpty(anilistData.Genres)) file.Genres = anilistData.Genres;
-                        if (!string.IsNullOrEmpty(anilistData.Status)) file.SeriesStatus = anilistData.Status;
+                        if (string.IsNullOrWhiteSpace(file.PosterUrl) && !string.IsNullOrEmpty(anilistData.CoverImageUrl)) 
+                            file.PosterUrl = anilistData.CoverImageUrl;
+                            
+                        if (string.IsNullOrWhiteSpace(file.BackdropUrl) && !string.IsNullOrEmpty(anilistData.BannerImageUrl)) 
+                            file.BackdropUrl = anilistData.BannerImageUrl;
+                            
+                        if (string.IsNullOrWhiteSpace(file.Overview) && !string.IsNullOrEmpty(anilistData.Description)) 
+                            file.Overview = anilistData.Description;
+                            
+                        if ((file.Rating == null || file.Rating <= 0) && anilistData.AverageScore.HasValue && anilistData.AverageScore.Value > 0)
+                        {
+                            file.Rating = Math.Round(anilistData.AverageScore.Value / 10.0, 1);
+                        }
                         
-                        file.TmdbId = anilistData.Id;
-                        if (anilistData.Episodes > 1) file.TotalEpisodesCount = anilistData.Episodes;
+                        if (string.IsNullOrWhiteSpace(file.Genres) && !string.IsNullOrEmpty(anilistData.Genres)) 
+                            file.Genres = anilistData.Genres;
+                            
+                        if (string.IsNullOrWhiteSpace(file.SeriesStatus) && !string.IsNullOrEmpty(anilistData.Status)) 
+                            file.SeriesStatus = anilistData.Status;
+                        
+                        if (file.TmdbId == null || file.TmdbId <= 0) file.TmdbId = anilistData.Id;
+                        if (anilistData.Episodes > 1 && (!file.TotalEpisodesCount.HasValue || file.TotalEpisodesCount <= 0)) 
+                            file.TotalEpisodesCount = anilistData.Episodes;
                     }
                 }
                 
@@ -992,35 +1002,45 @@ namespace MovieManagerDesktop.Services
                 // Ignore errors to not break the flow
             }
 
-            // Fallback to TVMaze ONLY if crucial info (Network) is missing from TMDB
+            // Enrich and refine Series Broadcast & Next Episode Schedule with TVMaze
             try
             {
-                if (string.IsNullOrWhiteSpace(file.NetworkName) || string.IsNullOrWhiteSpace(file.AirDay))
+                var tvmazeInfo = await TvMazeService.GetShowInfoAsync(null, file.FormattedTitle ?? file.FileName);
+                if (tvmazeInfo != null)
                 {
-                    LoggerService.Info($"[TMDB] اطلاعات شبکه یا روز پخش در TMDB یافت نشد، تلاش از طریق TVMaze...");
-                    var tvmazeService = new TvMazeService();
-                    var tvmazeResult = await tvmazeService.SearchSeriesAsync(file.FormattedTitle);
-                    if (tvmazeResult == null && !string.IsNullOrWhiteSpace(file.FileName))
+                    LoggerService.Info($"[TVMaze] اطلاعات سریال از TVMaze دریافت شد: {tvmazeInfo.Name} ({tvmazeInfo.Status})");
+
+                    if (!string.IsNullOrWhiteSpace(tvmazeInfo.NetworkName) && string.IsNullOrWhiteSpace(file.NetworkName))
+                        file.NetworkName = tvmazeInfo.NetworkName;
+
+                    if (!string.IsNullOrWhiteSpace(tvmazeInfo.AirDay))
+                        file.AirDay = tvmazeInfo.AirDay;
+
+                    if (!string.IsNullOrWhiteSpace(tvmazeInfo.AirTime))
+                        file.AirTime = tvmazeInfo.AirTime;
+
+                    if (!string.IsNullOrWhiteSpace(tvmazeInfo.Status) && string.IsNullOrWhiteSpace(file.SeriesStatus))
+                        file.SeriesStatus = tvmazeInfo.Status;
+
+                    if (!string.IsNullOrWhiteSpace(tvmazeInfo.NextEpisodeDate))
                     {
-                        LoggerService.Info($"[TVMaze] جستجو با نام اصلی فایل: {file.FileName}");
-                        tvmazeResult = await tvmazeService.SearchSeriesAsync(file.FileName);
+                        file.NextEpisodeDate = tvmazeInfo.NextEpisodeDate;
+                        if (tvmazeInfo.NextEpisodeNumber.HasValue)
+                            file.NextEpisodeNumber = tvmazeInfo.NextEpisodeNumber.Value;
+                        if (tvmazeInfo.NextEpisodeSeason.HasValue)
+                            file.NextEpisodeSeason = tvmazeInfo.NextEpisodeSeason.Value;
                     }
-                    if (tvmazeResult != null)
-                    {
-                        if (string.IsNullOrWhiteSpace(file.NetworkName) && !string.IsNullOrWhiteSpace(tvmazeResult.Network))
-                            file.NetworkName = tvmazeResult.Network;
-                        if (string.IsNullOrWhiteSpace(file.AirDay) && !string.IsNullOrWhiteSpace(tvmazeResult.ScheduleDays))
-                            file.AirDay = tvmazeResult.ScheduleDays;
-                        if (string.IsNullOrWhiteSpace(file.AirTime) && !string.IsNullOrWhiteSpace(tvmazeResult.ScheduleTime))
-                            file.AirTime = tvmazeResult.ScheduleTime;
-                        if (string.IsNullOrWhiteSpace(file.SeriesStatus) && !string.IsNullOrWhiteSpace(tvmazeResult.Status))
-                            file.SeriesStatus = tvmazeResult.Status;
-                    }
+
+                    if ((!file.TotalSeasonsCount.HasValue || file.TotalSeasonsCount <= 0) && tvmazeInfo.TotalSeasonsCount.HasValue)
+                        file.TotalSeasonsCount = tvmazeInfo.TotalSeasonsCount.Value;
+
+                    if ((!file.TotalEpisodesCount.HasValue || file.TotalEpisodesCount <= 0) && tvmazeInfo.TotalEpisodesCount.HasValue)
+                        file.TotalEpisodesCount = tvmazeInfo.TotalEpisodesCount.Value;
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignore TVMaze fallback errors
+                LoggerService.Error($"[TVMaze] خطای نادیده‌گرفته‌شده در استعلام TVMaze: {ex.Message}");
             }
         }
         

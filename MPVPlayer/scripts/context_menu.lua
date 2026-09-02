@@ -82,6 +82,16 @@ local function open_pick_subtitle()
     end)
 end
 
+local function open_download_sub_dialog()
+    local pipe_name = mp.get_property("input-ipc-server") or "mpvsocket"
+    local video_path = mp.get_property("path") or ""
+    mp.command_native_async({
+        name = "subprocess",
+        playback_only = false,
+        args = {"MpvMenuHelper.exe", "downloadsub", pipe_name, video_path}
+    })
+end
+
 function show_native_menu()
     callbacks = {}
     next_cmd_id = 100
@@ -90,6 +100,7 @@ function show_native_menu()
     -- ──────────────────────────────────────────
     -- 1. ابزارهای شناور و ثابت (Floating Tools)
     -- ──────────────────────────────────────────
+    add_menu_item(root, "⬇️ دانلود آنلاین زیرنویس فارسی و انگلیسی...", open_download_sub_dialog)
     add_menu_item(root, "⏱ همگام‌سازی صدا و زیرنویس...", open_sync_dialog)
     add_menu_item(root, "🎨 شخصی‌سازی و استایل زیرنویس...", open_style_dialog)
     add_menu_item(root, "🌐 ترجمه هوشمند زیرنویس به فارسی...", open_translate_dialog)
@@ -125,7 +136,8 @@ function show_native_menu()
         mp.command("cycle sub-visibility")
     end, sub_vis)
 
-    add_menu_item(subMenu, "بارگذاری فایل زیرنویس...", open_pick_subtitle)
+    add_menu_item(subMenu, "⬇️ دانلود آنلاین زیرنویس (SubDL / SubSource)...", open_download_sub_dialog)
+    add_menu_item(subMenu, "بارگذاری فایل زیرنویس از حافظه...", open_pick_subtitle)
 
     add_separator(subMenu)
 

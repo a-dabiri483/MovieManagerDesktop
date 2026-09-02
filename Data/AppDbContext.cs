@@ -71,6 +71,13 @@ namespace MovieManagerDesktop.Data
                 Database.ExecuteSqlRaw("UPDATE VideoFiles SET Year = substr(FirstAirDate, 1, 4) WHERE (Year IS NULL OR Year = '' OR Year = '0') AND FirstAirDate IS NOT NULL AND length(FirstAirDate) >= 4;");
             }
             catch { }
+
+            // Auto-heal rating scale for any score > 10 (e.g. AniList 0-100 scores)
+            try
+            {
+                Database.ExecuteSqlRaw("UPDATE VideoFiles SET Rating = ROUND(Rating / 10.0, 1) WHERE Rating > 10.0;");
+            }
+            catch { }
             try
             {
                 Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN CustomTags TEXT;");

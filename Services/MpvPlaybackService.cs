@@ -457,18 +457,24 @@ namespace MovieManagerDesktop.Services
                 if (dbItem != null)
                 {
                     dbItem.WatchProgressSeconds = timePosSeconds;
+                    bool becameWatched = false;
                     if (durationSeconds > 0)
                     {
                         dbItem.TotalDurationSeconds = durationSeconds;
                         dbItem.WatchProgressPercent = Math.Clamp((double)timePosSeconds / durationSeconds * 100.0, 0.0, 100.0);
-                        if (dbItem.WatchProgressPercent >= 85.0)
+                        if (dbItem.WatchProgressPercent >= 85.0 && !dbItem.IsWatched)
                         {
                             dbItem.IsWatched = true;
+                            becameWatched = true;
                         }
                     }
                     dbItem.LastPlayedAt = DateTime.Now;
                     db.SaveChanges();
-                    WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
+
+                    if (becameWatched)
+                    {
+                        WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
+                    }
                 }
             }
             catch { }

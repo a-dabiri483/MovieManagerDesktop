@@ -141,7 +141,7 @@ namespace MovieManagerDesktop.ViewModels
             if (IsSeries)
             {
                 string rawStatus = (Media.SeriesStatus ?? "").Trim().ToLowerInvariant();
-                if (rawStatus.Contains("returning") || rawStatus.Contains("airing"))
+                if (rawStatus.Contains("returning") || rawStatus.Contains("airing") || rawStatus.Contains("running"))
                 {
                     SeriesStatusText = isFa ? "در حال پخش" : "Returning Series";
                     SeriesStatusColor = "#2ED573";

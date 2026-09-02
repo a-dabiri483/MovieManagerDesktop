@@ -328,8 +328,6 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (IsLoading) return;
             IsLoading = true;
-            Movies.Clear();
-            CustomTags.Clear();
             
             try
             {
@@ -469,11 +467,13 @@ namespace MovieManagerDesktop.ViewModels
                 FavoritesCount = favCnt;
                 CategoriesCount = tagsList.Count;
 
+                CustomTags.Clear();
                 foreach (var t in tagsList)
                 {
                     CustomTags.Add(t);
                 }
 
+                Movies.Clear();
                 foreach (var m in grouped)
                 {
                     Movies.Add(m);

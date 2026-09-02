@@ -72,6 +72,12 @@ namespace MpvMenuHelper
                 string sid = args.Length > 4 ? args[4] : "";
                 Application.Run(new SubtitleTranslateForm(pipeName, subPath, videoPath, sid));
             }
+            else if (command == "downloadsub")
+            {
+                string pipeName = args.Length > 1 ? args[1] : "mpvsocket";
+                string videoPath = args.Length > 2 ? args[2] : "";
+                Application.Run(new SubtitleDownloadForm(pipeName, videoPath));
+            }
             else
             {
                 // Default: Context Menu

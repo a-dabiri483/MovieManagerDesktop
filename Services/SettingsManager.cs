@@ -51,6 +51,7 @@ namespace MovieManagerDesktop.Services
         public string FetchInfoLanguage { get; set; } = "fa-IR";
         public bool ShowActorImages { get; set; } = true;
         public bool HideAdultContent { get; set; } = false;
+        public bool EnableBingDailyWallpaper { get; set; } = false;
 
         // Video Player Settings
         public bool UseInternalPlayer { get; set; } = true;

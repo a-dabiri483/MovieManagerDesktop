@@ -321,12 +321,18 @@ namespace MovieManagerDesktop.Services.Network
                 var sw = Stopwatch.StartNew();
                 try
                 {
-                    var directRequest = await CloneHttpRequestAsync(request);
+                    // Generous timeout for direct attempt (15s for media files, 6s for APIs) so direct DoH downloads don't get canceled prematurely
+                    bool isMediaFile = host.Contains("static", StringComparison.OrdinalIgnoreCase) ||
+                                       host.Contains("image", StringComparison.OrdinalIgnoreCase) ||
+                                       originalUri.AbsolutePath.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) ||
+                                       originalUri.AbsolutePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ||
+                                       originalUri.AbsolutePath.EndsWith(".webp", StringComparison.OrdinalIgnoreCase);
 
-                    // 4-second timeout for quick direct attempt
+                    int directTimeoutSec = isMediaFile ? 15 : 6;
                     using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                    cts.CancelAfter(TimeSpan.FromSeconds(4));
+                    cts.CancelAfter(TimeSpan.FromSeconds(directTimeoutSec));
 
+                    var directRequest = await CloneHttpRequestAsync(request);
                     var response = await base.SendAsync(directRequest, cts.Token);
                     sw.Stop();
 

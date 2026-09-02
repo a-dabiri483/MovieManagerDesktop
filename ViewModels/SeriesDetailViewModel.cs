@@ -164,10 +164,12 @@ namespace MovieManagerDesktop.ViewModels
 
                 SeriesStatusText = rawStatus switch
                 {
+                    "running" => "در حال پخش",
                     "returning series" => "در حال پخش",
                     "ended" => "تمام شده",
                     "cancelled" => "کنسل شده",
                     "canceled" => "کنسل شده",
+                    "in development" => "در حال ساخت",
                     "planned" => "برنامه‌ریزی شده",
                     "currently airing" => "در حال پخش",
                     "finished airing" => "تمام شده",
@@ -177,10 +179,12 @@ namespace MovieManagerDesktop.ViewModels
                 
                 SeriesStatusColor = rawStatus switch
                 {
+                    "running" => "#4CAF50",
                     "returning series" => "#4CAF50",
                     "ended" => "#FF9800",
                     "cancelled" => "#FF5252",
                     "canceled" => "#FF5252",
+                    "in development" => "#AB47BC",
                     "planned" => "#2196F3",
                     "currently airing" => "#4CAF50",
                     "finished airing" => "#FF9800",
@@ -979,6 +983,7 @@ namespace MovieManagerDesktop.ViewModels
                     dbSeries.AirTime = _series.AirTime;
                     dbSeries.NextEpisodeDate = _series.NextEpisodeDate;
                     dbSeries.NextEpisodeNumber = _series.NextEpisodeNumber;
+                    dbSeries.NextEpisodeSeason = _series.NextEpisodeSeason;
                     dbSeries.TotalSeasonsCount = _series.TotalSeasonsCount;
                     dbSeries.TotalEpisodesCount = _series.TotalEpisodesCount;
                     

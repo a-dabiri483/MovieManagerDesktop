@@ -111,6 +111,14 @@ namespace MovieManagerDesktop.ViewModels
         private bool _hideAdultContent = false;
 
         [ObservableProperty]
+        private bool _enableBingDailyWallpaper = false;
+
+        partial void OnEnableBingDailyWallpaperChanged(bool value)
+        {
+            SavePersonalizationSettings();
+        }
+
+        [ObservableProperty]
         private bool _showBoxOfficeOnHome = true;
 
         [ObservableProperty]
@@ -161,6 +169,7 @@ namespace MovieManagerDesktop.ViewModels
             settings.FetchInfoLanguage = FetchInfoLanguage;
             settings.ShowActorImages = ShowActorImages;
             settings.HideAdultContent = HideAdultContent;
+            settings.EnableBingDailyWallpaper = EnableBingDailyWallpaper;
             SettingsManager.SaveSettings(settings);
 
             WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
@@ -568,6 +577,7 @@ namespace MovieManagerDesktop.ViewModels
             _fetchInfoLanguage = settings.FetchInfoLanguage ?? "fa-IR";
             _showActorImages = settings.ShowActorImages;
             _hideAdultContent = settings.HideAdultContent;
+            _enableBingDailyWallpaper = settings.EnableBingDailyWallpaper;
             
             CalculateDatabaseSize();
             CheckGoogleDriveConnection();
