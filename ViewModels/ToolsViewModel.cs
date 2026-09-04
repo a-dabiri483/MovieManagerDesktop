@@ -48,5 +48,11 @@ namespace MovieManagerDesktop.ViewModels
         {
             WeakReferenceMessenger.Default.Send(new NavigationMessage(new CatalogExportToolViewModel()));
         }
+
+        [RelayCommand]
+        private void OpenMissingEpisodes()
+        {
+            WeakReferenceMessenger.Default.Send(new NavigationMessage(new MissingEpisodesToolViewModel()));
+        }
     }
 }

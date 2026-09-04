@@ -414,6 +414,61 @@
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
+
+                <!-- Card 8: Missing Episodes Tracker -->
+                <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                        Command="{Binding OpenMissingEpisodesCommand}">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border Margin="8" CornerRadius="18"
+                                    Background="{DynamicResource CardBackground}"
+                                    BorderBrush="{DynamicResource LightBorder}"
+                                    BorderThickness="1" Padding="20">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
+                                                <Setter Property="BorderBrush" Value="#FF9F43"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <Border Grid.Row="0" Width="56" Height="56" CornerRadius="16" 
+                                            Background="#25FF9F43" HorizontalAlignment="Right" Margin="0,0,0,16">
+                                        <materialDesign:PackIcon Kind="TelevisionGuide" Width="28" Height="28" 
+                                                                 Foreground="#FF9F43"
+                                                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+
+                                    <TextBlock Grid.Row="1" Text="ردیاب سریال‌های ناقص" 
+                                               FontSize="16.5" FontWeight="Bold" 
+                                               Foreground="White" 
+                                               Margin="0,0,0,8"/>
+
+                                    <TextBlock Grid.Row="2" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">
+                                        بررسی خودکار سریال‌ها و شناسایی قسمت‌هایی که پخش شده‌اند ولی هنوز در سیستم شما دانلود نشده‌اند.
+                                    </TextBlock>
+
+                                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,18,0,0">
+                                        <TextBlock Text="شروع ابزار" Foreground="#FF9F43" FontWeight="Bold" FontSize="13"/>
+                                        <materialDesign:PackIcon Kind="ArrowLeft" Foreground="#FF9F43" 
+                                                                 Width="16" Height="16" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
             </UniformGrid>
         </StackPanel>
     </ScrollViewer>

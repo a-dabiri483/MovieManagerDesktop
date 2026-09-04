@@ -104,6 +104,9 @@
         <DataTemplate DataType="{x:Type viewmodels:CatalogExportToolViewModel}">
             <views:CatalogExportToolView />
         </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels:MissingEpisodesToolViewModel}">
+            <views:MissingEpisodesToolView />
+        </DataTemplate>
 
         <!-- Android Bottom Nav Item Style -->
         <Style x:Key="AndroidBottomNavRadioStyle" TargetType="RadioButton">
