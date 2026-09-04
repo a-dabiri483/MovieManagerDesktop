@@ -58,14 +58,32 @@ namespace MovieManagerDesktop
             // Check for software updates in background
             _ = Task.Run(async () =>
             {
-                await Task.Delay(4000);
-                var update = await MovieManagerDesktop.Services.UpdateManagerService.CheckForUpdatesAsync(silent: true);
-                if (update != null && update.HasUpdate)
+                await Task.Delay(3500);
+                try
                 {
-                    Application.Current?.Dispatcher?.Invoke(() =>
+                    var update = await MovieManagerDesktop.Services.UpdateManagerService.CheckForUpdatesAsync(silent: true);
+                    if (update != null && update.HasUpdate)
                     {
-                        MovieManagerDesktop.Services.UpdateManagerService.ShowUpdateDialog(update);
-                    });
+                        Application.Current?.Dispatcher?.Invoke(() =>
+                        {
+                            // 1. Add notification to bell center
+                            MovieManagerDesktop.Services.NotificationCenterService.Instance.AddLocalNotification(
+                                title: $"بروزرسانی جدید در دسترس است ({update.LatestVersion})",
+                                message: string.IsNullOrWhiteSpace(update.Message) ? "نسخه جدید نرم‌افزار آماده دریافت و نصب است." : update.Message,
+                                type: update.IsMandatory ? "warning" : "info",
+                                actionTitle: "دانلود بروزرسانی",
+                                actionUrl: update.DownloadUrl,
+                                isPinned: update.IsMandatory
+                            );
+
+                            // 2. Open update dialog popup
+                            MovieManagerDesktop.Services.UpdateManagerService.ShowUpdateDialog(update);
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MovieManagerDesktop.Services.LoggerService.Error("[UpdateCheck] Background check failed", ex);
                 }
             });
         }

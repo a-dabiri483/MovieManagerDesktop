@@ -88,7 +88,7 @@
                             </StackPanel>
 
                             <!-- Mandatory Alert -->
-                            <Border x:Name="BorderMandatory" Visibility="Collapsed" Background="rgba(248,113,113,0.15)" BorderBrush="#F87171" BorderThickness="1" CornerRadius="6" Padding="8,4" Margin="0,6,0,0">
+                            <Border x:Name="BorderMandatory" Visibility="Collapsed" Background="#26F87171" BorderBrush="#F87171" BorderThickness="1" CornerRadius="6" Padding="8,4" Margin="0,6,0,0">
                                 <StackPanel Orientation="Horizontal">
                                     <materialDesign:PackIcon Kind="AlertCircleOutline" Foreground="#F87171" Width="16" Height="16" Margin="0,0,6,0" VerticalAlignment="Center"/>
                                     <TextBlock Text="نصب این بروزرسانی برای ادامه عملکرد پایدار الزامی است." FontSize="11" Foreground="#FECACA" FontWeight="Bold"/>

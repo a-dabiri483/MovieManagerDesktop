@@ -119,6 +119,10 @@ namespace MovieManagerDesktop.Services
                     var win = new UpdateAvailableWindow(updateInfo);
                     WindowHelper.SafeShowDialog(win);
                 }
+                catch (Exception ex)
+                {
+                    LoggerService.Error("[UpdateDialog] Failed to display update dialog", ex);
+                }
                 finally
                 {
                     _isDialogOpen = false;
