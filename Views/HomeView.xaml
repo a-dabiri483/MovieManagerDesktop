@@ -678,7 +678,12 @@
                                             <materialDesign:PackIcon Kind="TelevisionClassic" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="ردیاب سریال" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock Text="ردیاب سریال" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                                                <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="VIP" FontSize="10" FontWeight="Bold" Foreground="#FBBF24"/>
+                                                </Border>
+                                            </StackPanel>
                                             <TextBlock Text="پیگیری وضعیت مشاهده فصل‌ها و یادآور" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
                                         </StackPanel>
                                         <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="20" Height="20" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center" Margin="8,0,0,0"/>

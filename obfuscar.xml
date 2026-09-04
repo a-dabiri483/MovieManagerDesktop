@@ -11,7 +11,7 @@
   <Var name="RenameProperties" value="false" />
   <Var name="RenameEvents" value="true" />
   <Var name="RenameFields" value="true" />
-  <Var name="UseUnicodeNames" value="false" />
+  <Var name="UseUnicodeNames" value="true" />
   <Var name="HidePrivateApi" value="true" />
   <Var name="ReuseNames" value="true" />
   <Var name="SuppressIldasm" value="true" />

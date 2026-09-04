@@ -34,6 +34,12 @@ namespace MovieManagerDesktop.Views
                     _ = Services.SettingsManager.SyncEncryptedProxiesAsync();
                 }
                 catch { }
+
+                try
+                {
+                    _ = Services.LicenseManagerService.VerifyLicenseAsync();
+                }
+                catch { }
             });
 
             // 3. Minimum display duration for a pleasant branding experience (~2.2s)

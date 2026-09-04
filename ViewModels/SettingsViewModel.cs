@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using MovieManagerDesktop.Data;
 using MovieManagerDesktop.Messages;
+using MovieManagerDesktop.Models;
 using MovieManagerDesktop.Services;
 using MovieManagerDesktop.Controls;
 using Microsoft.EntityFrameworkCore;
@@ -78,6 +79,63 @@ namespace MovieManagerDesktop.ViewModels
             OnPropertyChanged(nameof(IsPlayerView));
             OnPropertyChanged(nameof(IsEducationView));
             OnPropertyChanged(nameof(IsAboutView));
+        }
+
+        [ObservableProperty]
+        private LicenseInfo _currentLicense = LicenseManagerService.GetCurrentLicense();
+
+        public string HardwareId => HardwareIdService.GetHardwareId();
+
+        [RelayCommand]
+        private void OpenLicenseActivation()
+        {
+            var win = new Views.LicenseActivationWindow();
+            WindowHelper.SafeShowDialog(win);
+            CurrentLicense = LicenseManagerService.GetCurrentLicense();
+            OnPropertyChanged(nameof(CurrentLicense));
+        }
+
+        [RelayCommand]
+        private async Task RefreshLicenseStatusAsync()
+        {
+            await LicenseManagerService.VerifyLicenseAsync();
+            CurrentLicense = LicenseManagerService.GetCurrentLicense();
+            OnPropertyChanged(nameof(CurrentLicense));
+            ToastService.Instance.ShowSuccess("وضعیت لایسنس بررسی و بروزرسانی شد.");
+        }
+
+        [ObservableProperty]
+        private bool _isCheckingForUpdates;
+
+        [RelayCommand]
+        private async Task CheckForUpdatesManualAsync()
+        {
+            if (IsCheckingForUpdates) return;
+            IsCheckingForUpdates = true;
+
+            try
+            {
+                ToastService.Instance.ShowInfo("در حال بررسی نسخه جدید بر روی سرور...");
+                var result = await UpdateManagerService.CheckForUpdatesAsync(silent: false);
+                if (result == null)
+                {
+                    ToastService.Instance.ShowWarning("امکان برقراری ارتباط با سرور بروزرسانی وجود ندارد.");
+                    return;
+                }
+
+                if (result.HasUpdate)
+                {
+                    UpdateManagerService.ShowUpdateDialog(result);
+                }
+                else
+                {
+                    ToastService.Instance.ShowSuccess($"شما از آخرین نسخه نرم‌افزار ({UpdateManagerService.CurrentAppVersion}) استفاده می‌کنید.");
+                }
+            }
+            finally
+            {
+                IsCheckingForUpdates = false;
+            }
         }
 
         [ObservableProperty]
@@ -582,6 +640,12 @@ namespace MovieManagerDesktop.ViewModels
             CalculateDatabaseSize();
             CheckGoogleDriveConnection();
             LoadEducationTopics();
+
+            LicenseManagerService.LicenseStatusChanged += (s, lic) =>
+            {
+                CurrentLicense = lic;
+                OnPropertyChanged(nameof(CurrentLicense));
+            };
         }
 
         private void CheckGoogleDriveConnection()

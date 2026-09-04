@@ -1,9 +1,11 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using MaterialDesignThemes.Wpf;
 using MovieManagerDesktop.Messages;
 using MovieManagerDesktop.Models;
 using MovieManagerDesktop.Services;
+using MovieManagerDesktop.Views;
 using System;
 using System.ComponentModel;
 using System.Windows;
@@ -18,6 +20,54 @@ namespace MovieManagerDesktop.ViewModels
 
         [ObservableProperty]
         private bool _isPlayerActive = false;
+
+        [ObservableProperty]
+        private bool _isLicenseValid;
+
+        [ObservableProperty]
+        private string _licenseBadgeText = "نسخه آزمایشی (ارتقا به Pro)";
+
+        [ObservableProperty]
+        private string _licenseBadgeBackground = "#20F59E0B";
+
+        [ObservableProperty]
+        private string _licenseBadgeBorder = "#80F59E0B";
+
+        [ObservableProperty]
+        private string _licenseBadgeForeground = "#FBBF24";
+
+        [ObservableProperty]
+        private PackIconKind _licenseBadgeIcon = PackIconKind.Crown;
+
+        [RelayCommand]
+        private void OpenLicenseWindow()
+        {
+            var win = new LicenseActivationWindow();
+            WindowHelper.SafeShowDialog(win);
+            RefreshLicenseStatus();
+        }
+
+        public void RefreshLicenseStatus()
+        {
+            var lic = LicenseManagerService.GetCurrentLicense();
+            IsLicenseValid = lic.IsValid;
+            if (lic.IsValid)
+            {
+                LicenseBadgeText = "نسخه Pro (فعال)";
+                LicenseBadgeBackground = "#2010B981";
+                LicenseBadgeBorder = "#8010B981";
+                LicenseBadgeForeground = "#34D399";
+                LicenseBadgeIcon = PackIconKind.CheckDecagram;
+            }
+            else
+            {
+                LicenseBadgeText = "نسخه آزمایشی (ارتقا به Pro)";
+                LicenseBadgeBackground = "#20F59E0B";
+                LicenseBadgeBorder = "#80F59E0B";
+                LicenseBadgeForeground = "#FBBF24";
+                LicenseBadgeIcon = PackIconKind.Crown;
+            }
+        }
 
         partial void OnCurrentViewModelChanged(ObservableObject value)
         {
@@ -55,6 +105,12 @@ namespace MovieManagerDesktop.ViewModels
 
         public MainViewModel()
         {
+            RefreshLicenseStatus();
+            LicenseManagerService.LicenseStatusChanged += (s, lic) =>
+            {
+                Application.Current?.Dispatcher?.Invoke(RefreshLicenseStatus);
+            };
+
             CurrentViewModel = GetHomeViewModel();
 
             FilteredNotifications = CollectionViewSource.GetDefaultView(NotificationCenter.Notifications);

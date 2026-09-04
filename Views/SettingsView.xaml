@@ -114,7 +114,37 @@
                         <TextBlock Text="عملیات و سرویس‌های آنلاین" FontSize="16" FontWeight="Bold" Foreground="White"/>
                     </StackPanel>
 
-
+                    <!-- Card: مدیریت لایسنس و فعال‌سازی قانونی -->
+                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding OpenLicenseActivationCommand}">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource SettingsActionCard}">
+                                    <Grid Background="Transparent">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Amber / Gold Key Icon -->
+                                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#25F59E0B" Margin="0,0,16,0">
+                                            <materialDesign:PackIcon Kind="ShieldKeyOutline" Width="26" Height="26" Foreground="#F59E0B" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="مدیریت لایسنس و فعال‌سازی" FontSize="15.5" FontWeight="Black" Foreground="White" VerticalAlignment="Center"/>
+                                                <Border Background="#1E293B" CornerRadius="6" Padding="6,2" Margin="10,0,0,0" VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding CurrentLicense.PlanTitle, FallbackValue='نسخه فعال نشده'}" FontSize="11" Foreground="#38BDF8" FontWeight="SemiBold"/>
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding CurrentLicense.StatusSummary}" FontSize="12" Foreground="#94A3B8" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
 
                     <!-- Card 3: پشتیبان‌گیری و بازیابی -->
                     <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
@@ -252,7 +282,7 @@
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <TextBlock Text="درباره نرم‌افزار" FontSize="15.5" FontWeight="Black" Foreground="White"/>
-                                            <TextBlock Text="نسخه ۲.۰.۰ پرو، مشخصات پلتفرم دسکتاپ و تیم توسعه" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                            <TextBlock Text="نسخه ۲.۶.۰ پرو، مشخصات پلتفرم دسکتاپ و تیم توسعه" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
                                         </StackPanel>
                                         <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
                                     </Grid>
@@ -1084,7 +1114,7 @@
                         </Border>
 
                         <TextBlock Text="MovieManager Desktop" FontSize="24" FontWeight="Black" Foreground="White" HorizontalAlignment="Center"/>
-                        <TextBlock Text="نسخه ۲.۰.۰ (Professional Edition)" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" Margin="0,4,0,16"/>
+                        <TextBlock Text="نسخه ۲.۶.۰ (Professional Edition)" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" Margin="0,4,0,16"/>
 
                         <TextBlock Text="سامانه هوشمند و پیشرفته مدیریت، سازماندهی و تماشای آرشیو فیلم و سریال با معماری متریال ۳ نیتیو، هوش مصنوعی جستجو، سیستم ضد تحریم یکپارچه و پشتیبانی کامل از زبان فارسی و چینش راست‌چین (RTL)."
                                    FontSize="13" Foreground="#CBD5E1" LineHeight="24" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="600" Margin="0,0,0,24"/>
@@ -1112,6 +1142,26 @@
                             <TextBlock Grid.Row="2" Grid.Column="0" Text="پشتیبانی از پلتفرم:" FontSize="13" Foreground="{DynamicResource SecondaryText}"/>
                             <TextBlock Grid.Row="2" Grid.Column="1" Text="Windows 10 / Windows 11 (x64)" FontSize="13" FontWeight="Bold" Foreground="{DynamicResource EmeraldAccent}"/>
                         </Grid>
+
+                        <!-- Check for Updates Button -->
+                        <Button Margin="0,24,0,0"
+                                HorizontalAlignment="Center"
+                                Height="42" Padding="22,0"
+                                Command="{Binding CheckForUpdatesManualCommand}"
+                                Cursor="Hand"
+                                Foreground="White"
+                                materialDesign:ButtonAssist.CornerRadius="10">
+                            <Button.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#0284C7" Offset="0"/>
+                                    <GradientStop Color="#2563EB" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Button.Background>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="CloudDownloadOutline" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="بررسی نسخه جدید / بروزرسانی" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
                 </Border>
 
@@ -1141,6 +1191,9 @@
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                     <StackPanel Orientation="Horizontal">
                                         <TextBlock Text="پلیر داخلی مدرن برنامه (پیشنهادی)" FontSize="15" FontWeight="Bold" Foreground="White"/>
+                                        <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <TextBlock Text="VIP" FontSize="10" FontWeight="Bold" Foreground="#FBBF24"/>
+                                        </Border>
                                         <Border Background="#2538BDF8" CornerRadius="6" Padding="8,2" Margin="10,0,0,0">
                                             <TextBlock Text="شتاب گرافیکی سخت‌افزاری + کلیدهای میانبر PotPlayer" FontSize="11" FontWeight="Bold" Foreground="#38BDF8"/>
                                         </Border>

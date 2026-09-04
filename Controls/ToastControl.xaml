@@ -21,16 +21,16 @@
         <!-- Template for each ToastMessage -->
         <ItemsControl.ItemTemplate>
             <DataTemplate>
-                <Border Background="#202020" 
+                <Border Background="#F51A1D36" 
                         BorderBrush="{Binding BorderColor}" 
-                        BorderThickness="1,1,1,3"
-                        CornerRadius="8"
-                        Margin="0,5"
-                        Padding="15,10"
-                        MinWidth="300"
-                        MaxWidth="450">
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        Margin="0,3"
+                        Padding="10,6"
+                        MinWidth="200"
+                        MaxWidth="360">
                     <Border.Effect>
-                        <DropShadowEffect Color="Black" BlurRadius="15" Opacity="0.5" ShadowDepth="4"/>
+                        <DropShadowEffect Color="Black" BlurRadius="12" Opacity="0.55" ShadowDepth="2"/>
                     </Border.Effect>
                     
                     <Grid>
@@ -41,25 +41,26 @@
                         </Grid.ColumnDefinitions>
                         
                         <!-- Icon -->
-                        <Border Width="40" Height="40" CornerRadius="20" Background="{Binding BackgroundColor}">
-                            <materialDesign:PackIcon Kind="{Binding IconKind}" Foreground="{Binding BorderColor}" Width="24" Height="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Width="28" Height="28" CornerRadius="14" Background="{Binding BackgroundColor}" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="{Binding IconKind}" Foreground="{Binding BorderColor}" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
                         
                         <!-- Content -->
-                        <StackPanel Grid.Column="1" Margin="15,0">
-                            <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="14" Foreground="White" Margin="0,0,0,4"/>
-                            <TextBlock Text="{Binding Message}" FontSize="13" Foreground="#B0B0B0" TextWrapping="Wrap"/>
+                        <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="11.5" Foreground="White" Margin="0,0,0,2"/>
+                            <TextBlock Text="{Binding Message}" FontSize="11" Foreground="#CBD5E1" TextWrapping="Wrap" LineHeight="16"/>
                         </StackPanel>
                         
                         <!-- Close Button -->
                         <Button Grid.Column="2" 
                                 Style="{StaticResource MaterialDesignIconForegroundButton}" 
-                                Width="30" Height="30" 
+                                Width="22" Height="22" 
                                 Padding="0" 
                                 Opacity="0.6"
+                                VerticalAlignment="Center"
                                 Click="CloseButton_Click"
                                 Tag="{Binding}">
-                            <materialDesign:PackIcon Kind="Close" Width="16" Height="16" Foreground="White"/>
+                            <materialDesign:PackIcon Kind="Close" Width="12" Height="12" Foreground="White"/>
                         </Button>
                     </Grid>
                 </Border>

@@ -9,6 +9,9 @@
     <ApplicationIcon>Assets\logo.ico</ApplicationIcon>
     <Title>مدیریت فیلم و سریال</Title>
     <Product>مدیریت فیلم و سریال</Product>
+    <Version>2.6.0</Version>
+    <AssemblyVersion>2.6.0.0</AssemblyVersion>
+    <FileVersion>2.6.0.0</FileVersion>
     <NoWarn>$(NoWarn);NU1605</NoWarn>
   </PropertyGroup>
 

@@ -231,6 +231,28 @@
                     <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="18,0,0,0">
                         <Image Source="pack://application:,,,/Assets/logo.png" Width="22" Height="22" RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,8,0"/>
                         <TextBlock Text="MovieManager" Foreground="{DynamicResource SecondaryText}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+
+                        <!-- Dynamic License Status Badge (Clickable to open License Manager) -->
+                        <Button Command="{Binding OpenLicenseWindowCommand}"
+                                Style="{StaticResource MaterialDesignFlatButton}"
+                                Height="24" Padding="0" Margin="14,0,0,0" VerticalAlignment="Center"
+                                Cursor="Hand" ToolTip="مدیریت لایسنس و ارتقا">
+                            <Border CornerRadius="12" Padding="8,2"
+                                    Background="{Binding LicenseBadgeBackground}"
+                                    BorderBrush="{Binding LicenseBadgeBorder}"
+                                    BorderThickness="1">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="{Binding LicenseBadgeIcon}"
+                                                             Width="13" Height="13" Margin="0,0,5,0"
+                                                             Foreground="{Binding LicenseBadgeForeground}"
+                                                             VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding LicenseBadgeText}"
+                                               FontSize="11" FontWeight="SemiBold"
+                                               Foreground="{Binding LicenseBadgeForeground}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </Button>
                     </StackPanel>
 
                     <!-- Top-Right Window Control Buttons (Close, Maximize, Minimize on the Right) -->

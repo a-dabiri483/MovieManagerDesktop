@@ -417,11 +417,31 @@ namespace MovieManagerDesktop.ViewModels
                         }
                     }
                 }
-                else if (!string.IsNullOrWhiteSpace(identified.FormattedTitle))
+                else
                 {
-                    foreach (var file in group.Files)
+                    // Check free tier limit if adding a brand new title
+                    if (!LicenseManagerService.IsLicenseValid())
                     {
-                        file.FormattedTitle = identified.FormattedTitle;
+                        int currentTitleCount = db.VideoFiles.Select(v => v.FormattedTitle).Distinct().Count();
+                        if (currentTitleCount >= LicenseManagerService.FreeTierMediaLimit)
+                        {
+                            group.Status = "نیاز به لایسنس";
+                            group.IsError = true;
+                            group.IsChecked = false;
+                            ApplyFilters();
+                            ToastService.Instance.ShowWarning($"سقف نسخه آزمایشی ({LicenseManagerService.FreeTierMediaLimit} عنوان) تکمیل شده است. برای اسکن نامحدود و ثبت آرشیو کامل، لطفاً لایسنس برنامه را فعال نمایید.");
+                            var win = new LicenseActivationWindow();
+                            WindowHelper.SafeShowDialog(win);
+                            return;
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(identified.FormattedTitle))
+                    {
+                        foreach (var file in group.Files)
+                        {
+                            file.FormattedTitle = identified.FormattedTitle;
+                        }
                     }
                 }
 
@@ -525,6 +545,20 @@ namespace MovieManagerDesktop.ViewModels
                 ToastService.Instance.ShowWarning("لطفاً حداقل یک عنوان را جهت ثبت انتخاب کنید.");
                 return;
             }
+
+            // Check free tier limit before starting bulk registration
+            if (!LicenseManagerService.IsLicenseValid())
+            {
+                using var preDb = new AppDbContext();
+                int currentTitleCount = preDb.VideoFiles.Select(v => v.FormattedTitle).Distinct().Count();
+                if (currentTitleCount >= LicenseManagerService.FreeTierMediaLimit)
+                {
+                    ToastService.Instance.ShowWarning($"سقف ثبت در نسخه آزمایشی ({LicenseManagerService.FreeTierMediaLimit} عنوان) تکمیل شده است. برای اسکن نامحدود و ثبت آرشیو کامل، لطفاً لایسنس برنامه را فعال نمایید.");
+                    var win = new LicenseActivationWindow();
+                    WindowHelper.SafeShowDialog(win);
+                    return;
+                }
+            }
             
             LoggerService.Info($"[اسکنر] شروع ثبت گروهی برای {selectedGroups.Count} گروه...");
 
@@ -607,11 +641,34 @@ namespace MovieManagerDesktop.ViewModels
                                         }
                                     }
                                 }
-                                else if (!string.IsNullOrWhiteSpace(identified.FormattedTitle))
+                                else
                                 {
-                                    foreach (var file in group.Files)
+                                    // In-flight limit check during bulk registration
+                                    if (!LicenseManagerService.IsLicenseValid())
                                     {
-                                        file.FormattedTitle = identified.FormattedTitle;
+                                        int currentTitleCount = db.VideoFiles.Select(v => v.FormattedTitle).Distinct().Count();
+                                        if (currentTitleCount >= LicenseManagerService.FreeTierMediaLimit)
+                                        {
+                                            _cancellationTokenSource?.Cancel();
+                                            Application.Current.Dispatcher.Invoke(() =>
+                                            {
+                                                group.Status = "نیاز به لایسنس";
+                                                group.IsError = true;
+                                                group.IsChecked = false;
+                                                ToastService.Instance.ShowWarning($"سقف نسخه آزمایشی ({LicenseManagerService.FreeTierMediaLimit} عنوان) تکمیل شد. برای ادامه اسکن و ثبت نامحدود، لطفاً لایسنس برنامه را فعال نمایید.");
+                                                var win = new LicenseActivationWindow();
+                                                WindowHelper.SafeShowDialog(win);
+                                            });
+                                            return;
+                                        }
+                                    }
+
+                                    if (!string.IsNullOrWhiteSpace(identified.FormattedTitle))
+                                    {
+                                        foreach (var file in group.Files)
+                                        {
+                                            file.FormattedTitle = identified.FormattedTitle;
+                                        }
                                     }
                                 }
 

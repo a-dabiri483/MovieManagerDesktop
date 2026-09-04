@@ -1,6 +1,6 @@
 ; Script generated for MovieManager Desktop Installer
 #define MyAppName "MovieManager"
-#define MyAppVersion "2.5.0"
+#define MyAppVersion "2.6.0"
 #define MyAppPublisher "MovieManager Team"
 #define MyAppURL "https://github.com/a-dabiri483/MovieManagerDesktop"
 #define MyAppExeName "MovieManagerDesktop.exe"
@@ -19,7 +19,7 @@ DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=setup_output
-OutputBaseFilename=MovieManager_Setup_v2.5
+OutputBaseFilename=MovieManager_Setup_v2.6.0
 SetupIconFile=Assets\logo.ico
 Compression=lzma2/ultra64
 SolidCompression=yes

@@ -342,6 +342,7 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void GoToTracker()
         {
+            if (!LicenseManagerService.EnsureProFeature("ردیاب سریال اختصاصی")) return;
             WeakReferenceMessenger.Default.Send(new NavigationMessage(new TrackerViewModel()));
         }
 

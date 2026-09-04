@@ -54,6 +54,20 @@ namespace MovieManagerDesktop
             {
                 PlayBellWiggleAnimation();
             }
+
+            // Check for software updates in background
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(4000);
+                var update = await MovieManagerDesktop.Services.UpdateManagerService.CheckForUpdatesAsync(silent: true);
+                if (update != null && update.HasUpdate)
+                {
+                    Application.Current?.Dispatcher?.Invoke(() =>
+                    {
+                        MovieManagerDesktop.Services.UpdateManagerService.ShowUpdateDialog(update);
+                    });
+                }
+            });
         }
 
         private void BtnNotificationBell_MouseEnter(object sender, MouseEventArgs e)

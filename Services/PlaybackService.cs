@@ -46,6 +46,11 @@ namespace MovieManagerDesktop.Services
             var settings = SettingsManager.LoadSettings();
             if (settings.UseInternalPlayer)
             {
+                if (!LicenseManagerService.EnsureProFeature("پخش‌کننده ویدیوی داخلی"))
+                {
+                    return;
+                }
+
                 bool started = MpvPlaybackService.PlayMedia(file, playlist, initialIndex);
                 if (started) return;
             }
