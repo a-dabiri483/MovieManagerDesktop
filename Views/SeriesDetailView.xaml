@@ -8,9 +8,9 @@
              FlowDirection="RightToLeft"
              UseLayoutRounding="True"
              SnapsToDevicePixels="True"
-             TextOptions.TextFormattingMode="Display"
-             TextOptions.TextRenderingMode="ClearType"
-             TextOptions.TextHintingMode="Fixed"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="Auto"
+             TextOptions.TextHintingMode="Auto"
              RenderOptions.ClearTypeHint="Enabled"
              RenderOptions.BitmapScalingMode="HighQuality">
 

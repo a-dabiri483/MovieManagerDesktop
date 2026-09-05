@@ -10,8 +10,8 @@
              d:DataContext="{d:DesignInstance Type=viewmodels:SettingsViewModel}"
              d:DesignHeight="1200" d:DesignWidth="1100"
              FontFamily="{DynamicResource AppFontFamily}"
-             TextOptions.TextFormattingMode="Display"
-             TextOptions.TextRenderingMode="ClearType"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="Auto"
              UseLayoutRounding="True"
              SnapsToDevicePixels="True"
              FlowDirection="RightToLeft">

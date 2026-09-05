@@ -342,14 +342,16 @@ namespace MovieManagerDesktop
             {
                 WindowRootBorder.CornerRadius = new CornerRadius(0);
                 WindowRootBorder.BorderThickness = new Thickness(0);
-                BtnMaximize.Content = "\uE923";
+                if (MaximizeIcon != null)
+                    MaximizeIcon.Kind = MaterialDesignThemes.Wpf.PackIconKind.WindowRestore;
                 BtnMaximize.ToolTip = "خروج از تمام‌صفحه";
             }
             else
             {
                 WindowRootBorder.CornerRadius = new CornerRadius(18);
                 WindowRootBorder.BorderThickness = new Thickness(1);
-                BtnMaximize.Content = "\uE922";
+                if (MaximizeIcon != null)
+                    MaximizeIcon.Kind = MaterialDesignThemes.Wpf.PackIconKind.WindowMaximize;
                 BtnMaximize.ToolTip = "تمام‌صفحه";
             }
         }

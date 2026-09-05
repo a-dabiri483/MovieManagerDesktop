@@ -30,9 +30,9 @@
 
             <!-- Global Crisp Text & High-Quality Image Rendering Styles -->
             <Style TargetType="{x:Type TextBlock}">
-                <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
-                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
-                <Setter Property="TextOptions.TextHintingMode" Value="Fixed"/>
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+                <Setter Property="TextOptions.TextRenderingMode" Value="Auto"/>
+                <Setter Property="TextOptions.TextHintingMode" Value="Auto"/>
                 <Setter Property="UseLayoutRounding" Value="True"/>
                 <Setter Property="SnapsToDevicePixels" Value="True"/>
             </Style>
@@ -40,15 +40,14 @@
             <Style TargetType="{x:Type Image}">
                 <Setter Property="FlowDirection" Value="LeftToRight"/>
                 <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality"/>
-                <Setter Property="RenderOptions.EdgeMode" Value="Aliased"/>
                 <Setter Property="UseLayoutRounding" Value="True"/>
                 <Setter Property="SnapsToDevicePixels" Value="True"/>
             </Style>
 
             <Style TargetType="{x:Type UserControl}">
-                <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
-                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
-                <Setter Property="TextOptions.TextHintingMode" Value="Fixed"/>
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+                <Setter Property="TextOptions.TextRenderingMode" Value="Auto"/>
+                <Setter Property="TextOptions.TextHintingMode" Value="Auto"/>
                 <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled"/>
                 <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality"/>
                 <Setter Property="UseLayoutRounding" Value="True"/>
@@ -56,9 +55,9 @@
             </Style>
 
             <Style TargetType="{x:Type Window}">
-                <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
-                <Setter Property="TextOptions.TextRenderingMode" Value="ClearType"/>
-                <Setter Property="TextOptions.TextHintingMode" Value="Fixed"/>
+                <Setter Property="TextOptions.TextFormattingMode" Value="Ideal"/>
+                <Setter Property="TextOptions.TextRenderingMode" Value="Auto"/>
+                <Setter Property="TextOptions.TextHintingMode" Value="Auto"/>
                 <Setter Property="RenderOptions.ClearTypeHint" Value="Enabled"/>
                 <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality"/>
                 <Setter Property="UseLayoutRounding" Value="True"/>

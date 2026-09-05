@@ -88,7 +88,7 @@
 
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Grid Width="200" Height="200" Margin="10" CacheMode="BitmapCache">
+                    <Grid Width="200" Height="200" Margin="10">
                         <materialDesign:Card Background="{DynamicResource CardBackground}" UniformCornerRadius="12" RenderTransformOrigin="0.5,0.5">
                             <materialDesign:Card.RenderTransform>
                                 <ScaleTransform ScaleX="1" ScaleY="1"/>

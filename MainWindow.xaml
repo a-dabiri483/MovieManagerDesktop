@@ -13,9 +13,9 @@
         FlowDirection="RightToLeft"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
-        TextOptions.TextFormattingMode="Display"
-        TextOptions.TextRenderingMode="ClearType"
-        TextOptions.TextHintingMode="Fixed"
+        TextOptions.TextFormattingMode="Ideal"
+        TextOptions.TextRenderingMode="Auto"
+        TextOptions.TextHintingMode="Auto"
         RenderOptions.ClearTypeHint="Enabled"
         RenderOptions.BitmapScalingMode="HighQuality"
         PreviewMouseLeftButtonDown="Window_PreviewMouseLeftButtonDown"
@@ -161,8 +161,6 @@
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource SecondaryText}"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
-            <Setter Property="FontSize" Value="10"/>
             <Setter Property="Width" Value="36"/>
             <Setter Property="Height" Value="30"/>
             <Setter Property="Template">
@@ -633,10 +631,18 @@
                             </Popup>
                         </Grid>
 
-                        <Button Content="&#xE8D7;" ToolTip="نمایش لاگ‌ها" Style="{StaticResource WindowBtnStyle}" Click="BtnViewLogs_Click"/>
-                        <Button Content="&#xE921;" ToolTip="کوچک‌کردن" Style="{StaticResource WindowBtnStyle}" Click="BtnMinimize_Click"/>
-                        <Button x:Name="BtnMaximize" Content="&#xE922;" ToolTip="تمام‌صفحه" Style="{StaticResource WindowBtnStyle}" Click="BtnMaximize_Click"/>
-                        <Button Content="&#xE8BB;" ToolTip="بستن" Style="{StaticResource WindowCloseBtnStyle}" Click="BtnClose_Click"/>
+                        <Button ToolTip="نمایش لاگ‌ها" Style="{StaticResource WindowBtnStyle}" Click="BtnViewLogs_Click">
+                            <materialDesign:PackIcon Kind="FileDocumentOutline" Width="14" Height="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Button>
+                        <Button ToolTip="کوچک‌کردن" Style="{StaticResource WindowBtnStyle}" Click="BtnMinimize_Click">
+                            <materialDesign:PackIcon Kind="WindowMinimize" Width="14" Height="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Button>
+                        <Button x:Name="BtnMaximize" ToolTip="تمام‌صفحه" Style="{StaticResource WindowBtnStyle}" Click="BtnMaximize_Click">
+                            <materialDesign:PackIcon x:Name="MaximizeIcon" Kind="WindowMaximize" Width="14" Height="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Button>
+                        <Button ToolTip="بستن" Style="{StaticResource WindowCloseBtnStyle}" Click="BtnClose_Click">
+                            <materialDesign:PackIcon Kind="WindowClose" Width="14" Height="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                        </Button>
                     </StackPanel>
                 </Grid>
 
@@ -675,15 +681,12 @@
 
                 <!-- ANDROID FLOATING BOTTOM NAVIGATION BAR (دقیقاً مثل اسکرین‌شات اندروید) -->
                 <Border VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,16" Panel.ZIndex="90"
-                        TextOptions.TextFormattingMode="Display"
-                        TextOptions.TextRenderingMode="ClearType"
+                        TextOptions.TextFormattingMode="Ideal"
+                        TextOptions.TextRenderingMode="Auto"
                         UseLayoutRounding="True"
                         SnapsToDevicePixels="True"
                         Visibility="{Binding IsPlayerActive, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=inverse}">
                     <Border Background="#F2101222" CornerRadius="37" BorderBrush="#40EB3B5A" BorderThickness="1.5" Padding="14,4" Height="74">
-                        <Border.CacheMode>
-                            <BitmapCache RenderAtScale="1" EnableClearType="True"/>
-                        </Border.CacheMode>
                         <Border.Effect>
                             <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="3" Opacity="0.6"/>
                         </Border.Effect>
@@ -700,9 +703,6 @@
 
                                 <!-- 4. CENTER FLOATING FAB BUTTON (پویش و جستجو 🔍) -->
                                 <Button Command="{Binding NavigateToScanCommand}" Width="52" Height="52" Margin="8,-16,8,0" materialDesign:ButtonAssist.CornerRadius="26" BorderThickness="0" Background="{DynamicResource FabGradientBrush}" Cursor="Hand">
-                                    <Button.CacheMode>
-                                        <BitmapCache RenderAtScale="1" EnableClearType="True"/>
-                                    </Button.CacheMode>
                                     <Button.Effect>
                                         <DropShadowEffect Color="#8854D0" BlurRadius="16" ShadowDepth="2" Opacity="0.7"/>
                                     </Button.Effect>

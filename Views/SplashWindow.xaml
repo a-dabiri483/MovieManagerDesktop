@@ -69,13 +69,13 @@
                                     </BeginStoryboard>
                                 </EventTrigger>
                             </StackPanel.Triggers>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_breaking_bad.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_the_rookie.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_spider_man.webp" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_breaking_bad.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_the_rookie.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_spider_man.jpg" Stretch="UniformToFill"/></Border>
                             <!-- Seamless loop duplicates -->
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_breaking_bad.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_the_rookie.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_spider_man.webp" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_breaking_bad.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_the_rookie.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_spider_man.jpg" Stretch="UniformToFill"/></Border>
                         </StackPanel>
                     </Canvas>
 
@@ -98,13 +98,13 @@
                                     </BeginStoryboard>
                                 </EventTrigger>
                             </StackPanel.Triggers>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_game_of_thrones.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_the_flash.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_rick_and_morty.webp" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_game_of_thrones.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_the_flash.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_rick_and_morty.jpg" Stretch="UniformToFill"/></Border>
                             <!-- Seamless loop duplicates -->
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_game_of_thrones.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_the_flash.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_rick_and_morty.webp" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_game_of_thrones.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_the_flash.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_rick_and_morty.jpg" Stretch="UniformToFill"/></Border>
                         </StackPanel>
                     </Canvas>
 
@@ -127,13 +127,13 @@
                                     </BeginStoryboard>
                                 </EventTrigger>
                             </StackPanel.Triggers>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_avengers.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_venom.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_simpsons.webp" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_avengers.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_venom.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_simpsons.jpg" Stretch="UniformToFill"/></Border>
                             <!-- Seamless loop duplicates -->
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_avengers.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_venom.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_simpsons.webp" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_avengers.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_venom.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_simpsons.jpg" Stretch="UniformToFill"/></Border>
                         </StackPanel>
                     </Canvas>
 
@@ -156,13 +156,13 @@
                                     </BeginStoryboard>
                                 </EventTrigger>
                             </StackPanel.Triggers>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_interstellar.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_avatar.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_vikings.webp" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_interstellar.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_avatar.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_vikings.jpg" Stretch="UniformToFill"/></Border>
                             <!-- Seamless loop duplicates -->
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_interstellar.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_avatar.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_vikings.webp" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_interstellar.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_avatar.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_vikings.jpg" Stretch="UniformToFill"/></Border>
                         </StackPanel>
                     </Canvas>
 
@@ -185,13 +185,13 @@
                                     </BeginStoryboard>
                                 </EventTrigger>
                             </StackPanel.Triggers>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_money_heist.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_dune.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_stranger_things.webp" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_money_heist.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_dune.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_stranger_things.jpg" Stretch="UniformToFill"/></Border>
                             <!-- Seamless loop duplicates -->
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_money_heist.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_dune.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_stranger_things.webp" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_money_heist.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_dune.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_stranger_things.jpg" Stretch="UniformToFill"/></Border>
                         </StackPanel>
                     </Canvas>
 
@@ -214,13 +214,13 @@
                                     </BeginStoryboard>
                                 </EventTrigger>
                             </StackPanel.Triggers>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_lucifer.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_harry_potter.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_house_of_dragon.webp" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_lucifer.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_harry_potter.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_house_of_dragon.jpg" Stretch="UniformToFill"/></Border>
                             <!-- Seamless loop duplicates -->
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_lucifer.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_harry_potter.webp" Stretch="UniformToFill"/></Border>
-                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_house_of_dragon.webp" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_lucifer.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_harry_potter.jpg" Stretch="UniformToFill"/></Border>
+                            <Border Style="{StaticResource WallPosterCard}"><Image Source="/Assets/Posters/poster_house_of_dragon.jpg" Stretch="UniformToFill"/></Border>
                         </StackPanel>
                     </Canvas>
                 </Grid>
