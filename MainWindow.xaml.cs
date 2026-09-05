@@ -31,6 +31,7 @@ namespace MovieManagerDesktop
         public MainWindow()
         {
             InitializeComponent();
+            ApplyResponsiveScaling();
             
             try
             {
@@ -330,15 +331,161 @@ namespace MovieManagerDesktop
 
         private void BtnMaximize_Click(object sender, RoutedEventArgs e)
         {
+            this.WindowState = this.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+        }
+
+        private void Window_StateChanged(object? sender, EventArgs e)
+        {
+            if (WindowRootBorder == null || BtnMaximize == null) return;
+
             if (this.WindowState == WindowState.Maximized)
             {
-                this.WindowState = WindowState.Normal;
-                BtnMaximize.Content = "\uE922";
+                WindowRootBorder.CornerRadius = new CornerRadius(0);
+                WindowRootBorder.BorderThickness = new Thickness(0);
+                BtnMaximize.Content = "\uE923";
+                BtnMaximize.ToolTip = "خروج از تمام‌صفحه";
             }
             else
             {
-                this.WindowState = WindowState.Maximized;
-                BtnMaximize.Content = "\uE923";
+                WindowRootBorder.CornerRadius = new CornerRadius(18);
+                WindowRootBorder.BorderThickness = new Thickness(1);
+                BtnMaximize.Content = "\uE922";
+                BtnMaximize.ToolTip = "تمام‌صفحه";
+            }
+        }
+
+        private double _currentScale = 1.0;
+
+        private void ApplyResponsiveScaling()
+        {
+            try
+            {
+                double workWidth = SystemParameters.WorkArea.Width;
+                double workHeight = SystemParameters.WorkArea.Height;
+
+                // 1. Check if user previously saved a custom UI scale
+                var settings = MovieManagerDesktop.Services.SettingsManager.LoadSettings();
+                if (settings != null && settings.UiScaleFactor >= 0.5 && settings.UiScaleFactor <= 1.5)
+                {
+                    _currentScale = settings.UiScaleFactor;
+                }
+                else
+                {
+                    // 2. Auto-detect optimal scale for monitor resolution (e.g. 720p, 1366x768, 1080p high DPI)
+                    if (workHeight < 860 || workWidth < 1360)
+                    {
+                        double scaleByHeight = (workHeight * 0.90) / 820.0;
+                        double scaleByWidth = (workWidth * 0.92) / 1280.0;
+                        _currentScale = Math.Min(scaleByHeight, scaleByWidth);
+                        _currentScale = Math.Clamp(_currentScale, 0.68, 0.95);
+                        _currentScale = Math.Round(_currentScale, 2);
+                    }
+                    else
+                    {
+                        _currentScale = 1.0;
+                    }
+                }
+
+                // 3. Set Window dimensions to fit comfortably inside the work area
+                if (workHeight < 860 || workWidth < 1360)
+                {
+                    this.Width = Math.Min(workWidth * 0.94, Math.Max(720, 1280 * _currentScale));
+                    this.Height = Math.Min(workHeight * 0.92, Math.Max(460, 820 * _currentScale));
+                }
+                else
+                {
+                    this.Width = 1280;
+                    this.Height = 820;
+                }
+
+                // Center window on screen
+                this.Left = SystemParameters.WorkArea.Left + (workWidth - this.Width) / 2;
+                this.Top = SystemParameters.WorkArea.Top + (workHeight - this.Height) / 2;
+
+                // 4. Apply scale to root layout transform
+                if (MainUiScaleTransform != null)
+                {
+                    MainUiScaleTransform.ScaleX = _currentScale;
+                    MainUiScaleTransform.ScaleY = _currentScale;
+                }
+            }
+            catch (Exception ex)
+            {
+                MovieManagerDesktop.Services.LoggerService.Error("[MainWindow] ApplyResponsiveScaling error", ex);
+            }
+        }
+
+        public void AdjustUiScale(double delta)
+        {
+            double newScale = Math.Clamp(Math.Round(_currentScale + delta, 2), 0.60, 1.40);
+            if (Math.Abs(newScale - _currentScale) < 0.01) return;
+
+            _currentScale = newScale;
+            if (MainUiScaleTransform != null)
+            {
+                MainUiScaleTransform.ScaleX = _currentScale;
+                MainUiScaleTransform.ScaleY = _currentScale;
+            }
+
+            // Persist setting
+            var settings = MovieManagerDesktop.Services.SettingsManager.LoadSettings();
+            if (settings != null)
+            {
+                settings.UiScaleFactor = _currentScale;
+                MovieManagerDesktop.Services.SettingsManager.SaveSettings(settings);
+            }
+
+            MovieManagerDesktop.Services.ToastService.Instance.ShowInfo($"اندازه و مقیاس تصویر: {(int)(_currentScale * 100)}%", "مقیاس صفحه");
+        }
+
+        public void ResetUiScaleToAuto()
+        {
+            var settings = MovieManagerDesktop.Services.SettingsManager.LoadSettings();
+            if (settings != null)
+            {
+                settings.UiScaleFactor = 0; // reset to auto
+                MovieManagerDesktop.Services.SettingsManager.SaveSettings(settings);
+            }
+
+            ApplyResponsiveScaling();
+            MovieManagerDesktop.Services.ToastService.Instance.ShowSuccess($"مقیاس خودکار بر اساس مانیتور: {(int)(_currentScale * 100)}%", "تنظیم خودکار");
+        }
+
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                if (e.Key == Key.OemPlus || e.Key == Key.Add)
+                {
+                    AdjustUiScale(0.05);
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.OemMinus || e.Key == Key.Subtract)
+                {
+                    AdjustUiScale(-0.05);
+                    e.Handled = true;
+                }
+                else if (e.Key == Key.D0 || e.Key == Key.NumPad0)
+                {
+                    ResetUiScaleToAuto();
+                    e.Handled = true;
+                }
+            }
+        }
+
+        private void Window_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                if (e.Delta > 0)
+                {
+                    AdjustUiScale(0.04);
+                }
+                else if (e.Delta < 0)
+                {
+                    AdjustUiScale(-0.04);
+                }
+                e.Handled = true;
             }
         }
     }

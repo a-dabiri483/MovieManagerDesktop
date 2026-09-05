@@ -10,6 +10,22 @@ namespace MovieManagerDesktop.Views
         public SplashWindow()
         {
             InitializeComponent();
+
+            // Responsive sizing for 720p and smaller screens
+            double workH = SystemParameters.WorkArea.Height;
+            double workW = SystemParameters.WorkArea.Width;
+            if (workH < 620 || workW < 960)
+            {
+                double scale = Math.Min((workH * 0.88) / 520.0, (workW * 0.90) / 860.0);
+                scale = Math.Clamp(scale, 0.70, 0.95);
+                this.Width = 860 * scale;
+                this.Height = 520 * scale;
+                if (this.Content is FrameworkElement root)
+                {
+                    root.LayoutTransform = new System.Windows.Media.ScaleTransform(scale, scale);
+                }
+            }
+
             Loaded += SplashWindow_Loaded;
         }
 

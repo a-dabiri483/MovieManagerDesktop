@@ -6,7 +6,7 @@
         xmlns:views="clr-namespace:MovieManagerDesktop.Views"
         xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
         Title="MovieManager" Height="820" Width="1280"
-        MinHeight="550" MinWidth="800"
+        MinHeight="450" MinWidth="700"
         WindowStyle="None" AllowsTransparency="False" Background="{DynamicResource MainBackground}"
         WindowStartupLocation="CenterScreen"
         FontFamily="{StaticResource AppFontFamily}"
@@ -18,7 +18,10 @@
         TextOptions.TextHintingMode="Fixed"
         RenderOptions.ClearTypeHint="Enabled"
         RenderOptions.BitmapScalingMode="HighQuality"
-        PreviewMouseLeftButtonDown="Window_PreviewMouseLeftButtonDown">
+        PreviewMouseLeftButtonDown="Window_PreviewMouseLeftButtonDown"
+        PreviewKeyDown="Window_PreviewKeyDown"
+        PreviewMouseWheel="Window_PreviewMouseWheel"
+        StateChanged="Window_StateChanged">
 
     <Window.DataContext>
         <viewmodels:MainViewModel />
@@ -215,8 +218,11 @@
     </Window.Resources>
 
     <materialDesign:DialogHost Identifier="RootDialog" DialogBackground="{DynamicResource MainBackground}">
-        <Border CornerRadius="20" ClipToBounds="True" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Background="{DynamicResource MainBackground}">
-            <Grid>
+        <Border x:Name="WindowRootBorder" CornerRadius="18" ClipToBounds="True" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Background="{DynamicResource MainBackground}">
+            <Grid x:Name="RootLayoutGrid">
+                <Grid.LayoutTransform>
+                    <ScaleTransform x:Name="MainUiScaleTransform" ScaleX="1.0" ScaleY="1.0"/>
+                </Grid.LayoutTransform>
                 <!-- TOP WINDOW DRAGGING BAR AND CONTROLS (Floating Minimal, LTR for standard Windows layout) -->
                 <Grid Panel.ZIndex="100" VerticalAlignment="Top" Height="40" WindowChrome.IsHitTestVisibleInChrome="True" Background="Transparent"
                       FlowDirection="LeftToRight"

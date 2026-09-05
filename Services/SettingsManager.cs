@@ -21,6 +21,7 @@ namespace MovieManagerDesktop.Services
         public int PosterSize { get; set; } = 220;
         public string Theme { get; set; } = "Cyan"; // Cyan, MidnightBlue, OLEDBlack
         public bool IsDarkTheme { get; set; } = true;
+        public double UiScaleFactor { get; set; } = 0.0; // 0 = Auto-detect based on monitor resolution
         public int MediaTypeFilterIndex { get; set; } = 0;
         public int WatchedFilterIndex { get; set; } = 0;
         public int ListFilterIndex { get; set; } = 0;
