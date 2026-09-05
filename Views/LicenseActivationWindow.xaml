@@ -3,19 +3,20 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="فعال‌سازی لایسنس MovieManager"
-        Width="640" Height="590"
+        Width="580" Height="520"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
+        FontFamily="{DynamicResource AppFontFamily}"
         FlowDirection="RightToLeft">
 
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </Window.Resources>
 
-    <!-- Outer Glassmorphic Border -->
-    <Border Background="#F2101222" CornerRadius="20" BorderBrush="#40EB3B5A" BorderThickness="1.5">
+    <!-- Outer Card Border (Matching App & Website Dark Theme) -->
+    <Border Background="#F70C0E1F" CornerRadius="20" BorderBrush="#252A54" BorderThickness="1.5">
         <Border.Effect>
             <DropShadowEffect BlurRadius="40" ShadowDepth="4" Color="Black" Opacity="0.85"/>
         </Border.Effect>
@@ -27,16 +28,18 @@
                 <RowDefinition Height="Auto"/> <!-- Footer -->
             </Grid.RowDefinitions>
 
-            <!-- Draggable Window Header with App Logo -->
-            <Border Grid.Row="0" Background="#161936" CornerRadius="19,19,0,0" Padding="20,13"
+            <!-- ======================================================== -->
+            <!-- 1. DRAGGABLE WINDOW HEADER -->
+            <!-- ======================================================== -->
+            <Border Grid.Row="0" Background="#141733" CornerRadius="19,19,0,0" Padding="20,13"
                     BorderBrush="#252A54" BorderThickness="0,0,0,1"
                     MouseLeftButtonDown="Header_MouseLeftButtonDown">
                 <Grid>
-                    <!-- Logo + Title -->
+                    <!-- App Logo + Title -->
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Image Source="pack://application:,,,/Assets/logo.png" Width="26" Height="26" 
                                RenderOptions.BitmapScalingMode="HighQuality" Margin="0,0,10,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="فعال‌سازی و مدیریت لایسنس MovieManager" FontSize="14.5" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                        <TextBlock Text="فعال‌سازی و مدیریت لایسنس MovieManager" FontSize="14" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
                     </StackPanel>
 
                     <!-- Close Button -->
@@ -48,100 +51,143 @@
                 </Grid>
             </Border>
 
-            <!-- Content Area -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="22,16,22,10">
+            <!-- ======================================================== -->
+            <!-- 2. SCROLLABLE CONTENT AREA -->
+            <!-- ======================================================== -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="22,18,22,12">
                 <StackPanel>
                     
-                    <!-- Hardware ID Card -->
-                    <Border Background="#161936" CornerRadius="14" Padding="16" Margin="0,0,0,14" BorderBrush="#2A2F5A" BorderThickness="1">
+                    <!-- Hardware ID (HWID) Card -->
+                    <Border Background="#141733" CornerRadius="14" Padding="16,14" Margin="0,0,0,16" BorderBrush="#252A54" BorderThickness="1">
                         <StackPanel>
-                            <TextBlock Text="شناسه سخت‌افزاری اختصاصی سیستم شما (HWID):" FontSize="12.5" Foreground="#94A3B8" Margin="0,0,0,8"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <materialDesign:PackIcon Kind="Laptop" Width="17" Height="17" Foreground="#38BDF8" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="شناسه سخت‌افزاری اختصاصی سیستم شما (HWID):" FontSize="12.5" FontWeight="SemiBold" Foreground="#94A3B8" VerticalAlignment="Center"/>
+                            </StackPanel>
+
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <Border Grid.Column="0" Background="#0E1022" CornerRadius="9" BorderBrush="#252A54" BorderThickness="1" Padding="10,6">
+                                <Border Grid.Column="0" Background="#0A0C1A" CornerRadius="10" BorderBrush="#252A54" BorderThickness="1" Padding="12,7">
                                     <TextBox x:Name="TxtHwid" IsReadOnly="True" Background="Transparent" Foreground="#38BDF8" 
                                              FontFamily="Consolas, Courier New" FontSize="13.5" FontWeight="Bold"
-                                             BorderThickness="0" VerticalAlignment="Center"/>
+                                             BorderThickness="0" VerticalAlignment="Center" FlowDirection="LeftToRight"/>
                                 </Border>
 
                                 <Button Grid.Column="1" Click="BtnCopyHwid_Click" Margin="8,0,0,0"
                                         Foreground="White" BorderThickness="0"
                                         Padding="14,0" Height="38" Cursor="Hand"
-                                        materialDesign:ButtonAssist.CornerRadius="9">
+                                        materialDesign:ButtonAssist.CornerRadius="10">
                                     <Button.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#3867D6" Offset="0"/>
-                                            <GradientStop Color="#4B7BEC" Offset="1"/>
+                                            <GradientStop Color="#2563EB" Offset="0"/>
+                                            <GradientStop Color="#38BDF8" Offset="1"/>
                                         </LinearGradientBrush>
                                     </Button.Background>
                                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                         <materialDesign:PackIcon Kind="ContentCopy" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                        <TextBlock x:Name="TxtCopyBtnLabel" Text="کپی" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"/>
+                                        <TextBlock x:Name="TxtCopyBtnLabel" Text="کپی" VerticalAlignment="Center" FontSize="12" FontWeight="Bold"/>
                                     </StackPanel>
                                 </Button>
                             </Grid>
-                            <TextBlock Text="🔒 لایسنس شما به صورت امن به این شناسه متصل شده و پس از ثبت، بدون نیاز به اینترنت نیز معتبر است." FontSize="11" Foreground="#64748B" Margin="0,7,0,0"/>
+                            <TextBlock Text="🔒 لایسنس شما مستقیماً به این شناسه متصل می‌شود و نیازی به وارد کردن هیچ کدی نیست." 
+                                       FontSize="11" Foreground="#64748B" Margin="0,8,0,0" LineHeight="16"/>
                         </StackPanel>
                     </Border>
 
-                    <!-- Active License Info Banner (Visible if already active) -->
-                    <Border x:Name="ActiveLicenseBanner" Background="#0D281E" CornerRadius="14" Padding="16" Margin="0,0,0,14" BorderBrush="#10B981" BorderThickness="1" Visibility="Collapsed">
+                    <!-- Active License Card (Visible if currently activated) -->
+                    <Border x:Name="ActiveLicenseCard" Background="#0A2219" CornerRadius="16" Padding="18,16" Margin="0,0,0,16" 
+                            BorderBrush="#10B981" BorderThickness="1.5" Visibility="Collapsed">
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                <materialDesign:PackIcon Kind="CheckDecagram" Foreground="#34D399" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock Text="نرم‌افزار فعال است (نسخه معتبر قانونی)" Foreground="#34D399" FontWeight="Bold" FontSize="13.5" VerticalAlignment="Center"/>
-                            </StackPanel>
-
-                            <Grid Margin="0,4,0,0">
+                            <!-- Header Status -->
+                            <Grid Margin="0,0,0,14">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0">
-                                    <TextBlock Text="نوع اشتراک:" FontSize="11.5" Foreground="#A7F3D0"/>
-                                    <TextBlock x:Name="TxtActivePlan" Text="اشتراک ۱ ساله" FontWeight="Bold" Foreground="White" FontSize="13" Margin="0,2,0,0"/>
+
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="CheckDecagram" Foreground="#34D399" Width="22" Height="22" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="نرم‌افزار فعال است (نسخه معتبر قانونی)" Foreground="#34D399" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <StackPanel Grid.Column="1">
-                                    <TextBlock Text="وضعیت اعتبار:" FontSize="11.5" Foreground="#A7F3D0"/>
-                                    <TextBlock x:Name="TxtActiveExpiry" Text="۳۶۵ روز باقیمانده" FontWeight="Bold" Foreground="White" FontSize="13" Margin="0,2,0,0"/>
-                                </StackPanel>
+
+                                <Border Grid.Column="1" Background="#134E39" CornerRadius="8" Padding="8,3" VerticalAlignment="Center">
+                                    <TextBlock Text="PRO" FontSize="11" FontWeight="Black" Foreground="#6EE7B7"/>
+                                </Border>
                             </Grid>
 
-                            <TextBlock x:Name="TxtActiveKeyMasked" Text="کلید فعال: MM-XXXX-****-****-XXXX" FontSize="11.5" Foreground="#6EE7B7" Margin="0,8,0,0" FontFamily="Consolas"/>
+                            <!-- Plan & Expiry Details -->
+                            <Grid Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="14"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
 
-                            <!-- Deactivate / Unlink Button -->
-                            <Button x:Name="BtnDeactivateLicense" Click="BtnDeactivateLicense_Click"
-                                    Margin="0,12,0,0" Height="32" Cursor="Hand"
-                                    Foreground="#F87171" Background="#261014" BorderBrush="#EF4444" BorderThickness="1"
-                                    materialDesign:ButtonAssist.CornerRadius="8" Padding="12,0">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="TrashCanOutline" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                    <TextBlock Text="غیرفعال‌سازی و خروج لایسنس از این سیستم" FontSize="11" FontWeight="Bold" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </Button>
+                                <!-- Box 1: Plan Title -->
+                                <Border Grid.Column="0" Background="#0E2D22" CornerRadius="10" Padding="12,10" BorderBrush="#155E44" BorderThickness="1">
+                                    <StackPanel>
+                                        <TextBlock Text="نوع اشتراک:" FontSize="11" Foreground="#A7F3D0"/>
+                                        <TextBlock x:Name="TxtActivePlan" Text="اشتراک فعال" FontWeight="Bold" Foreground="White" FontSize="13" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Box 2: Expiry / Days Remaining -->
+                                <Border Grid.Column="2" Background="#0E2D22" CornerRadius="10" Padding="12,10" BorderBrush="#155E44" BorderThickness="1">
+                                    <StackPanel>
+                                        <TextBlock Text="وضعیت اعتبار:" FontSize="11" Foreground="#A7F3D0"/>
+                                        <TextBlock x:Name="TxtActiveExpiry" Text="معتبر" FontWeight="Bold" Foreground="White" FontSize="13" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <!-- Actions Row: Sync Check & Deactivate -->
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="10"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Sync / Re-check Button -->
+                                <Button Grid.Column="0" Click="BtnCheckLicense_Click"
+                                        Height="36" Cursor="Hand"
+                                        Foreground="#A7F3D0" Background="#134E39" BorderBrush="#10B981" BorderThickness="1"
+                                        materialDesign:ButtonAssist.CornerRadius="9" Padding="10,0">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="Sync" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="بروزرسانی وضعیت لایسنس" FontSize="11.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- Deactivate / Unlink Button -->
+                                <Button Grid.Column="2" Click="BtnDeactivateLicense_Click"
+                                        Height="36" Cursor="Hand"
+                                        Foreground="#F87171" Background="#261014" BorderBrush="#DC2626" BorderThickness="1"
+                                        materialDesign:ButtonAssist.CornerRadius="9" Padding="10,0">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <materialDesign:PackIcon Kind="TrashCanOutline" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock Text="غیرفعال‌سازی در این سیستم" FontSize="11.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
                         </StackPanel>
                     </Border>
 
-                    <!-- License Key Input Card -->
-                    <Border Background="#161936" CornerRadius="14" Padding="16" Margin="0,0,0,14" BorderBrush="#2A2F5A" BorderThickness="1">
+                    <!-- Inactive State Card (Check License + Buy License) -->
+                    <Border x:Name="LicenseActionsCard" Background="#141733" CornerRadius="16" Padding="18,16" Margin="0,0,0,16" BorderBrush="#252A54" BorderThickness="1">
                         <StackPanel>
-                            <TextBlock Text="کلید لایسنس خریداری شده را وارد نمایید:" FontSize="13" FontWeight="SemiBold" Foreground="#F1F5F9" Margin="0,0,0,8"/>
-                            <Border Background="#0E1022" CornerRadius="9" BorderBrush="#8854D0" BorderThickness="1.5" Margin="0,0,0,14">
-                                <TextBox x:Name="TxtLicenseKey" Background="Transparent" Foreground="#FFFFFF"
-                                         FontFamily="Consolas, Courier New" FontSize="15" FontWeight="Bold"
-                                         CharacterCasing="Upper" BorderThickness="0"
-                                         Padding="12,10" TextAlignment="Center"
-                                         KeyDown="TxtLicenseKey_KeyDown"/>
-                            </Border>
+                            <TextBlock Text="پس از خرید اشتراک از سایت، روی دکمه زیر کلیک کنید تا لایسنس بر اساس شناسه سخت‌افزاری شما بلافاصله فعال شود:" 
+                                       FontSize="12" Foreground="#CBD5E1" Margin="0,0,0,14" LineHeight="20" TextWrapping="Wrap"/>
 
-                            <!-- Submit Button with App Gradient -->
-                            <Button x:Name="BtnActivate" Click="BtnActivate_Click"
+                            <!-- Primary Action: Check & Activate License -->
+                            <Button x:Name="BtnCheckLicense" Click="BtnCheckLicense_Click"
                                     Foreground="White" BorderThickness="0"
-                                    Height="44" Cursor="Hand" FontWeight="Bold" FontSize="13.5"
+                                    Height="46" Cursor="Hand" FontWeight="Bold" FontSize="13.5"
+                                    Margin="0,0,0,10"
                                     materialDesign:ButtonAssist.CornerRadius="12">
                                 <Button.Background>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -150,51 +196,56 @@
                                     </LinearGradientBrush>
                                 </Button.Background>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="KeyChain" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock x:Name="TxtActivateBtnText" Text="تایید و فعال‌سازی آنلاین لایسنس" VerticalAlignment="Center"/>
+                                    <materialDesign:PackIcon x:Name="IconCheckBtn" Kind="ShieldCheckOutline" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock x:Name="TxtCheckBtnText" Text="بررسی و فعال‌سازی لایسنس" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Secondary Action: Buy License -->
+                            <Button x:Name="BtnBuyLicenseMain" Click="BtnBuyLicense_Click"
+                                    Background="#18F59E0B" BorderBrush="#F59E0B" BorderThickness="1.2" 
+                                    Foreground="#FBBF24" Cursor="Hand" Height="42"
+                                    materialDesign:ButtonAssist.CornerRadius="12">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="CartOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="خرید لایسنس از وب‌سایت (تحویل آنی)" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>
                     </Border>
 
                     <!-- Feedback Alert (Error or Success) -->
-                    <Border x:Name="FeedbackBox" CornerRadius="10" Padding="12,8" Margin="0,0,0,10" Visibility="Collapsed">
+                    <Border x:Name="FeedbackBox" CornerRadius="10" Padding="14,11" Margin="0,0,0,12" Visibility="Collapsed">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <materialDesign:PackIcon x:Name="FeedbackIcon" Kind="AlertCircle" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                            <TextBlock x:Name="TxtFeedbackMessage" Text="پیام نتیجه" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                            <materialDesign:PackIcon x:Name="FeedbackIcon" Kind="AlertCircle" Width="19" Height="19" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock x:Name="TxtFeedbackMessage" Text="پیام نتیجه" FontSize="12.5" FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
 
                 </StackPanel>
             </ScrollViewer>
 
-            <!-- Footer: Quick Links to Buy and Support -->
-            <Border Grid.Row="2" Background="#0E1022" CornerRadius="0,0,19,19" Padding="20,12" BorderBrush="#252A54" BorderThickness="0,1,0,0">
+            <!-- ======================================================== -->
+            <!-- 3. FOOTER: CENTERED SUPPORT & CLOSE -->
+            <!-- ======================================================== -->
+            <Border Grid.Row="2" Background="#0A0C1A" CornerRadius="0,0,19,19" Padding="20,12" BorderBrush="#252A54" BorderThickness="0,1,0,0">
                 <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
+                    <!-- Centered Support Button -->
+                    <Button HorizontalAlignment="Center" Click="BtnSupport_Click" 
+                            Background="#18818CF8" BorderBrush="#40818CF8" BorderThickness="1" 
+                            Foreground="#A5B4FC" Cursor="Hand" Padding="18,6" Height="36"
+                            materialDesign:ButtonAssist.CornerRadius="10">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="Headset" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                            <TextBlock Text="پشتیبانی و ثبت تیکت" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
 
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Click="BtnBuyLicense_Click" Background="Transparent" BorderThickness="0" Foreground="#FBBF24" Cursor="Hand" Padding="0" Margin="0,0,18,0">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="CartOutline" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBlock Text="خرید لایسنس از سایت 💳" FontSize="12" FontWeight="SemiBold" TextDecorations="Underline"/>
-                            </StackPanel>
-                        </Button>
-
-                        <Button Click="BtnSupport_Click" Background="Transparent" BorderThickness="0" Foreground="#A5B4FC" Cursor="Hand" Padding="0">
-                            <StackPanel Orientation="Horizontal">
-                                <materialDesign:PackIcon Kind="Headset" Width="16" Height="16" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBlock Text="پشتیبانی و ثبت تیکت 🎧" FontSize="12" TextDecorations="Underline"/>
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
-
-                    <Button Grid.Column="1" Click="BtnClose_Click" Background="#1F2347" Foreground="#CBD5E1" BorderThickness="0" 
-                            Padding="16,4" Height="30" Cursor="Hand" materialDesign:ButtonAssist.CornerRadius="8">
-                        <TextBlock Text="بستن" FontSize="11.5"/>
+                    <!-- Close Button (Left side in RTL) -->
+                    <Button HorizontalAlignment="Left" Click="BtnClose_Click" 
+                            Background="#1A1E3D" Foreground="#CBD5E1" BorderThickness="0" 
+                            Padding="16,5" Height="34" Cursor="Hand" materialDesign:ButtonAssist.CornerRadius="8">
+                        <TextBlock Text="بستن" FontSize="12" FontWeight="Bold"/>
                     </Button>
                 </Grid>
             </Border>

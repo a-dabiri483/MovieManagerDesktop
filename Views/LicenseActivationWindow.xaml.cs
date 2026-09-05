@@ -11,16 +11,26 @@ namespace MovieManagerDesktop.Views
 {
     public partial class LicenseActivationWindow : Window
     {
+        private bool _isChecking = false;
+
         public LicenseActivationWindow()
         {
             InitializeComponent();
             Loaded += LicenseActivationWindow_Loaded;
         }
 
-        private void LicenseActivationWindow_Loaded(object sender, RoutedEventArgs e)
+        private async void LicenseActivationWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            TxtHwid.Text = HardwareIdService.GetHardwareId();
+            string hwid = HardwareIdService.GetHardwareId();
+            TxtHwid.Text = hwid;
             RefreshLicenseUi();
+
+            // Auto-check on open if not currently activated (in case user just paid on website)
+            var lic = LicenseManagerService.GetCurrentLicense();
+            if (!lic.IsActivated || !lic.IsValid)
+            {
+                await PerformCheckLicenseAsync(silent: true);
+            }
         }
 
         private void RefreshLicenseUi()
@@ -28,8 +38,10 @@ namespace MovieManagerDesktop.Views
             var lic = LicenseManagerService.GetCurrentLicense();
             if (lic.IsActivated && lic.IsValid)
             {
-                ActiveLicenseBanner.Visibility = Visibility.Visible;
-                TxtActivePlan.Text = lic.PlanTitle;
+                ActiveLicenseCard.Visibility = Visibility.Visible;
+                LicenseActionsCard.Visibility = Visibility.Collapsed;
+
+                TxtActivePlan.Text = !string.IsNullOrWhiteSpace(lic.PlanTitle) ? lic.PlanTitle : "اشتراک فعال MovieManager";
                 if (lic.IsLifetime)
                 {
                     TxtActiveExpiry.Text = "مادام‌العمر (بدون انقضا)";
@@ -41,14 +53,13 @@ namespace MovieManagerDesktop.Views
                 }
                 else
                 {
-                    TxtActiveExpiry.Text = "فعال";
+                    TxtActiveExpiry.Text = "فعال و معتبر ✓";
                 }
-
-                TxtActiveKeyMasked.Text = $"کلید فعال: {lic.MaskedLicenseKey}";
             }
             else
             {
-                ActiveLicenseBanner.Visibility = Visibility.Collapsed;
+                ActiveLicenseCard.Visibility = Visibility.Collapsed;
+                LicenseActionsCard.Visibility = Visibility.Visible;
             }
         }
 
@@ -77,41 +88,52 @@ namespace MovieManagerDesktop.Views
             catch { }
         }
 
-        private void TxtLicenseKey_KeyDown(object sender, KeyEventArgs e)
+        private async void BtnCheckLicense_Click(object sender, RoutedEventArgs e)
         {
-            if (e.Key == Key.Enter)
-            {
-                BtnActivate_Click(sender, e);
-            }
+            await PerformCheckLicenseAsync(silent: false);
         }
 
-        private async void BtnActivate_Click(object sender, RoutedEventArgs e)
+        private async Task PerformCheckLicenseAsync(bool silent)
         {
-            string key = TxtLicenseKey.Text?.Trim() ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(key))
+            if (_isChecking) return;
+            _isChecking = true;
+
+            BtnCheckLicense.IsEnabled = false;
+            TxtCheckBtnText.Text = "در حال بررسی وضعیت لایسنس از سرور...";
+            IconCheckBtn.Kind = PackIconKind.Sync;
+            if (!silent) FeedbackBox.Visibility = Visibility.Collapsed;
+
+            try
             {
-                ShowFeedback("لطفاً کلید لایسنس خود را وارد نمایید.", false);
-                return;
+                var result = await LicenseManagerService.ActivateByHwidAsync();
+
+                if (result.Success)
+                {
+                    RefreshLicenseUi();
+                    ShowFeedback(result.Message, true);
+                    ToastService.Instance.ShowSuccess("لایسنس شما با موفقیت فعال و تایید شد.");
+                }
+                else
+                {
+                    if (!silent)
+                    {
+                        ShowFeedback(result.Message, false);
+                    }
+                }
             }
-
-            BtnActivate.IsEnabled = false;
-            TxtActivateBtnText.Text = "در حال برقراری ارتباط با سرور و فعال‌سازی...";
-            FeedbackBox.Visibility = Visibility.Collapsed;
-
-            var result = await LicenseManagerService.ActivateLicenseAsync(key);
-
-            BtnActivate.IsEnabled = true;
-            TxtActivateBtnText.Text = "تایید و فعال‌سازی آنلاین لایسنس";
-
-            if (result.Success)
+            catch (Exception ex)
             {
-                ShowFeedback(result.Message, true);
-                TxtLicenseKey.Text = string.Empty;
-                RefreshLicenseUi();
+                if (!silent)
+                {
+                    ShowFeedback($"خطا در ارتباط: {ex.Message}", false);
+                }
             }
-            else
+            finally
             {
-                ShowFeedback(result.Message, false);
+                _isChecking = false;
+                BtnCheckLicense.IsEnabled = true;
+                TxtCheckBtnText.Text = "بررسی و فعال‌سازی لایسنس";
+                IconCheckBtn.Kind = PackIconKind.ShieldCheckOutline;
             }
         }
 
@@ -144,9 +166,16 @@ namespace MovieManagerDesktop.Views
         {
             try
             {
+                string hwid = TxtHwid.Text?.Trim() ?? string.Empty;
+                string url = "https://moviemanager.ir/portal.html?redirect=buy";
+                if (!string.IsNullOrWhiteSpace(hwid))
+                {
+                    url += $"&hwid={Uri.EscapeDataString(hwid)}";
+                }
+
                 Process.Start(new ProcessStartInfo
                 {
-                    FileName = "https://moviemanager.ir/checkout.html",
+                    FileName = url,
                     UseShellExecute = true
                 });
             }
@@ -159,7 +188,7 @@ namespace MovieManagerDesktop.Views
         private void BtnDeactivateLicense_Click(object sender, RoutedEventArgs e)
         {
             var confirm = MessageBox.Show(
-                "آیا از غیرفعال‌سازی و حذف لایسنس از این سیستم اطمینان دارید؟\nپس از حذف، برنامه به نسخه رایگان برمی‌گردد.",
+                "آیا از غیرفعال‌سازی و حذف لایسنس از این سیستم اطمینان دارید؟\nپس از حذف، برنامه به نسخه محدود رایگان برمی‌گردد.",
                 "حذف لایسنس",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
@@ -169,7 +198,7 @@ namespace MovieManagerDesktop.Views
                 LicenseManagerService.DeactivateCurrentLicense();
                 RefreshLicenseUi();
                 ShowFeedback("لایسنس با موفقیت از این سیستم حذف و برنامه به حالت رایگان بازگردانده شد.", true);
-                ToastService.Instance.ShowSuccess("لایسنس با موفقیت از این سیستم حذف شد.");
+                ToastService.Instance.ShowSuccess("لایسنس از این سیستم حذف شد.");
             }
         }
 

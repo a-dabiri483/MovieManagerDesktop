@@ -21,6 +21,7 @@
   <Module file="$(InPath)\MovieManagerDesktop.dll">
     <SkipNamespace name="MovieManagerDesktop.Models" />
     <SkipNamespace name="MovieManagerDesktop.Data" />
+    <SkipNamespace name="MovieManagerDesktop.Services" />
   </Module>
 
 </Obfuscator>

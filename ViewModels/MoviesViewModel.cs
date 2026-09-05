@@ -172,6 +172,8 @@ namespace MovieManagerDesktop.ViewModels
             if (!_disableSaveSettings)
             {
                 var settings = SettingsManager.LoadSettings();
+                settings.MediaTypeFilterIndex = SelectedCategoryTabIndex;
+                settings.WatchedFilterIndex = SelectedWatchTabIndex;
                 settings.SortIndex = SortIndex;
                 settings.SortDirectionIndex = SortDirectionIndex;
                 settings.SelectedGenreIndex = SelectedGenreIndex;
@@ -266,6 +268,7 @@ namespace MovieManagerDesktop.ViewModels
 
         public MoviesViewModel()
         {
+            _disableSaveSettings = true;
             LoadSearchHistory();
             var settings = SettingsManager.LoadSettings();
             PosterSize = settings.PosterSize > 50 ? settings.PosterSize : 220;
@@ -273,6 +276,11 @@ namespace MovieManagerDesktop.ViewModels
             _sortIndex = settings.SortIndex;
             _sortDirectionIndex = settings.SortDirectionIndex;
             _selectedGenreIndex = settings.SelectedGenreIndex;
+            _selectedCategoryTabIndex = Math.Clamp(settings.MediaTypeFilterIndex, 0, 4);
+            _selectedWatchTabIndex = Math.Clamp(settings.WatchedFilterIndex, 0, 2);
+            _disableSaveSettings = false;
+
+            OnPropertyChanged(nameof(IsWatchSubFilterVisible));
             
             _ = LoadGenresAsync();
             _ = LoadMoviesAsync();

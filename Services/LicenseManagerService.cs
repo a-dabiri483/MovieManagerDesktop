@@ -94,6 +94,99 @@ namespace MovieManagerDesktop.Services
         }
 
         /// <summary>
+        /// Activates or verifies license directly by computer HWID without requiring the user to type a key.
+        /// </summary>
+        public static async Task<(bool Success, string Message, LicenseInfo? Info)> ActivateByHwidAsync()
+        {
+            string hwid = HardwareIdService.GetHardwareId();
+            string deviceName = $"{Environment.MachineName} ({Environment.OSVersion.VersionString})";
+
+            try
+            {
+                using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+                client.DefaultRequestHeaders.CacheControl = new System.Net.Http.Headers.CacheControlHeaderValue
+                {
+                    NoCache = true,
+                    NoStore = true
+                };
+
+                string jsonPayload = $"{{\"hwid\":\"{EscapeJson(hwid)}\",\"device_name\":\"{EscapeJson(deviceName)}\"}}";
+                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync($"{PrimaryApiUrl}?action=activate_by_hwid", content);
+                string jsonResp = await response.Content.ReadAsStringAsync();
+
+                if (string.IsNullOrWhiteSpace(jsonResp))
+                {
+                    return (false, "پاسخی از سرور دریافت نشد. لطفاً اتصال اینترنت خود را بررسی کنید.", null);
+                }
+
+                using var doc = JsonDocument.Parse(jsonResp);
+                var root = doc.RootElement;
+
+                bool success = root.TryGetProperty("success", out var sElem) && sElem.GetBoolean();
+                if (!success)
+                {
+                    string err = root.TryGetProperty("error", out var errElem) ? errElem.GetString() ?? "لایسنس فعالی برای این سیستم یافت نشد." : "لایسنس فعالی برای این سیستم یافت نشد.";
+                    return (false, err, null);
+                }
+
+                string key = root.TryGetProperty("license_key", out var kElem) ? kElem.GetString() ?? "" : "";
+                string planTitle = root.TryGetProperty("plan_title", out var pElem) ? pElem.GetString() ?? "اشتراک فعال" : "اشتراک فعال";
+                bool isLifetime = root.TryGetProperty("is_lifetime", out var lifeElem) && lifeElem.GetBoolean();
+                string token = root.TryGetProperty("token", out var tokElem) ? tokElem.GetString() ?? "" : "";
+
+                if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(key))
+                {
+                    return (false, "هیچ لایسنس فعالی برای شناسه سخت‌افزاری این سیستم یافت نشد. لطفاً از طریق دکمه «خرید لایسنس» اقدام نمایید.", null);
+                }
+
+                if (!VerifyOfflineToken(token, hwid, key))
+                {
+                    return (false, "توکن اعتبارسنجی لایسنس تایید نشد.", null);
+                }
+
+                DateTime? expiresAt = null;
+                if (!isLifetime && root.TryGetProperty("expires_at", out var expElem))
+                {
+                    string expStr = expElem.GetString() ?? "";
+                    if (DateTime.TryParse(expStr, out var parsedDate))
+                    {
+                        expiresAt = parsedDate;
+                    }
+                }
+
+                var newLicense = new LicenseInfo
+                {
+                    LicenseKey = key,
+                    PlanTitle = planTitle,
+                    IsLifetime = isLifetime,
+                    ExpiresAt = expiresAt,
+                    IsActivated = true,
+                    BoundHwid = hwid,
+                    OfflineToken = token,
+                    LastVerifiedAt = DateTime.Now
+                };
+
+                SaveLicenseToDisk(newLicense);
+
+                lock (_lock)
+                {
+                    _cachedLicense = newLicense;
+                }
+
+                LicenseStatusChanged?.Invoke(null, newLicense);
+
+                return (true, "لایسنس با موفقیت برای این سیستم فعال گردید! ✓", newLicense);
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Error("[LicenseManager] HWID activation failed", ex);
+                return (false, $"خطا در برقراری ارتباط با سرور: {ex.Message}", null);
+            }
+        }
+
+        /// <summary>
         /// Activates a license key with the server and binds it to this computer's HWID.
         /// </summary>
         public static async Task<(bool Success, string Message, LicenseInfo? Info)> ActivateLicenseAsync(string licenseKey)
@@ -116,14 +209,7 @@ namespace MovieManagerDesktop.Services
                     NoStore = true
                 };
 
-                var payload = new
-                {
-                    license_key = licenseKey,
-                    hwid = hwid,
-                    device_name = deviceName
-                };
-
-                string jsonPayload = JsonSerializer.Serialize(payload);
+                string jsonPayload = $"{{\"license_key\":\"{EscapeJson(licenseKey)}\",\"hwid\":\"{EscapeJson(hwid)}\",\"device_name\":\"{EscapeJson(deviceName)}\"}}";
                 var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
 
                 var response = await client.PostAsync($"{PrimaryApiUrl}?action=activate_license", content);
@@ -334,12 +420,19 @@ namespace MovieManagerDesktop.Services
             }
         }
 
+        private static string EscapeJson(string? s)
+        {
+            if (string.IsNullOrEmpty(s)) return string.Empty;
+            return s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "").Replace("\n", "");
+        }
+
         private static void SaveLicenseToDisk(LicenseInfo lic)
         {
             try
             {
                 string filePath = GetLicenseFilePath();
-                string json = JsonSerializer.Serialize(lic, new JsonSerializerOptions { WriteIndented = false });
+                string expiresVal = lic.ExpiresAt.HasValue ? $"\"{lic.ExpiresAt.Value:o}\"" : "null";
+                string json = $"{{\"LicenseKey\":\"{EscapeJson(lic.LicenseKey)}\",\"PlanTitle\":\"{EscapeJson(lic.PlanTitle)}\",\"ExpiresAt\":{expiresVal},\"IsLifetime\":{(lic.IsLifetime ? "true" : "false")},\"IsActivated\":{(lic.IsActivated ? "true" : "false")},\"BoundHwid\":\"{EscapeJson(lic.BoundHwid)}\",\"OfflineToken\":\"{EscapeJson(lic.OfflineToken)}\",\"LastVerifiedAt\":\"{lic.LastVerifiedAt:o}\",\"CustomerEmail\":\"{EscapeJson(lic.CustomerEmail)}\",\"CustomerPhone\":\"{EscapeJson(lic.CustomerPhone)}\"}}";
                 string? encrypted = CryptoUtils.Encrypt(json);
 
                 if (!string.IsNullOrEmpty(encrypted))
@@ -371,8 +464,32 @@ namespace MovieManagerDesktop.Services
                     return new LicenseInfo { IsActivated = false };
                 }
 
-                var lic = JsonSerializer.Deserialize<LicenseInfo>(json);
-                if (lic == null || !lic.IsActivated)
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                var lic = new LicenseInfo
+                {
+                    LicenseKey = root.TryGetProperty("LicenseKey", out var p1) ? p1.GetString() ?? "" : "",
+                    PlanTitle = root.TryGetProperty("PlanTitle", out var p2) ? p2.GetString() ?? "" : "",
+                    IsLifetime = root.TryGetProperty("IsLifetime", out var p3) && p3.GetBoolean(),
+                    IsActivated = root.TryGetProperty("IsActivated", out var p4) && p4.GetBoolean(),
+                    BoundHwid = root.TryGetProperty("BoundHwid", out var p5) ? p5.GetString() ?? "" : "",
+                    OfflineToken = root.TryGetProperty("OfflineToken", out var p6) ? p6.GetString() ?? "" : "",
+                    CustomerEmail = root.TryGetProperty("CustomerEmail", out var p7) ? p7.GetString() ?? "" : "",
+                    CustomerPhone = root.TryGetProperty("CustomerPhone", out var p8) ? p8.GetString() ?? "" : ""
+                };
+
+                if (root.TryGetProperty("ExpiresAt", out var pExp) && pExp.ValueKind != JsonValueKind.Null && pExp.TryGetDateTime(out var dtExp))
+                {
+                    lic.ExpiresAt = dtExp;
+                }
+
+                if (root.TryGetProperty("LastVerifiedAt", out var pVer) && pVer.ValueKind != JsonValueKind.Null && pVer.TryGetDateTime(out var dtVer))
+                {
+                    lic.LastVerifiedAt = dtVer;
+                }
+
+                if (!lic.IsActivated)
                 {
                     return new LicenseInfo { IsActivated = false };
                 }

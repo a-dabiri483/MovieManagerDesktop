@@ -130,6 +130,15 @@
                             ToolTip="افزودن/حذف از علاقه‌مندی‌ها" Margin="0,0,8,0">
                         <materialDesign:PackIcon Kind="{Binding FavoriteIconKind}" Width="22" Height="22" Foreground="{Binding FavoriteIconColor}"/>
                     </Button>
+
+                    <!-- Watched Toggle Button -->
+                    <Button Command="{Binding ToggleWatchedCommand}" 
+                            Background="{DynamicResource CardBackground}" BorderThickness="1" BorderBrush="{DynamicResource NormalBorder}"
+                            Foreground="{DynamicResource PrimaryText}" Width="44" Height="44" Padding="0"
+                            materialDesign:ButtonAssist.CornerRadius="22"
+                            ToolTip="علامت‌گذاری به عنوان دیده شده / دیده نشده" Margin="0,0,8,0">
+                        <materialDesign:PackIcon Kind="{Binding WatchedIconKind}" Width="22" Height="22" Foreground="{Binding WatchedIconColor}"/>
+                    </Button>
                     
                     <!-- More Options (Three dots) -->
                     <materialDesign:PopupBox PlacementMode="BottomAndAlignRightEdges" StaysOpen="False">
@@ -394,24 +403,86 @@
                         <StackPanel Visibility="{Binding IsTabEpisodesSelected, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <!-- Movie Play Card (When Media is a Movie) -->
                             <Border Visibility="{Binding IsMovie, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                    Background="{DynamicResource CardBackground}" CornerRadius="12" Padding="16" Margin="0,0,0,16" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1">
-                                <DockPanel VerticalAlignment="Center">
-                                    <Button DockPanel.Dock="Left" Command="{Binding PlayMovieCommand}"
-                                            Height="40" Padding="20,0" Cursor="Hand"
-                                            materialDesign:ButtonAssist.CornerRadius="20"
-                                            Background="#EB3B5A" BorderThickness="0"
-                                            ToolTip="پخش کامل فیلم">
+                                    Background="{DynamicResource CardBackground}" CornerRadius="14" Padding="18,14" Margin="0,0,0,16" 
+                                    BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1">
+                                <Grid VerticalAlignment="Center">
+                                    <Grid.ColumnDefinitions>
+                                        <!-- Right in RTL (Col 0): Watched Checkbox + Label -->
+                                        <ColumnDefinition Width="Auto"/>
+                                        <!-- Middle in RTL (Col 1): Title and File Path -->
+                                        <ColumnDefinition Width="*"/>
+                                        <!-- Left in RTL (Col 2): Play Button -->
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Right in RTL: Checkbox for Watched Status -->
+                                    <Button Grid.Column="0" Command="{Binding ToggleWatchedCommand}"
+                                            Background="Transparent" BorderThickness="0" Padding="0" Margin="0,0,16,0" 
+                                            Cursor="Hand" VerticalAlignment="Center"
+                                            ToolTip="علامت‌گذاری به عنوان دیده شده / دیده نشده">
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <materialDesign:PackIcon Kind="Play" Width="18" Height="18" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                            <TextBlock Text="پخش فیلم" Foreground="White" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                                            <Border Width="26" Height="26" CornerRadius="6">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="Background" Value="#181E2E"/>
+                                                        <Setter Property="BorderBrush" Value="#475569"/>
+                                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsWatched}" Value="True">
+                                                                <Setter Property="Background" Value="#EB3B5A"/>
+                                                                <Setter Property="BorderBrush" Value="#EB3B5A"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <materialDesign:PackIcon Kind="Check" Width="18" Height="18" Foreground="White" 
+                                                                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                         Visibility="{Binding IsWatched, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                            </Border>
+                                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource SecondaryText}">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Text" Value="دیده نشده"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsWatched}" Value="True">
+                                                                <Setter Property="Text" Value="دیده شده"/>
+                                                                <Setter Property="Foreground" Value="#EB3B5A"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
                                         </StackPanel>
                                     </Button>
 
-                                    <StackPanel VerticalAlignment="Center">
+                                    <!-- Middle: Title & Separated File Path Box with generous margin -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="8,0,20,0">
                                         <TextBlock Text="{Binding Media.FormattedTitle}" Foreground="{DynamicResource PrimaryText}" FontSize="15" FontWeight="Bold"/>
-                                        <TextBlock Text="{Binding Media.FilePath}" Foreground="{DynamicResource SecondaryText}" FontSize="11" Margin="0,3,0,0" TextTrimming="CharacterEllipsis"/>
+                                        <Border Background="#14FFFFFF" CornerRadius="6" Padding="10,4" Margin="0,6,0,0" HorizontalAlignment="Left" MaxWidth="500">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="FileDocumentOutline" Width="14" Height="14" Foreground="#94A3B8" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                <TextBlock Text="{Binding Media.FilePath}" Foreground="#CBD5E1" FontSize="11" FontFamily="Consolas, Segoe UI" 
+                                                           TextTrimming="CharacterEllipsis" FlowDirection="LeftToRight" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
                                     </StackPanel>
-                                </DockPanel>
+
+                                    <!-- Left in RTL: Play Movie Button with breathing room -->
+                                    <Button Grid.Column="2" Command="{Binding PlayMovieCommand}"
+                                            Height="42" Padding="22,0" Cursor="Hand" Margin="10,0,0,0"
+                                            materialDesign:ButtonAssist.CornerRadius="21"
+                                            Background="#EB3B5A" BorderThickness="0"
+                                            ToolTip="پخش کامل فیلم">
+                                        <Button.Effect>
+                                            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.4" Color="#EB3B5A"/>
+                                        </Button.Effect>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="Play" Width="18" Height="18" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBlock Text="پخش فیلم" Foreground="White" FontWeight="Bold" FontSize="13.5" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Button>
+                                </Grid>
                             </Border>
 
                             <!-- Series Episodes Section (When Media is Series) -->

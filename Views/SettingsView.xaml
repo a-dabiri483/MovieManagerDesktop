@@ -99,6 +99,10 @@
             <!-- VIEW 1: MAIN SETTINGS MENU (صفحه اصلی تنظیمات - دسکتاپ چند ستونه) -->
             <!-- ================================================================= -->
             <Grid Visibility="{Binding IsMainView, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="20"/>
@@ -106,7 +110,7 @@
                 </Grid.ColumnDefinitions>
 
                 <!-- ================= LEFT COLUMN (عملیات و سرویس‌ها) ================= -->
-                <StackPanel Grid.Column="0">
+                <StackPanel Grid.Row="0" Grid.Column="0">
                     
                     <!-- Section: عملیات -->
                     <StackPanel Style="{StaticResource SettingsSectionHeader}">
@@ -202,7 +206,7 @@
                 </StackPanel>
 
                 <!-- ================= RIGHT COLUMN (شخصی‌سازی، آموزش و دیتابیس) ================= -->
-                <StackPanel Grid.Column="2">
+                <StackPanel Grid.Row="0" Grid.Column="2">
                     
                     <!-- Section: تنظیمات ظاهری و اطلاعات -->
                     <StackPanel Style="{StaticResource SettingsSectionHeader}">
@@ -264,35 +268,8 @@
                         </Button.Template>
                     </Button>
 
-                    <!-- Card 6: درباره -->
-                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
-                            Command="{Binding OpenAboutCommand}">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Style="{StaticResource SettingsActionCard}">
-                                    <Grid Background="Transparent">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <!-- Blue Icon -->
-                                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#253867D6" Margin="0,0,16,0">
-                                            <materialDesign:PackIcon Kind="InformationOutline" Width="26" Height="26" Foreground="{DynamicResource NetworkBlue}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                        </Border>
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="درباره نرم‌افزار" FontSize="15.5" FontWeight="Black" Foreground="White"/>
-                                            <TextBlock Text="نسخه ۲.۶.۰ پرو، مشخصات پلتفرم دسکتاپ و تیم توسعه" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
-                                        </StackPanel>
-                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
-                                    </Grid>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
-                    </Button>
-
                     <!-- Database Management Card -->
-                    <Border Style="{StaticResource SettingsGroupCard}" Margin="0,4,0,0">
+                    <Border Style="{StaticResource SettingsGroupCard}" Margin="0,0,0,12">
                         <StackPanel>
                             <Grid Margin="4,0,4,12">
                                 <Grid.ColumnDefinitions>
@@ -317,6 +294,36 @@
                     </Border>
 
                 </StackPanel>
+
+                <!-- ================= BOTTOM ROW (درباره نرم‌افزار - پایین وسط) ================= -->
+                <Grid Grid.Row="1" Grid.ColumnSpan="3" Margin="0,8,0,0">
+                    <Button Style="{x:Null}" Background="Transparent" Padding="0" BorderThickness="0" Cursor="Hand"
+                            Command="{Binding OpenAboutCommand}"
+                            HorizontalAlignment="Center" Width="560" MaxWidth="620">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Style="{StaticResource SettingsActionCard}">
+                                    <Grid Background="Transparent">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <!-- Cyan / Blue Icon -->
+                                        <Border Grid.Column="0" Width="48" Height="48" CornerRadius="16" Background="#2538BDF8" Margin="0,0,16,0">
+                                            <materialDesign:PackIcon Kind="InformationOutline" Width="26" Height="26" Foreground="#38BDF8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="درباره نرم‌افزار" FontSize="15.5" FontWeight="Black" Foreground="White"/>
+                                            <TextBlock Text="{Binding AboutCardSubtitle}" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                        <materialDesign:PackIcon Grid.Column="2" Kind="ChevronLeft" Width="24" Height="24" Foreground="{DynamicResource SecondaryText}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                    </Button>
+                </Grid>
             </Grid>
 
 
@@ -1114,7 +1121,7 @@
                         </Border>
 
                         <TextBlock Text="MovieManager Desktop" FontSize="24" FontWeight="Black" Foreground="White" HorizontalAlignment="Center"/>
-                        <TextBlock Text="نسخه ۲.۶.۰ (Professional Edition)" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" Margin="0,4,0,16"/>
+                        <TextBlock Text="{Binding AppVersionFullText}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" Margin="0,4,0,16"/>
 
                         <TextBlock Text="سامانه هوشمند و پیشرفته مدیریت، سازماندهی و تماشای آرشیو فیلم و سریال با معماری متریال ۳ نیتیو، هوش مصنوعی جستجو، سیستم ضد تحریم یکپارچه و پشتیبانی کامل از زبان فارسی و چینش راست‌چین (RTL)."
                                    FontSize="13" Foreground="#CBD5E1" LineHeight="24" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="600" Margin="0,0,0,24"/>

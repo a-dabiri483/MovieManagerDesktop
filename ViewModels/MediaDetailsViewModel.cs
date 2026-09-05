@@ -61,6 +61,15 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private bool _isWatched;
 
+        public string WatchedIconKind => IsWatched ? "EyeCheck" : "EyeOutline";
+        public string WatchedIconColor => IsWatched ? "#EB3B5A" : "#888888";
+
+        partial void OnIsWatchedChanged(bool value)
+        {
+            OnPropertyChanged(nameof(WatchedIconKind));
+            OnPropertyChanged(nameof(WatchedIconColor));
+        }
+
         [ObservableProperty]
         private bool _isMovie;
 
@@ -558,9 +567,35 @@ namespace MovieManagerDesktop.ViewModels
             foreach (var f in filesToUpdate)
             {
                 f.IsWatched = IsWatched;
+                if (IsWatched)
+                {
+                    f.WatchProgressPercent = 100;
+                }
+                else
+                {
+                    f.WatchProgressPercent = 0;
+                    f.WatchProgressSeconds = 0;
+                }
             }
             db.SaveChanges();
             Media.IsWatched = IsWatched;
+            Media.WatchProgressPercent = IsWatched ? 100 : 0;
+            if (!IsWatched)
+            {
+                Media.WatchProgressSeconds = 0;
+            }
+
+            // Broadcast message so library and all views update immediately
+            WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
+
+            if (IsWatched)
+            {
+                ToastService.Instance.ShowSuccess("به عنوان دیده شده علامت‌گذاری شد.");
+            }
+            else
+            {
+                ToastService.Instance.ShowInfo("علامت دیده شده برداشته شد.");
+            }
         }
 
 

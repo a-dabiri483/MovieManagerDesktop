@@ -455,8 +455,12 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private bool _isApiProxyEnabled;
 
+        public string AppVersion => UpdateManagerService.CurrentAppVersion;
+        public string AppVersionFullText => $"نسخه {UpdateManagerService.CurrentAppVersion} (Professional Edition)";
+        public string AboutCardSubtitle => $"نسخه {UpdateManagerService.CurrentAppVersion} پرو، مشخصات پلتفرم دسکتاپ و تیم توسعه";
+
         [ObservableProperty]
-        private string _databaseSizeText = "17 MB";
+        private string _databaseSizeText = "در حال محاسبه...";
 
         [ObservableProperty]
         private string _newTmdbKey = string.Empty;
@@ -1611,6 +1615,15 @@ namespace MovieManagerDesktop.ViewModels
                     db.TvSeasons.RemoveRange(db.TvSeasons);
                     await db.SaveChangesAsync();
 
+                    try
+                    {
+                        await db.Database.ExecuteSqlRawAsync("VACUUM;");
+                    }
+                    catch (Exception ex)
+                    {
+                        MovieManagerDesktop.Services.LoggerService.Warning($"Database VACUUM notice: {ex.Message}");
+                    }
+
                     CalculateDatabaseSize();
                     ToastService.Instance.ShowSuccess("اطلاعات دیتابیس با موفقیت پاکسازی شد.");
                     WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
@@ -1720,21 +1733,45 @@ namespace MovieManagerDesktop.ViewModels
         {
             try
             {
-                string dbPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "moviemanager.db");
+                string dbPath = AppDbContext.GetDatabasePath();
+                long totalBytes = 0;
+
                 if (File.Exists(dbPath))
                 {
-                    var info = new FileInfo(dbPath);
-                    double mb = (double)info.Length / (1024 * 1024);
-                    DatabaseSizeText = $"{Math.Max(1, Math.Round(mb, 1))} MB";
+                    totalBytes += new FileInfo(dbPath).Length;
+
+                    string walPath = dbPath + "-wal";
+                    if (File.Exists(walPath))
+                    {
+                        totalBytes += new FileInfo(walPath).Length;
+                    }
+
+                    string shmPath = dbPath + "-shm";
+                    if (File.Exists(shmPath))
+                    {
+                        totalBytes += new FileInfo(shmPath).Length;
+                    }
+                }
+
+                if (totalBytes <= 0)
+                {
+                    DatabaseSizeText = "۰ کیلوبایت";
+                }
+                else if (totalBytes < 1024 * 1024)
+                {
+                    double kb = (double)totalBytes / 1024.0;
+                    DatabaseSizeText = $"{Math.Round(kb, 0):N0} KB";
                 }
                 else
                 {
-                    DatabaseSizeText = "17 MB";
+                    double mb = (double)totalBytes / (1024.0 * 1024.0);
+                    DatabaseSizeText = $"{Math.Round(mb, 1)} MB";
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                DatabaseSizeText = "17 MB";
+                MovieManagerDesktop.Services.LoggerService.Warning($"Error calculating database size: {ex.Message}");
+                DatabaseSizeText = "۰ کیلوبایت";
             }
         }
 
