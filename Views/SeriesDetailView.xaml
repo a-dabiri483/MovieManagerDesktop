@@ -376,7 +376,13 @@
                                                     Margin="0,0,0,8" 
                                                     Padding="14,10" 
                                                     BorderThickness="1" 
-                                                    BorderBrush="{DynamicResource NormalBorder}">
+                                                    BorderBrush="{DynamicResource NormalBorder}"
+                                                    Cursor="Hand">
+                                                <Border.InputBindings>
+                                                    <MouseBinding MouseAction="LeftClick" 
+                                                                  Command="{Binding DataContext.PlayEpisodeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" 
+                                                                  CommandParameter="{Binding}"/>
+                                                </Border.InputBindings>
                                                 <DockPanel VerticalAlignment="Center">
                                                     <!-- Right in RTL: Checkbox for Watched Status -->
                                                     <Button DockPanel.Dock="Right" 

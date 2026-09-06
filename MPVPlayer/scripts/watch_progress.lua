@@ -79,8 +79,8 @@ local function save_progress(force_watched)
         is_watched = true
         if force_watched then
             percent = 100.0
-            if duration > 0 then time_pos = duration end
         end
+        time_pos = 0
     end
 
     local sync_paths = get_sync_paths()

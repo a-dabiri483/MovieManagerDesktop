@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.EntityFrameworkCore;
 using MovieManagerDesktop.Data;
 using MovieManagerDesktop.Messages;
 using MovieManagerDesktop.Models;
@@ -86,6 +87,14 @@ namespace MovieManagerDesktop.Services
 
             // Sync any prior offline progress before launching
             SyncOfflineProgress();
+
+            // Clean legacy records where watched episodes erroneously retained end-of-file WatchProgressSeconds
+            try
+            {
+                using var cleanupDb = new AppDbContext();
+                cleanupDb.Database.ExecuteSqlRaw("UPDATE VideoFiles SET WatchProgressSeconds = 0 WHERE IsWatched = 1 OR WatchProgressPercent >= 90;");
+            }
+            catch { }
 
             try
             {
@@ -224,9 +233,12 @@ namespace MovieManagerDesktop.Services
                             string epTitle = FormatMediaDisplayTitle(ep, file.FormattedTitle);
                             string cleanEpTitle = epTitle.Replace("\"", "\\\"");
 
-                            if (ep.WatchProgressSeconds > 5)
+                            bool shouldResume = !ep.IsWatched && ep.WatchProgressPercent < 90.0 && ep.WatchProgressSeconds > 5;
+                            long startSec = shouldResume ? ep.WatchProgressSeconds : 0;
+
+                            if (startSec > 5)
                             {
-                                args.Add($"--{{ --force-media-title=\"{cleanEpTitle}\" --start={ep.WatchProgressSeconds} \"{ep.FilePath}\" --}}");
+                                args.Add($"--{{ --force-media-title=\"{cleanEpTitle}\" --start={startSec} \"{ep.FilePath}\" --}}");
                             }
                             else
                             {
@@ -241,9 +253,12 @@ namespace MovieManagerDesktop.Services
                     string singleTitle = FormatMediaDisplayTitle(file);
                     string cleanSingleTitle = singleTitle.Replace("\"", "\\\"");
 
-                    if (file.WatchProgressSeconds > 5)
+                    bool shouldResume = !file.IsWatched && file.WatchProgressPercent < 90.0 && file.WatchProgressSeconds > 5;
+                    long startSec = shouldResume ? file.WatchProgressSeconds : 0;
+
+                    if (startSec > 5)
                     {
-                        args.Add($"--{{ --force-media-title=\"{cleanSingleTitle}\" --start={file.WatchProgressSeconds} \"{file.FilePath}\" --}}");
+                        args.Add($"--{{ --force-media-title=\"{cleanSingleTitle}\" --start={startSec} \"{file.FilePath}\" --}}");
                     }
                     else
                     {
@@ -432,8 +447,8 @@ namespace MovieManagerDesktop.Services
                         if (durationSeconds > 0)
                         {
                             dbItem.TotalDurationSeconds = durationSeconds;
-                            dbItem.WatchProgressSeconds = durationSeconds;
                         }
+                        dbItem.WatchProgressSeconds = 0;
                     }
                     else
                     {
@@ -456,7 +471,6 @@ namespace MovieManagerDesktop.Services
                 var dbItem = db.VideoFiles.Find(fileId);
                 if (dbItem != null)
                 {
-                    dbItem.WatchProgressSeconds = timePosSeconds;
                     bool becameWatched = false;
                     if (durationSeconds > 0)
                     {
@@ -468,6 +482,16 @@ namespace MovieManagerDesktop.Services
                             becameWatched = true;
                         }
                     }
+
+                    if (dbItem.IsWatched || dbItem.WatchProgressPercent >= 90.0)
+                    {
+                        dbItem.WatchProgressSeconds = 0;
+                    }
+                    else
+                    {
+                        dbItem.WatchProgressSeconds = timePosSeconds;
+                    }
+
                     dbItem.LastPlayedAt = DateTime.Now;
                     db.SaveChanges();
 
@@ -529,16 +553,23 @@ namespace MovieManagerDesktop.Services
                                     if (duration > 0)
                                     {
                                         dbItem.TotalDurationSeconds = duration;
-                                        dbItem.WatchProgressSeconds = duration;
                                     }
+                                    dbItem.WatchProgressSeconds = 0;
                                     updated = true;
                                 }
                                 else if (!dbItem.IsWatched && timePos > dbItem.WatchProgressSeconds)
                                 {
-                                    dbItem.WatchProgressSeconds = timePos;
                                     if (duration > 0) dbItem.TotalDurationSeconds = duration;
                                     if (percent > 0) dbItem.WatchProgressPercent = percent;
-                                    if (dbItem.WatchProgressPercent >= 85.0) dbItem.IsWatched = true;
+                                    if (dbItem.WatchProgressPercent >= 85.0)
+                                    {
+                                        dbItem.IsWatched = true;
+                                        dbItem.WatchProgressSeconds = 0;
+                                    }
+                                    else
+                                    {
+                                        dbItem.WatchProgressSeconds = timePos;
+                                    }
                                     updated = true;
                                 }
 
