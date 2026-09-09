@@ -332,23 +332,20 @@ namespace MovieManagerDesktop.ViewModels
             catch { }
         }
 
+        private long _loadGeneration = 0;
         private System.Threading.CancellationTokenSource? _activeLoadCts;
-        private volatile bool _hasPendingReload = false;
 
         public async Task LoadMoviesAsync()
         {
-            if (IsLoading)
-            {
-                _hasPendingReload = true;
-                _activeLoadCts?.Cancel();
-                return;
-            }
+            long currentGen = System.Threading.Interlocked.Increment(ref _loadGeneration);
+
+            _activeLoadCts?.Cancel();
+            var cts = new System.Threading.CancellationTokenSource();
+            _activeLoadCts = cts;
+            var cancellationToken = cts.Token;
 
             IsLoading = true;
-            _hasPendingReload = false;
-            _activeLoadCts = new System.Threading.CancellationTokenSource();
-            var cancellationToken = _activeLoadCts.Token;
-            
+
             try
             {
                 var (grouped, allCnt, movCnt, serCnt, favCnt, tagsList) = await Task.Run(() =>
@@ -478,6 +475,12 @@ namespace MovieManagerDesktop.ViewModels
                     return (resultList.ToList(), cAll, cMov, cSer, cFav, tagsWithCounts);
                 }, cancellationToken);
 
+                // Discard stale results if a newer load was requested or cancellation was triggered
+                if (currentGen != System.Threading.Volatile.Read(ref _loadGeneration) || cancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
                 AllCount = allCnt;
                 MoviesCount = movCnt;
                 SeriesCount = serCnt;
@@ -503,13 +506,11 @@ namespace MovieManagerDesktop.ViewModels
             }
             finally
             {
-                HasNoMovies = (SelectedCategoryTabIndex == 4 && SelectedCustomTag == null) ? CustomTags.Count == 0 : Movies.Count == 0;
-                IsLoading = false;
-
-                if (_hasPendingReload)
+                // Only turn off IsLoading if this is still the active generation
+                if (currentGen == System.Threading.Volatile.Read(ref _loadGeneration))
                 {
-                    _hasPendingReload = false;
-                    _ = LoadMoviesAsync();
+                    HasNoMovies = (SelectedCategoryTabIndex == 4 && SelectedCustomTag == null) ? CustomTags.Count == 0 : Movies.Count == 0;
+                    IsLoading = false;
                 }
             }
         }
