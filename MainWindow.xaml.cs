@@ -131,13 +131,16 @@ namespace MovieManagerDesktop
             }
         }
 
+        private bool _isShuttingDown = false;
+
         private async void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
-            if (this.Visibility == Visibility.Collapsed) return;
+            if (_isShuttingDown) return;
 
             if (MovieManagerDesktop.Services.BackupManager.IsBackupNeeded())
             {
                 e.Cancel = true;
+                _isShuttingDown = true;
 
                 // Show a beautiful modern dialog
                 var border = new System.Windows.Controls.Border
@@ -205,16 +208,17 @@ namespace MovieManagerDesktop
                     var delayTask = Task.Delay(2000); // Minimum 2 seconds delay to ensure the beautiful UI is seen
                     await Task.WhenAll(backupTask, delayTask);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    MovieManagerDesktop.Services.LoggerService.Error("Failed to complete backup during shutdown", ex);
+                }
 
-                this.Visibility = Visibility.Collapsed;
-                Environment.Exit(0);
-            }
-            else
-            {
-                // No backup needed, exit normally
-                this.Visibility = Visibility.Collapsed;
-                Environment.Exit(0);
+                Dispatcher.Invoke(() =>
+                {
+                    this.Closing -= MainWindow_Closing;
+                    this.Close();
+                    Application.Current.Shutdown();
+                });
             }
         }
 

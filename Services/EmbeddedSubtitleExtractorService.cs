@@ -33,9 +33,9 @@ namespace MovieManagerDesktop.Services
             {
                 Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ffmpeg.exe"),
                 Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "bin", "ffmpeg.exe"),
-                @"C:\Users\ALI\CascadeProjects\MovieManagerDesktop\ffmpeg7.1_extracted\ffmpeg-n7.1-latest-win64-gpl-shared-7.1\bin\ffmpeg.exe",
-                @"C:\Users\ALI\CascadeProjects\MovieManagerDesktop\ffmpeg_extracted\ffmpeg-master-latest-win64-gpl-shared\bin\ffmpeg.exe",
-                @"C:\Users\ALI\CascadeProjects\MovieManager\ffmpeg_folder\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe"
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MPVPlayer", "ffmpeg.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "MovieManager", "ffmpeg.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "ffmpeg", "bin", "ffmpeg.exe")
             };
 
             foreach (var p in possiblePaths)

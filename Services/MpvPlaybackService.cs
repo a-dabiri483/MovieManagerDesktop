@@ -25,9 +25,10 @@ namespace MovieManagerDesktop.Services
             string[] candidatePaths = new[]
             {
                 Path.Combine(baseDir, "MPVPlayer", "mpv.exe"),
+                Path.Combine(baseDir, "mpv.exe"),
                 Path.Combine(projectRoot, "MPVPlayer", "mpv.exe"),
-                @"C:\Users\ALI\CascadeProjects\MovieManagerDesktop\MPVPlayer\mpv.exe",
-                @"C:\Users\ALI\Downloads\MPV-EASY Player V0.41.0.5\mpv\mpv.exe"
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "MovieManager", "MPVPlayer", "mpv.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "MovieManager", "MPVPlayer", "mpv.exe")
             };
 
             foreach (var path in candidatePaths)
@@ -88,13 +89,12 @@ namespace MovieManagerDesktop.Services
             // Sync any prior offline progress before launching
             SyncOfflineProgress();
 
-            // Clean legacy records where watched episodes erroneously retained end-of-file WatchProgressSeconds
-            try
+            // If the specific file was already watched and finished, reset its position for fresh replay
+            if (file.IsWatched && file.WatchProgressPercent >= 95)
             {
-                using var cleanupDb = new AppDbContext();
-                cleanupDb.Database.ExecuteSqlRaw("UPDATE VideoFiles SET WatchProgressSeconds = 0 WHERE IsWatched = 1 OR WatchProgressPercent >= 90;");
+                file.WatchProgressSeconds = 0;
+                file.WatchProgressPercent = 0;
             }
-            catch { }
 
             try
             {
@@ -189,11 +189,15 @@ namespace MovieManagerDesktop.Services
                 var args = new List<string>();
                 string mpvDir = Path.GetDirectoryName(mpvExe)!;
 
-                // Restore permanent window state and subtitle style if exist in AppData
                 try
                 {
-                    var appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManagerDesktop");
+                    var appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManager");
                     var appDataWindowConf = Path.Combine(appData, "window_state.conf");
+                    if (!File.Exists(appDataWindowConf))
+                    {
+                        var legacy = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManagerDesktop", "window_state.conf");
+                        if (File.Exists(legacy)) appDataWindowConf = legacy;
+                    }
                     var mpvWindowConfPath = Path.Combine(mpvDir, "window_state.conf");
                     if (File.Exists(appDataWindowConf))
                     {
@@ -201,6 +205,11 @@ namespace MovieManagerDesktop.Services
                     }
 
                     var appDataSubConf = Path.Combine(appData, "sub_style.conf");
+                    if (!File.Exists(appDataSubConf))
+                    {
+                        var legacySub = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManagerDesktop", "sub_style.conf");
+                        if (File.Exists(legacySub)) appDataSubConf = legacySub;
+                    }
                     var mpvSubConfPath = Path.Combine(mpvDir, "sub_style.conf");
                     if (File.Exists(appDataSubConf))
                     {

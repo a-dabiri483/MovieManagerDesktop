@@ -115,7 +115,7 @@ namespace MovieManagerDesktop.ViewModels
         private readonly HttpClient _httpClient;
         private static readonly string CacheFolder = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "CineTrackManager", "CinemaHubCache");
+            "MovieManager", "CinemaHubCache");
         private CinemaHubCacheMeta _meta = new();
 
         public CinemaHubViewModel(int initialTab = 0)
@@ -168,6 +168,14 @@ namespace MovieManagerDesktop.ViewModels
         {
             try
             {
+                var legacyFolder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "CineTrackManager", "CinemaHubCache");
+                if (!Directory.Exists(CacheFolder) && Directory.Exists(legacyFolder))
+                {
+                    try { Directory.Move(legacyFolder, CacheFolder); } catch { }
+                }
+
                 Directory.CreateDirectory(CacheFolder);
                 string metaFile = Path.Combine(CacheFolder, "cache_meta.json");
                 if (File.Exists(metaFile))

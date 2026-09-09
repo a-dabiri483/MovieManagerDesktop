@@ -12,7 +12,7 @@ namespace MovieManagerDesktop.Services
         {
             try
             {
-                var appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManagerDesktop");
+                var appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManager");
                 if (!Directory.Exists(appData))
                 {
                     Directory.CreateDirectory(appData);
@@ -25,6 +25,13 @@ namespace MovieManagerDesktop.Services
                 }
                 
                 LogFilePath = Path.Combine(logDir, "app.log");
+
+                // Legacy migration
+                var legacyLog = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManagerDesktop", "Logs", "app.log");
+                if (!File.Exists(LogFilePath) && File.Exists(legacyLog))
+                {
+                    try { File.Copy(legacyLog, LogFilePath, true); } catch { }
+                }
             }
             catch
             {

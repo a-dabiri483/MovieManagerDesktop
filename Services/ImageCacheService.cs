@@ -17,8 +17,14 @@ namespace MovieManagerDesktop.Services
         static ImageCacheService()
         {
             var appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            CacheDirectory = Path.Combine(appData, "CineTrackManager", "ImageCache");
+            CacheDirectory = Path.Combine(appData, "MovieManager", "ImageCache");
             
+            var legacyCacheDir = Path.Combine(appData, "CineTrackManager", "ImageCache");
+            if (!Directory.Exists(CacheDirectory) && Directory.Exists(legacyCacheDir))
+            {
+                try { Directory.Move(legacyCacheDir, CacheDirectory); } catch { }
+            }
+
             if (!Directory.Exists(CacheDirectory))
             {
                 Directory.CreateDirectory(CacheDirectory);

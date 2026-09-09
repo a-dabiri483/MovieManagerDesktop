@@ -43,10 +43,16 @@ namespace MovieManagerDesktop.Services
 
         public IdentifyMediaService()
         {
-            
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            _imagesDirectory = Path.Combine(appData, "MovieManager", "Images");
 
-            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            _imagesDirectory = Path.Combine(appData, "CineTrack", "Images");
+            // Migration from legacy CineTrack folder
+            string legacyDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CineTrack", "Images");
+            if (!Directory.Exists(_imagesDirectory) && Directory.Exists(legacyDir))
+            {
+                try { Directory.Move(legacyDir, _imagesDirectory); } catch { }
+            }
+
             if (!Directory.Exists(_imagesDirectory))
             {
                 Directory.CreateDirectory(_imagesDirectory);
@@ -138,45 +144,6 @@ namespace MovieManagerDesktop.Services
                     MediaType = "Anime"
                 });
             }
-            return results;
-        }
-
-        private async Task<List<TmdbSearchResult>> SearchFmDbAsync(string query)
-        {
-            var results = new List<TmdbSearchResult>();
-            if (string.IsNullOrWhiteSpace(query)) return results;
-            try
-            {
-                string url = $"https://imdb.iamidiotareyoutoo.com/search?q={Uri.EscapeDataString(query)}";
-                LoggerService.Info($"[موتور جستجو - دستی] ارسال درخواست به FM_DB: {url}");
-                var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
-                if (response.IsSuccessStatusCode)
-                {
-                    var json = await response.Content.ReadAsStringAsync();
-                    var fmdbResponse = JsonSerializer.Deserialize<FmDbResponse>(json);
-                    if (fmdbResponse != null && fmdbResponse.Ok && fmdbResponse.Description != null)
-                    {
-                        foreach (var item in fmdbResponse.Description)
-                        {
-                            int tmdbId = 0;
-                            if (!string.IsNullOrWhiteSpace(item.ImdbId))
-                            {
-                                int? realTmdbId = await GetTmdbIdFromImdbIdAsync(item.ImdbId);
-                                if (realTmdbId.HasValue) tmdbId = realTmdbId.Value;
-                            }
-                            results.Add(new TmdbSearchResult
-                            {
-                                Id = tmdbId,
-                                Title = item.Title ?? "",
-                                ReleaseYear = item.Year?.ToString() ?? "",
-                                PosterUrl = item.ImgPoster ?? "",
-                                MediaType = "movie"
-                            });
-                        }
-                    }
-                }
-            }
-            catch { }
             return results;
         }
 

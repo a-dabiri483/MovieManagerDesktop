@@ -94,12 +94,14 @@ namespace MovieManagerDesktop.Views
         {
             try
             {
-                var appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManagerDesktop");
+                var appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManager");
                 var logFilePath = Path.Combine(appData, "Logs", "app.log");
 
                 if (!File.Exists(logFilePath))
                 {
-                    logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.log");
+                    var legacyPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManagerDesktop", "Logs", "app.log");
+                    if (File.Exists(legacyPath)) logFilePath = legacyPath;
+                    else logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.log");
                 }
 
                 _allRawLogs.Clear();

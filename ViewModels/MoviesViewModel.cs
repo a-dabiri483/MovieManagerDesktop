@@ -332,20 +332,34 @@ namespace MovieManagerDesktop.ViewModels
             catch { }
         }
 
+        private System.Threading.CancellationTokenSource? _activeLoadCts;
+        private volatile bool _hasPendingReload = false;
+
         public async Task LoadMoviesAsync()
         {
-            if (IsLoading) return;
+            if (IsLoading)
+            {
+                _hasPendingReload = true;
+                _activeLoadCts?.Cancel();
+                return;
+            }
+
             IsLoading = true;
+            _hasPendingReload = false;
+            _activeLoadCts = new System.Threading.CancellationTokenSource();
+            var cancellationToken = _activeLoadCts.Token;
             
             try
             {
                 var (grouped, allCnt, movCnt, serCnt, favCnt, tagsList) = await Task.Run(() =>
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     using var db = new AppDbContext();
-                    var allDbFiles = db.VideoFiles.ToList();
+                    var visibleDbFiles = ShowHiddenItems 
+                        ? db.VideoFiles.AsNoTracking().ToList() 
+                        : db.VideoFiles.AsNoTracking().Where(v => !v.IsHidden).ToList();
 
-                    // Total distinct items (Non-hidden by default, unless ShowHiddenItems is true)
-                    var visibleDbFiles = ShowHiddenItems ? allDbFiles : allDbFiles.Where(v => !v.IsHidden).ToList();
+                    cancellationToken.ThrowIfCancellationRequested();
 
                     var allDistinct = visibleDbFiles
                         .GroupBy(v => new { Title = (v.FormattedTitle ?? "ناشناس").ToLowerInvariant(), Type = v.MediaType })
@@ -372,13 +386,8 @@ namespace MovieManagerDesktop.ViewModels
                         .OrderBy(t => t.Name)
                         .ToList();
 
-                    var query = db.VideoFiles.AsQueryable();
-
-                    // Filter hidden items
-                    if (!ShowHiddenItems)
-                    {
-                        query = query.Where(v => !v.IsHidden);
-                    }
+                    // Filter directly in memory from visibleDbFiles without running a second full-table SQL query
+                    var filtered = visibleDbFiles.AsEnumerable();
 
                     // Search Filter
                     if (!string.IsNullOrWhiteSpace(SearchQuery))
@@ -391,7 +400,7 @@ namespace MovieManagerDesktop.ViewModels
                                 string term1 = term.Replace("ی", "ي").Replace("ک", "ك");
                                 string term2 = term.Replace("ي", "ی").Replace("ك", "ک");
                                 
-                                query = query.Where(v => 
+                                filtered = filtered.Where(v => 
                                     (v.FormattedTitle != null && (v.FormattedTitle.ToLower().Contains(term1) || v.FormattedTitle.ToLower().Contains(term2))) ||
                                     (v.CollectionName != null && (v.CollectionName.ToLower().Contains(term1) || v.CollectionName.ToLower().Contains(term2)))
                                 );
@@ -400,45 +409,45 @@ namespace MovieManagerDesktop.ViewModels
                     }
 
                     // Category Tab Filter
-                    if (SelectedCategoryTabIndex == 1) query = query.Where(v => v.MediaType == "Movie");
-                    else if (SelectedCategoryTabIndex == 2) query = query.Where(v => v.MediaType == "Series");
-                    else if (SelectedCategoryTabIndex == 3) query = query.Where(v => v.IsFavorite);
+                    if (SelectedCategoryTabIndex == 1) filtered = filtered.Where(v => v.MediaType == "Movie");
+                    else if (SelectedCategoryTabIndex == 2) filtered = filtered.Where(v => v.MediaType == "Series");
+                    else if (SelectedCategoryTabIndex == 3) filtered = filtered.Where(v => v.IsFavorite);
                     else if (SelectedCategoryTabIndex == 4 && !string.IsNullOrWhiteSpace(SelectedCustomTag))
                     {
-                        query = query.Where(v => v.CustomTags != null && v.CustomTags.Contains(SelectedCustomTag));
+                        filtered = filtered.Where(v => v.CustomTags != null && v.CustomTags.Contains(SelectedCustomTag));
                     }
 
                     // Watch Sub-Filter (0: All, 1: Watched, 2: Unwatched)
-                    if (SelectedWatchTabIndex == 1) query = query.Where(v => v.IsWatched);
-                    else if (SelectedWatchTabIndex == 2) query = query.Where(v => !v.IsWatched);
+                    if (SelectedWatchTabIndex == 1) filtered = filtered.Where(v => v.IsWatched);
+                    else if (SelectedWatchTabIndex == 2) filtered = filtered.Where(v => !v.IsWatched);
 
                     // Genre Dropdown Filter
                     string? selectedGenre = (SelectedGenreIndex > 0 && SelectedGenreIndex < Genres.Count) ? Genres[SelectedGenreIndex] : null;
 
-                    var allFiles = query.ToList();
-
                     if (!string.IsNullOrWhiteSpace(selectedGenre))
                     {
-                        allFiles = allFiles.Where(v => GenreTranslatorService.MatchesGenre(v.Genres, selectedGenre)).ToList();
+                        filtered = filtered.Where(v => GenreTranslatorService.MatchesGenre(v.Genres, selectedGenre));
                     }
 
                     if (!string.IsNullOrWhiteSpace(PersonFilterName))
                     {
-                        allFiles = allFiles.Where(v => 
+                        filtered = filtered.Where(v => 
                         {
                             var data = PersonFilterType == "Actor" ? v.Actors : v.Director;
                             if (string.IsNullOrWhiteSpace(data)) return false;
                             var parts = data.Split(new[] { ',', '،' }, StringSplitOptions.RemoveEmptyEntries).Select(p => p.Trim());
                             return parts.Any(p => p.Equals(PersonFilterName, StringComparison.OrdinalIgnoreCase));
-                        }).ToList();
+                        });
                     }
                     
                     if (!string.IsNullOrWhiteSpace(CollectionFilter))
                     {
-                        allFiles = allFiles.Where(v => v.CollectionName != null && v.CollectionName.Equals(CollectionFilter, StringComparison.OrdinalIgnoreCase)).ToList();
+                        filtered = filtered.Where(v => v.CollectionName != null && v.CollectionName.Equals(CollectionFilter, StringComparison.OrdinalIgnoreCase));
                     }
 
-                    var resultList = allFiles
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    var resultList = filtered
                         .GroupBy(v => new { Title = (v.FormattedTitle ?? "ناشناس").ToLowerInvariant(), Type = v.MediaType })
                         .Select(g => 
                         {
@@ -467,7 +476,7 @@ namespace MovieManagerDesktop.ViewModels
                         resultList = isAscending ? resultList.OrderBy(v => v.File.DateAdded) : resultList.OrderByDescending(v => v.File.DateAdded);
 
                     return (resultList.ToList(), cAll, cMov, cSer, cFav, tagsWithCounts);
-                });
+                }, cancellationToken);
 
                 AllCount = allCnt;
                 MoviesCount = movCnt;
@@ -487,11 +496,21 @@ namespace MovieManagerDesktop.ViewModels
                     Movies.Add(m);
                 }
             }
-            catch { }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                LoggerService.Error("Error loading movies", ex);
+            }
             finally
             {
                 HasNoMovies = (SelectedCategoryTabIndex == 4 && SelectedCustomTag == null) ? CustomTags.Count == 0 : Movies.Count == 0;
                 IsLoading = false;
+
+                if (_hasPendingReload)
+                {
+                    _hasPendingReload = false;
+                    _ = LoadMoviesAsync();
+                }
             }
         }
 

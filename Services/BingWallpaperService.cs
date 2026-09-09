@@ -16,7 +16,7 @@ namespace MovieManagerDesktop.Services
 
         private static string GetCacheDirectory()
         {
-            string appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManagerDesktop", "Cache");
+            string appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManager", "Cache");
             if (!Directory.Exists(appData))
             {
                 Directory.CreateDirectory(appData);

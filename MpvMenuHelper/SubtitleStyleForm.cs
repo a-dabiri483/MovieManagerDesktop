@@ -94,9 +94,12 @@ namespace MpvMenuHelper
 
         private string? GetConfigPath()
         {
-            var appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManagerDesktop");
+            var appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManager");
             var appDataConf = Path.Combine(appData, "sub_style.conf");
             if (File.Exists(appDataConf)) return appDataConf;
+
+            var legacyConf = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManagerDesktop", "sub_style.conf");
+            if (File.Exists(legacyConf)) return legacyConf;
 
             var localConf = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "sub_style.conf");
             if (File.Exists(localConf)) return localConf;
@@ -139,16 +142,23 @@ namespace MpvMenuHelper
                 string content = sb.ToString();
 
                 // 1. AppData
-                var appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManagerDesktop");
+                var appData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManager");
                 Directory.CreateDirectory(appData);
                 File.WriteAllText(Path.Combine(appData, "sub_style.conf"), content, Encoding.UTF8);
 
                 // 2. BaseDir
                 File.WriteAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "sub_style.conf"), content, Encoding.UTF8);
 
-                // 3. Project Source Dir if exists
-                string srcConf = @"c:\Users\ALI\CascadeProjects\MovieManagerDesktop\MPVPlayer\sub_style.conf";
-                try { File.WriteAllText(srcConf, content, Encoding.UTF8); } catch { }
+                // 3. MPVPlayer folder if exists
+                string mpvConf = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "MPVPlayer", "sub_style.conf");
+                try 
+                { 
+                    if (File.Exists(mpvConf) || Directory.Exists(Path.GetDirectoryName(mpvConf)))
+                    {
+                        File.WriteAllText(mpvConf, content, Encoding.UTF8); 
+                    }
+                } 
+                catch { }
             }
             catch { }
         }

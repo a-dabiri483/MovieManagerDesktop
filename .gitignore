@@ -53,3 +53,11 @@ MPVPlayer/*.runtimeconfig.json
 # OAuth credentials
 credentials.json
 setup_output/
+
+# Archive files & extracted tool bundles
+*.zip
+*.7z
+*.rar
+ffmpeg_extracted/
+ffmpeg7.1_extracted/
+ffmpeg_folder/

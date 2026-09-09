@@ -84,181 +84,209 @@ namespace MovieManagerDesktop.ViewModels
 
         public void LoadHomeDataDirect()
         {
+            _ = LoadHomeDataAsync();
+        }
+
+        public async Task LoadHomeDataAsync()
+        {
             try
             {
-                using var db = new AppDbContext();
-                if (!db.Database.CanConnect()) return;
-
-                var allFiles = db.VideoFiles.AsNoTracking().ToList();
-                int totalFilesCount = allFiles.Count;
-
-                var grouped = allFiles
-                    .GroupBy(v => new { Title = (v.FormattedTitle ?? "ناشناس").ToLowerInvariant(), Type = v.MediaType })
-                    .ToList();
-
-                int movies = grouped.Count(g => g.Key.Type == "Movie");
-                int series = grouped.Count(g => g.Key.Type == "Series");
-                int totalUnique = movies + series;
-
-                double moviePct = totalUnique > 0 ? Math.Round((double)movies / totalUnique * 100, 1) : 0;
-                double seriesPct = totalUnique > 0 ? Math.Round((double)series / totalUnique * 100, 1) : 0;
-
-                // Featured Random Media
-                var withBackdrop = allFiles.Where(f => !string.IsNullOrEmpty(f.BackdropUrl)).ToList();
-                var rand = new Random();
-                var featuredCandidate = (withBackdrop.Count > 0 ? withBackdrop[rand.Next(withBackdrop.Count)] : null)
-                    ?? allFiles.Where(f => !string.IsNullOrEmpty(f.PosterUrl)).OrderBy(_ => rand.Next()).FirstOrDefault()
-                    ?? allFiles.FirstOrDefault();
-
-                string featuredTitle = "";
-                string? featuredBackdrop = null;
-                string? featuredPoster = null;
-                string featuredGenres = "";
-                string featuredRating = "";
-                string featuredMediaType = "Movie";
-
-                if (featuredCandidate != null)
+                var result = await Task.Run(() =>
                 {
-                    featuredTitle = string.IsNullOrWhiteSpace(featuredCandidate.FormattedTitle) ? featuredCandidate.FileName : featuredCandidate.FormattedTitle;
-                    string? backdrop = featuredCandidate.BackdropUrl;
-                    if (!string.IsNullOrEmpty(backdrop))
+                    using var db = new AppDbContext();
+                    if (!db.Database.CanConnect()) return null;
+
+                    var allFiles = db.VideoFiles.AsNoTracking().ToList();
+                    int totalFilesCount = allFiles.Count;
+
+                    var grouped = allFiles
+                        .GroupBy(v => new { Title = (v.FormattedTitle ?? "ناشناس").ToLowerInvariant(), Type = v.MediaType })
+                        .ToList();
+
+                    int movies = grouped.Count(g => g.Key.Type == "Movie");
+                    int series = grouped.Count(g => g.Key.Type == "Series");
+                    int totalUnique = movies + series;
+
+                    double moviePct = totalUnique > 0 ? Math.Round((double)movies / totalUnique * 100, 1) : 0;
+                    double seriesPct = totalUnique > 0 ? Math.Round((double)series / totalUnique * 100, 1) : 0;
+
+                    // Featured Random Media
+                    var withBackdrop = allFiles.Where(f => !string.IsNullOrEmpty(f.BackdropUrl)).ToList();
+                    var rand = new Random();
+                    var featuredCandidate = (withBackdrop.Count > 0 ? withBackdrop[rand.Next(withBackdrop.Count)] : null)
+                        ?? allFiles.Where(f => !string.IsNullOrEmpty(f.PosterUrl)).OrderBy(_ => rand.Next()).FirstOrDefault()
+                        ?? allFiles.FirstOrDefault();
+
+                    string featuredTitle = "";
+                    string? featuredBackdrop = null;
+                    string? featuredPoster = null;
+                    string featuredGenres = "";
+                    string featuredRating = "";
+                    string featuredMediaType = "Movie";
+
+                    if (featuredCandidate != null)
                     {
-                        if (backdrop.Contains("/w500/")) backdrop = backdrop.Replace("/w500/", "/w1280/");
-                        else if (backdrop.Contains("/w300/")) backdrop = backdrop.Replace("/w300/", "/w1280/");
-                        else if (backdrop.Contains("/w780/")) backdrop = backdrop.Replace("/w780/", "/w1280/");
-                    }
-                    else
-                    {
-                        backdrop = featuredCandidate.PosterUrl;
+                        featuredTitle = string.IsNullOrWhiteSpace(featuredCandidate.FormattedTitle) ? featuredCandidate.FileName : featuredCandidate.FormattedTitle;
+                        string? backdrop = featuredCandidate.BackdropUrl;
                         if (!string.IsNullOrEmpty(backdrop))
                         {
                             if (backdrop.Contains("/w500/")) backdrop = backdrop.Replace("/w500/", "/w1280/");
-                            else if (backdrop.Contains("/w342/")) backdrop = backdrop.Replace("/w342/", "/w780/");
-                            else if (backdrop.Contains("/w185/")) backdrop = backdrop.Replace("/w185/", "/w500/");
-                        }
-                    }
-
-                    featuredBackdrop = backdrop;
-                    featuredPoster = featuredCandidate.PosterUrl;
-                    featuredGenres = !string.IsNullOrEmpty(featuredCandidate.Genres)
-                        ? GenreTranslatorService.TranslateList(featuredCandidate.Genres).Replace("،", " • ")
-                        : (featuredCandidate.MediaType == "Series" ? "سریال" : "فیلم سینمایی");
-
-                    featuredRating = (featuredCandidate.Rating.HasValue && featuredCandidate.Rating.Value > 0)
-                        ? featuredCandidate.Rating.Value.ToString("0.0")
-                        : "";
-
-                    featuredMediaType = featuredCandidate.MediaType ?? "Movie";
-                }
-
-                // Rating
-                string avgRating = "0.0";
-                var validRatings = allFiles.Where(f => f.Rating.HasValue && f.Rating.Value > 0).Select(f => f.Rating.Value).ToList();
-                if (validRatings.Any())
-                {
-                    avgRating = validRatings.Average().ToString("0.0");
-                }
-
-                // Size
-                long totalBytes = allFiles.Sum(f => f.FileSizeBytes);
-                string fileSize = FormatBytes(totalBytes);
-
-                var genres = allFiles
-                    .Where(f => !string.IsNullOrEmpty(f.Genres))
-                    .SelectMany(f => f.Genres!.Split(new[] { ',', '،', '/' }, StringSplitOptions.RemoveEmptyEntries))
-                    .Select(g => GenreTranslatorService.Translate(g.Trim()))
-                    .Where(g => !string.IsNullOrWhiteSpace(g))
-                    .GroupBy(g => g)
-                    .OrderByDescending(g => g.Count())
-                    .Take(4)
-                    .Select(g => g.Key)
-                    .ToList();
-
-                string topGenresText = "ثبت نشده";
-                if (genres.Any())
-                {
-                    topGenresText = string.Join("، ", genres);
-                }
-
-                // Continue Watching: ONLY media actually played by the user with the player (LastPlayedAt != null)
-                // 1. Movies with LastPlayedAt and not finished
-                var continueMovies = allFiles
-                    .Where(f => f.MediaType != "Series" && f.LastPlayedAt.HasValue && !f.IsWatched && f.WatchProgressPercent < 95)
-                    .ToList();
-
-                // 2. Series with at least one episode played
-                var seriesGroups = allFiles
-                    .Where(f => f.MediaType == "Series")
-                    .GroupBy(f => (!string.IsNullOrWhiteSpace(f.FormattedTitle) ? f.FormattedTitle : f.FileName).ToLowerInvariant());
-
-                var continueSeries = new List<VideoFile>();
-                foreach (var sGroup in seriesGroups)
-                {
-                    var eps = sGroup.OrderBy(e => e.Season ?? 1).ThenBy(e => e.Episode ?? 1).ToList();
-                    bool hasBeenPlayed = eps.Any(e => e.LastPlayedAt.HasValue);
-                    bool allWatched = eps.Count > 0 && eps.All(e => e.IsWatched);
-
-                    if (hasBeenPlayed && !allWatched)
-                    {
-                        var seriesLastPlayed = eps.Max(e => e.LastPlayedAt);
-                        // Check if there is an in-progress episode
-                        var inProgressEp = eps.FirstOrDefault(e => !e.IsWatched && e.WatchProgressPercent > 0 && e.WatchProgressPercent < 95);
-                        if (inProgressEp != null)
-                        {
-                            if (seriesLastPlayed.HasValue && (!inProgressEp.LastPlayedAt.HasValue || inProgressEp.LastPlayedAt < seriesLastPlayed))
-                            {
-                                inProgressEp.LastPlayedAt = seriesLastPlayed;
-                            }
-                            continueSeries.Add(inProgressEp);
+                            else if (backdrop.Contains("/w300/")) backdrop = backdrop.Replace("/w300/", "/w1280/");
+                            else if (backdrop.Contains("/w780/")) backdrop = backdrop.Replace("/w780/", "/w1280/");
                         }
                         else
                         {
-                            // Otherwise find next unwatched episode
-                            var nextUnwatchedEp = eps.FirstOrDefault(e => !e.IsWatched);
-                            if (nextUnwatchedEp != null)
+                            backdrop = featuredCandidate.PosterUrl;
+                            if (!string.IsNullOrEmpty(backdrop))
                             {
-                                if (seriesLastPlayed.HasValue)
+                                if (backdrop.Contains("/w500/")) backdrop = backdrop.Replace("/w500/", "/w1280/");
+                                else if (backdrop.Contains("/w342/")) backdrop = backdrop.Replace("/w342/", "/w780/");
+                                else if (backdrop.Contains("/w185/")) backdrop = backdrop.Replace("/w185/", "/w500/");
+                            }
+                        }
+
+                        featuredBackdrop = backdrop;
+                        featuredPoster = featuredCandidate.PosterUrl;
+                        featuredGenres = !string.IsNullOrEmpty(featuredCandidate.Genres)
+                            ? GenreTranslatorService.TranslateList(featuredCandidate.Genres).Replace("،", " • ")
+                            : (featuredCandidate.MediaType == "Series" ? "سریال" : "فیلم سینمایی");
+
+                        featuredRating = (featuredCandidate.Rating.HasValue && featuredCandidate.Rating.Value > 0)
+                            ? featuredCandidate.Rating.Value.ToString("0.0")
+                            : "";
+
+                        featuredMediaType = featuredCandidate.MediaType ?? "Movie";
+                    }
+
+                    // Rating
+                    string avgRating = "0.0";
+                    var validRatings = allFiles.Where(f => f.Rating.HasValue && f.Rating.Value > 0).Select(f => f.Rating.Value).ToList();
+                    if (validRatings.Any())
+                    {
+                        avgRating = validRatings.Average().ToString("0.0");
+                    }
+
+                    // Size
+                    long totalBytes = allFiles.Sum(f => f.FileSizeBytes);
+                    string fileSize = FormatBytes(totalBytes);
+
+                    var genres = allFiles
+                        .Where(f => !string.IsNullOrEmpty(f.Genres))
+                        .SelectMany(f => f.Genres!.Split(new[] { ',', '،', '/' }, StringSplitOptions.RemoveEmptyEntries))
+                        .Select(g => GenreTranslatorService.Translate(g.Trim()))
+                        .Where(g => !string.IsNullOrWhiteSpace(g))
+                        .GroupBy(g => g)
+                        .OrderByDescending(g => g.Count())
+                        .Take(4)
+                        .Select(g => g.Key)
+                        .ToList();
+
+                    string topGenresText = "ثبت نشده";
+                    if (genres.Any())
+                    {
+                        topGenresText = string.Join("، ", genres);
+                    }
+
+                    // Continue Watching: ONLY media actually played by the user with the player (LastPlayedAt != null)
+                    var continueMovies = allFiles
+                        .Where(f => f.MediaType != "Series" && f.LastPlayedAt.HasValue && !f.IsWatched && f.WatchProgressPercent < 95)
+                        .ToList();
+
+                    var seriesGroups = allFiles
+                        .Where(f => f.MediaType == "Series")
+                        .GroupBy(f => (!string.IsNullOrWhiteSpace(f.FormattedTitle) ? f.FormattedTitle : f.FileName).ToLowerInvariant());
+
+                    var continueSeries = new List<VideoFile>();
+                    foreach (var sGroup in seriesGroups)
+                    {
+                        var eps = sGroup.OrderBy(e => e.Season ?? 1).ThenBy(e => e.Episode ?? 1).ToList();
+                        bool hasBeenPlayed = eps.Any(e => e.LastPlayedAt.HasValue);
+                        bool allWatched = eps.Count > 0 && eps.All(e => e.IsWatched);
+
+                        if (hasBeenPlayed && !allWatched)
+                        {
+                            var seriesLastPlayed = eps.Max(e => e.LastPlayedAt);
+                            var inProgressEp = eps.FirstOrDefault(e => !e.IsWatched && e.WatchProgressPercent > 0 && e.WatchProgressPercent < 95);
+                            if (inProgressEp != null)
+                            {
+                                if (seriesLastPlayed.HasValue && (!inProgressEp.LastPlayedAt.HasValue || inProgressEp.LastPlayedAt < seriesLastPlayed))
                                 {
-                                    nextUnwatchedEp.LastPlayedAt = seriesLastPlayed;
+                                    inProgressEp.LastPlayedAt = seriesLastPlayed;
                                 }
-                                continueSeries.Add(nextUnwatchedEp);
+                                continueSeries.Add(inProgressEp);
+                            }
+                            else
+                            {
+                                var nextUnwatchedEp = eps.FirstOrDefault(e => !e.IsWatched);
+                                if (nextUnwatchedEp != null)
+                                {
+                                    if (seriesLastPlayed.HasValue)
+                                    {
+                                        nextUnwatchedEp.LastPlayedAt = seriesLastPlayed;
+                                    }
+                                    continueSeries.Add(nextUnwatchedEp);
+                                }
                             }
                         }
                     }
-                }
 
-                var combinedContinueWatching = continueMovies
-                    .Concat(continueSeries)
-                    .OrderByDescending(f => f.LastPlayedAt ?? DateTime.MinValue)
-                    .Take(20)
-                    .ToList();
+                    var combinedContinueWatching = continueMovies
+                        .Concat(continueSeries)
+                        .OrderByDescending(f => f.LastPlayedAt ?? DateTime.MinValue)
+                        .Take(20)
+                        .ToList();
 
-                TotalCount = totalFilesCount;
-                MovieCount = movies;
-                SeriesCount = series;
-                MoviePercentage = moviePct;
-                SeriesPercentage = seriesPct;
+                    return new
+                    {
+                        totalFilesCount,
+                        movies,
+                        series,
+                        moviePct,
+                        seriesPct,
+                        featuredCandidate,
+                        featuredTitle,
+                        featuredBackdrop,
+                        featuredPoster,
+                        featuredGenres,
+                        featuredRating,
+                        featuredMediaType,
+                        avgRating,
+                        fileSize,
+                        topGenresText,
+                        combinedContinueWatching
+                    };
+                });
 
-                FeaturedVideoFile = featuredCandidate;
-                FeaturedTitle = featuredTitle;
-                FeaturedBackdropUrl = featuredBackdrop;
-                FeaturedPosterUrl = featuredPoster;
-                FeaturedGenres = featuredGenres;
-                FeaturedRating = featuredRating;
-                FeaturedMediaType = featuredMediaType;
-                HasFeaturedMedia = featuredCandidate != null && totalFilesCount > 0;
+                if (result == null) return;
 
-                AverageRating = avgRating;
-                TotalFileSize = fileSize;
-                TopGenres = topGenresText;
-
-                // Update Continue Watching collection
-                ContinueWatchingItems.Clear();
-                foreach (var item in combinedContinueWatching)
+                System.Windows.Application.Current?.Dispatcher?.InvokeAsync(() =>
                 {
-                    ContinueWatchingItems.Add(item);
-                }
-                HasContinueWatching = ContinueWatchingItems.Count > 0;
+                    TotalCount = result.totalFilesCount;
+                    MovieCount = result.movies;
+                    SeriesCount = result.series;
+                    MoviePercentage = result.moviePct;
+                    SeriesPercentage = result.seriesPct;
+
+                    FeaturedVideoFile = result.featuredCandidate;
+                    FeaturedTitle = result.featuredTitle;
+                    FeaturedBackdropUrl = result.featuredBackdrop;
+                    FeaturedPosterUrl = result.featuredPoster;
+                    FeaturedGenres = result.featuredGenres;
+                    FeaturedRating = result.featuredRating;
+                    FeaturedMediaType = result.featuredMediaType;
+                    HasFeaturedMedia = result.featuredCandidate != null && result.totalFilesCount > 0;
+
+                    AverageRating = result.avgRating;
+                    TotalFileSize = result.fileSize;
+                    TopGenres = result.topGenresText;
+
+                    ContinueWatchingItems.Clear();
+                    foreach (var item in result.combinedContinueWatching)
+                    {
+                        ContinueWatchingItems.Add(item);
+                    }
+                    HasContinueWatching = ContinueWatchingItems.Count > 0;
+                });
             }
             catch { }
         }

@@ -13,11 +13,19 @@ namespace MovieManagerDesktop.Services
 
         static SearchHistoryService()
         {
-            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            string cineTrackDir = Path.Combine(appData, "CineTrack");
-            if (!Directory.Exists(cineTrackDir)) Directory.CreateDirectory(cineTrackDir);
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string movieManagerDir = Path.Combine(appData, "MovieManager");
+            if (!Directory.Exists(movieManagerDir)) Directory.CreateDirectory(movieManagerDir);
             
-            _historyFile = Path.Combine(cineTrackDir, "search_history.json");
+            _historyFile = Path.Combine(movieManagerDir, "search_history.json");
+
+            // Migration from legacy CineTrack folder
+            string legacyDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CineTrack");
+            string legacyFile = Path.Combine(legacyDir, "search_history.json");
+            if (!File.Exists(_historyFile) && File.Exists(legacyFile))
+            {
+                try { File.Copy(legacyFile, _historyFile, true); } catch { }
+            }
         }
 
         public static List<string> GetHistory()
