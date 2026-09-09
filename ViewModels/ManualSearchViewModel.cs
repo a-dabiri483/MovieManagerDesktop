@@ -87,17 +87,17 @@ namespace MovieManagerDesktop.ViewModels
                                 Overview = Overview,
                                 DateAdded = DateTime.Now,
                                 IsTracked = true,
-                                IsWatchlist = true
+                                IsWatchlist = false
                             };
                             db.VideoFiles.Add(target);
                         }
                         else
                         {
                             target.IsTracked = true;
-                            target.IsWatchlist = true;
                             if (string.IsNullOrEmpty(target.PosterUrl)) target.PosterUrl = PosterUrl;
                             if (string.IsNullOrEmpty(target.BackdropUrl)) target.BackdropUrl = BackdropUrl;
                             if (string.IsNullOrEmpty(target.Overview)) target.Overview = Overview;
+                            if (!target.Rating.HasValue && Rating > 0) target.Rating = Rating;
                         }
 
                         await db.SaveChangesAsync();
@@ -131,6 +131,11 @@ namespace MovieManagerDesktop.ViewModels
                                             dbTarget.NextEpisodeDate = target.NextEpisodeDate;
                                             dbTarget.NextEpisodeNumber = target.NextEpisodeNumber;
                                             dbTarget.SeriesStatus = target.SeriesStatus;
+                                            if (!string.IsNullOrEmpty(target.BackdropUrl)) dbTarget.BackdropUrl = target.BackdropUrl;
+                                            if (!string.IsNullOrEmpty(target.PosterUrl)) dbTarget.PosterUrl = target.PosterUrl;
+                                            if (!string.IsNullOrEmpty(target.Overview)) dbTarget.Overview = target.Overview;
+                                            if (!string.IsNullOrEmpty(target.Genres)) dbTarget.Genres = target.Genres;
+                                            if (target.Rating.HasValue && target.Rating.Value > 0) dbTarget.Rating = target.Rating;
                                             if (string.IsNullOrWhiteSpace(dbTarget.Year) && target.FirstAirDate.HasValue)
                                                 dbTarget.Year = target.FirstAirDate.Value.Year.ToString();
                                             await db2.SaveChangesAsync();
@@ -284,8 +289,10 @@ namespace MovieManagerDesktop.ViewModels
                             Title = string.IsNullOrWhiteSpace(r.Title) ? r.OriginalTitle : r.Title,
                             ReleaseYear = r.ReleaseYear,
                             PosterUrl = poster,
+                            BackdropUrl = r.BackdropUrl,
                             MediaType = mediaType,
                             Overview = r.Overview,
+                            Rating = r.Rating ?? 0,
                             IsInTracker = inTracker
                         };
                     }).ToList();

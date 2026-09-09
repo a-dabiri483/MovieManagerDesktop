@@ -43,6 +43,26 @@ namespace MovieManagerDesktop.Services
             if (File.Exists(url) || url.StartsWith("pack://"))
                 return url;
 
+            // Fallback: If local path doesn't exist at specified location, check if filename exists in MovieManager/Images
+            if (!url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) && !url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    string fileNameOnly = Path.GetFileName(url);
+                    if (!string.IsNullOrEmpty(fileNameOnly))
+                    {
+                        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                        string candidate = Path.Combine(localAppData, "MovieManager", "Images", fileNameOnly);
+                        if (File.Exists(candidate))
+                        {
+                            return candidate;
+                        }
+                    }
+                }
+                catch { }
+                return null;
+            }
+
             string fileName = GetHashString(url) + Path.GetExtension(url).Split('?')[0];
             if (string.IsNullOrEmpty(Path.GetExtension(fileName)))
             {

@@ -16,6 +16,8 @@ namespace MovieManagerDesktop.Services
         public string OriginalTitle { get; set; } = string.Empty;
         public string ReleaseYear { get; set; } = string.Empty;
         public string PosterUrl { get; set; } = string.Empty;
+        public string BackdropUrl { get; set; } = string.Empty;
+        public double? Rating { get; set; }
         public string MediaType { get; set; } = string.Empty;
         public string Overview { get; set; } = string.Empty;
     }
@@ -69,8 +71,17 @@ namespace MovieManagerDesktop.Services
                 string ext = Path.GetExtension(url.Split('?')[0]);
                 if (string.IsNullOrEmpty(ext)) ext = ".jpg";
                 
-                string fileName = $"{cleanPrefix}_{Guid.NewGuid().ToString("N").Substring(0,6)}{ext}";
+                // Deterministic hash based on URL so multiple episodes of a series or re-scans reuse the same image
+                string hashInput = !string.IsNullOrWhiteSpace(url) ? url.Trim() : cleanPrefix;
+                string hash = Convert.ToHexString(System.Security.Cryptography.MD5.HashData(System.Text.Encoding.UTF8.GetBytes(hashInput))).Substring(0, 8).ToLowerInvariant();
+                string fileName = $"{cleanPrefix}_{hash}{ext}";
                 string filePath = Path.Combine(_imagesDirectory, fileName);
+
+                // If already downloaded and valid, reuse immediately without re-downloading or duplicating!
+                if (File.Exists(filePath) && new FileInfo(filePath).Length > 0)
+                {
+                    return filePath;
+                }
                 
                 string proxyUrl = SettingsManager.WrapUrlWithProxy(url);
                 var request = new HttpRequestMessage(HttpMethod.Get, proxyUrl);
@@ -141,6 +152,7 @@ namespace MovieManagerDesktop.Services
                     Title = !string.IsNullOrEmpty(data.TitleEnglish) ? data.TitleEnglish : data.TitleRomaji,
                     ReleaseYear = data.SeasonYear > 0 ? data.SeasonYear.ToString() : "",
                     PosterUrl = data.CoverImageUrl,
+                    BackdropUrl = data.BannerImageUrl ?? string.Empty,
                     MediaType = "Anime"
                 });
             }
@@ -242,7 +254,16 @@ namespace MovieManagerDesktop.Services
                                 res.ReleaseYear = fad.GetString()!.Substring(0, 4);
 
                             if (item.TryGetProperty("poster_path", out var pp) && pp.ValueKind == JsonValueKind.String)
-                                res.PosterUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/w92{pp.GetString()}");
+                                res.PosterUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/w500{pp.GetString()}");
+
+                            if (item.TryGetProperty("backdrop_path", out var bp) && bp.ValueKind == JsonValueKind.String)
+                                res.BackdropUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/w1280{bp.GetString()}");
+
+                            if (item.TryGetProperty("vote_average", out var va) && va.ValueKind == JsonValueKind.Number)
+                                res.Rating = va.GetDouble();
+
+                            if (item.TryGetProperty("overview", out var ov) && ov.ValueKind == JsonValueKind.String)
+                                res.Overview = ov.GetString() ?? "";
 
                             results.Add(res);
                             return results;
@@ -274,7 +295,16 @@ namespace MovieManagerDesktop.Services
                             res.ReleaseYear = fad.GetString()!.Substring(0, 4);
 
                         if (root.TryGetProperty("poster_path", out var pp) && pp.ValueKind == JsonValueKind.String)
-                            res.PosterUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/w92{pp.GetString()}");
+                            res.PosterUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/w500{pp.GetString()}");
+
+                        if (root.TryGetProperty("backdrop_path", out var bp) && bp.ValueKind == JsonValueKind.String)
+                            res.BackdropUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/w1280{bp.GetString()}");
+
+                        if (root.TryGetProperty("vote_average", out var va) && va.ValueKind == JsonValueKind.Number)
+                            res.Rating = va.GetDouble();
+
+                        if (root.TryGetProperty("overview", out var ov) && ov.ValueKind == JsonValueKind.String)
+                            res.Overview = ov.GetString() ?? "";
 
                         results.Add(res);
                         return results;
@@ -318,7 +348,16 @@ namespace MovieManagerDesktop.Services
                                 res.ReleaseYear = fad.GetString()!.Substring(0, 4);
 
                             if (item.TryGetProperty("poster_path", out var pp) && pp.ValueKind == JsonValueKind.String)
-                                res.PosterUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/w92{pp.GetString()}");
+                                res.PosterUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/w500{pp.GetString()}");
+
+                            if (item.TryGetProperty("backdrop_path", out var bp) && bp.ValueKind == JsonValueKind.String)
+                                res.BackdropUrl = SettingsManager.WrapUrlWithProxy($"https://image.tmdb.org/t/p/w1280{bp.GetString()}");
+
+                            if (item.TryGetProperty("vote_average", out var va) && va.ValueKind == JsonValueKind.Number)
+                                res.Rating = va.GetDouble();
+
+                            if (item.TryGetProperty("overview", out var ov) && ov.ValueKind == JsonValueKind.String)
+                                res.Overview = ov.GetString() ?? "";
                                 
                             results.Add(res);
                         }
@@ -920,6 +959,66 @@ namespace MovieManagerDesktop.Services
                         if (nextEp.TryGetProperty("episode_number", out var epNum) && epNum.ValueKind == JsonValueKind.Number)
                         {
                             file.NextEpisodeNumber = epNum.GetInt32();
+                        }
+                    }
+
+                    // Backdrop image
+                    if (root.TryGetProperty("backdrop_path", out var bp) && bp.ValueKind == JsonValueKind.String && !string.IsNullOrEmpty(bp.GetString()))
+                    {
+                        string backdropHttp = $"https://image.tmdb.org/t/p/w1280{bp.GetString()}";
+                        string cleanTitle = !string.IsNullOrWhiteSpace(file.FormattedTitle) ? file.FormattedTitle : (file.FileName ?? "series");
+                        try
+                        {
+                            string? localBackdrop = await DownloadImageAsync(backdropHttp, $"{cleanTitle}_backdrop");
+                            file.BackdropUrl = localBackdrop ?? SettingsManager.WrapUrlWithProxy(backdropHttp);
+                        }
+                        catch
+                        {
+                            file.BackdropUrl = SettingsManager.WrapUrlWithProxy(backdropHttp);
+                        }
+                    }
+
+                    // Poster image
+                    if (root.TryGetProperty("poster_path", out var pp) && pp.ValueKind == JsonValueKind.String && !string.IsNullOrEmpty(pp.GetString()))
+                    {
+                        string posterHttp = $"https://image.tmdb.org/t/p/w500{pp.GetString()}";
+                        if (string.IsNullOrEmpty(file.PosterUrl) || file.PosterUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string cleanTitle = !string.IsNullOrWhiteSpace(file.FormattedTitle) ? file.FormattedTitle : (file.FileName ?? "series");
+                            try
+                            {
+                                string? localPoster = await DownloadImageAsync(posterHttp, $"{cleanTitle}_poster");
+                                file.PosterUrl = localPoster ?? SettingsManager.WrapUrlWithProxy(posterHttp);
+                            }
+                            catch
+                            {
+                                file.PosterUrl = SettingsManager.WrapUrlWithProxy(posterHttp);
+                            }
+                        }
+                    }
+
+                    // Overview
+                    if (string.IsNullOrWhiteSpace(file.Overview) && root.TryGetProperty("overview", out var ov) && ov.ValueKind == JsonValueKind.String)
+                    {
+                        file.Overview = ov.GetString();
+                    }
+
+                    // Rating
+                    if ((!file.Rating.HasValue || file.Rating.Value <= 0) && root.TryGetProperty("vote_average", out var va) && va.ValueKind == JsonValueKind.Number)
+                    {
+                        file.Rating = va.GetDouble();
+                    }
+
+                    // Genres
+                    if (string.IsNullOrWhiteSpace(file.Genres) && root.TryGetProperty("genres", out var genresArray) && genresArray.ValueKind == JsonValueKind.Array)
+                    {
+                        var genreNames = genresArray.EnumerateArray()
+                            .Select(g => g.TryGetProperty("name", out var gName) ? gName.GetString() : "")
+                            .Where(g => !string.IsNullOrEmpty(g))
+                            .ToList();
+                        if (genreNames.Any())
+                        {
+                            file.Genres = string.Join("، ", genreNames);
                         }
                     }
                     

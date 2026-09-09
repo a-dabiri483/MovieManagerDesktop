@@ -50,8 +50,9 @@ namespace MovieManagerDesktop.ViewModels
         public void RefreshLicenseStatus()
         {
             var lic = LicenseManagerService.GetCurrentLicense();
-            IsLicenseValid = lic.IsValid;
-            if (lic.IsValid)
+            bool isValid = LicenseManagerService.IsLicenseValid();
+            IsLicenseValid = isValid;
+            if (isValid)
             {
                 LicenseBadgeText = "نسخه Pro (فعال)";
                 LicenseBadgeBackground = "#2010B981";

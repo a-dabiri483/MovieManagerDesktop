@@ -6,6 +6,7 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
              xmlns:converters="clr-namespace:MovieManagerDesktop.Converters"
+             xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=viewmodels:TrackedDetailViewModel}"
              d:DesignHeight="1050" d:DesignWidth="1100"
@@ -69,7 +70,7 @@
                     <!-- Backdrop Image with Gradient Overlay -->
                     <Border Background="#0C0D1A">
                         <Grid>
-                            <Image Source="{Binding BackdropUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" Opacity="0.4"/>
+                            <Image controls:CachedImage.SourceUrl="{Binding BackdropUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality" Opacity="0.4"/>
                             
                             <!-- Heavy Bottom Gradient Overlay -->
                             <Border>
@@ -150,7 +151,7 @@
                             <Border.Effect>
                                 <DropShadowEffect BlurRadius="24" ShadowDepth="6" Opacity="0.6" Color="Black"/>
                             </Border.Effect>
-                            <Image Source="{Binding PosterUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <Image controls:CachedImage.SourceUrl="{Binding PosterUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
                         </Border>
 
                         <!-- Title, Badges & Quick Stats -->

@@ -14,6 +14,8 @@ using MovieManagerDesktop.Data;
 using System.Text.Json;
 using MovieManagerDesktop.Models;
 using System.Net.Http;
+using System.IO.Compression;
+using System.Text;
 
 namespace MovieManagerDesktop.Services
 {
@@ -141,6 +143,103 @@ namespace MovieManagerDesktop.Services
             };
 
             return JsonSerializer.Serialize(backupModel, new JsonSerializerOptions { WriteIndented = true });
+        }
+
+        public static async Task CreateZipBackupAsync(string zipPath, IProgress<double>? progress = null, IProgress<string>? textProgress = null)
+        {
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string imagesDir = Path.Combine(appData, "MovieManager", "Images");
+            
+            textProgress?.Report("در حال استخراج متادیتای دیتابیس...");
+            string json = await GenerateBackupJsonAsync();
+
+            textProgress?.Report("در حال ایجاد بسته فشرده ZIP...");
+            
+            if (System.IO.File.Exists(zipPath))
+            {
+                System.IO.File.Delete(zipPath);
+            }
+
+            using var fileStream = new FileStream(zipPath, FileMode.Create, FileAccess.Write, FileShare.None);
+            using var archive = new ZipArchive(fileStream, ZipArchiveMode.Create, false);
+
+            // 1. Add backup.json
+            var jsonEntry = archive.CreateEntry("backup.json", CompressionLevel.Optimal);
+            using (var writer = new StreamWriter(jsonEntry.Open(), Encoding.UTF8))
+            {
+                await writer.WriteAsync(json);
+            }
+
+            // 2. Add Images
+            if (Directory.Exists(imagesDir))
+            {
+                var imageFiles = Directory.GetFiles(imagesDir);
+                int total = imageFiles.Length;
+                int count = 0;
+
+                foreach (var imgFile in imageFiles)
+                {
+                    count++;
+                    string entryName = "Images/" + Path.GetFileName(imgFile);
+                    archive.CreateEntryFromFile(imgFile, entryName, CompressionLevel.Fastest);
+
+                    if (count % 50 == 0 || count == total)
+                    {
+                        double percent = (double)count / Math.Max(1, total) * 100.0;
+                        progress?.Report(percent);
+                        textProgress?.Report($"بسته‌بندی تصاویر: {count} از {total} ({percent:F0}%)");
+                    }
+                }
+            }
+        }
+
+        public static async Task<string> ExtractZipBackupAsync(string zipPath, IProgress<double>? progress = null, IProgress<string>? textProgress = null)
+        {
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string imagesDir = Path.Combine(appData, "MovieManager", "Images");
+            if (!Directory.Exists(imagesDir))
+            {
+                Directory.CreateDirectory(imagesDir);
+            }
+
+            textProgress?.Report("در حال بازگشایی بسته ZIP...");
+            string? extractedJsonPath = null;
+
+            using (var archive = ZipFile.OpenRead(zipPath))
+            {
+                int total = archive.Entries.Count;
+                int count = 0;
+
+                foreach (var entry in archive.Entries)
+                {
+                    count++;
+                    if (entry.FullName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                    {
+                        string tempJson = Path.Combine(Path.GetTempPath(), $"MovieManager_Restore_{Guid.NewGuid():N}.json");
+                        entry.ExtractToFile(tempJson, true);
+                        extractedJsonPath = tempJson;
+                    }
+                    else if (entry.FullName.StartsWith("Images/", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(entry.Name))
+                    {
+                        string dest = Path.Combine(imagesDir, entry.Name);
+                        entry.ExtractToFile(dest, true);
+                    }
+
+                    if (count % 50 == 0 || count == total)
+                    {
+                        double percent = (double)count / Math.Max(1, total) * 100.0;
+                        progress?.Report(percent);
+                        textProgress?.Report($"استخراج تصاویر: {count} از {total} ({percent:F0}%)");
+                    }
+                }
+            }
+
+            if (string.IsNullOrEmpty(extractedJsonPath))
+            {
+                throw new InvalidOperationException("فایل دیتابیس (backup.json) درون بسته ZIP یافت نشد.");
+            }
+
+            return await Task.FromResult(extractedJsonPath);
         }
 
         private static async Task<string> RunLocalBackupAsync(SettingsModel settings, string backupJson)

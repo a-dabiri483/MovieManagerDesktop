@@ -132,6 +132,47 @@ namespace MovieManagerDesktop.ViewModels
 
             InitTrackerInfo();
             _ = LoadDetailsAsync();
+
+            WeakReferenceMessenger.Default.Register<MediaUpdatedMessage>(this, (r, m) =>
+            {
+                App.Current?.Dispatcher?.InvokeAsync(async () =>
+                {
+                    await ReloadMediaDataAsync();
+                });
+            });
+        }
+
+        public async Task ReloadMediaDataAsync()
+        {
+            if (Media == null) return;
+            try
+            {
+                using var db = new AppDbContext();
+                var updated = await db.VideoFiles.AsNoTracking().FirstOrDefaultAsync(v => v.Id == Media.Id);
+                if (updated != null)
+                {
+                    Media = updated;
+                    InitTrackerInfo();
+                    await LoadDetailsAsync();
+                    NotifyVisualProperties();
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Error("Error reloading tracked media data", ex);
+            }
+        }
+
+        private void NotifyVisualProperties()
+        {
+            OnPropertyChanged(nameof(Title));
+            OnPropertyChanged(nameof(FormattedYear));
+            OnPropertyChanged(nameof(FormattedGenres));
+            OnPropertyChanged(nameof(PosterUrl));
+            OnPropertyChanged(nameof(BackdropUrl));
+            OnPropertyChanged(nameof(Rating));
+            OnPropertyChanged(nameof(Overview));
+            OnPropertyChanged(nameof(MediaTypeDisplay));
         }
 
         private void InitTrackerInfo()
@@ -372,6 +413,7 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void GoBack()
         {
+            WeakReferenceMessenger.Default.Unregister<MediaUpdatedMessage>(this);
             WeakReferenceMessenger.Default.Send(new NavigationMessage(new TrackerViewModel()));
         }
 
@@ -402,6 +444,11 @@ namespace MovieManagerDesktop.ViewModels
                     dbItem.NextEpisodeDate = Media.NextEpisodeDate;
                     dbItem.NextEpisodeNumber = Media.NextEpisodeNumber;
                     dbItem.SeriesStatus = Media.SeriesStatus;
+                    if (!string.IsNullOrEmpty(Media.BackdropUrl)) dbItem.BackdropUrl = Media.BackdropUrl;
+                    if (!string.IsNullOrEmpty(Media.PosterUrl)) dbItem.PosterUrl = Media.PosterUrl;
+                    if (!string.IsNullOrEmpty(Media.Overview)) dbItem.Overview = Media.Overview;
+                    if (!string.IsNullOrEmpty(Media.Genres)) dbItem.Genres = Media.Genres;
+                    if (Media.Rating.HasValue && Media.Rating.Value > 0) dbItem.Rating = Media.Rating;
                     await db.SaveChangesAsync();
                 }
 
@@ -425,6 +472,7 @@ namespace MovieManagerDesktop.ViewModels
 
                 InitTrackerInfo();
                 await LoadDetailsAsync();
+                NotifyVisualProperties();
                 WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
             }
             catch (Exception ex)
@@ -448,6 +496,7 @@ namespace MovieManagerDesktop.ViewModels
                 dbMedia.IsTracked = false;
                 db.SaveChanges();
             }
+            WeakReferenceMessenger.Default.Unregister<MediaUpdatedMessage>(this);
             WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
             GoBack();
         }

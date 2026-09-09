@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -29,9 +30,18 @@ namespace MovieManagerDesktop.Services
         /// </summary>
         public static bool EnsureProFeature(string featureName)
         {
+            if (Debugger.IsAttached)
+            {
+                return false;
+            }
+
             if (IsLicenseValid())
             {
-                return true;
+                var lic = GetCurrentLicense();
+                if (!string.IsNullOrEmpty(lic.OfflineToken) && string.Equals(lic.BoundHwid, HardwareIdService.GetHardwareId(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
             }
 
             Application.Current?.Dispatcher?.Invoke(() =>
@@ -89,7 +99,28 @@ namespace MovieManagerDesktop.Services
         /// </summary>
         public static bool IsLicenseValid()
         {
+            if (Debugger.IsAttached)
+            {
+                return false;
+            }
+
             var lic = GetCurrentLicense();
+            if (lic == null || !lic.IsActivated || string.IsNullOrWhiteSpace(lic.LicenseKey) || string.IsNullOrWhiteSpace(lic.OfflineToken))
+            {
+                return false;
+            }
+
+            string currentHwid = HardwareIdService.GetHardwareId();
+            if (!string.Equals(lic.BoundHwid, currentHwid, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (!lic.IsLifetime && lic.ExpiresAt.HasValue && DateTime.Now > lic.ExpiresAt.Value)
+            {
+                return false;
+            }
+
             return lic.IsValid;
         }
 

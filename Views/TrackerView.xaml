@@ -7,6 +7,7 @@
              xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
              xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
              xmlns:converters="clr-namespace:MovieManagerDesktop.Converters"
+             xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
              mc:Ignorable="d" 
              d:DataContext="{d:DesignInstance Type=viewmodels:TrackerViewModel}"
              d:DesignHeight="800" d:DesignWidth="1100"
@@ -294,7 +295,7 @@
                                 <!-- Poster Image -->
                                 <Border Grid.Row="0" Background="#1A1C30">
                                     <Grid>
-                                        <Image Source="{Binding PosterUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
+                                        <Image controls:CachedImage.SourceUrl="{Binding PosterUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
                                         
                                         <!-- Gradient Overlay -->
                                         <Border>

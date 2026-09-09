@@ -47,11 +47,12 @@ namespace MovieManagerDesktop.Controls
                     string localPath = await ImageCacheService.GetCachedImageAsync(url);
                     if (!string.IsNullOrEmpty(localPath))
                     {
+                        if (GetSourceUrl(image) != url) return;
+
                         var bitmap = new BitmapImage();
                         bitmap.BeginInit();
                         bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                        // Use a decode width suitable for full-screen backdrops and HD posters
-                        bitmap.DecodePixelWidth = 1280; 
+                        bitmap.DecodePixelWidth = 800; 
                         bitmap.UriSource = new Uri(localPath, UriKind.Absolute);
                         bitmap.EndInit();
                         bitmap.Freeze(); // Cross-thread safety

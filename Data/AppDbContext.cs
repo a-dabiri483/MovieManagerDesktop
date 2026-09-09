@@ -82,6 +82,26 @@ namespace MovieManagerDesktop.Data
                     }
                     catch { }
 
+                    // Auto-heal legacy CineTrack image paths to MovieManager
+                    try
+                    {
+                        db.Database.ExecuteSqlRaw(@"
+                            UPDATE VideoFiles 
+                            SET PosterUrl = replace(PosterUrl, 'AppData\Roaming\CineTrack\Images', 'AppData\Local\MovieManager\Images')
+                            WHERE PosterUrl LIKE '%AppData\Roaming\CineTrack\Images%';
+                            UPDATE VideoFiles 
+                            SET BackdropUrl = replace(BackdropUrl, 'AppData\Roaming\CineTrack\Images', 'AppData\Local\MovieManager\Images')
+                            WHERE BackdropUrl LIKE '%AppData\Roaming\CineTrack\Images%';
+                            UPDATE VideoFiles 
+                            SET PosterUrl = replace(PosterUrl, 'AppData/Roaming/CineTrack/Images', 'AppData/Local/MovieManager/Images')
+                            WHERE PosterUrl LIKE '%AppData/Roaming/CineTrack/Images%';
+                            UPDATE VideoFiles 
+                            SET BackdropUrl = replace(BackdropUrl, 'AppData/Roaming/CineTrack/Images', 'AppData/Local/MovieManager/Images')
+                            WHERE BackdropUrl LIKE '%AppData/Roaming/CineTrack/Images%';
+                        ");
+                    }
+                    catch { }
+
                     try
                     {
                         db.Database.ExecuteSqlRaw(@"

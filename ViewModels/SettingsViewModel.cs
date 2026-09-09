@@ -1175,16 +1175,17 @@ namespace MovieManagerDesktop.ViewModels
         {
             try
             {
-                LoggerService.Info("[Backup] 💾 Initializing local database backup export...");
+                LoggerService.Info("[Backup] 💾 Initializing local backup export...");
                 string? selectedPath = null;
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     var saveDialog = new SaveFileDialog
                     {
-                        Filter = "JSON Backup File (*.json)|*.json",
-                        FileName = $"MovieManager_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.json",
-                        Title = "ذخیره فایل پشتیبان محلی دیتابیس"
+                        Filter = "بسته کامل شامل تصاویر (*.zip)|*.zip|فایل متنی سبک دیتابیس (*.json)|*.json",
+                        DefaultExt = "zip",
+                        FileName = $"MovieManager_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.zip",
+                        Title = "ذخیره فایل پشتیبان"
                     };
 
                     if (saveDialog.ShowDialog(Application.Current.MainWindow) == true)
@@ -1200,8 +1201,16 @@ namespace MovieManagerDesktop.ViewModels
                 }
 
                 ToastService.Instance.ShowInfo("در حال تهیه نسخه پشتیبان...");
-                var json = await MovieManagerDesktop.Services.BackupManager.GenerateBackupJsonAsync();
-                await File.WriteAllTextAsync(selectedPath, json);
+
+                if (selectedPath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                {
+                    await MovieManagerDesktop.Services.BackupManager.CreateZipBackupAsync(selectedPath);
+                }
+                else
+                {
+                    var json = await MovieManagerDesktop.Services.BackupManager.GenerateBackupJsonAsync();
+                    await File.WriteAllTextAsync(selectedPath, json);
+                }
 
                 long fileLength = new FileInfo(selectedPath).Length;
                 string formattedSize = fileLength > 1024 * 1024 
@@ -1223,16 +1232,16 @@ namespace MovieManagerDesktop.ViewModels
         {
             try
             {
-                LoggerService.Info("[Backup] 📥 Initializing local database restore...");
+                LoggerService.Info("[Backup] 📥 Initializing local restore...");
                 string? selectedPath = null;
 
                 Application.Current.Dispatcher.Invoke(() =>
                 {
                     var openDialog = new OpenFileDialog
                     {
-                        Filter = "JSON Files (*.json)|*.json|All Files (*.*)|*.*",
-                        DefaultExt = "json",
-                        Title = "انتخاب فایل پشتیبان JSON برای بازیابی"
+                        Filter = "فایل‌های پشتیبان (*.zip;*.json)|*.zip;*.json|بسته کامل با تصاویر (*.zip)|*.zip|فایل متنی (*.json)|*.json|All Files (*.*)|*.*",
+                        DefaultExt = "zip",
+                        Title = "انتخاب فایل پشتیبان برای بازیابی"
                     };
 
                     if (openDialog.ShowDialog(Application.Current.MainWindow) == true)
@@ -1247,12 +1256,28 @@ namespace MovieManagerDesktop.ViewModels
                     return;
                 }
 
-                await ImportJsonFileAsync(selectedPath);
+                if (selectedPath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                {
+                    ToastService.Instance.ShowInfo("در حال استخراج تصاویر و اطلاعات از بسته ZIP...");
+                    string extractedJsonPath = await MovieManagerDesktop.Services.BackupManager.ExtractZipBackupAsync(selectedPath);
+                    try
+                    {
+                        await ImportJsonFileAsync(extractedJsonPath);
+                    }
+                    finally
+                    {
+                        try { File.Delete(extractedJsonPath); } catch { }
+                    }
+                }
+                else
+                {
+                    await ImportJsonFileAsync(selectedPath);
+                }
             }
             catch (Exception ex)
             {
                 LoggerService.Error("Error opening restore dialog", ex);
-                ToastService.Instance.ShowError($"خطا در باز کردن فایل: {ex.Message}");
+                ToastService.Instance.ShowError($"خطا در بازیابی فایل: {ex.Message}");
             }
         }
 
@@ -1317,19 +1342,35 @@ namespace MovieManagerDesktop.ViewModels
             {
                 var dialog = new OpenFileDialog
                 {
-                    Filter = "JSON Files (*.json)|*.json",
-                    DefaultExt = "json",
-                    Title = "انتخاب فایل پشتیبان JSON"
+                    Filter = "فایل‌های پشتیبان (*.zip;*.json)|*.zip;*.json|بسته کامل با تصاویر (*.zip)|*.zip|فایل متنی (*.json)|*.json",
+                    DefaultExt = "zip",
+                    Title = "انتخاب فایل پشتیبان"
                 };
 
                 if (dialog.ShowDialog() == true)
                 {
-                    await ImportJsonFileAsync(dialog.FileName);
+                    if (dialog.FileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ToastService.Instance.ShowInfo("در حال استخراج تصاویر و اطلاعات بسته ZIP...");
+                        string extractedJsonPath = await MovieManagerDesktop.Services.BackupManager.ExtractZipBackupAsync(dialog.FileName);
+                        try
+                        {
+                            await ImportJsonFileAsync(extractedJsonPath);
+                        }
+                        finally
+                        {
+                            try { File.Delete(extractedJsonPath); } catch { }
+                        }
+                    }
+                    else
+                    {
+                        await ImportJsonFileAsync(dialog.FileName);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                LoggerService.Error("Error selecting json backup file", ex);
+                LoggerService.Error("Error selecting backup file", ex);
                 ToastService.Instance.ShowError($"خطا در انتخاب فایل: {ex.Message}");
             }
         }
@@ -1375,6 +1416,33 @@ namespace MovieManagerDesktop.ViewModels
                         ToastService.Instance.ShowInfo("در حال ادغام و بروزرسانی اطلاعات دیتابیس...");
                         using var db = new AppDbContext();
                         
+                        string localImagesDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManager", "Images");
+
+                        string? NormalizeImagePath(string? path)
+                        {
+                            if (string.IsNullOrWhiteSpace(path)) return path;
+                            if (path.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || path.StartsWith("https://", StringComparison.OrdinalIgnoreCase) || path.StartsWith("pack://", StringComparison.OrdinalIgnoreCase))
+                                return path;
+
+                            if (File.Exists(path)) return path;
+
+                            try
+                            {
+                                string fn = Path.GetFileName(path);
+                                if (!string.IsNullOrEmpty(fn))
+                                {
+                                    string candidate = Path.Combine(localImagesDir, fn);
+                                    if (File.Exists(candidate))
+                                    {
+                                        return candidate;
+                                    }
+                                }
+                            }
+                            catch { }
+
+                            return path;
+                        }
+
                         // Import VideoFiles with Full Merge (Update existing + Insert new)
                         var existingVideos = await db.VideoFiles.ToListAsync();
                         var existingMap = existingVideos.ToDictionary(v => v.Id);
@@ -1383,6 +1451,9 @@ namespace MovieManagerDesktop.ViewModels
 
                         foreach (var incoming in videoFiles)
                         {
+                            incoming.PosterUrl = NormalizeImagePath(incoming.PosterUrl);
+                            incoming.BackdropUrl = NormalizeImagePath(incoming.BackdropUrl);
+
                             if (existingMap.TryGetValue(incoming.Id, out var existing))
                             {
                                 // Merge watch state, continue watching, ratings, etc.

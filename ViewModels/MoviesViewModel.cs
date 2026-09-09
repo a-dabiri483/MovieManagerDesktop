@@ -303,7 +303,7 @@ namespace MovieManagerDesktop.ViewModels
                 {
                     using var db = new AppDbContext();
                     var allGenres = db.VideoFiles
-                        .Where(v => !string.IsNullOrEmpty(v.Genres))
+                        .Where(v => v.FilePath != "[Manual Tracker]" && !v.FilePath.StartsWith("[Manual") && !string.IsNullOrEmpty(v.Genres))
                         .Select(v => v.Genres)
                         .ToList();
                     
@@ -352,9 +352,13 @@ namespace MovieManagerDesktop.ViewModels
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     using var db = new AppDbContext();
-                    var visibleDbFiles = ShowHiddenItems 
-                        ? db.VideoFiles.AsNoTracking().ToList() 
-                        : db.VideoFiles.AsNoTracking().Where(v => !v.IsHidden).ToList();
+                    var query = ShowHiddenItems 
+                        ? db.VideoFiles.AsNoTracking() 
+                        : db.VideoFiles.AsNoTracking().Where(v => !v.IsHidden);
+
+                    var visibleDbFiles = query
+                        .Where(v => v.FilePath != "[Manual Tracker]" && !v.FilePath.StartsWith("[Manual"))
+                        .ToList();
 
                     cancellationToken.ThrowIfCancellationRequested();
 
