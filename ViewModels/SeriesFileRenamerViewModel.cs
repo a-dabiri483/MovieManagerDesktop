@@ -8,7 +8,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MovieManagerDesktop.Models;
 using MovieManagerDesktop.Services;
-using FolderIconManager.WPF.Services;
 using System.Collections.Generic;
 
 namespace MovieManagerDesktop.ViewModels

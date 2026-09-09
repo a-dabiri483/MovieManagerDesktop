@@ -150,7 +150,7 @@ namespace MovieManagerDesktop.Services
                 if (!isLifetime && root.TryGetProperty("expires_at", out var expElem))
                 {
                     string expStr = expElem.GetString() ?? "";
-                    if (DateTime.TryParse(expStr, out var parsedDate))
+                    if (DateTime.TryParse(expStr, System.Globalization.CultureInfo.InvariantCulture, out var parsedDate))
                     {
                         expiresAt = parsedDate;
                     }
@@ -379,6 +379,7 @@ namespace MovieManagerDesktop.Services
                 string? decryptedJson = CryptoUtils.Decrypt(token);
                 if (string.IsNullOrWhiteSpace(decryptedJson))
                 {
+                    LoggerService.Warning("[LicenseManager] VerifyOfflineToken: CryptoUtils.Decrypt returned null or empty.");
                     return false;
                 }
 
@@ -391,11 +392,13 @@ namespace MovieManagerDesktop.Services
                 // Ensure token is bound to this exact HWID and key
                 if (!string.Equals(tokenKey, expectedKey, StringComparison.OrdinalIgnoreCase))
                 {
+                    LoggerService.Warning($"[LicenseManager] VerifyOfflineToken: tokenKey '{tokenKey}' != expectedKey '{expectedKey}'");
                     return false;
                 }
 
                 if (!string.Equals(tokenHwid, currentHwid, StringComparison.OrdinalIgnoreCase))
                 {
+                    LoggerService.Warning($"[LicenseManager] VerifyOfflineToken: tokenHwid '{tokenHwid}' != currentHwid '{currentHwid}'");
                     return false;
                 }
 
@@ -403,10 +406,11 @@ namespace MovieManagerDesktop.Services
                 if (root.TryGetProperty("expires_at", out var expElem) && expElem.ValueKind != JsonValueKind.Null)
                 {
                     string expStr = expElem.GetString() ?? "";
-                    if (!string.IsNullOrEmpty(expStr) && !expStr.Contains("مادام") && DateTime.TryParse(expStr, out var expDate))
+                    if (!string.IsNullOrEmpty(expStr) && !expStr.Contains("مادام") && DateTime.TryParse(expStr, System.Globalization.CultureInfo.InvariantCulture, out var expDate))
                     {
                         if (DateTime.Now > expDate)
                         {
+                            LoggerService.Warning($"[LicenseManager] VerifyOfflineToken: Token expired on {expDate}");
                             return false;
                         }
                     }
@@ -414,8 +418,9 @@ namespace MovieManagerDesktop.Services
 
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                LoggerService.Error("[LicenseManager] VerifyOfflineToken exception", ex);
                 return false;
             }
         }
@@ -437,7 +442,18 @@ namespace MovieManagerDesktop.Services
 
                 if (!string.IsNullOrEmpty(encrypted))
                 {
-                    File.WriteAllText(filePath, encrypted, Encoding.UTF8);
+                    byte[] plainBytes = Encoding.UTF8.GetBytes(encrypted);
+                    byte[] entropy = Encoding.UTF8.GetBytes(lic.BoundHwid);
+                    byte[]? protectedBytes = CryptoUtils.ProtectLocalData(plainBytes, entropy);
+
+                    if (protectedBytes != null)
+                    {
+                        File.WriteAllBytes(filePath, protectedBytes);
+                    }
+                    else
+                    {
+                        File.WriteAllText(filePath, encrypted, Encoding.UTF8);
+                    }
                 }
             }
             catch (Exception ex)
@@ -456,7 +472,24 @@ namespace MovieManagerDesktop.Services
                     return new LicenseInfo { IsActivated = false };
                 }
 
-                string encrypted = File.ReadAllText(filePath, Encoding.UTF8);
+                string currentHwid = HardwareIdService.GetHardwareId();
+                byte[] fileBytes = File.ReadAllBytes(filePath);
+                string? encrypted = null;
+
+                // 1. Attempt hardware-bound DPAPI unprotect
+                byte[] entropy = Encoding.UTF8.GetBytes(currentHwid);
+                byte[]? unprotectedBytes = CryptoUtils.UnprotectLocalData(fileBytes, entropy);
+
+                if (unprotectedBytes != null)
+                {
+                    encrypted = Encoding.UTF8.GetString(unprotectedBytes);
+                }
+                else
+                {
+                    // 2. Fallback to legacy format
+                    encrypted = Encoding.UTF8.GetString(fileBytes);
+                }
+
                 string? json = CryptoUtils.Decrypt(encrypted);
 
                 if (string.IsNullOrWhiteSpace(json))
@@ -495,7 +528,6 @@ namespace MovieManagerDesktop.Services
                 }
 
                 // Verify HWID matches current machine
-                string currentHwid = HardwareIdService.GetHardwareId();
                 if (!string.Equals(lic.BoundHwid, currentHwid, StringComparison.OrdinalIgnoreCase))
                 {
                     LoggerService.Warning("[LicenseManager] HWID mismatch: License was copied from another machine.");

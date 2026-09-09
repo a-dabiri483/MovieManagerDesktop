@@ -81,7 +81,31 @@ namespace MovieManagerDesktop.Services
 
     public static class SettingsManager
     {
-        private static readonly string SettingsFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+        private static string ResolveSettingsFilePath()
+        {
+            var appDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MovieManager");
+            if (!Directory.Exists(appDataDir))
+            {
+                Directory.CreateDirectory(appDataDir);
+            }
+
+            var targetPath = Path.Combine(appDataDir, "appsettings.json");
+
+            // Auto-migration: If legacy settings exist in BaseDirectory and target doesn't exist yet, copy it over
+            try
+            {
+                var legacyPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+                if (File.Exists(legacyPath) && !File.Exists(targetPath))
+                {
+                    File.Copy(legacyPath, targetPath, true);
+                }
+            }
+            catch { }
+
+            return targetPath;
+        }
+
+        private static readonly string SettingsFilePath = ResolveSettingsFilePath();
 
         private static readonly object _fileLock = new();
         private static volatile SettingsModel? _cachedSettings = null;

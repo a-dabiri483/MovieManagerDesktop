@@ -78,11 +78,19 @@ namespace MovieManagerDesktop.ViewModels
         private MoviesViewModel? _moviesViewModel;
         private FavoritesViewModel? _favoritesViewModel;
         private CollectionsViewModel? _collectionsViewModel;
+        private ScanViewModel? _scanViewModel;
+        private ToolsViewModel? _toolsViewModel;
+        private CalendarViewModel? _calendarViewModel;
+        private SettingsViewModel? _settingsViewModel;
 
         private HomeViewModel GetHomeViewModel() => _homeViewModel ??= new HomeViewModel();
         private MoviesViewModel GetMoviesViewModel() => _moviesViewModel ??= new MoviesViewModel();
         private FavoritesViewModel GetFavoritesViewModel() => _favoritesViewModel ??= new FavoritesViewModel();
         private CollectionsViewModel GetCollectionsViewModel() => _collectionsViewModel ??= new CollectionsViewModel();
+        private ScanViewModel GetScanViewModel() => _scanViewModel ??= new ScanViewModel();
+        private ToolsViewModel GetToolsViewModel() => _toolsViewModel ??= new ToolsViewModel();
+        private CalendarViewModel GetCalendarViewModel() => _calendarViewModel ??= new CalendarViewModel();
+        private SettingsViewModel GetSettingsViewModel() => _settingsViewModel ??= new SettingsViewModel();
 
         public NotificationCenterService NotificationCenter => NotificationCenterService.Instance;
         public ICollectionView FilteredNotifications { get; }
@@ -192,13 +200,13 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void NavigateToScan()
         {
-            CurrentViewModel = new ScanViewModel();
+            CurrentViewModel = GetScanViewModel();
         }
 
         [RelayCommand]
         private void NavigateToTools()
         {
-            CurrentViewModel = new ToolsViewModel();
+            CurrentViewModel = GetToolsViewModel();
         }
 
         [RelayCommand]
@@ -225,13 +233,13 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void NavigateToCalendar()
         {
-            CurrentViewModel = new CalendarViewModel();
+            CurrentViewModel = GetCalendarViewModel();
         }
 
         [RelayCommand]
         private void NavigateToSettings()
         {
-            CurrentViewModel = new SettingsViewModel();
+            CurrentViewModel = GetSettingsViewModel();
         }
 
         [RelayCommand]

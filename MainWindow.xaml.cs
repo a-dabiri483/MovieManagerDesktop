@@ -101,13 +101,15 @@ namespace MovieManagerDesktop
 
         public async void PlayBellWiggleAnimation()
         {
-            if (_isWiggling) return;
+            if (_isWiggling || !this.IsLoaded) return;
             _isWiggling = true;
 
             try
             {
-                while (MovieManagerDesktop.Services.NotificationCenterService.Instance.HasUnread)
+                int iterations = 0;
+                while (MovieManagerDesktop.Services.NotificationCenterService.Instance.HasUnread && iterations < 3 && this.IsLoaded)
                 {
+                    iterations++;
                     Dispatcher.Invoke(() =>
                     {
                         try
@@ -122,6 +124,7 @@ namespace MovieManagerDesktop
                     await Task.Delay(2000);
                 }
             }
+            catch { }
             finally
             {
                 _isWiggling = false;

@@ -15,9 +15,18 @@ public partial class App : Application
         base.OnStartup(e);
         this.DispatcherUnhandledException += App_DispatcherUnhandledException;
 
-        using (var db = new MovieManagerDesktop.Data.AppDbContext())
+        // Initialize SQLite schema and migrations once on startup
+        MovieManagerDesktop.Data.AppDbContext.InitializeDatabase();
+
+        // Apply user's saved theme
+        try
         {
-            db.Database.EnsureCreated();
+            var settings = MovieManagerDesktop.Services.SettingsManager.LoadSettings();
+            ApplyTheme(settings.Theme, settings.IsDarkTheme);
+        }
+        catch (Exception ex)
+        {
+            MovieManagerDesktop.Services.LoggerService.Error("Failed to apply startup theme", ex);
         }
 
         // Sync any offline playback progress from MPV

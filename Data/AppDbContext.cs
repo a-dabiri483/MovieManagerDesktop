@@ -13,172 +13,118 @@ namespace MovieManagerDesktop.Data
 
         public AppDbContext()
         {
-            Database.EnsureCreated();
-            
-            // Add new columns for Series Tracker
-            try { Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN FirstAirDate TEXT;"); } catch { }
-            try { Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN LastAirDate TEXT;"); } catch { }
-            try { Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN NetworkName TEXT;"); } catch { }
-            try { Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN AirDay TEXT;"); } catch { }
-            try { Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN AirTime TEXT;"); } catch { }
-            try { Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN TotalSeasonsCount INTEGER;"); } catch { }
-            try { Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN TotalEpisodesCount INTEGER;"); } catch { }
+        }
 
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN IsWatched INTEGER NOT NULL DEFAULT 0;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN IsFavorite INTEGER NOT NULL DEFAULT 0;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN IsWatchlist INTEGER NOT NULL DEFAULT 0;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN WatchProgressPercent REAL NOT NULL DEFAULT 0;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN WatchProgressSeconds INTEGER NOT NULL DEFAULT 0;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN TotalDurationSeconds INTEGER NOT NULL DEFAULT 0;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN CollectionName TEXT;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN IsHidden INTEGER NOT NULL DEFAULT 0;");
-            }
-            catch { }
+        private static bool _isInitialized = false;
+        private static readonly object _initLock = new();
 
-            // Auto-heal missing Year from FirstAirDate
-            try
-            {
-                Database.ExecuteSqlRaw("UPDATE VideoFiles SET Year = substr(FirstAirDate, 1, 4) WHERE (Year IS NULL OR Year = '' OR Year = '0') AND FirstAirDate IS NOT NULL AND length(FirstAirDate) >= 4;");
-            }
-            catch { }
+        public static void InitializeDatabase()
+        {
+            if (_isInitialized) return;
 
-            // Auto-heal rating scale for any score > 10 (e.g. AniList 0-100 scores)
-            try
+            lock (_initLock)
             {
-                Database.ExecuteSqlRaw("UPDATE VideoFiles SET Rating = ROUND(Rating / 10.0, 1) WHERE Rating > 10.0;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN CustomTags TEXT;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN HasDubbing INTEGER NOT NULL DEFAULT 0;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN HasSubtitle INTEGER NOT NULL DEFAULT 0;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN ContentRating TEXT;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN LastPlayedEpisode INTEGER;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN LastPlayedAt TEXT;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN IsTracked INTEGER NOT NULL DEFAULT 0;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN SeriesStatus TEXT;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN LastAiredSeason INTEGER;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN HasNewEpisode INTEGER NOT NULL DEFAULT 0;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN NextEpisodeDate TEXT;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN NextEpisodeSeason INTEGER;");
-            }
-            catch { }
-            try
-            {
-                Database.ExecuteSqlRaw("ALTER TABLE VideoFiles ADD COLUMN NextEpisodeNumber INTEGER;");
-            }
-            catch { }
-            
-            try
-            {
-                Database.ExecuteSqlRaw(@"
-                    CREATE TABLE IF NOT EXISTS TvSeasons (
-                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        TmdbSeriesId INTEGER NOT NULL,
-                        SeasonNumber INTEGER NOT NULL,
-                        Name TEXT,
-                        Overview TEXT,
-                        PosterPath TEXT,
-                        AirDate TEXT,
-                        EpisodeCount INTEGER NOT NULL
-                    );
-                ");
-            }
-            catch { }
+                if (_isInitialized) return;
 
-            try
-            {
-                Database.ExecuteSqlRaw(@"
-                    CREATE TABLE IF NOT EXISTS TvEpisodes (
-                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        TmdbSeriesId INTEGER NOT NULL,
-                        SeasonNumber INTEGER NOT NULL,
-                        EpisodeNumber INTEGER NOT NULL,
-                        Name TEXT,
-                        Overview TEXT,
-                        StillPath TEXT,
-                        AirDate TEXT,
-                        VoteAverage REAL NOT NULL,
-                        IsWatched INTEGER NOT NULL DEFAULT 0
-                    );
-                ");
+                try
+                {
+                    using var db = new AppDbContext();
+                    db.Database.EnsureCreated();
+
+                    string[] alterCommands = new[]
+                    {
+                        "ALTER TABLE VideoFiles ADD COLUMN FirstAirDate TEXT;",
+                        "ALTER TABLE VideoFiles ADD COLUMN LastAirDate TEXT;",
+                        "ALTER TABLE VideoFiles ADD COLUMN NetworkName TEXT;",
+                        "ALTER TABLE VideoFiles ADD COLUMN AirDay TEXT;",
+                        "ALTER TABLE VideoFiles ADD COLUMN AirTime TEXT;",
+                        "ALTER TABLE VideoFiles ADD COLUMN TotalSeasonsCount INTEGER;",
+                        "ALTER TABLE VideoFiles ADD COLUMN TotalEpisodesCount INTEGER;",
+                        "ALTER TABLE VideoFiles ADD COLUMN IsWatched INTEGER NOT NULL DEFAULT 0;",
+                        "ALTER TABLE VideoFiles ADD COLUMN IsFavorite INTEGER NOT NULL DEFAULT 0;",
+                        "ALTER TABLE VideoFiles ADD COLUMN IsWatchlist INTEGER NOT NULL DEFAULT 0;",
+                        "ALTER TABLE VideoFiles ADD COLUMN WatchProgressPercent REAL NOT NULL DEFAULT 0;",
+                        "ALTER TABLE VideoFiles ADD COLUMN WatchProgressSeconds INTEGER NOT NULL DEFAULT 0;",
+                        "ALTER TABLE VideoFiles ADD COLUMN TotalDurationSeconds INTEGER NOT NULL DEFAULT 0;",
+                        "ALTER TABLE VideoFiles ADD COLUMN CollectionName TEXT;",
+                        "ALTER TABLE VideoFiles ADD COLUMN IsHidden INTEGER NOT NULL DEFAULT 0;",
+                        "ALTER TABLE VideoFiles ADD COLUMN CustomTags TEXT;",
+                        "ALTER TABLE VideoFiles ADD COLUMN HasDubbing INTEGER NOT NULL DEFAULT 0;",
+                        "ALTER TABLE VideoFiles ADD COLUMN HasSubtitle INTEGER NOT NULL DEFAULT 0;",
+                        "ALTER TABLE VideoFiles ADD COLUMN ContentRating TEXT;",
+                        "ALTER TABLE VideoFiles ADD COLUMN LastPlayedEpisode INTEGER;",
+                        "ALTER TABLE VideoFiles ADD COLUMN LastPlayedAt TEXT;",
+                        "ALTER TABLE VideoFiles ADD COLUMN IsTracked INTEGER NOT NULL DEFAULT 0;",
+                        "ALTER TABLE VideoFiles ADD COLUMN SeriesStatus TEXT;",
+                        "ALTER TABLE VideoFiles ADD COLUMN LastAiredSeason INTEGER;",
+                        "ALTER TABLE VideoFiles ADD COLUMN HasNewEpisode INTEGER NOT NULL DEFAULT 0;",
+                        "ALTER TABLE VideoFiles ADD COLUMN NextEpisodeDate TEXT;",
+                        "ALTER TABLE VideoFiles ADD COLUMN NextEpisodeSeason INTEGER;",
+                        "ALTER TABLE VideoFiles ADD COLUMN NextEpisodeNumber INTEGER;"
+                    };
+
+                    foreach (var cmd in alterCommands)
+                    {
+                        try { db.Database.ExecuteSqlRaw(cmd); } catch { }
+                    }
+
+                    // Auto-heal missing Year from FirstAirDate
+                    try
+                    {
+                        db.Database.ExecuteSqlRaw("UPDATE VideoFiles SET Year = substr(FirstAirDate, 1, 4) WHERE (Year IS NULL OR Year = '' OR Year = '0') AND FirstAirDate IS NOT NULL AND length(FirstAirDate) >= 4;");
+                    }
+                    catch { }
+
+                    // Auto-heal rating scale for any score > 10
+                    try
+                    {
+                        db.Database.ExecuteSqlRaw("UPDATE VideoFiles SET Rating = ROUND(Rating / 10.0, 1) WHERE Rating > 10.0;");
+                    }
+                    catch { }
+
+                    try
+                    {
+                        db.Database.ExecuteSqlRaw(@"
+                            CREATE TABLE IF NOT EXISTS TvSeasons (
+                                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                TmdbSeriesId INTEGER NOT NULL,
+                                SeasonNumber INTEGER NOT NULL,
+                                Name TEXT,
+                                Overview TEXT,
+                                PosterPath TEXT,
+                                AirDate TEXT,
+                                EpisodeCount INTEGER NOT NULL
+                            );
+                        ");
+                    }
+                    catch { }
+
+                    try
+                    {
+                        db.Database.ExecuteSqlRaw(@"
+                            CREATE TABLE IF NOT EXISTS TvEpisodes (
+                                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                TmdbSeriesId INTEGER NOT NULL,
+                                SeasonNumber INTEGER NOT NULL,
+                                EpisodeNumber INTEGER NOT NULL,
+                                Name TEXT,
+                                Overview TEXT,
+                                StillPath TEXT,
+                                AirDate TEXT,
+                                VoteAverage REAL NOT NULL,
+                                IsWatched INTEGER NOT NULL DEFAULT 0
+                            );
+                        ");
+                    }
+                    catch { }
+
+                    _isInitialized = true;
+                }
+                catch (Exception ex)
+                {
+                    Services.LoggerService.Error("[AppDbContext] Database initialization failed", ex);
+                }
             }
-            catch { }
         }
 
         public static string GetDatabasePath()
