@@ -163,12 +163,17 @@ namespace MovieManagerDesktop.ViewModels
         {
             if (obj is not AppNotificationItem item) return false;
 
+            // Determine if item is an update notification
+            bool isUpdateItem = string.Equals(item.Type, "update", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(item.ActionTitle, "دانلود بروزرسانی", StringComparison.OrdinalIgnoreCase) ||
+                                (item.Title?.Contains("بروزرسانی", StringComparison.OrdinalIgnoreCase) == true);
+
             // Tab filter
             bool matchesTab = SelectedNotificationTab switch
             {
-                "update" => string.Equals(item.Type, "update", StringComparison.OrdinalIgnoreCase),
-                "news" => string.Equals(item.Type, "info", StringComparison.OrdinalIgnoreCase) || string.Equals(item.Type, "success", StringComparison.OrdinalIgnoreCase),
-                "warning" => string.Equals(item.Type, "warning", StringComparison.OrdinalIgnoreCase),
+                "update" => isUpdateItem,
+                "news" => !isUpdateItem && (string.Equals(item.Type, "info", StringComparison.OrdinalIgnoreCase) || string.Equals(item.Type, "success", StringComparison.OrdinalIgnoreCase)),
+                "warning" => !isUpdateItem && string.Equals(item.Type, "warning", StringComparison.OrdinalIgnoreCase),
                 _ => true
             };
 

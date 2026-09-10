@@ -71,7 +71,7 @@ namespace MovieManagerDesktop
                             MovieManagerDesktop.Services.NotificationCenterService.Instance.AddLocalNotification(
                                 title: $"بروزرسانی جدید در دسترس است ({update.LatestVersion})",
                                 message: string.IsNullOrWhiteSpace(update.Message) ? "نسخه جدید نرم‌افزار آماده دریافت و نصب است." : update.Message,
-                                type: update.IsMandatory ? "warning" : "info",
+                                type: "update",
                                 actionTitle: "دانلود بروزرسانی",
                                 actionUrl: update.DownloadUrl,
                                 isPinned: update.IsMandatory
