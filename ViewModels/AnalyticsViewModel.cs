@@ -187,10 +187,12 @@ namespace MovieManagerDesktop.ViewModels
                     using var db = new AppDbContext();
                     if (!db.Database.CanConnect()) return null;
 
-                    var allFiles = db.VideoFiles.AsNoTracking().ToList();
-                    if (allFiles.Count == 0) return null;
+                    var allFiles = db.VideoFiles.AsNoTracking()
+                        .Where(v => v.FilePath != "[Manual Tracker]" && !v.FilePath.StartsWith("[Manual"))
+                        .ToList();
 
                     var res = new AnalyticsDataResult();
+                    if (allFiles.Count == 0) return res;
 
                     // 1. Group Distinct Movies and Series exactly like MoviesViewModel
                     var allDistinct = allFiles
@@ -245,17 +247,18 @@ namespace MovieManagerDesktop.ViewModels
 
                         totalArchiveSeconds += fileDuration;
 
-                        if (f.WatchProgressSeconds > 0)
-                        {
-                            watchedSeconds += f.WatchProgressSeconds;
-                        }
-                        else if (f.IsWatched || f.WatchProgressPercent >= 85)
+                        // Check watched status first so a fully watched item isn't undercut by a partial progress timestamp
+                        if (f.IsWatched || f.WatchProgressPercent >= 85)
                         {
                             watchedSeconds += fileDuration;
                         }
+                        else if (f.WatchProgressSeconds > 0)
+                        {
+                            watchedSeconds += Math.Min(fileDuration, f.WatchProgressSeconds);
+                        }
                         else if (f.WatchProgressPercent > 0)
                         {
-                            watchedSeconds += (long)(fileDuration * (f.WatchProgressPercent / 100.0));
+                            watchedSeconds += (long)(fileDuration * (Math.Min(100.0, f.WatchProgressPercent) / 100.0));
                         }
 
                         // Storage calculation with on-disk fallback
@@ -273,6 +276,8 @@ namespace MovieManagerDesktop.ViewModels
                             catch { }
                         }
                     }
+
+                    watchedSeconds = Math.Min(totalArchiveSeconds, watchedSeconds);
 
                     res.WatchTimeStr = FormatSecondsToPersianDuration(watchedSeconds);
                     res.ArchiveDurationStr = FormatSecondsToPersianDuration(totalArchiveSeconds);
@@ -362,8 +367,8 @@ namespace MovieManagerDesktop.ViewModels
                         qColorIdx++;
                     }
 
-                    // 8. Decades Breakdown (Based on Distinct Titles)
-                    var decadeMap = new Dictionary<string, int>();
+                    // 8. Decades Breakdown (Based on Distinct Titles with Chronological Sort)
+                    var decadeMap = new Dictionary<string, (int Count, int Order)>();
                     foreach (var g in allDistinct)
                     {
                         var first = g.First();
@@ -373,18 +378,25 @@ namespace MovieManagerDesktop.ViewModels
                             yearVal = first.FirstAirDate.Value.Year.ToString();
                         }
 
-                        string decade = ExtractDecade(yearVal);
-                        decadeMap[decade] = decadeMap.GetValueOrDefault(decade, 0) + 1;
+                        var (decadeLabel, sortOrder) = ExtractDecadeInfo(yearVal);
+                        if (decadeMap.TryGetValue(decadeLabel, out var existing))
+                        {
+                            decadeMap[decadeLabel] = (existing.Count + 1, sortOrder);
+                        }
+                        else
+                        {
+                            decadeMap[decadeLabel] = (1, sortOrder);
+                        }
                     }
 
                     int dColorIdx = 0;
-                    foreach (var kvp in decadeMap.OrderByDescending(x => x.Key))
+                    foreach (var kvp in decadeMap.OrderByDescending(x => x.Value.Order))
                     {
-                        double pct = Math.Round((double)kvp.Value / allDistinct.Count * 100, 1);
+                        double pct = Math.Round((double)kvp.Value.Count / allDistinct.Count * 100, 1);
                         res.DecadeList.Add(new SimpleStatItem
                         {
                             Name = kvp.Key,
-                            Count = kvp.Value,
+                            Count = kvp.Value.Count,
                             Percentage = pct,
                             Color = _decadeColors[dColorIdx % _decadeColors.Length]
                         });
@@ -403,8 +415,13 @@ namespace MovieManagerDesktop.ViewModels
                             foreach (var d in first.Director.Split(new[] { ',', '،', '|', ';' }, StringSplitOptions.RemoveEmptyEntries))
                             {
                                 var trimmed = d.Trim();
-                                if (trimmed.Length > 2)
+                                if (trimmed.Length > 2 &&
+                                    !trimmed.Equals("N/A", StringComparison.OrdinalIgnoreCase) &&
+                                    !trimmed.Equals("Unknown", StringComparison.OrdinalIgnoreCase) &&
+                                    !trimmed.Equals("نامشخص", StringComparison.OrdinalIgnoreCase))
+                                {
                                     directorMap[trimmed] = directorMap.GetValueOrDefault(trimmed, 0) + 1;
+                                }
                             }
                         }
 
@@ -413,8 +430,13 @@ namespace MovieManagerDesktop.ViewModels
                             foreach (var a in first.Actors.Split(new[] { ',', '،', '|', ';' }, StringSplitOptions.RemoveEmptyEntries).Take(4))
                             {
                                 var trimmed = a.Trim();
-                                if (trimmed.Length > 2)
+                                if (trimmed.Length > 2 &&
+                                    !trimmed.Equals("N/A", StringComparison.OrdinalIgnoreCase) &&
+                                    !trimmed.Equals("Unknown", StringComparison.OrdinalIgnoreCase) &&
+                                    !trimmed.Equals("نامشخص", StringComparison.OrdinalIgnoreCase))
+                                {
                                     actorMap[trimmed] = actorMap.GetValueOrDefault(trimmed, 0) + 1;
+                                }
                             }
                         }
                     }
@@ -500,25 +522,25 @@ namespace MovieManagerDesktop.ViewModels
         private static string ExtractNormalizedResolution(string? resolution, string? quality)
         {
             string combined = $"{resolution} {quality}".ToLowerInvariant();
-            if (combined.Contains("2160") || combined.Contains("4k") || combined.Contains("uhd")) return "4K Ultra HD";
-            if (combined.Contains("1080") || combined.Contains("fhd")) return "1080p Full HD";
-            if (combined.Contains("720") || combined.Contains("hd")) return "720p HD";
-            if (combined.Contains("480") || combined.Contains("sd")) return "480p SD";
+            if (combined.Contains("2160") || combined.Contains("3840") || combined.Contains("4k") || combined.Contains("uhd")) return "4K Ultra HD";
+            if (combined.Contains("1080") || combined.Contains("1920") || combined.Contains("fhd")) return "1080p Full HD";
+            if (combined.Contains("720") || combined.Contains("1280") || combined.Contains("hd")) return "720p HD";
+            if (combined.Contains("480") || combined.Contains("854") || combined.Contains("sd") || combined.Contains("dvd")) return "480p SD";
             return "کیفیت استاندارد";
         }
 
-        private static string ExtractDecade(string? yearStr)
+        private static (string Label, int SortOrder) ExtractDecadeInfo(string? yearStr)
         {
             if (int.TryParse(yearStr?.Trim(), out int year) && year > 1900 && year < 2100)
             {
-                if (year >= 2020) return "دهه ۲۰۲۰ (۲۰۲۰ تا اکنون)";
-                if (year >= 2010) return "دهه ۲۰۱۰ (۲۰۱۰ تا ۲۰۱۹)";
-                if (year >= 2000) return "دهه ۲۰۰۰ (۲۰۰۰ تا ۲۰۰۹)";
-                if (year >= 1990) return "دهه ۹۰ (۱۹۹۰ تا ۱۹۹۹)";
-                if (year >= 1980) return "دهه ۸۰ (۱۹۸۰ تا ۱۹۸۹)";
-                return "کلاسیک (قبل از ۱۹۸۰)";
+                if (year >= 2020) return ("دهه ۲۰۲۰ (۲۰۲۰ تا اکنون)", 2020);
+                if (year >= 2010) return ("دهه ۲۰۱۰ (۲۰۱۰ تا ۲۰۱۹)", 2010);
+                if (year >= 2000) return ("دهه ۲۰۰۰ (۲۰۰۰ تا ۲۰۰۹)", 2000);
+                if (year >= 1990) return ("دهه ۹۰ (۱۹۹۰ تا ۱۹۹۹)", 1990);
+                if (year >= 1980) return ("دهه ۸۰ (۱۹۸۰ تا ۱۹۸۹)", 1980);
+                return ("کلاسیک (قبل از ۱۹۸۰)", 1970);
             }
-            return "نامشخص";
+            return ("نامشخص", 0);
         }
 
         [RelayCommand]

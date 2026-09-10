@@ -1,7 +1,9 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Net.Http;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using MovieManagerDesktop.Helpers;
@@ -9,6 +11,21 @@ using MovieManagerDesktop.Views;
 
 namespace MovieManagerDesktop.Services
 {
+    public class UpdateDownloadProgress
+    {
+        public double Percentage { get; set; }
+        public long DownloadedBytes { get; set; }
+        public long TotalBytes { get; set; }
+        public double SpeedBytesPerSecond { get; set; }
+        public string StatusMessage { get; set; } = string.Empty;
+
+        public string DownloadedText => $"{DownloadedBytes / (1024.0 * 1024.0):0.1} مگابایت";
+        public string TotalText => TotalBytes > 0 ? $"{TotalBytes / (1024.0 * 1024.0):0.1} مگابایت" : "نامشخص";
+        public string SpeedText => SpeedBytesPerSecond > 1024 * 1024
+            ? $"{SpeedBytesPerSecond / (1024.0 * 1024.0):0.1} MB/s"
+            : $"{SpeedBytesPerSecond / 1024.0:0} KB/s";
+    }
+
     public class UpdateCheckResult
     {
         public bool Success { get; set; }
@@ -26,12 +43,12 @@ namespace MovieManagerDesktop.Services
 
     /// <summary>
     /// Service to check for software updates from moviemanager.ir server,
-    /// notify users and open download links.
+    /// notify users and handle direct in-app download and installation.
     /// </summary>
     public static class UpdateManagerService
     {
-        public const string CurrentAppVersion = "2.6.0";
-        public const int CurrentVersionCode = 260;
+        public const string CurrentAppVersion = "2.7.0";
+        public const int CurrentVersionCode = 270;
         private const string CheckUpdateUrl = "https://moviemanager.ir/license/api.php?action=check_update&platform=windows";
 
         private static bool _isDialogOpen = false;
@@ -147,6 +164,119 @@ namespace MovieManagerDesktop.Services
             {
                 LoggerService.Error($"[UpdateCheck] Failed to open download URL: {url}", ex);
                 MessageBox.Show($"خطا در باز کردن لینک دانلود:\n{url}", "خطا", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        /// <summary>
+        /// Downloads the update installer file in chunks with live progress and speed reporting.
+        /// Returns the path to the downloaded installer file in temp folder.
+        /// </summary>
+        public static async Task<string?> DownloadUpdateFileAsync(
+            string downloadUrl,
+            string version,
+            IProgress<UpdateDownloadProgress>? progress = null,
+            CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(downloadUrl)) return null;
+
+            string cleanVer = (version ?? "latest").Trim().TrimStart('v', 'V');
+            string tempFileName = $"MovieManager_Setup_v{cleanVer}.exe";
+            string tempPath = Path.Combine(Path.GetTempPath(), tempFileName);
+
+            // If an earlier file exists, remove it
+            if (File.Exists(tempPath))
+            {
+                try { File.Delete(tempPath); } catch { }
+            }
+
+            using var client = new HttpClient { Timeout = TimeSpan.FromHours(1) };
+            using var response = await client.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            long totalBytes = response.Content.Headers.ContentLength ?? -1L;
+            using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true);
+
+            var buffer = new byte[81920];
+            long totalDownloaded = 0;
+            int bytesRead;
+
+            var stopwatch = Stopwatch.StartNew();
+            long lastBytes = 0;
+            double currentSpeed = 0;
+            long lastSpeedCheck = stopwatch.ElapsedMilliseconds;
+
+            while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
+            {
+                await fileStream.WriteAsync(buffer, 0, bytesRead, cancellationToken);
+                totalDownloaded += bytesRead;
+
+                long now = stopwatch.ElapsedMilliseconds;
+                if (now - lastSpeedCheck >= 400)
+                {
+                    double elapsedSec = (now - lastSpeedCheck) / 1000.0;
+                    long bytesDelta = totalDownloaded - lastBytes;
+                    currentSpeed = elapsedSec > 0 ? (bytesDelta / elapsedSec) : 0;
+                    lastBytes = totalDownloaded;
+                    lastSpeedCheck = now;
+                }
+
+                double percent = totalBytes > 0 ? ((double)totalDownloaded / totalBytes * 100.0) : 0;
+                progress?.Report(new UpdateDownloadProgress
+                {
+                    Percentage = percent,
+                    DownloadedBytes = totalDownloaded,
+                    TotalBytes = totalBytes,
+                    SpeedBytesPerSecond = currentSpeed,
+                    StatusMessage = "در حال دریافت بسته بروزرسانی..."
+                });
+            }
+
+            await fileStream.FlushAsync(cancellationToken);
+
+            progress?.Report(new UpdateDownloadProgress
+            {
+                Percentage = 100,
+                DownloadedBytes = totalDownloaded,
+                TotalBytes = totalBytes > 0 ? totalBytes : totalDownloaded,
+                SpeedBytesPerSecond = 0,
+                StatusMessage = "دانلود بسته بروزرسانی تکمیل شد."
+            });
+
+            return tempPath;
+        }
+
+        /// <summary>
+        /// Executes the downloaded installer and gracefully exits the application
+        /// so Inno Setup can overwrite files without file locks.
+        /// </summary>
+        public static void LaunchInstallerAndExit(string installerFilePath)
+        {
+            try
+            {
+                if (!File.Exists(installerFilePath))
+                {
+                    MessageBox.Show("فایل نصبی یافت نشد.", "خطا", MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = installerFilePath,
+                    UseShellExecute = true
+                };
+
+                Process.Start(startInfo);
+
+                Application.Current?.Dispatcher?.Invoke(() =>
+                {
+                    Application.Current.Shutdown();
+                });
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Error($"[AutoUpdater] Failed to launch installer: {installerFilePath}", ex);
+                MessageBox.Show($"خطا در اجرای برنامه نصب:\n{ex.Message}", "خطا", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

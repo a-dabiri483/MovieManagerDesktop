@@ -1,5 +1,11 @@
+using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using MovieManagerDesktop.Services;
 
 namespace MovieManagerDesktop.Views
@@ -7,6 +13,8 @@ namespace MovieManagerDesktop.Views
     public partial class UpdateAvailableWindow : Window
     {
         private readonly UpdateCheckResult _updateInfo;
+        private CancellationTokenSource? _downloadCts;
+        private bool _isDownloading = false;
 
         public UpdateAvailableWindow(UpdateCheckResult updateInfo)
         {
@@ -39,16 +47,123 @@ namespace MovieManagerDesktop.Views
         {
             if (!_updateInfo.IsMandatory)
             {
+                CancelActiveDownload();
                 this.Close();
             }
         }
 
         private void BtnLater_Click(object sender, RoutedEventArgs e)
         {
+            CancelActiveDownload();
             this.Close();
         }
 
-        private void BtnDownload_Click(object sender, RoutedEventArgs e)
+        private async void BtnDownload_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(_updateInfo.DownloadUrl))
+            {
+                MessageBox.Show("لینک دانلود برای این بروزرسانی معتبر نیست.", "خطا", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // Switch to download progress state
+            _isDownloading = true;
+            GridNormalFooter.Visibility = Visibility.Collapsed;
+            GridDownloadProgress.Visibility = Visibility.Visible;
+            BtnBrowserFallback.Visibility = Visibility.Collapsed;
+            SpinnerProgress.Visibility = Visibility.Visible;
+            PrgDownload.IsIndeterminate = true;
+            PrgDownload.Value = 0;
+            TxtPercent.Text = "۰%";
+            TxtDownloadSize.Text = "۰ مگابایت";
+            TxtDownloadSpeed.Text = "۰ KB/s";
+            TxtDownloadStatus.Text = "در حال برقراری ارتباط با سرور...";
+            TxtDownloadStatus.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E2E8F0"));
+
+            _downloadCts = new CancellationTokenSource();
+            string? installerPath = null;
+
+            var progress = new Progress<UpdateDownloadProgress>(p =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    PrgDownload.IsIndeterminate = false;
+                    PrgDownload.Value = p.Percentage;
+                    TxtPercent.Text = $"{p.Percentage:0}%";
+                    TxtDownloadSize.Text = $"{p.DownloadedText} / {p.TotalText}";
+                    TxtDownloadSpeed.Text = p.SpeedText;
+                    if (!string.IsNullOrWhiteSpace(p.StatusMessage))
+                    {
+                        TxtDownloadStatus.Text = p.StatusMessage;
+                    }
+                });
+            });
+
+            try
+            {
+                installerPath = await UpdateManagerService.DownloadUpdateFileAsync(
+                    _updateInfo.DownloadUrl,
+                    _updateInfo.LatestVersion,
+                    progress,
+                    _downloadCts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                ResetFooterToNormal();
+                return;
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Error("[UpdateWindow] In-app download failed", ex);
+                _isDownloading = false;
+                Dispatcher.Invoke(() =>
+                {
+                    SpinnerProgress.Visibility = Visibility.Collapsed;
+                    PrgDownload.IsIndeterminate = false;
+                    TxtDownloadStatus.Text = "خطا در دریافت فایل بروزرسانی!";
+                    TxtDownloadStatus.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F87171"));
+                    BtnBrowserFallback.Visibility = Visibility.Visible;
+                });
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(installerPath) && File.Exists(installerPath))
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    SpinnerProgress.Visibility = Visibility.Collapsed;
+                    PrgDownload.Value = 100;
+                    TxtPercent.Text = "۱۰۰%";
+                    TxtDownloadStatus.Text = "دانلود کامل شد. در حال اجرای ستاپ جدید...";
+                    TxtDownloadStatus.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#34D399"));
+                });
+
+                await Task.Delay(1000);
+                UpdateManagerService.LaunchInstallerAndExit(installerPath);
+            }
+        }
+
+        private void BtnCancelDownload_Click(object sender, RoutedEventArgs e)
+        {
+            if (_isDownloading)
+            {
+                CancelActiveDownload();
+                ResetFooterToNormal();
+            }
+            else
+            {
+                if (!_updateInfo.IsMandatory)
+                {
+                    this.Close();
+                }
+                else
+                {
+                    ResetFooterToNormal();
+                }
+            }
+        }
+
+        private void BtnBrowserFallback_Click(object sender, RoutedEventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(_updateInfo.DownloadUrl))
             {
@@ -59,6 +174,37 @@ namespace MovieManagerDesktop.Views
             {
                 this.Close();
             }
+        }
+
+        private void CancelActiveDownload()
+        {
+            if (_downloadCts != null && !_downloadCts.IsCancellationRequested)
+            {
+                try
+                {
+                    _downloadCts.Cancel();
+                    _downloadCts.Dispose();
+                }
+                catch { }
+                finally
+                {
+                    _downloadCts = null;
+                }
+            }
+            _isDownloading = false;
+        }
+
+        private void ResetFooterToNormal()
+        {
+            _isDownloading = false;
+            GridDownloadProgress.Visibility = Visibility.Collapsed;
+            GridNormalFooter.Visibility = Visibility.Visible;
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            CancelActiveDownload();
+            base.OnClosed(e);
         }
     }
 }

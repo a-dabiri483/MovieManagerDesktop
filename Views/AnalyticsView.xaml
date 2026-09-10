@@ -223,17 +223,19 @@
                         </StackPanel>
 
                         <!-- Visual Ratio Bar -->
-                        <Grid Height="24" Margin="0,8,0,16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="{Binding MoviePercentage, StringFormat='{}{0}*'}"/>
-                                <ColumnDefinition Width="{Binding SeriesPercentage, StringFormat='{}{0}*'}"/>
-                            </Grid.ColumnDefinitions>
-                            
-                            <!-- Movies Bar -->
-                            <Border Grid.Column="0" Background="#EB3B5A" CornerRadius="8,0,0,8" ToolTip="{Binding MoviePercentage, StringFormat='فیلم‌ها: {0}%'}"/>
-                            <!-- Series Bar -->
-                            <Border Grid.Column="1" Background="#8854D0" CornerRadius="0,8,8,0" ToolTip="{Binding SeriesPercentage, StringFormat='سریال‌ها: {0}%'}"/>
-                        </Grid>
+                        <Border Height="24" CornerRadius="8" Background="#20FFFFFF" ClipToBounds="True" Margin="0,8,0,16">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="{Binding MoviePercentage, StringFormat='{}{0}*'}"/>
+                                    <ColumnDefinition Width="{Binding SeriesPercentage, StringFormat='{}{0}*'}"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- Movies Bar -->
+                                <Border Grid.Column="0" Background="#EB3B5A" ToolTip="{Binding MoviePercentage, StringFormat='فیلم‌ها: {0}%'}"/>
+                                <!-- Series Bar -->
+                                <Border Grid.Column="1" Background="#8854D0" ToolTip="{Binding SeriesPercentage, StringFormat='سریال‌ها: {0}%'}"/>
+                            </Grid>
+                        </Border>
 
                         <!-- Legend Items -->
                         <Grid Margin="0,4,0,12">
@@ -362,7 +364,7 @@
                                                          Foreground="{Binding Color}" Background="Transparent" BorderThickness="0"/>
                                         </Border>
 
-                                        <TextBlock Grid.Column="2" Text="{Binding Count, Converter={StaticResource PersianNumberConverter}, StringFormat='{}{0} فایل'}" FontSize="11" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding Count, Converter={StaticResource PersianNumberConverter}, StringFormat='{}{0} اثر'}" FontSize="11" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>

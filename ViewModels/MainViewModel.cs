@@ -295,7 +295,28 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void OpenNotificationAction(AppNotificationItem item)
         {
-            if (item != null && !string.IsNullOrWhiteSpace(item.ActionUrl))
+            if (item != null && item.ActionTitle == "دانلود بروزرسانی")
+            {
+                _ = Task.Run(async () =>
+                {
+                    var update = await UpdateManagerService.CheckForUpdatesAsync(silent: false);
+                    if (update != null && update.HasUpdate)
+                    {
+                        UpdateManagerService.ShowUpdateDialog(update);
+                    }
+                    else if (!string.IsNullOrWhiteSpace(item.ActionUrl))
+                    {
+                        UpdateManagerService.ShowUpdateDialog(new UpdateCheckResult
+                        {
+                            HasUpdate = true,
+                            DownloadUrl = item.ActionUrl,
+                            LatestVersion = "جدید",
+                            CurrentVersion = UpdateManagerService.CurrentAppVersion
+                        });
+                    }
+                });
+            }
+            else if (item != null && !string.IsNullOrWhiteSpace(item.ActionUrl))
             {
                 try
                 {
@@ -308,6 +329,7 @@ namespace MovieManagerDesktop.ViewModels
                 }
                 catch { }
             }
+
             if (item != null)
             {
                 NotificationCenter.MarkAsRead(item);
