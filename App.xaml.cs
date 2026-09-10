@@ -13,6 +13,10 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Enforce anti-tamper and anti-debugging integrity defenses immediately on startup
+        MovieManagerDesktop.Services.SecurityIntegrityService.AssertRuntimeIntegrity();
+
         this.DispatcherUnhandledException += App_DispatcherUnhandledException;
 
         // Initialize SQLite schema and migrations once on startup

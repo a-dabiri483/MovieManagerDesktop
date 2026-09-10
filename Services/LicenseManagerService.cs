@@ -30,7 +30,9 @@ namespace MovieManagerDesktop.Services
         /// </summary>
         public static bool EnsureProFeature(string featureName)
         {
-            if (Debugger.IsAttached)
+            SecurityIntegrityService.AssertRuntimeIntegrity();
+
+            if (SecurityIntegrityService.IsDebuggerAttached())
             {
                 return false;
             }
@@ -99,7 +101,9 @@ namespace MovieManagerDesktop.Services
         /// </summary>
         public static bool IsLicenseValid()
         {
-            if (Debugger.IsAttached)
+            SecurityIntegrityService.AssertRuntimeIntegrity();
+
+            if (SecurityIntegrityService.IsDebuggerAttached())
             {
                 return false;
             }
@@ -113,6 +117,13 @@ namespace MovieManagerDesktop.Services
             string currentHwid = HardwareIdService.GetHardwareId();
             if (!string.Equals(lic.BoundHwid, currentHwid, StringComparison.OrdinalIgnoreCase))
             {
+                return false;
+            }
+
+            // Anti-Clock Rollback: Invalidate if system clock was rolled backwards
+            if (SecurityIntegrityService.CheckClockRollback(lic.LastVerifiedAt))
+            {
+                LoggerService.Warning("[LicenseManager] System clock rollback detected! License invalidated.");
                 return false;
             }
 
@@ -165,7 +176,11 @@ namespace MovieManagerDesktop.Services
                 string key = root.TryGetProperty("license_key", out var kElem) ? kElem.GetString() ?? "" : "";
                 string planTitle = root.TryGetProperty("plan_title", out var pElem) ? pElem.GetString() ?? "اشتراک فعال" : "اشتراک فعال";
                 bool isLifetime = root.TryGetProperty("is_lifetime", out var lifeElem) && lifeElem.GetBoolean();
-                string token = root.TryGetProperty("token", out var tokElem) ? tokElem.GetString() ?? "" : "";
+                
+                // Prioritize asymmetric RSA token, fallback to standard token
+                string token = root.TryGetProperty("rsa_token", out var rsaElem) && !string.IsNullOrWhiteSpace(rsaElem.GetString())
+                    ? rsaElem.GetString()!
+                    : (root.TryGetProperty("token", out var tokElem) ? tokElem.GetString() ?? "" : "");
 
                 if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(key))
                 {
@@ -264,7 +279,11 @@ namespace MovieManagerDesktop.Services
                 string key = root.TryGetProperty("license_key", out var kElem) ? kElem.GetString() ?? licenseKey : licenseKey;
                 string planTitle = root.TryGetProperty("plan_title", out var pElem) ? pElem.GetString() ?? "اشتراک فعال" : "اشتراک فعال";
                 bool isLifetime = root.TryGetProperty("is_lifetime", out var lifeElem) && lifeElem.GetBoolean();
-                string token = root.TryGetProperty("token", out var tokElem) ? tokElem.GetString() ?? "" : "";
+                
+                // Prioritize asymmetric RSA token, fallback to standard token
+                string token = root.TryGetProperty("rsa_token", out var rsaElem) && !string.IsNullOrWhiteSpace(rsaElem.GetString())
+                    ? rsaElem.GetString()!
+                    : (root.TryGetProperty("token", out var tokElem) ? tokElem.GetString() ?? "" : "");
 
                 DateTime? expiresAt = null;
                 if (!isLifetime && root.TryGetProperty("expires_at", out var expElem))
@@ -405,6 +424,30 @@ namespace MovieManagerDesktop.Services
                 return false;
             }
 
+            // 1. Asymmetric RSA-2048 Verification (Unbreakable by keygens)
+            if (token.StartsWith("MMRSA1.", StringComparison.Ordinal))
+            {
+                if (SecurityIntegrityService.VerifyRsaToken(token, currentHwid, out var doc, out string? errMsg))
+                {
+                    if (doc != null && doc.RootElement.TryGetProperty("key", out var kElem))
+                    {
+                        string tokenKey = kElem.GetString() ?? "";
+                        if (!string.IsNullOrEmpty(expectedKey) && !string.Equals(tokenKey, expectedKey, StringComparison.OrdinalIgnoreCase))
+                        {
+                            LoggerService.Warning($"[LicenseManager] VerifyOfflineToken (RSA): tokenKey '{tokenKey}' != expectedKey '{expectedKey}'");
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                else
+                {
+                    LoggerService.Warning($"[LicenseManager] RSA token verification failed: {errMsg}");
+                    return false;
+                }
+            }
+
+            // 2. Legacy symmetric AES verification fallback
             try
             {
                 string? decryptedJson = CryptoUtils.Decrypt(token);
@@ -555,6 +598,13 @@ namespace MovieManagerDesktop.Services
 
                 if (!lic.IsActivated)
                 {
+                    return new LicenseInfo { IsActivated = false };
+                }
+
+                // Anti-Clock Rollback on disk load
+                if (SecurityIntegrityService.CheckClockRollback(lic.LastVerifiedAt))
+                {
+                    LoggerService.Warning("[LicenseManager] Clock rollback detected in stored license file.");
                     return new LicenseInfo { IsActivated = false };
                 }
 
