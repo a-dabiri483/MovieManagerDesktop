@@ -23,7 +23,6 @@ namespace MovieManagerDesktop.Services
         public int? Season { get; set; }
         public int? Episode { get; set; }
         public bool IsSeasonPack { get; set; }
-        public int? OpenSubFileId { get; set; }
 
         public string DisplayText => $"{Language} | {Title} ({Source})";
     }
@@ -32,7 +31,6 @@ namespace MovieManagerDesktop.Services
     {
         public const string SUBDL_DEFAULT_KEY = "subdl_HHtBliLNdNumqWs29n7Z4E9GLQwyX0bL9MDFc6RTy34";
         public const string SUBSOURCE_DEFAULT_KEY = "sk_68d68b32ef82a0a168e243815c66d85ca5ecfe2909507245e8ff695b27c10025";
-        public const string OPENSUBTITLES_DEFAULT_KEY = "tf6Ebu6rUqT662SZlDWYWw5yJkS9Gz2g";
 
         private static readonly HttpClient _httpClient = new(new Network.ProxyHttpClientHandler())
         {
@@ -54,7 +52,7 @@ namespace MovieManagerDesktop.Services
             int? season = null;
             int? episode = null;
 
-            // Match S01E01, S1E1, 1x01, Season 1 Episode 1, فصل 1 قسمت 1
+            // 1. Season & Episode Detection
             var sEpMatch = Regex.Match(input, @"(?:[sS](\d+)\s*[eE](\d+)|(?:(\d+)x(\d+))|(?:فصل\s*(\d+)\s*قسمت\s*(\d+))|(?:Season\s*(\d+)\s*Episode\s*(\d+)))", RegexOptions.IgnoreCase);
             if (sEpMatch.Success)
             {
@@ -77,10 +75,21 @@ namespace MovieManagerDesktop.Services
                 if (eOnly.Success && int.TryParse(eOnly.Groups[1].Value, out int eVal)) episode = eVal;
             }
 
-            // Strip video quality, codecs, release groups
-            string cleaned = Regex.Replace(input, @"(?i)\b(?:1080p|720p|480p|2160p|4k|uhd|bluray|bdrip|brrip|web-dl|webrip|web|hdtv|dvdrip|x264|x265|hevc|h264|h265|aac|dts|ac3|yify|pahe|psa|rarbg|eztv|galaxytv|amzn|nf|dsnp|proper|repack|remux|hdr|10bit|60fps|dual-audio|dubbed|farsi|persian|sub|softsub)\b", " ");
+            // 2. Strip video quality, codecs, resolutions, release encoders
+            string cleaned = Regex.Replace(input, @"(?i)\b(?:1080p|720p|480p|2160p|4k|uhd|bluray|bdrip|brrip|web-dl|webrip|web|hdtv|dvdrip|x264|x265|hevc|h264|h265|aac|dts|ac3|yify|pahe|psa|rarbg|eztv|galaxytv|amzn|nf|dsnp|proper|repack|remux|hdr|10bit|60fps|dual-audio|softsub)\b", " ");
+
+            // 3. Strip Iranian download site brands & watermark tokens
+            cleaned = Regex.Replace(cleaned, @"(?i)\b(?:golchindl|film2media|zarfilm|avamovie|dibamovie|digimovie|uptvs|tinymoviez|hexdownload|mobomoviez|film2serial|salamdl|valamovie|doostihaa|mydiba|melodifilm|namava|filimo|filmnet|tamasha|telewebion)\b", " ");
+
+            // 4. Strip Persian / English dubbing and subtitle tags
+            cleaned = Regex.Replace(cleaned, @"(?i)\b(?:duble|dooble|dubbed|farsidub|fa-dubbed|farsi|persian|sub|subtitle)\b", " ");
+            cleaned = Regex.Replace(cleaned, @"[\u0600-\u06FF\s]*(?:دوبله(?:\s+فارسی)?|زیرنویس(?:\s+چسبیده|\s+فارسی)?|بدون\s+سانسور|سانسور\s+شده|نسخه\s+کامل|فارسی)[\u0600-\u06FF\s]*", " ");
+
+            // 5. Strip Season/Episode patterns from title text
             cleaned = Regex.Replace(cleaned, @"(?i)(?:[sS]\d+\s*[eE]\d+|\d+x\d+|Season\s*\d+|Episode\s*\d+|فصل\s*\d+|قسمت\s*\d+)", " ");
-            cleaned = Regex.Replace(cleaned, @"[\.\[\]\(\)\-_]", " ");
+
+            // 6. Replace symbols, brackets, dots with spaces
+            cleaned = Regex.Replace(cleaned, @"[\.\[\]\(\)\-_\+:]", " ");
             cleaned = Regex.Replace(cleaned, @"\s+", " ").Trim();
 
             return (cleaned, season, episode);
@@ -105,34 +114,56 @@ namespace MovieManagerDesktop.Services
                 _ => "FA,EN"
             };
 
+            // Extract year if present (e.g. 2026) to allow searching both with and without year
+            string? titleWithoutYear = null;
+            var yearMatch = Regex.Match(cleanTitle, @"\b(19\d\d|20\d\d)\b");
+            if (yearMatch.Success)
+            {
+                string noYear = Regex.Replace(cleanTitle, @"\b(19\d\d|20\d\d)\b", "").Trim();
+                noYear = Regex.Replace(noYear, @"\s+", " ");
+                if (!string.IsNullOrWhiteSpace(noYear) && noYear.Length >= 2)
+                {
+                    titleWithoutYear = noYear;
+                }
+            }
+
             // ==========================================
-            // 1. SubDL API (Search by Show Name + S/E)
+            // 1. SubDL API (Search by Show Name + S/E + Clean Title)
             // ==========================================
             try
             {
                 var subdlQueries = new List<string>();
                 string encTitle = Uri.EscapeDataString(cleanTitle);
 
-                // Query 1: Exact Episode
                 if (season != null && episode != null)
                 {
                     subdlQueries.Add($"https://api.subdl.com/api/v1/subtitles?film_name={encTitle}&type=tv&season_number={season}&episode_number={episode}&languages={subdlLangs}&api_key={SUBDL_DEFAULT_KEY}&subs_per_page=30");
                 }
-                // Query 2: Season Pack / General Show
                 if (season != null)
                 {
                     subdlQueries.Add($"https://api.subdl.com/api/v1/subtitles?film_name={encTitle}&type=tv&season_number={season}&languages={subdlLangs}&api_key={SUBDL_DEFAULT_KEY}&subs_per_page=30");
                 }
-                // Query 3: Pure Title
                 subdlQueries.Add($"https://api.subdl.com/api/v1/subtitles?film_name={encTitle}&languages={subdlLangs}&api_key={SUBDL_DEFAULT_KEY}&subs_per_page=30");
+
+                if (!string.IsNullOrWhiteSpace(titleWithoutYear))
+                {
+                    string encNoYear = Uri.EscapeDataString(titleWithoutYear);
+                    if (season != null && episode != null)
+                    {
+                        subdlQueries.Add($"https://api.subdl.com/api/v1/subtitles?film_name={encNoYear}&type=tv&season_number={season}&episode_number={episode}&languages={subdlLangs}&api_key={SUBDL_DEFAULT_KEY}&subs_per_page=30");
+                    }
+                    subdlQueries.Add($"https://api.subdl.com/api/v1/subtitles?film_name={encNoYear}&languages={subdlLangs}&api_key={SUBDL_DEFAULT_KEY}&subs_per_page=30");
+                }
 
                 foreach (var url in subdlQueries)
                 {
-                    if (results.Count >= 25) break;
+                    if (results.Count >= 30) break;
 
                     try
                     {
-                        var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url), ct);
+                        using var req = new HttpRequestMessage(HttpMethod.Get, SettingsManager.WrapUrlWithProxy(url));
+                        req.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+                        var response = await _httpClient.SendAsync(req, ct);
                         if (!response.IsSuccessStatusCode) continue;
 
                         string json = await response.Content.ReadAsStringAsync(ct);
@@ -145,6 +176,7 @@ namespace MovieManagerDesktop.Services
                             foreach (var sub in subsArray.EnumerateArray())
                             {
                                 string releaseName = sub.TryGetProperty("release_name", out var rn) ? rn.GetString() ?? "" : "";
+                                string name = sub.TryGetProperty("name", out var nm) ? nm.GetString() ?? releaseName : releaseName;
                                 string langCode = sub.TryGetProperty("lang", out var l) ? l.GetString() ?? "FA" : "FA";
                                 string urlPath = sub.TryGetProperty("url", out var u) ? u.GetString() ?? "" : "";
 
@@ -159,15 +191,18 @@ namespace MovieManagerDesktop.Services
                                 int? epNum = sub.TryGetProperty("episode", out var epP) && epP.ValueKind == JsonValueKind.Number ? epP.GetInt32() : null;
                                 int? sNum = sub.TryGetProperty("season", out var sP) && sP.ValueKind == JsonValueKind.Number ? sP.GetInt32() : null;
 
-                                string langLabel = langCode.Equals("FA", StringComparison.OrdinalIgnoreCase) || langCode.Equals("Farsi", StringComparison.OrdinalIgnoreCase) || langCode.Equals("Persian", StringComparison.OrdinalIgnoreCase)
-                                    ? "🇮🇷 فارسی"
-                                    : (langCode.Equals("EN", StringComparison.OrdinalIgnoreCase) ? "🇬🇧 English" : langCode);
+                                bool isPersian = langCode.Contains("fa", StringComparison.OrdinalIgnoreCase) ||
+                                                 langCode.Contains("farsi", StringComparison.OrdinalIgnoreCase) ||
+                                                 langCode.Contains("persian", StringComparison.OrdinalIgnoreCase);
+
+                                string langLabel = isPersian ? "🇮🇷 فارسی" : (langCode.Contains("en", StringComparison.OrdinalIgnoreCase) ? "🇬🇧 English" : langCode);
+                                string itemTitle = string.IsNullOrWhiteSpace(releaseName) ? (!string.IsNullOrWhiteSpace(name) ? name : cleanTitle) : releaseName;
 
                                 results.Add(new OnlineSubtitleItem
                                 {
-                                    Title = string.IsNullOrWhiteSpace(releaseName) ? cleanTitle : releaseName,
+                                    Title = itemTitle,
                                     Language = langLabel,
-                                    LanguageCode = langCode.ToLowerInvariant(),
+                                    LanguageCode = isPersian ? "fa" : "en",
                                     DownloadUrl = fullDownloadUrl,
                                     Source = "SubDL",
                                     Season = sNum,
@@ -188,71 +223,85 @@ namespace MovieManagerDesktop.Services
             // ==========================================
             // 2. SubSource API
             // ==========================================
-            if (results.Count < 20)
+            if (results.Count < 30)
             {
-                try
+                var ssQueries = new List<string> { cleanTitle };
+                if (!string.IsNullOrWhiteSpace(titleWithoutYear) && !ssQueries.Contains(titleWithoutYear))
                 {
-                    string ssLang = language == "EN" ? "english" : "persian";
-                    string searchUrl = $"https://api.subsource.net/api/v1/movies/search?searchType=text&q={Uri.EscapeDataString(cleanTitle)}";
+                    ssQueries.Add(titleWithoutYear);
+                }
 
-                    using var req = new HttpRequestMessage(HttpMethod.Get, SettingsManager.WrapUrlWithProxy(searchUrl));
-                    req.Headers.Add("X-API-Key", SUBSOURCE_DEFAULT_KEY);
-                    req.Headers.Add("Accept", "application/json");
-
-                    var response = await _httpClient.SendAsync(req, ct);
-                    if (response.IsSuccessStatusCode)
+                foreach (var ssQuery in ssQueries)
+                {
+                    if (results.Count >= 30) break;
+                    try
                     {
-                        string json = await response.Content.ReadAsStringAsync(ct);
-                        using var doc = JsonDocument.Parse(json);
-                        var root = doc.RootElement;
+                        string ssLang = language == "EN" ? "english" : "persian";
+                        string searchUrl = $"https://api.subsource.net/api/v1/movies/search?searchType=text&q={Uri.EscapeDataString(ssQuery)}";
 
-                        if (root.TryGetProperty("data", out var dataArr) && dataArr.ValueKind == JsonValueKind.Array)
+                        using var req = new HttpRequestMessage(HttpMethod.Get, SettingsManager.WrapUrlWithProxy(searchUrl));
+                        req.Headers.Add("X-API-Key", SUBSOURCE_DEFAULT_KEY);
+                        req.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+                        req.Headers.Add("Accept", "application/json");
+
+                        var response = await _httpClient.SendAsync(req, ct);
+                        if (response.IsSuccessStatusCode)
                         {
-                            var movies = dataArr.EnumerateArray().ToList();
-                            if (movies.Any())
+                            string json = await response.Content.ReadAsStringAsync(ct);
+                            using var doc = JsonDocument.Parse(json);
+                            var root = doc.RootElement;
+
+                            if (root.TryGetProperty("data", out var dataArr) && dataArr.ValueKind == JsonValueKind.Array)
                             {
-                                int movieId = movies[0].TryGetProperty("movieId", out var mId) ? mId.GetInt32() : -1;
-                                if (movieId > 0)
+                                var movies = dataArr.EnumerateArray().ToList();
+                                if (movies.Any())
                                 {
-                                    string subUrl = $"https://api.subsource.net/api/v1/subtitles?movieId={movieId}&language={ssLang}";
-                                    using var subReq = new HttpRequestMessage(HttpMethod.Get, SettingsManager.WrapUrlWithProxy(subUrl));
-                                    subReq.Headers.Add("X-API-Key", SUBSOURCE_DEFAULT_KEY);
-                                    subReq.Headers.Add("Accept", "application/json");
-
-                                    var subResp = await _httpClient.SendAsync(subReq, ct);
-                                    if (subResp.IsSuccessStatusCode)
+                                    int movieId = movies[0].TryGetProperty("movieId", out var mId) ? mId.GetInt32() : -1;
+                                    if (movieId > 0)
                                     {
-                                        string subJson = await subResp.Content.ReadAsStringAsync(ct);
-                                        using var subDoc = JsonDocument.Parse(subJson);
-                                        if (subDoc.RootElement.TryGetProperty("data", out var subItems) && subItems.ValueKind == JsonValueKind.Array)
+                                        string subUrl = $"https://api.subsource.net/api/v1/subtitles?movieId={movieId}&language={ssLang}";
+                                        using var subReq = new HttpRequestMessage(HttpMethod.Get, SettingsManager.WrapUrlWithProxy(subUrl));
+                                        subReq.Headers.Add("X-API-Key", SUBSOURCE_DEFAULT_KEY);
+                                        subReq.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+                                        subReq.Headers.Add("Accept", "application/json");
+
+                                        var subResp = await _httpClient.SendAsync(subReq, ct);
+                                        if (subResp.IsSuccessStatusCode)
                                         {
-                                            foreach (var subItem in subItems.EnumerateArray().Take(20))
+                                            string subJson = await subResp.Content.ReadAsStringAsync(ct);
+                                            using var subDoc = JsonDocument.Parse(subJson);
+                                            if (subDoc.RootElement.TryGetProperty("data", out var subItems) && subItems.ValueKind == JsonValueKind.Array)
                                             {
-                                                int subtitleId = subItem.TryGetProperty("subtitleId", out var sid) ? sid.GetInt32() : -1;
-                                                if (subtitleId <= 0) continue;
-
-                                                string releaseName = "SubSource Subtitle";
-                                                if (subItem.TryGetProperty("releaseInfo", out var relArr) && relArr.ValueKind == JsonValueKind.Array)
+                                                foreach (var subItem in subItems.EnumerateArray().Take(20))
                                                 {
-                                                    var firstRel = relArr.EnumerateArray().FirstOrDefault();
-                                                    if (firstRel.ValueKind == JsonValueKind.String)
-                                                        releaseName = firstRel.GetString() ?? releaseName;
-                                                }
+                                                    int subtitleId = subItem.TryGetProperty("subtitleId", out var sid) ? sid.GetInt32() : -1;
+                                                    if (subtitleId <= 0) continue;
 
-                                                string dlUrl = $"https://api.subsource.net/api/v1/subtitles/{subtitleId}/download";
-                                                string langLabel = ssLang == "persian" ? "🇮🇷 فارسی" : "🇬🇧 English";
-
-                                                if (results.All(r => r.DownloadUrl != dlUrl))
-                                                {
-                                                    results.Add(new OnlineSubtitleItem
+                                                    string releaseName = "SubSource Subtitle";
+                                                    if (subItem.TryGetProperty("releaseInfo", out var relArr) && relArr.ValueKind == JsonValueKind.Array)
                                                     {
-                                                        Title = releaseName,
-                                                        Language = langLabel,
-                                                        LanguageCode = ssLang == "persian" ? "fa" : "en",
-                                                        DownloadUrl = dlUrl,
-                                                        Source = "SubSource",
-                                                        ReleaseInfo = releaseName
-                                                    });
+                                                        var firstRel = relArr.EnumerateArray().FirstOrDefault();
+                                                        if (firstRel.ValueKind == JsonValueKind.String)
+                                                            releaseName = firstRel.GetString() ?? releaseName;
+                                                    }
+
+                                                    string dlUrl = $"https://api.subsource.net/api/v1/subtitles/{subtitleId}/download";
+                                                    string langLabel = ssLang == "persian" ? "🇮🇷 فارسی" : "🇬🇧 English";
+
+                                                    if (results.All(r => r.DownloadUrl != dlUrl))
+                                                    {
+                                                        results.Add(new OnlineSubtitleItem
+                                                        {
+                                                            Title = releaseName,
+                                                            Language = langLabel,
+                                                            LanguageCode = ssLang == "persian" ? "fa" : "en",
+                                                            DownloadUrl = dlUrl,
+                                                            Source = "SubSource",
+                                                            ReleaseInfo = releaseName,
+                                                            Season = season,
+                                                            Episode = episode
+                                                        });
+                                                    }
                                                 }
                                             }
                                         }
@@ -261,73 +310,11 @@ namespace MovieManagerDesktop.Services
                             }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    LoggerService.Error($"[Subtitles] Error querying SubSource: {ex.Message}");
-                }
-            }
-
-            // ==========================================
-            // 3. OpenSubtitles.com API (Worldwide DB)
-            // ==========================================
-            if (results.Count < 20)
-            {
-                try
-                {
-                    string osLang = language == "FA" ? "fa" : (language == "EN" ? "en" : "fa,en");
-                    string osUrl = $"https://api.opensubtitles.com/api/v1/subtitles?query={Uri.EscapeDataString(cleanTitle)}&languages={osLang}";
-                    if (season != null) osUrl += $"&season_number={season}";
-                    if (episode != null) osUrl += $"&episode_number={episode}";
-
-                    using var osReq = new HttpRequestMessage(HttpMethod.Get, SettingsManager.WrapUrlWithProxy(osUrl));
-                    osReq.Headers.Add("Api-Key", OPENSUBTITLES_DEFAULT_KEY);
-                    osReq.Headers.Add("User-Agent", "MovieManagerDesktop v2.5");
-
-                    var osResp = await _httpClient.SendAsync(osReq, ct);
-                    if (osResp.IsSuccessStatusCode)
+                    catch (Exception ex)
                     {
-                        string osJson = await osResp.Content.ReadAsStringAsync(ct);
-                        using var osDoc = JsonDocument.Parse(osJson);
-                        if (osDoc.RootElement.TryGetProperty("data", out var dataArr) && dataArr.ValueKind == JsonValueKind.Array)
-                        {
-                            foreach (var osItem in dataArr.EnumerateArray().Take(15))
-                            {
-                                if (osItem.TryGetProperty("attributes", out var attr))
-                                {
-                                    string langCode = attr.TryGetProperty("language", out var l) ? l.GetString() ?? "fa" : "fa";
-                                    string releaseName = attr.TryGetProperty("release", out var r) ? r.GetString() ?? "" : "";
-                                    
-                                    int fileId = -1;
-                                    if (attr.TryGetProperty("files", out var filesArr) && filesArr.ValueKind == JsonValueKind.Array && filesArr.GetArrayLength() > 0)
-                                    {
-                                        fileId = filesArr[0].TryGetProperty("file_id", out var fId) ? fId.GetInt32() : -1;
-                                    }
-
-                                    if (fileId > 0)
-                                    {
-                                        string langLabel = langCode.Equals("fa", StringComparison.OrdinalIgnoreCase) ? "🇮🇷 فارسی" : "🇬🇧 English";
-                                        string titleText = string.IsNullOrWhiteSpace(releaseName) ? cleanTitle : releaseName;
-
-                                        results.Add(new OnlineSubtitleItem
-                                        {
-                                            Title = titleText,
-                                            Language = langLabel,
-                                            LanguageCode = langCode.ToLowerInvariant(),
-                                            DownloadUrl = $"https://api.opensubtitles.com/api/v1/download",
-                                            OpenSubFileId = fileId,
-                                            Source = "OpenSubtitles",
-                                            Season = season,
-                                            Episode = episode,
-                                            ReleaseInfo = releaseName
-                                        });
-                                    }
-                                }
-                            }
-                        }
+                        LoggerService.Error($"[Subtitles] Error querying SubSource: {ex.Message}");
                     }
                 }
-                catch { }
             }
 
             // ==========================================
@@ -352,61 +339,53 @@ namespace MovieManagerDesktop.Services
             string videoNameWithoutExt = Path.GetFileNameWithoutExtension(targetVideoPath);
             string targetSrtPath = Path.Combine(videoDir, $"{videoNameWithoutExt}.{(item.LanguageCode.Contains("fa") ? "fa" : item.LanguageCode)}.srt");
 
-            byte[] rawBytes;
-
-            if (item.Source == "OpenSubtitles" && item.OpenSubFileId.HasValue)
+            using var req = new HttpRequestMessage(HttpMethod.Get, item.DownloadUrl);
+            req.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)");
+            if (item.Source == "SubSource")
             {
-                using var osReq = new HttpRequestMessage(HttpMethod.Post, SettingsManager.WrapUrlWithProxy("https://api.opensubtitles.com/api/v1/download"));
-                osReq.Headers.Add("Api-Key", OPENSUBTITLES_DEFAULT_KEY);
-                osReq.Headers.Add("User-Agent", "MovieManagerDesktop v2.5");
-                osReq.Content = new StringContent(JsonSerializer.Serialize(new { file_id = item.OpenSubFileId.Value }), Encoding.UTF8, "application/json");
-
-                var osResp = await _httpClient.SendAsync(osReq, ct);
-                osResp.EnsureSuccessStatusCode();
-
-                string osJson = await osResp.Content.ReadAsStringAsync(ct);
-                using var doc = JsonDocument.Parse(osJson);
-                string directDlLink = doc.RootElement.GetProperty("link").GetString()!;
-
-                var dlResp = await _httpClient.GetAsync(directDlLink, ct);
-                dlResp.EnsureSuccessStatusCode();
-                rawBytes = await dlResp.Content.ReadAsByteArrayAsync(ct);
-            }
-            else
-            {
-                using var req = new HttpRequestMessage(HttpMethod.Get, item.DownloadUrl);
-                if (item.Source == "SubSource")
-                {
-                    req.Headers.Add("X-API-Key", SUBSOURCE_DEFAULT_KEY);
-                }
-
-                var response = await _httpClient.SendAsync(req, ct);
-                response.EnsureSuccessStatusCode();
-                rawBytes = await response.Content.ReadAsByteArrayAsync(ct);
+                req.Headers.Add("X-API-Key", SUBSOURCE_DEFAULT_KEY);
             }
 
-            byte[] srtBytes = ExtractSubtitleBytes(rawBytes);
+            var response = await _httpClient.SendAsync(req, ct);
+            response.EnsureSuccessStatusCode();
+            byte[] rawBytes = await response.Content.ReadAsByteArrayAsync(ct);
+
+            byte[] srtBytes = ExtractSubtitleBytes(rawBytes, item.LanguageCode);
             string cleanSubtitleText = FixEncodingToPersianUtf8(srtBytes);
             await File.WriteAllTextAsync(targetSrtPath, cleanSubtitleText, Encoding.UTF8, ct);
 
             return targetSrtPath;
         }
 
-        private static byte[] ExtractSubtitleBytes(byte[] rawData)
+        private static byte[] ExtractSubtitleBytes(byte[] rawData, string langCode)
         {
             if (rawData.Length > 4 && rawData[0] == 0x50 && rawData[1] == 0x4B)
             {
                 using var ms = new MemoryStream(rawData);
                 using var archive = new ZipArchive(ms, ZipArchiveMode.Read);
-                var entry = archive.Entries.FirstOrDefault(e => e.FullName.EndsWith(".srt", StringComparison.OrdinalIgnoreCase) ||
-                                                                e.FullName.EndsWith(".vtt", StringComparison.OrdinalIgnoreCase) ||
-                                                                e.FullName.EndsWith(".ass", StringComparison.OrdinalIgnoreCase));
-                if (entry != null)
+                var validEntries = archive.Entries.Where(e =>
+                    !e.FullName.StartsWith("__MACOSX", StringComparison.OrdinalIgnoreCase) &&
+                    (e.FullName.EndsWith(".srt", StringComparison.OrdinalIgnoreCase) ||
+                     e.FullName.EndsWith(".vtt", StringComparison.OrdinalIgnoreCase) ||
+                     e.FullName.EndsWith(".ass", StringComparison.OrdinalIgnoreCase))
+                ).ToList();
+
+                if (validEntries.Count > 0)
                 {
-                    using var entryStream = entry.Open();
-                    using var outMs = new MemoryStream();
-                    entryStream.CopyTo(outMs);
-                    return outMs.ToArray();
+                    ZipArchiveEntry? chosen = null;
+                    if (langCode.Contains("fa", StringComparison.OrdinalIgnoreCase))
+                    {
+                        chosen = validEntries.FirstOrDefault(e => Regex.IsMatch(e.FullName, @"(?i)(fa|farsi|persian|fa-|fa\.)"));
+                    }
+                    chosen ??= validEntries.FirstOrDefault();
+
+                    if (chosen != null)
+                    {
+                        using var entryStream = chosen.Open();
+                        using var outMs = new MemoryStream();
+                        entryStream.CopyTo(outMs);
+                        return outMs.ToArray();
+                    }
                 }
             }
 

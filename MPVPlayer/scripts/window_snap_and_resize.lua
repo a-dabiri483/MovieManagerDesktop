@@ -9,6 +9,7 @@ local mp = require("mp")
 
 pcall(ffi.cdef, [[
     typedef void* HWND;
+    typedef void* HMONITOR;
     typedef int BOOL;
     typedef unsigned int UINT;
     typedef unsigned long DWORD;
@@ -18,6 +19,12 @@ pcall(ffi.cdef, [[
         long right;
         long bottom;
     } RECT;
+    typedef struct tagMONITORINFO {
+        DWORD cbSize;
+        RECT rcMonitor;
+        RECT rcWork;
+        DWORD dwFlags;
+    } MONITORINFO;
 
     HWND FindWindowA(const char* lpClassName, const char* lpWindowName);
     HWND GetForegroundWindow();
@@ -28,6 +35,9 @@ pcall(ffi.cdef, [[
     BOOL IsIconic(HWND hWnd);
     long GetWindowLongA(HWND hWnd, int nIndex);
     long SetWindowLongA(HWND hWnd, int nIndex, long dwNewLong);
+    short GetAsyncKeyState(int vKey);
+    HMONITOR MonitorFromWindow(HWND hwnd, DWORD dwFlags);
+    BOOL GetMonitorInfoA(HMONITOR hMonitor, MONITORINFO* lpmi);
 ]])
 
 local user32 = ffi.load("user32")
@@ -41,8 +51,12 @@ local SWP_NOSIZE = 0x0001
 local SWP_FRAMECHANGED = 0x0020
 local GWL_STYLE = -16
 local WS_THICKFRAME = 0x00040000
+local VK_LBUTTON = 0x01
+local MONITOR_DEFAULTTONEAREST = 2
 
-local SNAP_THRESHOLD = 35 -- distance in pixels for magnetic snap to screen edges and corners
+-- Magnetic thresholds
+local EDGE_SNAP_THRESHOLD = 35    -- Pixels for magnetic snap to top, bottom, left, right edges
+local CORNER_SNAP_THRESHOLD = 50  -- Generous magnetic field for snapping into any of the 4 corners
 
 local function get_mpv_hwnd()
     local hwnd = user32.FindWindowA("mpv", nil)
@@ -70,9 +84,32 @@ local function init_window_frame()
     end
 end
 
--- Magnetic Snap logic: snaps window to screen edges and corners automatically
-local last_snapped_x = nil
-local last_snapped_y = nil
+-- Get exact work area for the monitor where the window currently resides (handles multi-monitor & taskbars)
+local function get_work_area(hwnd)
+    local workArea = ffi.new("RECT")
+    if user32.MonitorFromWindow ~= nil and user32.GetMonitorInfoA ~= nil then
+        local hMon = user32.MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST)
+        if hMon ~= nil and hMon ~= ffi.null then
+            local mi = ffi.new("MONITORINFO")
+            mi.cbSize = ffi.sizeof("MONITORINFO")
+            if user32.GetMonitorInfoA(hMon, mi) ~= 0 then
+                workArea.left = mi.rcWork.left
+                workArea.top = mi.rcWork.top
+                workArea.right = mi.rcWork.right
+                workArea.bottom = mi.rcWork.bottom
+                return workArea
+            end
+        end
+    end
+    -- Fallback to primary monitor work area
+    user32.SystemParametersInfoA(SPI_GETWORKAREA, 0, workArea, 0)
+    return workArea
+end
+
+-- Magnetic Snap State
+local was_dragging = false
+local last_x = nil
+local last_y = nil
 
 local function apply_magnetic_snap()
     if not frame_initialized then init_window_frame() end
@@ -86,69 +123,95 @@ local function apply_magnetic_snap()
     local rect = ffi.new("RECT")
     if user32.GetWindowRect(hwnd, rect) == 0 then return end
 
-    local workArea = ffi.new("RECT")
-    if user32.SystemParametersInfoA(SPI_GETWORKAREA, 0, workArea, 0) == 0 then return end
-
-    local width = rect.right - rect.left
-    local height = rect.bottom - rect.top
     local cur_x = rect.left
     local cur_y = rect.top
+    local width = rect.right - rect.left
+    local height = rect.bottom - rect.top
 
+    -- Check if left mouse button is pressed
+    local is_lbutton_down = bit.band(user32.GetAsyncKeyState(VK_LBUTTON), 0x8000) ~= 0
+    local is_foreground = (user32.GetForegroundWindow() == hwnd)
+
+    if is_lbutton_down and is_foreground then
+        -- User is actively dragging or resizing.
+        -- DO NOT interrupt with SetWindowPos here, as Windows' internal SC_MOVE
+        -- loop will fight SetWindowPos and cause the window to jerk and bounce back!
+        if last_x ~= cur_x or last_y ~= cur_y then
+            was_dragging = true
+            last_x = cur_x
+            last_y = cur_y
+        end
+        return
+    end
+
+    -- If the mouse is UP, and window hasn't moved since last check, nothing to do
+    if not was_dragging and last_x == cur_x and last_y == cur_y then
+        return
+    end
+
+    was_dragging = false
+    last_x = cur_x
+    last_y = cur_y
+
+    local workArea = get_work_area(hwnd)
     local new_x = cur_x
     local new_y = cur_y
     local snapped = false
 
-    -- 1. Horizontal snap
-    if math.abs(cur_x - workArea.left) <= SNAP_THRESHOLD then
-        new_x = workArea.left
-        snapped = true
-    elseif math.abs((cur_x + width) - workArea.right) <= SNAP_THRESHOLD then
-        new_x = workArea.right - width
-        snapped = true
-    end
+    local dist_left = math.abs(cur_x - workArea.left)
+    local dist_right = math.abs((cur_x + width) - workArea.right)
+    local dist_top = math.abs(cur_y - workArea.top)
+    local dist_bottom = math.abs((cur_y + height) - workArea.bottom)
 
-    -- 2. Vertical snap
-    if math.abs(cur_y - workArea.top) <= SNAP_THRESHOLD then
+    -- 1. Corner Magnetic Snapping (Higher priority & larger magnetic zone)
+    if dist_left <= CORNER_SNAP_THRESHOLD and dist_top <= CORNER_SNAP_THRESHOLD then
+        -- Top-Left Corner
+        new_x = workArea.left
         new_y = workArea.top
         snapped = true
-    elseif math.abs((cur_y + height) - workArea.bottom) <= SNAP_THRESHOLD then
+    elseif dist_right <= CORNER_SNAP_THRESHOLD and dist_top <= CORNER_SNAP_THRESHOLD then
+        -- Top-Right Corner
+        new_x = workArea.right - width
+        new_y = workArea.top
+        snapped = true
+    elseif dist_left <= CORNER_SNAP_THRESHOLD and dist_bottom <= CORNER_SNAP_THRESHOLD then
+        -- Bottom-Left Corner
+        new_x = workArea.left
         new_y = workArea.bottom - height
         snapped = true
-    end
+    elseif dist_right <= CORNER_SNAP_THRESHOLD and dist_bottom <= CORNER_SNAP_THRESHOLD then
+        -- Bottom-Right Corner
+        new_x = workArea.right - width
+        new_y = workArea.bottom - height
+        snapped = true
+    else
+        -- 2. Single Edge Magnetic Snapping
+        if dist_left <= EDGE_SNAP_THRESHOLD then
+            new_x = workArea.left
+            snapped = true
+        elseif dist_right <= EDGE_SNAP_THRESHOLD then
+            new_x = workArea.right - width
+            snapped = true
+        end
 
-    -- 3. Corner Magnetic Snapping
-    if math.abs(cur_x - workArea.left) <= SNAP_THRESHOLD and math.abs(cur_y - workArea.top) <= SNAP_THRESHOLD then
-        new_x = workArea.left
-        new_y = workArea.top
-        snapped = true
-    elseif math.abs((cur_x + width) - workArea.right) <= SNAP_THRESHOLD and math.abs(cur_y - workArea.top) <= SNAP_THRESHOLD then
-        new_x = workArea.right - width
-        new_y = workArea.top
-        snapped = true
-    elseif math.abs(cur_x - workArea.left) <= SNAP_THRESHOLD and math.abs((cur_y + height) - workArea.bottom) <= SNAP_THRESHOLD then
-        new_x = workArea.left
-        new_y = workArea.bottom - height
-        snapped = true
-    elseif math.abs((cur_x + width) - workArea.right) <= SNAP_THRESHOLD and math.abs((cur_y + height) - workArea.bottom) <= SNAP_THRESHOLD then
-        new_x = workArea.right - width
-        new_y = workArea.bottom - height
-        snapped = true
+        if dist_top <= EDGE_SNAP_THRESHOLD then
+            new_y = workArea.top
+            snapped = true
+        elseif dist_bottom <= EDGE_SNAP_THRESHOLD then
+            new_y = workArea.bottom - height
+            snapped = true
+        end
     end
 
     if snapped and (new_x ~= cur_x or new_y ~= cur_y) then
-        if new_x ~= last_snapped_x or new_y ~= last_snapped_y then
-            last_snapped_x = new_x
-            last_snapped_y = new_y
-            user32.SetWindowPos(hwnd, nil, new_x, new_y, width, height, bit.bor(SWP_NOZORDER, SWP_NOACTIVATE))
-        end
-    else
-        last_snapped_x = nil
-        last_snapped_y = nil
+        user32.SetWindowPos(hwnd, nil, new_x, new_y, 0, 0, bit.bor(SWP_NOZORDER, SWP_NOSIZE, SWP_NOACTIVATE))
+        last_x = new_x
+        last_y = new_y
     end
 end
 
 -- Initialize on load
 mp.register_event("file-loaded", init_window_frame)
 
--- Periodic check for magnetic snap after moving window
-mp.add_periodic_timer(0.25, apply_magnetic_snap)
+-- Periodic check for magnetic snap (50ms for instant, smooth lock without lag)
+mp.add_periodic_timer(0.05, apply_magnetic_snap)

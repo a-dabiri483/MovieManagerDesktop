@@ -2,6 +2,18 @@
 $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "0. Building MpvMenuHelper & updating MPVPlayer..." -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
+
+dotnet build MpvMenuHelper\MpvMenuHelper.csproj -c Release
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "MpvMenuHelper build failed."
+    exit 1
+}
+Copy-Item -Path "MpvMenuHelper\bin\Release\net10.0-windows\MpvMenuHelper.*" -Destination "MPVPlayer\" -Force
+Write-Host "MpvMenuHelper updated in MPVPlayer successfully." -ForegroundColor Green
+
+Write-Host "`n========================================" -ForegroundColor Cyan
 Write-Host "1. Publishing Release build..." -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 
