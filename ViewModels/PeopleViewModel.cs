@@ -46,7 +46,7 @@ namespace MovieManagerDesktop.ViewModels
                 var items = await Task.Run(() =>
                 {
                     using var db = new AppDbContext();
-                    var allVideos = db.VideoFiles.ToList();
+                    var allVideos = db.VideoFiles.Where(v => !v.IsHidden).ToList();
 
                     // Group by Title and MediaType to treat every Series as 1 work and every Movie as 1 work
                     var uniqueWorks = allVideos

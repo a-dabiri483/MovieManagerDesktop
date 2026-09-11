@@ -562,11 +562,12 @@
                         </Style>
                     </StackPanel.Style>
                     
-                    <materialDesign:PackIcon Kind="MovieFilterOutline" Width="90" Height="90" Foreground="{DynamicResource DisabledText}" HorizontalAlignment="Center" Margin="0,0,0,16"/>
-                    <TextBlock Text="هیچ فیلم یا سریالی یافت نشد!" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
-                    <TextBlock Text="برای شروع، پوشه فیلم‌ها و سریال‌های خود را پویش کنید" FontSize="13.5" Foreground="{DynamicResource DisabledText}" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                    <materialDesign:PackIcon Kind="{Binding EmptyStateIcon, FallbackValue=MovieFilterOutline}" Width="90" Height="90" Foreground="{DynamicResource DisabledText}" HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                    <TextBlock Text="{Binding EmptyStateTitle, FallbackValue='هیچ فیلم یا سریالی یافت نشد!'}" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource SecondaryText}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                    <TextBlock Text="{Binding EmptyStateSubtitle, FallbackValue='برای شروع، پوشه فیلم‌ها و سریال‌های خود را پویش کنید'}" FontSize="13.5" Foreground="{DynamicResource DisabledText}" HorizontalAlignment="Center" Margin="0,0,0,20"/>
                     
                     <Button Content="شروع پویش و اسکن" Command="{Binding GoToScanCommand}"
+                            Visibility="{Binding CanShowScanButton, Converter={StaticResource BoolToVisibilityConverter}}"
                             Background="{DynamicResource PrimaryGradientBrush}" Foreground="White" BorderThickness="0"
                             Width="190" Height="42" FontSize="14.5" FontWeight="Bold" materialDesign:ButtonAssist.CornerRadius="12"
                             HorizontalAlignment="Center"/>

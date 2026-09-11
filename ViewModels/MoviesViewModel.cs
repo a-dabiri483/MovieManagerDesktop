@@ -62,6 +62,7 @@ namespace MovieManagerDesktop.ViewModels
 
         partial void OnShowHiddenItemsChanged(bool value)
         {
+            _ = LoadGenresAsync();
             _ = LoadMoviesAsync();
         }
 
@@ -222,6 +223,18 @@ namespace MovieManagerDesktop.ViewModels
         [ObservableProperty]
         private bool _hasNoMovies = false;
 
+        public string EmptyStateTitle => ShowHiddenItems 
+            ? "هیچ موردی در لیست مخفی‌ها وجود ندارد!" 
+            : (!string.IsNullOrWhiteSpace(SearchQuery) ? "موردی با این مشخصات یافت نشد!" : "هیچ فیلم یا سریالی یافت نشد!");
+
+        public string EmptyStateSubtitle => ShowHiddenItems
+            ? "برای مخفی‌سازی، روی فیلم یا سریال راست‌کلیک کرده و آیکون قفل را بزنید."
+            : (!string.IsNullOrWhiteSpace(SearchQuery) ? "عبارت جستجو یا فیلترهای اعمال‌شده را بررسی کنید" : "برای شروع، پوشه فیلم‌ها و سریال‌های خود را پویش کنید");
+
+        public string EmptyStateIcon => ShowHiddenItems ? "EyeOffOutline" : "MovieFilterOutline";
+
+        public bool CanShowScanButton => !ShowHiddenItems && string.IsNullOrWhiteSpace(SearchQuery);
+
         [ObservableProperty]
         private bool _isBulkActionRunning = false;
 
@@ -302,7 +315,10 @@ namespace MovieManagerDesktop.ViewModels
                 var genres = await Task.Run(() =>
                 {
                     using var db = new AppDbContext();
-                    var allGenres = db.VideoFiles
+                    var query = ShowHiddenItems
+                        ? db.VideoFiles.Where(v => v.IsHidden)
+                        : db.VideoFiles.Where(v => !v.IsHidden);
+                    var allGenres = query
                         .Where(v => v.FilePath != "[Manual Tracker]" && !v.FilePath.StartsWith("[Manual") && !string.IsNullOrEmpty(v.Genres))
                         .Select(v => v.Genres)
                         .ToList();
@@ -353,7 +369,7 @@ namespace MovieManagerDesktop.ViewModels
                     cancellationToken.ThrowIfCancellationRequested();
                     using var db = new AppDbContext();
                     var query = ShowHiddenItems 
-                        ? db.VideoFiles.AsNoTracking() 
+                        ? db.VideoFiles.AsNoTracking().Where(v => v.IsHidden) 
                         : db.VideoFiles.AsNoTracking().Where(v => !v.IsHidden);
 
                     var visibleDbFiles = query
@@ -514,6 +530,10 @@ namespace MovieManagerDesktop.ViewModels
                 if (currentGen == System.Threading.Volatile.Read(ref _loadGeneration))
                 {
                     HasNoMovies = (SelectedCategoryTabIndex == 4 && SelectedCustomTag == null) ? CustomTags.Count == 0 : Movies.Count == 0;
+                    OnPropertyChanged(nameof(EmptyStateTitle));
+                    OnPropertyChanged(nameof(EmptyStateSubtitle));
+                    OnPropertyChanged(nameof(EmptyStateIcon));
+                    OnPropertyChanged(nameof(CanShowScanButton));
                     IsLoading = false;
                 }
             }
@@ -855,8 +875,8 @@ namespace MovieManagerDesktop.ViewModels
             var selected = Movies.Where(m => m.IsSelected).ToList();
             if (selected.Count == 0) return;
 
-            bool targetState = selected.Any(s => !s.IsHidden);
-            await RunBulkMediaActionAsync("مخفی‌سازی", (db, f) => f.IsHidden = targetState);
+            bool targetState = ShowHiddenItems ? false : selected.Any(s => !s.IsHidden);
+            await RunBulkMediaActionAsync(targetState ? "مخفی‌سازی" : "خروج از حالت مخفی", (db, f) => f.IsHidden = targetState);
         }
 
         [RelayCommand]

@@ -97,7 +97,7 @@ namespace MovieManagerDesktop.ViewModels
                     if (!db.Database.CanConnect()) return null;
 
                     var allFiles = db.VideoFiles.AsNoTracking()
-                        .Where(v => v.FilePath != "[Manual Tracker]" && !v.FilePath.StartsWith("[Manual"))
+                        .Where(v => !v.IsHidden && v.FilePath != "[Manual Tracker]" && !v.FilePath.StartsWith("[Manual"))
                         .ToList();
                     int totalFilesCount = allFiles.Count;
 

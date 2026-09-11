@@ -47,7 +47,7 @@ namespace MovieManagerDesktop.ViewModels
                 var items = await Task.Run(() =>
                 {
                     using var db = new AppDbContext();
-                    var allVideos = db.VideoFiles.Where(v => !string.IsNullOrEmpty(v.CollectionName)).ToList();
+                    var allVideos = db.VideoFiles.Where(v => !v.IsHidden && !string.IsNullOrEmpty(v.CollectionName)).ToList();
 
                     var groups = allVideos.GroupBy(v => v.CollectionName)
                                           .Select(g => new CollectionItemViewModel(g.Key, g.Count(), g.FirstOrDefault(v => !string.IsNullOrEmpty(v.PosterUrl))?.PosterUrl))

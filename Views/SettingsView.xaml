@@ -833,24 +833,7 @@
 
                             <Separator Background="{DynamicResource LightBorder}" Margin="0,0,0,14"/>
 
-                            <!-- نمایش محتوای +18 در لیست -->
-                            <Grid Margin="0,0,0,14">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="12" Background="#20EB3B5A" Margin="0,0,12,0">
-                                    <materialDesign:PackIcon Kind="EyeOutline" Width="20" Height="20" Foreground="{DynamicResource PrimaryColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBlock Text="نمایش محتوای +18 در لیست" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
-                                    <TextBlock Text="نمایش یا مخفی‌سازی فیلم‌ها و سریال‌های بزرگسال در آرشیو" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
-                                </StackPanel>
-                                <ToggleButton Grid.Column="2" IsChecked="{Binding HideAdultContent}" Style="{StaticResource MaterialDesignSwitchToggleButton}"/>
-                            </Grid>
 
-                            <Separator Background="{DynamicResource LightBorder}" Margin="0,0,0,14"/>
 
                             <!-- تصویر پس‌زمینه روزانه بینگ -->
                             <Grid>
