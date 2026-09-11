@@ -579,10 +579,6 @@ namespace MovieManagerDesktop.ViewModels
         public void ToggleSelection(GalleryItemViewModel item)
         {
             if (item == null) return;
-            if (!item.IsSelected)
-            {
-                if (!LicenseManagerService.EnsureProFeature("انتخاب و مدیریت گروهی")) return;
-            }
             item.IsSelected = !item.IsSelected;
             UpdateSelectionState();
         }
@@ -590,7 +586,6 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         public void EnterSelectionMode()
         {
-            if (!LicenseManagerService.EnsureProFeature("انتخاب و مدیریت گروهی")) return;
             IsInSelectionMode = !IsInSelectionMode;
             if (!IsInSelectionMode)
             {
