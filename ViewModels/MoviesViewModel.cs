@@ -62,6 +62,8 @@ namespace MovieManagerDesktop.ViewModels
 
         partial void OnShowHiddenItemsChanged(bool value)
         {
+            OnPropertyChanged(nameof(HiddenButtonText));
+            OnPropertyChanged(nameof(HiddenButtonIcon));
             _ = LoadGenresAsync();
             _ = LoadMoviesAsync();
         }
@@ -234,6 +236,9 @@ namespace MovieManagerDesktop.ViewModels
         public string EmptyStateIcon => ShowHiddenItems ? "EyeOffOutline" : "MovieFilterOutline";
 
         public bool CanShowScanButton => !ShowHiddenItems && string.IsNullOrWhiteSpace(SearchQuery);
+
+        public string HiddenButtonText => ShowHiddenItems ? "خروج از مخفی" : "مخفی‌سازی";
+        public string HiddenButtonIcon => ShowHiddenItems ? "LockOpenOutline" : "LockOutline";
 
         [ObservableProperty]
         private bool _isBulkActionRunning = false;

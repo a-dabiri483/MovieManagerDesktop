@@ -297,7 +297,32 @@ namespace MovieManagerDesktop.Services
                         else if (entry.FullName.StartsWith("Images/", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(entry.Name))
                         {
                             string dest = Path.Combine(imagesDir, entry.Name);
-                            entry.ExtractToFile(dest, true);
+                            try
+                            {
+                                if (!File.Exists(dest) || new FileInfo(dest).Length == 0)
+                                {
+                                    entry.ExtractToFile(dest, true);
+                                }
+                                else
+                                {
+                                    // File already exists. Attempt to update it with FileShare.ReadWrite,
+                                    // but if it is currently locked by WPF/UI, keep the existing file safely.
+                                    try
+                                    {
+                                        using var entryStream = entry.Open();
+                                        using var destStream = new FileStream(dest, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+                                        entryStream.CopyTo(destStream);
+                                    }
+                                    catch (IOException)
+                                    {
+                                        // File is currently locked/in-use by the UI. Since it already exists on disk, skipping overwrite is safe.
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                LoggerService.Warn($"[Backup] Warning extracting image {entry.Name}: {ex.Message}");
+                            }
                         }
 
                         if (count % 20 == 0 || count == total)

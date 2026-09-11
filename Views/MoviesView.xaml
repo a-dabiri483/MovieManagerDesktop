@@ -380,33 +380,40 @@
                             <materialDesign:PackIcon Kind="HeartOutline" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
 
-                        <!-- مشاهده شده -->
+                        <!-- مشاهده شده / چشمی -->
                         <Button Command="{Binding ToggleWatchedSelectedCommand}" 
                                 Background="#2026DE81" BorderThickness="0" Foreground="{DynamicResource EmeraldAccent}"
-                                Width="34" Height="34" Padding="0" materialDesign:ButtonAssist.CornerRadius="10"
-                                ToolTip="تغییر وضعیت مشاهده" Margin="0,0,6,0" Cursor="Hand"
+                                Height="34" Padding="12,0" materialDesign:ButtonAssist.CornerRadius="10"
+                                ToolTip="تغییر وضعیت مشاهده (تماشا شده / تماشا نشده)" Margin="0,0,6,0" Cursor="Hand"
                                 VerticalAlignment="Center">
-                            <materialDesign:PackIcon Kind="EyeCheckOutline" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="EyeCheckOutline" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock Text="تماشا شده" FontSize="11.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
                         </Button>
 
-                        <!-- مخفی‌سازی -->
+                        <!-- مخفی‌سازی / خروج از مخفی -->
                         <Button Command="{Binding ToggleHiddenSelectedCommand}" 
                                 Background="#208854D0" BorderThickness="0" Foreground="{DynamicResource PurpleAccent}"
-                                Width="34" Height="34" Padding="0" materialDesign:ButtonAssist.CornerRadius="10"
-                                ToolTip="مخفی‌سازی / قفل" Margin="0,0,6,0" Cursor="Hand"
+                                Height="34" Padding="12,0" materialDesign:ButtonAssist.CornerRadius="10"
+                                ToolTip="مخفی‌سازی یا خروج از حالت مخفی" Margin="0,0,6,0" Cursor="Hand"
                                 VerticalAlignment="Center">
-                            <materialDesign:PackIcon Kind="LockOutline" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="{Binding HiddenButtonIcon, FallbackValue=LockOutline}" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                <TextBlock Text="{Binding HiddenButtonText, FallbackValue='مخفی‌سازی'}" FontSize="11.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
                         </Button>
 
                         <!-- بروزرسانی (F5) - VIP -->
                         <Button Command="{Binding RefreshSelectedCommand}" 
                                 Background="#20FFD32A" BorderThickness="0" Foreground="{DynamicResource GoldColor}"
-                                Width="46" Height="34" Padding="0" materialDesign:ButtonAssist.CornerRadius="10"
+                                Height="34" Padding="12,0" materialDesign:ButtonAssist.CornerRadius="10"
                                 ToolTip="به‌روزرسانی آنلاین (F5) - اشتراک VIP" Margin="0,0,6,0" Cursor="Hand"
                                 VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <materialDesign:PackIcon Kind="Refresh" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <materialDesign:PackIcon Kind="Crown" Width="10" Height="10" Foreground="#FFD32A" VerticalAlignment="Top" Margin="2,-2,0,0"/>
+                                <materialDesign:PackIcon Kind="Refresh" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBlock Text="بروزرسانی" FontSize="11.5" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FFD32A" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 

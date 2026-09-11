@@ -73,6 +73,8 @@ namespace MovieManagerDesktop.Services
             Enqueue("WARN", message);
         }
 
+        public static void Warn(string message) => Warning(message);
+
         public static void Error(string message, Exception? ex = null)
         {
             var fullMessage = ex == null 
