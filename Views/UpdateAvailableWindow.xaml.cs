@@ -104,6 +104,7 @@ namespace MovieManagerDesktop.Views
                 installerPath = await UpdateManagerService.DownloadUpdateFileAsync(
                     _updateInfo.DownloadUrl,
                     _updateInfo.LatestVersion,
+                    _updateInfo.Sha256,
                     progress,
                     _downloadCts.Token);
             }
@@ -120,7 +121,7 @@ namespace MovieManagerDesktop.Views
                 {
                     SpinnerProgress.Visibility = Visibility.Collapsed;
                     PrgDownload.IsIndeterminate = false;
-                    TxtDownloadStatus.Text = "خطا در دریافت فایل بروزرسانی!";
+                    TxtDownloadStatus.Text = ex is InvalidDataException ? ex.Message : "خطا در دریافت فایل بروزرسانی!";
                     TxtDownloadStatus.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F87171"));
                     BtnBrowserFallback.Visibility = Visibility.Visible;
                 });

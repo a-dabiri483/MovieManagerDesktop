@@ -162,7 +162,14 @@ namespace MovieManagerDesktop.Services
             textProgress?.Report("در حال استخراج متادیتای دیتابیس...");
             string json = await GenerateBackupJsonAsync();
 
-            textProgress?.Report("در حال ایجاد بسته فشرده ZIP...");
+            bool isEncryptedPackage = zipPath.EndsWith(".mmbackup", StringComparison.OrdinalIgnoreCase);
+            if (isEncryptedPackage)
+            {
+                textProgress?.Report("در حال رمزنگاری متادیتای دیتابیس (AES-256)...");
+                json = MovieManagerDesktop.Helpers.CryptoUtils.Encrypt(json) ?? json;
+            }
+
+            textProgress?.Report("در حال ایجاد بسته فشرده پشتیبان...");
             
             if (System.IO.File.Exists(zipPath))
             {
@@ -172,8 +179,9 @@ namespace MovieManagerDesktop.Services
             using var fileStream = new FileStream(zipPath, FileMode.Create, FileAccess.Write, FileShare.None);
             using var archive = new ZipArchive(fileStream, ZipArchiveMode.Create, false);
 
-            // 1. Add backup.json
-            var jsonEntry = archive.CreateEntry("backup.json", CompressionLevel.Optimal);
+            // 1. Add backup payload (encrypted if mmbackup, json if zip)
+            string entryName = isEncryptedPackage ? "backup.mmbackup" : "backup.json";
+            var jsonEntry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
             using (var writer = new StreamWriter(jsonEntry.Open(), Encoding.UTF8))
             {
                 await writer.WriteAsync(json);
@@ -189,8 +197,8 @@ namespace MovieManagerDesktop.Services
                 foreach (var imgFile in imageFiles)
                 {
                     count++;
-                    string entryName = "Images/" + Path.GetFileName(imgFile);
-                    archive.CreateEntryFromFile(imgFile, entryName, CompressionLevel.Fastest);
+                    string imgEntryName = "Images/" + Path.GetFileName(imgFile);
+                    archive.CreateEntryFromFile(imgFile, imgEntryName, CompressionLevel.Fastest);
 
                     if (count % 50 == 0 || count == total)
                     {
@@ -211,7 +219,7 @@ namespace MovieManagerDesktop.Services
                 Directory.CreateDirectory(imagesDir);
             }
 
-            textProgress?.Report("در حال بازگشایی بسته ZIP...");
+            textProgress?.Report("در حال بازگشایی بسته پشتیبان...");
             string? extractedJsonPath = null;
 
             using (var archive = ZipFile.OpenRead(zipPath))
@@ -222,9 +230,10 @@ namespace MovieManagerDesktop.Services
                 foreach (var entry in archive.Entries)
                 {
                     count++;
-                    if (entry.FullName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                    if (entry.FullName.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || entry.FullName.EndsWith(".mmbackup", StringComparison.OrdinalIgnoreCase))
                     {
-                        string tempJson = Path.Combine(Path.GetTempPath(), $"MovieManager_Restore_{Guid.NewGuid():N}.json");
+                        string ext = Path.GetExtension(entry.FullName);
+                        string tempJson = Path.Combine(Path.GetTempPath(), $"MovieManager_Restore_{Guid.NewGuid():N}{ext}");
                         entry.ExtractToFile(tempJson, true);
                         extractedJsonPath = tempJson;
                     }
@@ -294,9 +303,11 @@ namespace MovieManagerDesktop.Services
             if (textProgress != null) textProgress.Report("در حال جمع‌آوری اطلاعات از دیتابیس...");
             var backupJson = await GenerateBackupJsonAsync(settings);
             
-            var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var localBackupFilePath = Path.Combine(Path.GetTempPath(), $"MovieManager_Backup_{timestamp}.json");
-            System.IO.File.WriteAllText(localBackupFilePath, backupJson);
+            var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            if (textProgress != null) textProgress.Report("در حال رمزنگاری امن اطلاعات بکاپ (AES-256)...");
+            var encryptedPayload = MovieManagerDesktop.Helpers.CryptoUtils.Encrypt(backupJson);
+            var localBackupFilePath = Path.Combine(Path.GetTempPath(), $"MovieManager_Backup_{timestamp}.mmbackup");
+            System.IO.File.WriteAllText(localBackupFilePath, encryptedPayload ?? backupJson);
 
             long fileLength = new FileInfo(localBackupFilePath).Length;
             string formattedSize = fileLength > 1024 * 1024 

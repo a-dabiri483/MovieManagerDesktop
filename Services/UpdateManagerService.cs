@@ -38,6 +38,7 @@ namespace MovieManagerDesktop.Services
         public string DownloadUrl { get; set; } = string.Empty;
         public string FileSize { get; set; } = string.Empty;
         public string Changelog { get; set; } = string.Empty;
+        public string Sha256 { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
     }
 
@@ -101,6 +102,7 @@ namespace MovieManagerDesktop.Services
                     DownloadUrl = root.TryGetProperty("download_url", out var du) ? du.GetString() ?? "" : "",
                     FileSize = root.TryGetProperty("file_size", out var fs) ? fs.GetString() ?? "" : "",
                     Changelog = root.TryGetProperty("changelog", out var cl) ? cl.GetString() ?? "" : "",
+                    Sha256 = root.TryGetProperty("sha256", out var sh) ? sh.GetString() ?? "" : (root.TryGetProperty("sha_256", out var sh2) ? sh2.GetString() ?? "" : ""),
                     Message = root.TryGetProperty("message", out var msg) ? msg.GetString() ?? "" : ""
                 };
 
@@ -174,6 +176,7 @@ namespace MovieManagerDesktop.Services
         public static async Task<string?> DownloadUpdateFileAsync(
             string downloadUrl,
             string version,
+            string? expectedSha256 = null,
             IProgress<UpdateDownloadProgress>? progress = null,
             CancellationToken cancellationToken = default)
         {
@@ -195,52 +198,104 @@ namespace MovieManagerDesktop.Services
 
             long totalBytes = response.Content.Headers.ContentLength ?? -1L;
             using var contentStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-            using var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true);
-
-            var buffer = new byte[81920];
-            long totalDownloaded = 0;
-            int bytesRead;
-
-            var stopwatch = Stopwatch.StartNew();
-            long lastBytes = 0;
-            double currentSpeed = 0;
-            long lastSpeedCheck = stopwatch.ElapsedMilliseconds;
-
-            while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
+            
+            using (var fileStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true))
             {
-                await fileStream.WriteAsync(buffer, 0, bytesRead, cancellationToken);
-                totalDownloaded += bytesRead;
+                var buffer = new byte[81920];
+                long totalDownloaded = 0;
+                int bytesRead;
 
-                long now = stopwatch.ElapsedMilliseconds;
-                if (now - lastSpeedCheck >= 400)
+                var stopwatch = Stopwatch.StartNew();
+                long lastBytes = 0;
+                double currentSpeed = 0;
+                long lastSpeedCheck = stopwatch.ElapsedMilliseconds;
+
+                while ((bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length, cancellationToken)) > 0)
                 {
-                    double elapsedSec = (now - lastSpeedCheck) / 1000.0;
-                    long bytesDelta = totalDownloaded - lastBytes;
-                    currentSpeed = elapsedSec > 0 ? (bytesDelta / elapsedSec) : 0;
-                    lastBytes = totalDownloaded;
-                    lastSpeedCheck = now;
+                    await fileStream.WriteAsync(buffer, 0, bytesRead, cancellationToken);
+                    totalDownloaded += bytesRead;
+
+                    long now = stopwatch.ElapsedMilliseconds;
+                    if (now - lastSpeedCheck >= 400)
+                    {
+                        double elapsedSec = (now - lastSpeedCheck) / 1000.0;
+                        long bytesDelta = totalDownloaded - lastBytes;
+                        currentSpeed = elapsedSec > 0 ? (bytesDelta / elapsedSec) : 0;
+                        lastBytes = totalDownloaded;
+                        lastSpeedCheck = now;
+                    }
+
+                    double percent = totalBytes > 0 ? ((double)totalDownloaded / totalBytes * 100.0) : 0;
+                    progress?.Report(new UpdateDownloadProgress
+                    {
+                        Percentage = percent,
+                        DownloadedBytes = totalDownloaded,
+                        TotalBytes = totalBytes,
+                        SpeedBytesPerSecond = currentSpeed,
+                        StatusMessage = "در حال دریافت بسته بروزرسانی..."
+                    });
                 }
 
-                double percent = totalBytes > 0 ? ((double)totalDownloaded / totalBytes * 100.0) : 0;
-                progress?.Report(new UpdateDownloadProgress
-                {
-                    Percentage = percent,
-                    DownloadedBytes = totalDownloaded,
-                    TotalBytes = totalBytes,
-                    SpeedBytesPerSecond = currentSpeed,
-                    StatusMessage = "در حال دریافت بسته بروزرسانی..."
-                });
+                await fileStream.FlushAsync(cancellationToken);
             }
 
-            await fileStream.FlushAsync(cancellationToken);
+            // 1. Validate File Size & PE Header (Starts with 'M' 'Z')
+            var fileInfo = new FileInfo(tempPath);
+            if (!fileInfo.Exists || fileInfo.Length < 1024 * 500)
+            {
+                try { File.Delete(tempPath); } catch { }
+                throw new InvalidDataException("فایل دانلود شده ناقص یا نامعتبر است (حجم فایل کمتر از حد استاندارد است).");
+            }
+
+            using (var fsCheck = File.OpenRead(tempPath))
+            {
+                byte[] magic = new byte[2];
+                int read = await fsCheck.ReadAsync(magic, 0, 2, cancellationToken);
+                if (read < 2 || magic[0] != 0x4D || magic[1] != 0x5A) // 'M' 'Z' (0x4D, 0x5A)
+                {
+                    fsCheck.Close();
+                    try { File.Delete(tempPath); } catch { }
+                    throw new InvalidDataException("فایل دانلود شده ساختار اجرایی استاندارد ویندوز را ندارد.");
+                }
+            }
+
+            // 2. Cryptographic SHA-256 Checksum Verification
+            if (!string.IsNullOrWhiteSpace(expectedSha256))
+            {
+                progress?.Report(new UpdateDownloadProgress
+                {
+                    Percentage = 100,
+                    DownloadedBytes = fileInfo.Length,
+                    TotalBytes = totalBytes > 0 ? totalBytes : fileInfo.Length,
+                    SpeedBytesPerSecond = 0,
+                    StatusMessage = "در حال اعتبارسنجی امضای امنیتی و چک‌سام فایل..."
+                });
+
+                using (var sha = System.Security.Cryptography.SHA256.Create())
+                using (var verifyStream = File.OpenRead(tempPath))
+                {
+                    byte[] hashBytes = await sha.ComputeHashAsync(verifyStream, cancellationToken);
+                    string actualHash = Convert.ToHexString(hashBytes);
+
+                    if (!string.Equals(actualHash, expectedSha256.Trim(), StringComparison.OrdinalIgnoreCase))
+                    {
+                        verifyStream.Close();
+                        try { File.Delete(tempPath); } catch { }
+                        LoggerService.Error($"[AutoUpdater] SHA-256 mismatch! Expected: {expectedSha256}, Actual: {actualHash}");
+                        throw new InvalidDataException($"اعتبارسنجی امنیتی بسته با شکست مواجه شد.\nهش مورد انتظار: {expectedSha256}\nهش دریافت شده: {actualHash}");
+                    }
+
+                    LoggerService.Info($"[AutoUpdater] ✔ SHA-256 verification passed: {actualHash}");
+                }
+            }
 
             progress?.Report(new UpdateDownloadProgress
             {
                 Percentage = 100,
-                DownloadedBytes = totalDownloaded,
-                TotalBytes = totalBytes > 0 ? totalBytes : totalDownloaded,
+                DownloadedBytes = fileInfo.Length,
+                TotalBytes = totalBytes > 0 ? totalBytes : fileInfo.Length,
                 SpeedBytesPerSecond = 0,
-                StatusMessage = "دانلود بسته بروزرسانی تکمیل شد."
+                StatusMessage = "دانلود و اعتبارسنجی بسته بروزرسانی با موفقیت تکمیل شد."
             });
 
             return tempPath;

@@ -17,6 +17,7 @@ namespace MovieManagerDesktop.Data
 
         private static bool _isInitialized = false;
         private static readonly object _initLock = new();
+        public const int CurrentSchemaVersion = 4;
 
         public static void InitializeDatabase()
         {
@@ -31,112 +32,29 @@ namespace MovieManagerDesktop.Data
                     using var db = new AppDbContext();
                     db.Database.EnsureCreated();
 
-                    string[] alterCommands = new[]
+                    // Read current SQLite schema user_version
+                    int currentVersion = 0;
+                    using (var conn = db.Database.GetDbConnection())
                     {
-                        "ALTER TABLE VideoFiles ADD COLUMN FirstAirDate TEXT;",
-                        "ALTER TABLE VideoFiles ADD COLUMN LastAirDate TEXT;",
-                        "ALTER TABLE VideoFiles ADD COLUMN NetworkName TEXT;",
-                        "ALTER TABLE VideoFiles ADD COLUMN AirDay TEXT;",
-                        "ALTER TABLE VideoFiles ADD COLUMN AirTime TEXT;",
-                        "ALTER TABLE VideoFiles ADD COLUMN TotalSeasonsCount INTEGER;",
-                        "ALTER TABLE VideoFiles ADD COLUMN TotalEpisodesCount INTEGER;",
-                        "ALTER TABLE VideoFiles ADD COLUMN IsWatched INTEGER NOT NULL DEFAULT 0;",
-                        "ALTER TABLE VideoFiles ADD COLUMN IsFavorite INTEGER NOT NULL DEFAULT 0;",
-                        "ALTER TABLE VideoFiles ADD COLUMN IsWatchlist INTEGER NOT NULL DEFAULT 0;",
-                        "ALTER TABLE VideoFiles ADD COLUMN WatchProgressPercent REAL NOT NULL DEFAULT 0;",
-                        "ALTER TABLE VideoFiles ADD COLUMN WatchProgressSeconds INTEGER NOT NULL DEFAULT 0;",
-                        "ALTER TABLE VideoFiles ADD COLUMN TotalDurationSeconds INTEGER NOT NULL DEFAULT 0;",
-                        "ALTER TABLE VideoFiles ADD COLUMN CollectionName TEXT;",
-                        "ALTER TABLE VideoFiles ADD COLUMN IsHidden INTEGER NOT NULL DEFAULT 0;",
-                        "ALTER TABLE VideoFiles ADD COLUMN CustomTags TEXT;",
-                        "ALTER TABLE VideoFiles ADD COLUMN HasDubbing INTEGER NOT NULL DEFAULT 0;",
-                        "ALTER TABLE VideoFiles ADD COLUMN HasSubtitle INTEGER NOT NULL DEFAULT 0;",
-                        "ALTER TABLE VideoFiles ADD COLUMN ContentRating TEXT;",
-                        "ALTER TABLE VideoFiles ADD COLUMN LastPlayedEpisode INTEGER;",
-                        "ALTER TABLE VideoFiles ADD COLUMN LastPlayedAt TEXT;",
-                        "ALTER TABLE VideoFiles ADD COLUMN IsTracked INTEGER NOT NULL DEFAULT 0;",
-                        "ALTER TABLE VideoFiles ADD COLUMN SeriesStatus TEXT;",
-                        "ALTER TABLE VideoFiles ADD COLUMN LastAiredSeason INTEGER;",
-                        "ALTER TABLE VideoFiles ADD COLUMN HasNewEpisode INTEGER NOT NULL DEFAULT 0;",
-                        "ALTER TABLE VideoFiles ADD COLUMN NextEpisodeDate TEXT;",
-                        "ALTER TABLE VideoFiles ADD COLUMN NextEpisodeSeason INTEGER;",
-                        "ALTER TABLE VideoFiles ADD COLUMN NextEpisodeNumber INTEGER;"
-                    };
+                        conn.Open();
+                        using var cmd = conn.CreateCommand();
+                        cmd.CommandText = "PRAGMA user_version;";
+                        var result = cmd.ExecuteScalar();
+                        if (result != null && int.TryParse(result.ToString(), out int ver))
+                        {
+                            currentVersion = ver;
+                        }
 
-                    foreach (var cmd in alterCommands)
-                    {
-                        try { db.Database.ExecuteSqlRaw(cmd); } catch { }
-                    }
+                        if (currentVersion < CurrentSchemaVersion)
+                        {
+                            Services.LoggerService.Info($"[AppDbContext] 🚀 Upgrading database schema from v{currentVersion} to v{CurrentSchemaVersion}...");
+                            ApplySchemaMigrations(conn, currentVersion);
 
-                    // Auto-heal missing Year from FirstAirDate
-                    try
-                    {
-                        db.Database.ExecuteSqlRaw("UPDATE VideoFiles SET Year = substr(FirstAirDate, 1, 4) WHERE (Year IS NULL OR Year = '' OR Year = '0') AND FirstAirDate IS NOT NULL AND length(FirstAirDate) >= 4;");
+                            cmd.CommandText = $"PRAGMA user_version = {CurrentSchemaVersion};";
+                            cmd.ExecuteNonQuery();
+                            Services.LoggerService.Info($"[AppDbContext] ✔ Database schema successfully updated to v{CurrentSchemaVersion}");
+                        }
                     }
-                    catch { }
-
-                    // Auto-heal rating scale for any score > 10
-                    try
-                    {
-                        db.Database.ExecuteSqlRaw("UPDATE VideoFiles SET Rating = ROUND(Rating / 10.0, 1) WHERE Rating > 10.0;");
-                    }
-                    catch { }
-
-                    // Auto-heal legacy CineTrack image paths to MovieManager
-                    try
-                    {
-                        db.Database.ExecuteSqlRaw(@"
-                            UPDATE VideoFiles 
-                            SET PosterUrl = replace(PosterUrl, 'AppData\Roaming\CineTrack\Images', 'AppData\Local\MovieManager\Images')
-                            WHERE PosterUrl LIKE '%AppData\Roaming\CineTrack\Images%';
-                            UPDATE VideoFiles 
-                            SET BackdropUrl = replace(BackdropUrl, 'AppData\Roaming\CineTrack\Images', 'AppData\Local\MovieManager\Images')
-                            WHERE BackdropUrl LIKE '%AppData\Roaming\CineTrack\Images%';
-                            UPDATE VideoFiles 
-                            SET PosterUrl = replace(PosterUrl, 'AppData/Roaming/CineTrack/Images', 'AppData/Local/MovieManager/Images')
-                            WHERE PosterUrl LIKE '%AppData/Roaming/CineTrack/Images%';
-                            UPDATE VideoFiles 
-                            SET BackdropUrl = replace(BackdropUrl, 'AppData/Roaming/CineTrack/Images', 'AppData/Local/MovieManager/Images')
-                            WHERE BackdropUrl LIKE '%AppData/Roaming/CineTrack/Images%';
-                        ");
-                    }
-                    catch { }
-
-                    try
-                    {
-                        db.Database.ExecuteSqlRaw(@"
-                            CREATE TABLE IF NOT EXISTS TvSeasons (
-                                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                TmdbSeriesId INTEGER NOT NULL,
-                                SeasonNumber INTEGER NOT NULL,
-                                Name TEXT,
-                                Overview TEXT,
-                                PosterPath TEXT,
-                                AirDate TEXT,
-                                EpisodeCount INTEGER NOT NULL
-                            );
-                        ");
-                    }
-                    catch { }
-
-                    try
-                    {
-                        db.Database.ExecuteSqlRaw(@"
-                            CREATE TABLE IF NOT EXISTS TvEpisodes (
-                                Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                                TmdbSeriesId INTEGER NOT NULL,
-                                SeasonNumber INTEGER NOT NULL,
-                                EpisodeNumber INTEGER NOT NULL,
-                                Name TEXT,
-                                Overview TEXT,
-                                StillPath TEXT,
-                                AirDate TEXT,
-                                VoteAverage REAL NOT NULL,
-                                IsWatched INTEGER NOT NULL DEFAULT 0
-                            );
-                        ");
-                    }
-                    catch { }
 
                     _isInitialized = true;
                 }
@@ -144,6 +62,139 @@ namespace MovieManagerDesktop.Data
                 {
                     Services.LoggerService.Error("[AppDbContext] Database initialization failed", ex);
                 }
+            }
+        }
+
+        private static void ApplySchemaMigrations(System.Data.Common.DbConnection conn, int fromVersion)
+        {
+            using var cmd = conn.CreateCommand();
+
+            void Exec(string sql)
+            {
+                try
+                {
+                    cmd.CommandText = sql;
+                    cmd.ExecuteNonQuery();
+                }
+                catch { }
+            }
+
+            // Migration v1: Ensure all schema columns exist in VideoFiles
+            if (fromVersion < 1)
+            {
+                var existingCols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                cmd.CommandText = "PRAGMA table_info(VideoFiles);";
+                try
+                {
+                    using var reader = cmd.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        if (!reader.IsDBNull(1)) existingCols.Add(reader.GetString(1));
+                    }
+                }
+                catch { }
+
+                var missingColumns = new Dictionary<string, string>
+                {
+                    { "FirstAirDate", "TEXT" },
+                    { "LastAirDate", "TEXT" },
+                    { "NetworkName", "TEXT" },
+                    { "AirDay", "TEXT" },
+                    { "AirTime", "TEXT" },
+                    { "TotalSeasonsCount", "INTEGER" },
+                    { "TotalEpisodesCount", "INTEGER" },
+                    { "IsWatched", "INTEGER NOT NULL DEFAULT 0" },
+                    { "IsFavorite", "INTEGER NOT NULL DEFAULT 0" },
+                    { "IsWatchlist", "INTEGER NOT NULL DEFAULT 0" },
+                    { "WatchProgressPercent", "REAL NOT NULL DEFAULT 0" },
+                    { "WatchProgressSeconds", "INTEGER NOT NULL DEFAULT 0" },
+                    { "TotalDurationSeconds", "INTEGER NOT NULL DEFAULT 0" },
+                    { "CollectionName", "TEXT" },
+                    { "IsHidden", "INTEGER NOT NULL DEFAULT 0" },
+                    { "CustomTags", "TEXT" },
+                    { "HasDubbing", "INTEGER NOT NULL DEFAULT 0" },
+                    { "HasSubtitle", "INTEGER NOT NULL DEFAULT 0" },
+                    { "ContentRating", "TEXT" },
+                    { "LastPlayedEpisode", "INTEGER" },
+                    { "LastPlayedAt", "TEXT" },
+                    { "IsTracked", "INTEGER NOT NULL DEFAULT 0" },
+                    { "SeriesStatus", "TEXT" },
+                    { "LastAiredSeason", "INTEGER" },
+                    { "HasNewEpisode", "INTEGER NOT NULL DEFAULT 0" },
+                    { "NextEpisodeDate", "TEXT" },
+                    { "NextEpisodeSeason", "INTEGER" },
+                    { "NextEpisodeNumber", "INTEGER" }
+                };
+
+                foreach (var (colName, colDef) in missingColumns)
+                {
+                    if (!existingCols.Contains(colName))
+                    {
+                        Exec($"ALTER TABLE VideoFiles ADD COLUMN {colName} {colDef};");
+                    }
+                }
+            }
+
+            // Migration v2: Auto-heal legacy data
+            if (fromVersion < 2)
+            {
+                Exec("UPDATE VideoFiles SET Year = substr(FirstAirDate, 1, 4) WHERE (Year IS NULL OR Year = '' OR Year = '0') AND FirstAirDate IS NOT NULL AND length(FirstAirDate) >= 4;");
+                Exec("UPDATE VideoFiles SET Rating = ROUND(Rating / 10.0, 1) WHERE Rating > 10.0;");
+                Exec(@"
+                    UPDATE VideoFiles 
+                    SET PosterUrl = replace(PosterUrl, 'AppData\\Roaming\\CineTrack\\Images', 'AppData\\Local\\MovieManager\\Images')
+                    WHERE PosterUrl LIKE '%AppData\\Roaming\\CineTrack\\Images%';
+                    UPDATE VideoFiles 
+                    SET BackdropUrl = replace(BackdropUrl, 'AppData\\Roaming\\CineTrack\\Images', 'AppData\\Local\\MovieManager\\Images')
+                    WHERE BackdropUrl LIKE '%AppData\\Roaming\\CineTrack\\Images%';
+                    UPDATE VideoFiles 
+                    SET PosterUrl = replace(PosterUrl, 'AppData/Roaming/CineTrack/Images', 'AppData/Local/MovieManager/Images')
+                    WHERE PosterUrl LIKE '%AppData/Roaming/CineTrack/Images%';
+                    UPDATE VideoFiles 
+                    SET BackdropUrl = replace(BackdropUrl, 'AppData/Roaming/CineTrack/Images', 'AppData/Local/MovieManager/Images')
+                    WHERE BackdropUrl LIKE '%AppData/Roaming/CineTrack/Images%';
+                ");
+            }
+
+            // Migration v3: TvSeasons and TvEpisodes tables
+            if (fromVersion < 3)
+            {
+                Exec(@"
+                    CREATE TABLE IF NOT EXISTS TvSeasons (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        TmdbSeriesId INTEGER NOT NULL,
+                        SeasonNumber INTEGER NOT NULL,
+                        Name TEXT,
+                        Overview TEXT,
+                        PosterPath TEXT,
+                        AirDate TEXT,
+                        EpisodeCount INTEGER NOT NULL
+                    );
+                ");
+                Exec(@"
+                    CREATE TABLE IF NOT EXISTS TvEpisodes (
+                        Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        TmdbSeriesId INTEGER NOT NULL,
+                        SeasonNumber INTEGER NOT NULL,
+                        EpisodeNumber INTEGER NOT NULL,
+                        Name TEXT,
+                        Overview TEXT,
+                        StillPath TEXT,
+                        AirDate TEXT,
+                        VoteAverage REAL NOT NULL,
+                        IsWatched INTEGER NOT NULL DEFAULT 0
+                    );
+                ");
+            }
+
+            // Migration v4: Performance Indexes
+            if (fromVersion < 4)
+            {
+                Exec("CREATE INDEX IF NOT EXISTS IX_VideoFiles_TmdbId ON VideoFiles (TmdbId);");
+                Exec("CREATE INDEX IF NOT EXISTS IX_VideoFiles_MediaType ON VideoFiles (MediaType);");
+                Exec("CREATE INDEX IF NOT EXISTS IX_VideoFiles_FormattedTitle ON VideoFiles (FormattedTitle);");
+                Exec("CREATE INDEX IF NOT EXISTS IX_TvSeasons_TmdbSeriesId ON TvSeasons (TmdbSeriesId);");
+                Exec("CREATE INDEX IF NOT EXISTS IX_TvEpisodes_TmdbSeriesId ON TvEpisodes (TmdbSeriesId, SeasonNumber);");
             }
         }
 

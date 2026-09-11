@@ -1182,9 +1182,9 @@ namespace MovieManagerDesktop.ViewModels
                 {
                     var saveDialog = new SaveFileDialog
                     {
-                        Filter = "بسته کامل شامل تصاویر (*.zip)|*.zip|فایل متنی سبک دیتابیس (*.json)|*.json",
-                        DefaultExt = "zip",
-                        FileName = $"MovieManager_Backup_{DateTime.Now:yyyyMMdd_HHmmss}.zip",
+                        Filter = "پشتیبان امن رمزنگاری‌شده (*.mmbackup)|*.mmbackup|بسته کامل شامل تصاویر (*.zip)|*.zip|فایل متنی سبک دیتابیس (*.json)|*.json",
+                        DefaultExt = "mmbackup",
+                        FileName = $"MovieManager_Backup_{DateTime.UtcNow:yyyyMMdd_HHmmss}.mmbackup",
                         Title = "ذخیره فایل پشتیبان"
                     };
 
@@ -1202,7 +1202,7 @@ namespace MovieManagerDesktop.ViewModels
 
                 ToastService.Instance.ShowInfo("در حال تهیه نسخه پشتیبان...");
 
-                if (selectedPath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                if (selectedPath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) || selectedPath.EndsWith(".mmbackup", StringComparison.OrdinalIgnoreCase))
                 {
                     await MovieManagerDesktop.Services.BackupManager.CreateZipBackupAsync(selectedPath);
                 }
@@ -1342,16 +1342,28 @@ namespace MovieManagerDesktop.ViewModels
             {
                 var dialog = new OpenFileDialog
                 {
-                    Filter = "فایل‌های پشتیبان (*.zip;*.json)|*.zip;*.json|بسته کامل با تصاویر (*.zip)|*.zip|فایل متنی (*.json)|*.json",
-                    DefaultExt = "zip",
+                    Filter = "تمام فایل‌های پشتیبان (*.mmbackup;*.json;*.zip)|*.mmbackup;*.json;*.zip|پشتیبان امن رمزنگاری‌شده (*.mmbackup)|*.mmbackup|فایل متنی سبک (*.json)|*.json|بسته کامل با تصاویر (*.zip)|*.zip",
+                    DefaultExt = "mmbackup",
                     Title = "انتخاب فایل پشتیبان"
                 };
 
                 if (dialog.ShowDialog() == true)
                 {
-                    if (dialog.FileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                    bool isPackage = false;
+                    try
                     {
-                        ToastService.Instance.ShowInfo("در حال استخراج تصاویر و اطلاعات بسته ZIP...");
+                        using var fs = File.OpenRead(dialog.FileName);
+                        byte[] sig = new byte[2];
+                        if (fs.Read(sig, 0, 2) == 2 && sig[0] == 0x50 && sig[1] == 0x4B) // 'P' 'K' (Zip Archive Package)
+                        {
+                            isPackage = true;
+                        }
+                    }
+                    catch { }
+
+                    if (isPackage || dialog.FileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ToastService.Instance.ShowInfo("در حال استخراج تصاویر و اطلاعات بسته پشتیبان...");
                         string extractedJsonPath = await MovieManagerDesktop.Services.BackupManager.ExtractZipBackupAsync(dialog.FileName);
                         try
                         {
@@ -1381,6 +1393,21 @@ namespace MovieManagerDesktop.ViewModels
             {
                 LoggerService.Info($"[Backup] 📥 Reading backup file: {filePath}");
                 var json = await File.ReadAllTextAsync(filePath);
+
+                // Automatic AES-256 decryption for .mmbackup files or encrypted payloads
+                if (filePath.EndsWith(".mmbackup", StringComparison.OrdinalIgnoreCase) || (!json.TrimStart().StartsWith("{") && !json.TrimStart().StartsWith("[")))
+                {
+                    var decrypted = MovieManagerDesktop.Helpers.CryptoUtils.Decrypt(json);
+                    if (!string.IsNullOrEmpty(decrypted))
+                    {
+                        json = decrypted;
+                        LoggerService.Info("[Backup] 🔐 Encrypted .mmbackup file successfully decrypted.");
+                    }
+                    else
+                    {
+                        throw new InvalidDataException("رمزگشایی فایل پشتیبان رمزنگاری‌شده ناموفق بود.");
+                    }
+                }
                 
                 System.Collections.Generic.List<Models.VideoFile> videoFiles = new();
                 System.Collections.Generic.List<Models.TvSeason> tvSeasons = new();
