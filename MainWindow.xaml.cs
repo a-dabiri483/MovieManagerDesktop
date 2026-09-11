@@ -42,6 +42,7 @@ namespace MovieManagerDesktop
 
             this.SourceInitialized += MainWindow_SourceInitialized;
             this.Closing += MainWindow_Closing;
+            this.Closed += MainWindow_Closed;
             this.Loaded += MainWindow_Loaded;
             this.Activated += (s, e) => MovieManagerDesktop.Services.MpvPlaybackService.SyncOfflineProgress();
 
@@ -265,6 +266,24 @@ namespace MovieManagerDesktop
             {
                 // Silently ignore icon loading errors
             }
+        }
+
+        private void MainWindow_Closed(object? sender, EventArgs e)
+        {
+            try
+            {
+                if (_hIconBig != IntPtr.Zero)
+                {
+                    DestroyIcon(_hIconBig);
+                    _hIconBig = IntPtr.Zero;
+                }
+                if (_hIconSmall != IntPtr.Zero)
+                {
+                    DestroyIcon(_hIconSmall);
+                    _hIconSmall = IntPtr.Zero;
+                }
+            }
+            catch { }
         }
 
         private void Window_MouseMove(object sender, MouseEventArgs e)

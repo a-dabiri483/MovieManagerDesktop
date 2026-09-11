@@ -120,7 +120,7 @@ namespace MovieManagerDesktop.Services
             public List<TvEpisode> TvEpisodes { get; set; } = new();
             public SettingsModel Settings { get; set; } = new();
             public string BackupVersion { get; set; } = "2.0";
-            public DateTime CreatedAt { get; set; } = DateTime.Now;
+            public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         }
 
         public static async Task<string> GenerateBackupJsonAsync(SettingsModel? settings = null)
@@ -133,13 +133,22 @@ namespace MovieManagerDesktop.Services
 
             LoggerService.Info($"[Backup] 💾 Collecting records: {videoFiles.Count} media items, {tvSeasons.Count} seasons, {tvEpisodes.Count} episodes.");
 
+            // Clone settings and sanitize sensitive fields (API keys, private proxy credentials)
+            // so exported backups do not leak confidential keys if uploaded to cloud or shared.
+            var safeSettings = JsonSerializer.Deserialize<SettingsModel>(JsonSerializer.Serialize(settings)) ?? new SettingsModel();
+            safeSettings.TmdbApiKey = string.Empty;
+            safeSettings.OmdbApiKey = string.Empty;
+            safeSettings.ApiProxyUrl = string.Empty;
+            safeSettings.InternalEncryptedProxies = string.Empty;
+            safeSettings.DynamicProxySourceUrl = string.Empty;
+
             var backupModel = new FullBackupModel
             {
                 VideoFiles = videoFiles,
                 TvSeasons = tvSeasons,
                 TvEpisodes = tvEpisodes,
-                Settings = settings,
-                CreatedAt = DateTime.Now
+                Settings = safeSettings,
+                CreatedAt = DateTime.UtcNow
             };
 
             return JsonSerializer.Serialize(backupModel, new JsonSerializerOptions { WriteIndented = true });

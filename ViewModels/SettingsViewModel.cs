@@ -1511,6 +1511,17 @@ namespace MovieManagerDesktop.ViewModels
                         // Restore Settings if present
                         if (importedSettings != null)
                         {
+                            var currentSettings = SettingsManager.LoadSettings();
+                            // Keep existing local user keys and proxies if backup keys are empty (from sanitized backup)
+                            if (string.IsNullOrWhiteSpace(importedSettings.TmdbApiKey))
+                                importedSettings.TmdbApiKey = currentSettings.TmdbApiKey;
+                            if (string.IsNullOrWhiteSpace(importedSettings.OmdbApiKey))
+                                importedSettings.OmdbApiKey = currentSettings.OmdbApiKey;
+                            if (string.IsNullOrWhiteSpace(importedSettings.ApiProxyUrl))
+                                importedSettings.ApiProxyUrl = currentSettings.ApiProxyUrl;
+                            if (string.IsNullOrWhiteSpace(importedSettings.InternalEncryptedProxies))
+                                importedSettings.InternalEncryptedProxies = currentSettings.InternalEncryptedProxies;
+
                             SettingsManager.SaveSettings(importedSettings);
                             SelectedDataSource = importedSettings.SelectedDataSource ?? "TMDB_ONLY";
                             

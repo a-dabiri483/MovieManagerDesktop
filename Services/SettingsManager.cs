@@ -172,7 +172,7 @@ namespace MovieManagerDesktop.Services
             
             var allKeys = DefaultTmdbKeys.Union(savedKeys).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct().ToArray();
             if (allKeys.Length == 0) return DefaultTmdbKeys[0];
-            return allKeys[new Random().Next(allKeys.Length)].Trim();
+            return allKeys[Random.Shared.Next(allKeys.Length)].Trim();
         }
 
         public static string GetOmdbApiKey()
@@ -184,7 +184,7 @@ namespace MovieManagerDesktop.Services
             
             var allKeys = DefaultOmdbKeys.Union(savedKeys).Where(k => !string.IsNullOrWhiteSpace(k)).Distinct().ToArray();
             if (allKeys.Length == 0) return DefaultOmdbKeys[0];
-            return allKeys[new Random().Next(allKeys.Length)].Trim();
+            return allKeys[Random.Shared.Next(allKeys.Length)].Trim();
         }
 
         public static List<string> GetEffectiveProxies()
@@ -216,6 +216,7 @@ namespace MovieManagerDesktop.Services
             _cachedSettings = settings;
             lock (_fileLock)
             {
+                string tempFilePath = SettingsFilePath + ".tmp";
                 for (int i = 0; i < 3; i++)
                 {
                     try
@@ -226,16 +227,35 @@ namespace MovieManagerDesktop.Services
                             NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
                         };
                         var json = JsonSerializer.Serialize(settings, options);
-                        using var fs = new FileStream(SettingsFilePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-                        using var writer = new StreamWriter(fs);
-                        writer.Write(json);
+
+                        // 1. Write and flush to temporary file
+                        using (var fs = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
+                        using (var writer = new StreamWriter(fs))
+                        {
+                            writer.Write(json);
+                            writer.Flush();
+                            fs.Flush(true);
+                        }
+
+                        // 2. Atomically replace the destination settings file
+                        if (File.Exists(SettingsFilePath))
+                        {
+                            File.Replace(tempFilePath, SettingsFilePath, null);
+                        }
+                        else
+                        {
+                            File.Move(tempFilePath, SettingsFilePath);
+                        }
                         break;
                     }
                     catch (IOException)
                     {
                         System.Threading.Thread.Sleep(50);
                     }
-                    catch { }
+                    catch 
+                    {
+                        try { if (File.Exists(tempFilePath)) File.Delete(tempFilePath); } catch { }
+                    }
                 }
             }
         }

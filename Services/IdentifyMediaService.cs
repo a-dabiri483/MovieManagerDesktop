@@ -61,6 +61,16 @@ namespace MovieManagerDesktop.Services
             }
         }
 
+        private static string SanitizeUrlForLog(string? url)
+        {
+            if (string.IsNullOrEmpty(url)) return string.Empty;
+            return System.Text.RegularExpressions.Regex.Replace(
+                url,
+                @"(api_key|apikey)=([^&]+)",
+                "$1=***",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        }
+
         public async Task<string?> DownloadImageAsync(string? url, string fileNamePrefix)
         {
             if (string.IsNullOrWhiteSpace(url)) return null;
@@ -166,7 +176,7 @@ namespace MovieManagerDesktop.Services
             try
             {
                 string url = $"https://www.omdbapi.com/?apikey={apiKey}&s={Uri.EscapeDataString(query)}";
-                LoggerService.Info($"[موتور جستجو - دستی] ارسال درخواست به OMDB: {url}");
+                LoggerService.Info($"[موتور جستجو - دستی] ارسال درخواست به OMDB: {SanitizeUrlForLog(url)}");
                 var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 if (response.IsSuccessStatusCode)
                 {
@@ -583,14 +593,14 @@ namespace MovieManagerDesktop.Services
                 }
             }
 
-            LoggerService.Info($"[TMDB] ارسال درخواست جستجو/دریافت: {url}");
+            LoggerService.Info($"[TMDB] ارسال درخواست جستجو/دریافت: {SanitizeUrlForLog(url)}");
             var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
             
             if (!response.IsSuccessStatusCode && language == "fa-IR")
             {
                  LoggerService.Info($"[TMDB] پاسخ با زبان فارسی ناموفق بود. تلاش مجدد با زبان انگلیسی...");
                  url = url.Replace("language=fa-IR", "language=en-US");
-                 LoggerService.Info($"[TMDB] ارسال درخواست جایگزین: {url}");
+                 LoggerService.Info($"[TMDB] ارسال درخواست جایگزین: {SanitizeUrlForLog(url)}");
                  response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
             }
 
@@ -617,7 +627,7 @@ namespace MovieManagerDesktop.Services
                         url = $"https://api.themoviedb.org/3/search/movie?api_key={apiKey}&query={query}&language={language}";
                 }
                 
-                LoggerService.Info($"[TMDB] ارسال درخواست جستجوی عنوان: {url}");
+                LoggerService.Info($"[TMDB] ارسال درخواست جستجوی عنوان: {SanitizeUrlForLog(url)}");
                 response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
             }
 
@@ -635,7 +645,7 @@ namespace MovieManagerDesktop.Services
                     // Fallback: try searching without year
                     string fallbackType = file.MediaType == "Series" ? "tv" : "movie";
                     string fallbackUrl = $"https://api.themoviedb.org/3/search/{fallbackType}?api_key={apiKey}&query={query}&language={language}";
-                    LoggerService.Info($"[TMDB] ارسال درخواست بدون سال: {fallbackUrl}");
+                    LoggerService.Info($"[TMDB] ارسال درخواست بدون سال: {SanitizeUrlForLog(fallbackUrl)}");
                     response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(fallbackUrl));
                     if (response.IsSuccessStatusCode)
                     {
@@ -776,7 +786,7 @@ namespace MovieManagerDesktop.Services
                         try
                         {
                             string detailsUrl = $"https://api.themoviedb.org/3/{mediaType}/{tmdbId}?api_key={apiKey}&append_to_response=credits&language={language}";
-                            LoggerService.Info($"[TMDB] دریافت اطلاعات تکمیلی (بازیگران و عوامل): {detailsUrl}");
+                            LoggerService.Info($"[TMDB] دریافت اطلاعات تکمیلی (بازیگران و عوامل): {SanitizeUrlForLog(detailsUrl)}");
                             var detailsResp = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(detailsUrl));
                             if (detailsResp.IsSuccessStatusCode)
                             {
@@ -885,13 +895,13 @@ namespace MovieManagerDesktop.Services
             try
             {
                 string url = $"https://api.themoviedb.org/3/tv/{file.TmdbId}?api_key={apiKey}&language={language}";
-                LoggerService.Info($"[TMDB] استخراج اطلاعات دقیق سریال: {url}");
+                LoggerService.Info($"[TMDB] استخراج اطلاعات دقیق سریال: {SanitizeUrlForLog(url)}");
                 var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 
                 if (!response.IsSuccessStatusCode && language == "fa-IR")
                 {
                     url = $"https://api.themoviedb.org/3/tv/{file.TmdbId}?api_key={apiKey}&language=en-US";
-                    LoggerService.Info($"[TMDB] تلاش مجدد با زبان انگلیسی: {url}");
+                    LoggerService.Info($"[TMDB] تلاش مجدد با زبان انگلیسی: {SanitizeUrlForLog(url)}");
                     response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 }
                 
@@ -1121,7 +1131,7 @@ namespace MovieManagerDesktop.Services
                 url += $"&y={file.Year}";
             }
 
-            LoggerService.Info($"[OMDB] ارسال درخواست جستجو: {url}");
+            LoggerService.Info($"[OMDB] ارسال درخواست جستجو: {SanitizeUrlForLog(url)}");
             var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
             if (response.IsSuccessStatusCode)
             {
@@ -1170,12 +1180,12 @@ namespace MovieManagerDesktop.Services
                 string apiKey = SettingsManager.GetTmdbApiKey();
                 string url = $"https://api.themoviedb.org/3/tv/{file.TmdbId.Value}?api_key={apiKey}&language=fa-IR";
                 
-                LoggerService.Info($"[TMDB] استخراج مجدد وضعیت سریال: {url}");
+                LoggerService.Info($"[TMDB] استخراج مجدد وضعیت سریال: {SanitizeUrlForLog(url)}");
                 var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 if (!response.IsSuccessStatusCode)
                 {
                     url = $"https://api.themoviedb.org/3/tv/{file.TmdbId.Value}?api_key={apiKey}&language=en-US";
-                    LoggerService.Info($"[TMDB] تلاش مجدد با زبان انگلیسی: {url}");
+                    LoggerService.Info($"[TMDB] تلاش مجدد با زبان انگلیسی: {SanitizeUrlForLog(url)}");
                     response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 }
 
@@ -1381,7 +1391,7 @@ namespace MovieManagerDesktop.Services
                 string type = mediaType.ToLower() == "series" ? "tv" : "movie";
                 
                 string url = $"https://api.themoviedb.org/3/{type}/{tmdbId}/images?api_key={apiKey}&include_image_language=en,null,fa,fr,de,es,it,ar,ja,ko,ru,zh";
-                LoggerService.Info($"[TMDB] دریافت لیست پوسترهای جایگزین: {url}");
+                LoggerService.Info($"[TMDB] دریافت لیست پوسترهای جایگزین: {SanitizeUrlForLog(url)}");
                 var response = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(url));
                 if (response.IsSuccessStatusCode)
                 {
