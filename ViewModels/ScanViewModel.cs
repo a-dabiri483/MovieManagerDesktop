@@ -73,12 +73,58 @@ namespace MovieManagerDesktop.ViewModels
         // Filters
         private string _selectedFilter = "همه";
 
+        public int GetRemainingFreeTierQuota()
+        {
+            if (LicenseManagerService.IsLicenseValid())
+            {
+                return int.MaxValue;
+            }
+
+            try
+            {
+                using var db = new AppDbContext();
+                int currentTitleCount = db.VideoFiles.Select(v => v.FormattedTitle).Distinct().Count();
+                return Math.Max(0, LicenseManagerService.FreeTierMediaLimit - currentTitleCount);
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Warning($"[اسکنر] خطا در محاسبه سقف نسخه آزمایشی: {ex.Message}");
+                return LicenseManagerService.FreeTierMediaLimit;
+            }
+        }
+
         private bool _isAllSelected;
         public bool IsAllSelected
         {
             get => _isAllSelected;
             set
             {
+                if (value && !LicenseManagerService.IsLicenseValid())
+                {
+                    int quota = GetRemainingFreeTierQuota();
+                    int checkedCount = 0;
+                    foreach (var group in _allGroups)
+                    {
+                        if (checkedCount < quota)
+                        {
+                            group.IsChecked = true;
+                            checkedCount++;
+                        }
+                        else
+                        {
+                            group.IsChecked = false;
+                        }
+                    }
+                    _isAllSelected = (_allGroups.Count <= quota && quota > 0);
+                    OnPropertyChanged(nameof(IsAllSelected));
+                    UpdateBulkToolbar();
+                    if (_allGroups.Count > quota)
+                    {
+                        ToastService.Instance.ShowWarning($"در نسخه آزمایشی حداکثر {quota} عنوان مجاز به انتخاب هستند (سقف کل: {LicenseManagerService.FreeTierMediaLimit} عنوان). برای ثبت نامحدود لطفاً لایسنس را فعال کنید.");
+                    }
+                    return;
+                }
+
                 if (SetProperty(ref _isAllSelected, value))
                 {
                     foreach (var group in _allGroups)
@@ -150,11 +196,39 @@ namespace MovieManagerDesktop.ViewModels
 
         public void UpdateBulkToolbar()
         {
+            if (!LicenseManagerService.IsLicenseValid())
+            {
+                int quota = GetRemainingFreeTierQuota();
+                int currentChecked = _allGroups.Count(g => g.IsChecked);
+                if (currentChecked > quota)
+                {
+                    int allowed = quota;
+                    foreach (var g in _allGroups)
+                    {
+                        if (g.IsChecked)
+                        {
+                            if (allowed > 0)
+                            {
+                                allowed--;
+                            }
+                            else
+                            {
+                                g.IsChecked = false;
+                            }
+                        }
+                    }
+                    ToastService.Instance.ShowWarning($"در نسخه آزمایشی حداکثر مجاز به انتخاب {quota} عنوان هستید (سقف کل: {LicenseManagerService.FreeTierMediaLimit} عنوان).");
+                }
+            }
+
             int count = _allGroups.Count(g => g.IsChecked);
             SelectedCountText = $"{count} مورد انتخاب شد";
             HasSelection = count > 0 && !IsScanning && !IsRegistering;
             BulkToolbarVisibility = HasSelection ? Visibility.Visible : Visibility.Collapsed;
             RegisterButtonVisibility = BulkToolbarVisibility; // Link to the new button they added
+
+            _isAllSelected = _allGroups.Count > 0 && _allGroups.All(g => g.IsChecked);
+            OnPropertyChanged(nameof(IsAllSelected));
         }
 
         private void ApplyFilters()
@@ -256,23 +330,51 @@ namespace MovieManagerDesktop.ViewModels
                         .ToList();
                 }
                 
+                int remainingQuota = GetRemainingFreeTierQuota();
+                int checkedCount = 0;
+
                 foreach (var fileList in groupedFileLists)
                 {
                     var vm = new ScannedGroupViewModel(fileList, existingSeriesCache);
+                    if (checkedCount < remainingQuota)
+                    {
+                        vm.IsChecked = true;
+                        checkedCount++;
+                    }
+                    else
+                    {
+                        vm.IsChecked = false;
+                    }
                     _allGroups.Add(vm);
                 }
                 
                 SearchQuery = string.Empty;
                 IsFilterAll = true; // This will call ApplyFilters
                 
-                _isAllSelected = true;
+                _isAllSelected = _allGroups.Count > 0 && _allGroups.All(g => g.IsChecked);
                 OnPropertyChanged(nameof(IsAllSelected));
+                UpdateBulkToolbar();
                 
                 ScanProgressText = $"{_allGroups.Count} گروه یافت شد";
                 IsScanningIndeterminate = false;
                 ScanProgressValue = 100;
                 StatusMessage = $"اسکن با موفقیت انجام شد ({_allGroups.Count} عنوان یافت شد).";
-                ToastService.Instance.ShowSuccess($"{_allGroups.Count} عنوان ویدیویی جهت بررسی و ثبت آماده شد.");
+
+                if (!LicenseManagerService.IsLicenseValid() && _allGroups.Count > remainingQuota)
+                {
+                    if (remainingQuota > 0)
+                    {
+                        ToastService.Instance.ShowInfo($"اسکن انجام شد. در نسخه آزمایشی {remainingQuota} عنوان اول علامت‌گذاری شدند (سقف کل: {LicenseManagerService.FreeTierMediaLimit} عنوان).");
+                    }
+                    else
+                    {
+                        ToastService.Instance.ShowWarning($"سقف نسخه آزمایشی ({LicenseManagerService.FreeTierMediaLimit} عنوان) پر شده است. برای ثبت عناوین جدید لطفاً لایسنس برنامه را فعال نمایید.");
+                    }
+                }
+                else
+                {
+                    ToastService.Instance.ShowSuccess($"{_allGroups.Count} عنوان ویدیویی جهت بررسی و ثبت آماده شد.");
+                }
             }
             catch (OperationCanceledException)
             {
@@ -445,7 +547,8 @@ namespace MovieManagerDesktop.ViewModels
                     }
                 }
 
-                var alreadyExistingPaths = db.VideoFiles.Select(v => v.FilePath).ToHashSet();
+                var groupPaths = group.Files.Select(v => v.FilePath).ToList();
+                var alreadyExistingPaths = db.VideoFiles.Where(v => groupPaths.Contains(v.FilePath)).Select(v => v.FilePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
                 int newlyAddedCount = 0;
 
                 foreach (var item in group.Files)
@@ -549,14 +652,18 @@ namespace MovieManagerDesktop.ViewModels
             // Check free tier limit before starting bulk registration
             if (!LicenseManagerService.IsLicenseValid())
             {
-                using var preDb = new AppDbContext();
-                int currentTitleCount = preDb.VideoFiles.Select(v => v.FormattedTitle).Distinct().Count();
-                if (currentTitleCount >= LicenseManagerService.FreeTierMediaLimit)
+                int quota = GetRemainingFreeTierQuota();
+                if (quota <= 0)
                 {
                     ToastService.Instance.ShowWarning($"سقف ثبت در نسخه آزمایشی ({LicenseManagerService.FreeTierMediaLimit} عنوان) تکمیل شده است. برای اسکن نامحدود و ثبت آرشیو کامل، لطفاً لایسنس برنامه را فعال نمایید.");
                     var win = new LicenseActivationWindow();
                     WindowHelper.SafeShowDialog(win);
                     return;
+                }
+
+                if (selectedGroups.Count > quota)
+                {
+                    selectedGroups = selectedGroups.Take(quota).ToList();
                 }
             }
             
@@ -578,7 +685,7 @@ namespace MovieManagerDesktop.ViewModels
                     int processedGroups = 0;
                     int totalGroups = selectedGroups.Count;
                     
-                    var fetchSemaphore = new SemaphoreSlim(5); // 5 concurrent fetches
+                    var fetchSemaphore = new SemaphoreSlim(2); // Halved from 5 to 2 concurrent fetches for network & proxy stability
                     var dbSemaphore = new SemaphoreSlim(1); // 1 concurrent db write for SQLite
                     
                     var tasks = selectedGroups.Select(async group =>
@@ -592,7 +699,7 @@ namespace MovieManagerDesktop.ViewModels
                             representative.FormattedTitle = string.IsNullOrWhiteSpace(group.TitleOverride) ? representative.FormattedTitle : group.TitleOverride;
                             representative.Year = string.IsNullOrWhiteSpace(group.YearOverride) ? null : group.YearOverride;
                             
-                            Application.Current.Dispatcher.Invoke(() => group.Status = "در حال ارتباط با سرور...");
+                            _ = Application.Current.Dispatcher.InvokeAsync(() => group.Status = "در حال ارتباط با سرور...");
                             
                             var identified = await _identifyService.IdentifyMediaAsync(representative);
                             
@@ -603,11 +710,14 @@ namespace MovieManagerDesktop.ViewModels
                             if (!hasData)
                             {
                                 Interlocked.Increment(ref failedCount);
+                                int doneCount = Interlocked.Increment(ref processedGroups);
                                 LoggerService.Warning($"[اسکنر] دیتایی برای '{representative.FormattedTitle}' یافت نشد.");
-                                Application.Current.Dispatcher.Invoke(() => {
+                                _ = Application.Current.Dispatcher.InvokeAsync(() => {
                                     group.Status = "خطا در پیدا کردن";
                                     group.IsError = true;
                                     group.IsChecked = false;
+                                    ScanProgressValue = ((double)doneCount / totalGroups) * 100;
+                                    ScanProgressText = $"در حال ثبت... {((double)doneCount / totalGroups) * 100:0}% ({doneCount} از {totalGroups})";
                                 });
                                 return;
                             }
@@ -650,7 +760,7 @@ namespace MovieManagerDesktop.ViewModels
                                         if (currentTitleCount >= LicenseManagerService.FreeTierMediaLimit)
                                         {
                                             _cancellationTokenSource?.Cancel();
-                                            Application.Current.Dispatcher.Invoke(() =>
+                                            _ = Application.Current.Dispatcher.InvokeAsync(() =>
                                             {
                                                 group.Status = "نیاز به لایسنس";
                                                 group.IsError = true;
@@ -672,7 +782,8 @@ namespace MovieManagerDesktop.ViewModels
                                     }
                                 }
 
-                                var alreadyExistingPaths = db.VideoFiles.Select(v => v.FilePath).ToHashSet();
+                                var groupPaths = group.Files.Select(v => v.FilePath).ToList();
+                                var alreadyExistingPaths = db.VideoFiles.Where(v => groupPaths.Contains(v.FilePath)).Select(v => v.FilePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
                                 foreach (var file in group.Files)
                                 {
@@ -723,8 +834,9 @@ namespace MovieManagerDesktop.ViewModels
                             }
 
                             Interlocked.Add(ref successCount, newlyAddedCount > 0 ? newlyAddedCount : group.Files.Count);
-                            
-                            Application.Current.Dispatcher.Invoke(() => {
+                            int done = Interlocked.Increment(ref processedGroups);
+
+                            _ = Application.Current.Dispatcher.InvokeAsync(() => {
                                 group.TitleOverride = group.Files.First().FormattedTitle;
                                 group.Representative.FormattedTitle = group.TitleOverride;
                                 group.Status = newlyAddedCount > 0 ? "ثبت شد" : "قبلاً ثبت شده";
@@ -734,25 +846,27 @@ namespace MovieManagerDesktop.ViewModels
                                 
                                 LoggerService.Info($"[اسکنر] '{group.TitleOverride}' با موفقیت در دیتابیس ثبت شد.");
 
-                                processedGroups++;
-                                ScanProgressValue = ((double)processedGroups / totalGroups) * 100;
-                                ScanProgressText = $"در حال ثبت... {((double)processedGroups / totalGroups) * 100:0}% ({processedGroups} از {totalGroups})";
+                                ScanProgressValue = ((double)done / totalGroups) * 100;
+                                ScanProgressText = $"در حال ثبت... {((double)done / totalGroups) * 100:0}% ({done} از {totalGroups})";
                             });
                         }
                         catch (Exception ex)
                         {
                             Interlocked.Increment(ref failedCount);
+                            int done = Interlocked.Increment(ref processedGroups);
                             LoggerService.Error($"[اسکنر] خطا در پردازش '{group.Representative.FormattedTitle}': {ex.Message}", ex);
-                            Application.Current.Dispatcher.Invoke(() => {
+                            _ = Application.Current.Dispatcher.InvokeAsync(() => {
                                 group.Status = ex is InvalidOperationException ? ex.Message : "خطای سیستمی";
                                 group.IsError = true;
+                                ScanProgressValue = ((double)done / totalGroups) * 100;
+                                ScanProgressText = $"در حال ثبت... {((double)done / totalGroups) * 100:0}% ({done} از {totalGroups})";
                             });
                         }
                         finally
                         {
                             fetchSemaphore.Release();
                         }
-                    });
+                    }).ToList();
                     
                     await Task.WhenAll(tasks);
                     
@@ -777,7 +891,7 @@ namespace MovieManagerDesktop.ViewModels
                         ToastService.Instance.ShowInfo("عملیات ثبت لغو شد.");
                     }
                     
-                    Application.Current.Dispatcher.Invoke(() => ApplyFilters());
+                    _ = Application.Current.Dispatcher.InvokeAsync(() => ApplyFilters());
                     WeakReferenceMessenger.Default.Send(new MovieManagerDesktop.Messages.MediaUpdatedMessage());
                 });
             }

@@ -78,7 +78,7 @@
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                 <TextBlock Text="نسخه فعلی شما: " FontSize="11.5" Foreground="#94A3B8"/>
-                                <TextBlock x:Name="TxtCurrentVersion" Text="v2.7.0" FontSize="11.5" Foreground="#CBD5E1" FontWeight="Bold" FlowDirection="LeftToRight" Margin="4,0,14,0"/>
+                                <TextBlock x:Name="TxtCurrentVersion" Text="v2.8.0" FontSize="11.5" Foreground="#CBD5E1" FontWeight="Bold" FlowDirection="LeftToRight" Margin="4,0,14,0"/>
 
                                 <TextBlock x:Name="TxtFileSizeLabel" Text="حجم: " FontSize="11.5" Foreground="#94A3B8"/>
                                 <TextBlock x:Name="TxtFileSize" Text="85 MB" FontSize="11.5" Foreground="#34D399" FontWeight="Bold" FlowDirection="LeftToRight" Margin="4,0,14,0"/>
@@ -160,16 +160,38 @@
                         </Grid.RowDefinitions>
 
                         <!-- Top Status & Stats -->
-                        <Grid Grid.Row="0" Margin="0,0,0,8">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
-                                <ProgressBar x:Name="SpinnerProgress" Style="{StaticResource MaterialDesignCircularProgressBar}" 
+                        <Grid Grid.Row="0" Margin="0,0,0,10" MinHeight="26">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Status / Error Message (Takes available width, wraps cleanly) -->
+                            <Grid Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <ProgressBar x:Name="SpinnerProgress" Grid.Column="0"
+                                             Style="{StaticResource MaterialDesignCircularProgressBar}" 
                                              Width="16" Height="16" IsIndeterminate="True" Value="0"
                                              Foreground="#38BDF8" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="TxtDownloadStatus" Text="در حال دریافت بسته بروزرسانی..." FontSize="12.5" Foreground="#E2E8F0" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                            </StackPanel>
 
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <TextBlock x:Name="TxtDownloadSize" Text="0 MB / 0 MB" FontSize="11.5" Foreground="#94A3B8" FlowDirection="LeftToRight" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <materialDesign:PackIcon x:Name="IconErrorStatus" Grid.Column="0"
+                                                         Kind="AlertCircle" Width="18" Height="18"
+                                                         Foreground="#F87171" Margin="0,0,8,0" 
+                                                         VerticalAlignment="Center" Visibility="Collapsed"/>
+
+                                <TextBlock x:Name="TxtDownloadStatus" Grid.Column="1"
+                                           Text="در حال دریافت بسته بروزرسانی..." FontSize="12" 
+                                           Foreground="#E2E8F0" FontWeight="SemiBold" 
+                                           VerticalAlignment="Center" TextWrapping="Wrap" LineHeight="18"/>
+                            </Grid>
+
+                            <!-- Stats: Size & Speed (Hidden when error occurs) -->
+                            <StackPanel x:Name="PnlDownloadStats" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock x:Name="TxtDownloadSize" Text="0 MB / 0 MB" FontSize="11.5" Foreground="#94A3B8" FlowDirection="LeftToRight" Margin="0,0,8,0" VerticalAlignment="Center"/>
                                 <Border Background="#1E293B" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
                                     <TextBlock x:Name="TxtDownloadSpeed" Text="0 KB/s" FontSize="11" Foreground="#34D399" FontWeight="Bold" FlowDirection="LeftToRight"/>
                                 </Border>
@@ -177,32 +199,37 @@
                         </Grid>
 
                         <!-- Progress Bar -->
-                        <Grid Grid.Row="1" Margin="0,0,0,8">
+                        <Grid Grid.Row="1" Margin="0,0,0,10">
                             <Border Height="8" CornerRadius="4" Background="#1E293B" ClipToBounds="True">
                                 <ProgressBar x:Name="PrgDownload" Value="0" Maximum="100" Height="8"
                                              Foreground="#0284C7" Background="Transparent" BorderThickness="0"/>
                             </Border>
                         </Grid>
 
-                        <!-- Cancel and Retry/Browser Fallback Buttons -->
+                        <!-- Action Buttons on the RIGHT and Percentage on the LEFT -->
                         <Grid Grid.Row="2">
-                            <TextBlock x:Name="TxtPercent" Text="۰%" FontSize="12" FontWeight="Bold" Foreground="#38BDF8" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button x:Name="BtnBrowserFallback" Click="BtnBrowserFallback_Click" Visibility="Collapsed"
-                                        Background="Transparent" BorderBrush="#38BDF8" BorderThickness="1"
-                                        Foreground="#38BDF8" Height="30" Padding="10,0" Cursor="Hand" Margin="0,0,8,0"
-                                        materialDesign:ButtonAssist.CornerRadius="6">
-                                    <TextBlock Text="دانلود با مرورگر" FontSize="11"/>
-                                </Button>
-
+                            <!-- Buttons on Right side (Left alignment in RTL) -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                                 <Button x:Name="BtnCancelDownload" Click="BtnCancelDownload_Click"
                                         Background="#26F87171" BorderBrush="#F87171" BorderThickness="1"
-                                        Foreground="#FCA5A5" Height="30" Padding="12,0" Cursor="Hand"
+                                        Foreground="#FCA5A5" Height="32" Padding="14,0" Cursor="Hand" Margin="0,0,8,0"
                                         materialDesign:ButtonAssist.CornerRadius="6">
-                                    <TextBlock Text="انصراف" FontSize="11"/>
+                                    <TextBlock Text="انصراف" FontSize="11.5" FontWeight="SemiBold"/>
+                                </Button>
+
+                                <Button x:Name="BtnBrowserFallback" Click="BtnBrowserFallback_Click" Visibility="Collapsed"
+                                        Background="#1E293B" BorderBrush="#38BDF8" BorderThickness="1"
+                                        Foreground="#38BDF8" Height="32" Padding="12,0" Cursor="Hand"
+                                        materialDesign:ButtonAssist.CornerRadius="6">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="OpenInBrowser" Width="15" Height="15" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                        <TextBlock Text="دانلود با مرورگر" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    </StackPanel>
                                 </Button>
                             </StackPanel>
+
+                            <!-- Percentage on Left side (Right alignment in RTL) -->
+                            <TextBlock x:Name="TxtPercent" Text="۰%" FontSize="12.5" FontWeight="Bold" Foreground="#38BDF8" HorizontalAlignment="Right" VerticalAlignment="Center" FlowDirection="LeftToRight"/>
                         </Grid>
                     </Grid>
                 </Grid>

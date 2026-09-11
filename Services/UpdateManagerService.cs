@@ -19,10 +19,13 @@ namespace MovieManagerDesktop.Services
         public double SpeedBytesPerSecond { get; set; }
         public string StatusMessage { get; set; } = string.Empty;
 
-        public string DownloadedText => $"{DownloadedBytes / (1024.0 * 1024.0):0.1} مگابایت";
-        public string TotalText => TotalBytes > 0 ? $"{TotalBytes / (1024.0 * 1024.0):0.1} مگابایت" : "نامشخص";
+        public double DownloadedMb => DownloadedBytes / (1024.0 * 1024.0);
+        public double TotalMb => TotalBytes > 0 ? TotalBytes / (1024.0 * 1024.0) : 0;
+
+        public string DownloadedText => $"{DownloadedMb:0.0} MB";
+        public string TotalText => TotalBytes > 0 ? $"{TotalMb:0.0} MB" : "نامشخص";
         public string SpeedText => SpeedBytesPerSecond > 1024 * 1024
-            ? $"{SpeedBytesPerSecond / (1024.0 * 1024.0):0.1} MB/s"
+            ? $"{SpeedBytesPerSecond / (1024.0 * 1024.0):0.0} MB/s"
             : $"{SpeedBytesPerSecond / 1024.0:0} KB/s";
     }
 
@@ -39,6 +42,7 @@ namespace MovieManagerDesktop.Services
         public string FileSize { get; set; } = string.Empty;
         public string Changelog { get; set; } = string.Empty;
         public string Sha256 { get; set; } = string.Empty;
+        public string Signature { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
     }
 
@@ -48,8 +52,8 @@ namespace MovieManagerDesktop.Services
     /// </summary>
     public static class UpdateManagerService
     {
-        public const string CurrentAppVersion = "2.7.0";
-        public const int CurrentVersionCode = 270;
+        public const string CurrentAppVersion = "2.8.0";
+        public const int CurrentVersionCode = 280;
         private const string CheckUpdateUrl = "https://moviemanager.ir/license/api.php?action=check_update&platform=windows";
 
         private static bool _isDialogOpen = false;
@@ -103,6 +107,7 @@ namespace MovieManagerDesktop.Services
                     FileSize = root.TryGetProperty("file_size", out var fs) ? fs.GetString() ?? "" : "",
                     Changelog = root.TryGetProperty("changelog", out var cl) ? cl.GetString() ?? "" : "",
                     Sha256 = root.TryGetProperty("sha256", out var sh) ? sh.GetString() ?? "" : (root.TryGetProperty("sha_256", out var sh2) ? sh2.GetString() ?? "" : ""),
+                    Signature = root.TryGetProperty("signature", out var sig) ? sig.GetString() ?? "" : (root.TryGetProperty("rsa_signature", out var sig2) ? sig2.GetString() ?? "" : ""),
                     Message = root.TryGetProperty("message", out var msg) ? msg.GetString() ?? "" : ""
                 };
 
@@ -176,11 +181,19 @@ namespace MovieManagerDesktop.Services
         public static async Task<string?> DownloadUpdateFileAsync(
             string downloadUrl,
             string version,
-            string? expectedSha256 = null,
+            string? expectedSha256,
+            string? expectedSignature = null,
             IProgress<UpdateDownloadProgress>? progress = null,
             CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(downloadUrl)) return null;
+
+            // Security Policy: Reject early if server didn't provide mandatory SHA-256
+            if (string.IsNullOrWhiteSpace(expectedSha256))
+            {
+                LoggerService.Error("[AutoUpdater] Security rejection: No SHA-256 checksum was provided by update server.");
+                throw new InvalidDataException("خطای امنیتی: سرور بروزرسانی هیچ چک‌سام امنیتی (SHA-256) معتبری برای این نسخه ارائه نکرده است.\nبه منظور حفظ امنیت سیستم، دانلود و اجرای بسته نصبی متوقف شد.");
+            }
 
             string cleanVer = (version ?? "latest").Trim().TrimStart('v', 'V');
             string tempFileName = $"MovieManager_Setup_v{cleanVer}.exe";
@@ -259,33 +272,55 @@ namespace MovieManagerDesktop.Services
                 }
             }
 
-            // 2. Cryptographic SHA-256 Checksum Verification
-            if (!string.IsNullOrWhiteSpace(expectedSha256))
+            // 2. Cryptographic SHA-256 Checksum Verification (Mandatory Policy)
+            progress?.Report(new UpdateDownloadProgress
             {
-                progress?.Report(new UpdateDownloadProgress
-                {
-                    Percentage = 100,
-                    DownloadedBytes = fileInfo.Length,
-                    TotalBytes = totalBytes > 0 ? totalBytes : fileInfo.Length,
-                    SpeedBytesPerSecond = 0,
-                    StatusMessage = "در حال اعتبارسنجی امضای امنیتی و چک‌سام فایل..."
-                });
+                Percentage = 100,
+                DownloadedBytes = fileInfo.Length,
+                TotalBytes = totalBytes > 0 ? totalBytes : fileInfo.Length,
+                SpeedBytesPerSecond = 0,
+                StatusMessage = "در حال اعتبارسنجی امضای امنیتی و چک‌سام فایل..."
+            });
 
-                using (var sha = System.Security.Cryptography.SHA256.Create())
-                using (var verifyStream = File.OpenRead(tempPath))
-                {
-                    byte[] hashBytes = await sha.ComputeHashAsync(verifyStream, cancellationToken);
-                    string actualHash = Convert.ToHexString(hashBytes);
+            byte[] hashBytes;
+            using (var sha = System.Security.Cryptography.SHA256.Create())
+            using (var verifyStream = File.OpenRead(tempPath))
+            {
+                hashBytes = await sha.ComputeHashAsync(verifyStream, cancellationToken);
+            }
 
-                    if (!string.Equals(actualHash, expectedSha256.Trim(), StringComparison.OrdinalIgnoreCase))
+            string actualHash = Convert.ToHexString(hashBytes);
+
+            if (!string.Equals(actualHash, expectedSha256.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                try { File.Delete(tempPath); } catch { }
+                LoggerService.Error($"[AutoUpdater] SHA-256 mismatch! Expected: {expectedSha256}, Actual: {actualHash}");
+                throw new InvalidDataException($"اعتبارسنجی امنیتی بسته با شکست مواجه شد.\nهش مورد انتظار: {expectedSha256}\nهش دریافت شده: {actualHash}");
+            }
+
+            LoggerService.Info($"[AutoUpdater] ✔ SHA-256 verification passed: {actualHash}");
+
+            // 3. Official RSA-2048 Digital Signature Verification (if provided by server)
+            if (!string.IsNullOrWhiteSpace(expectedSignature))
+            {
+                try
+                {
+                    byte[] signatureBytes = Convert.FromBase64String(expectedSignature.Trim());
+                    bool isSignatureValid = SecurityIntegrityService.VerifyHashSignature(hashBytes, signatureBytes);
+                    if (!isSignatureValid)
                     {
-                        verifyStream.Close();
                         try { File.Delete(tempPath); } catch { }
-                        LoggerService.Error($"[AutoUpdater] SHA-256 mismatch! Expected: {expectedSha256}, Actual: {actualHash}");
-                        throw new InvalidDataException($"اعتبارسنجی امنیتی بسته با شکست مواجه شد.\nهش مورد انتظار: {expectedSha256}\nهش دریافت شده: {actualHash}");
+                        LoggerService.Error("[AutoUpdater] RSA signature verification failed! Package may be tampered or untrusted.");
+                        throw new InvalidDataException("خطای امنیتی: امضای دیجیتال بسته نصبی با کلید رسمی MovieManager تطابق ندارد.\nفایل دانلود شده نامعتبر است.");
                     }
 
-                    LoggerService.Info($"[AutoUpdater] ✔ SHA-256 verification passed: {actualHash}");
+                    LoggerService.Info("[AutoUpdater] ✔ Official MovieManager RSA digital signature successfully verified.");
+                }
+                catch (FormatException fex)
+                {
+                    try { File.Delete(tempPath); } catch { }
+                    LoggerService.Error("[AutoUpdater] Invalid RSA signature format received from server", fex);
+                    throw new InvalidDataException("ساختار امضای دیجیتال سرور نامعتبر است.");
                 }
             }
 
@@ -295,7 +330,7 @@ namespace MovieManagerDesktop.Services
                 DownloadedBytes = fileInfo.Length,
                 TotalBytes = totalBytes > 0 ? totalBytes : fileInfo.Length,
                 SpeedBytesPerSecond = 0,
-                StatusMessage = "دانلود و اعتبارسنجی بسته بروزرسانی با موفقیت تکمیل شد."
+                StatusMessage = "دانلود و اعتبارسنجی امنیتی بسته بروزرسانی با موفقیت تکمیل شد."
             });
 
             return tempPath;

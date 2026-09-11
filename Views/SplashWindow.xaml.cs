@@ -61,6 +61,10 @@ namespace MovieManagerDesktop.Views
             fadeOut.Completed += (s, ev) =>
             {
                 var mainWindow = new MainWindow();
+                if (Application.Current != null)
+                {
+                    Application.Current.MainWindow = mainWindow;
+                }
                 mainWindow.Show();
                 Close();
             };

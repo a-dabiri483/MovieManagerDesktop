@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using File = System.IO.File;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using MovieManagerDesktop.Data;
 using System.Text.Json;
 using MovieManagerDesktop.Models;
+using MovieManagerDesktop.Helpers;
 using System.Net.Http;
 using System.IO.Compression;
 using System.Text;
@@ -29,7 +31,7 @@ namespace MovieManagerDesktop.Services
         public static bool IsBackupNeeded()
         {
             var settings = SettingsManager.LoadSettings();
-            if (!settings.IsLocalAutoBackupEnabled && !settings.IsGoogleDriveAutoBackupEnabled)
+            if (!settings.IsLocalAutoBackupEnabled)
             {
                 return false;
             }
@@ -51,7 +53,7 @@ namespace MovieManagerDesktop.Services
         public static async Task<bool> RunBackupAsync()
         {
             var settings = SettingsManager.LoadSettings();
-            if (!settings.IsLocalAutoBackupEnabled && !settings.IsGoogleDriveAutoBackupEnabled)
+            if (!settings.IsLocalAutoBackupEnabled)
             {
                 return true;
             }
@@ -73,30 +75,9 @@ namespace MovieManagerDesktop.Services
                 // Generate the backup JSON string
                 var backupJson = await GenerateBackupJsonAsync(settings);
                 
-                string localBackupFilePath = string.Empty;
-
                 if (settings.IsLocalAutoBackupEnabled)
                 {
-                    localBackupFilePath = await RunLocalBackupAsync(settings, backupJson);
-                }
-
-                if (settings.IsGoogleDriveAutoBackupEnabled)
-                {
-                    // Use a temp file if local backup wasn't enabled
-                    bool usingTempFile = false;
-                    if (string.IsNullOrEmpty(localBackupFilePath))
-                    {
-                        localBackupFilePath = Path.GetTempFileName();
-                        System.IO.File.WriteAllText(localBackupFilePath, backupJson);
-                        usingTempFile = true;
-                    }
-
-                    await RunGoogleDriveBackupAsync(localBackupFilePath);
-
-                    if (usingTempFile)
-                    {
-                        System.IO.File.Delete(localBackupFilePath);
-                    }
+                    await RunLocalBackupAsync(settings, backupJson);
                 }
 
                 // Update Last Backup Time
@@ -159,53 +140,84 @@ namespace MovieManagerDesktop.Services
             string appData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             string imagesDir = Path.Combine(appData, "MovieManager", "Images");
             
-            textProgress?.Report("در حال استخراج متادیتای دیتابیس...");
+            progress?.Report(2.0);
+            textProgress?.Report("در حال جمع‌آوری اطلاعات و متادیتای فیلم‌ها و سریال‌ها...");
             string json = await GenerateBackupJsonAsync();
+            progress?.Report(10.0);
 
             bool isEncryptedPackage = zipPath.EndsWith(".mmbackup", StringComparison.OrdinalIgnoreCase);
-            if (isEncryptedPackage)
-            {
-                textProgress?.Report("در حال رمزنگاری متادیتای دیتابیس (AES-256)...");
-                json = MovieManagerDesktop.Helpers.CryptoUtils.Encrypt(json) ?? json;
-            }
 
-            textProgress?.Report("در حال ایجاد بسته فشرده پشتیبان...");
+            textProgress?.Report("در حال آماده‌سازی آرشیو پشتیبان...");
             
-            if (System.IO.File.Exists(zipPath))
+            if (File.Exists(zipPath))
             {
-                System.IO.File.Delete(zipPath);
+                try { File.Delete(zipPath); } catch { }
             }
 
-            using var fileStream = new FileStream(zipPath, FileMode.Create, FileAccess.Write, FileShare.None);
-            using var archive = new ZipArchive(fileStream, ZipArchiveMode.Create, false);
+            // If encrypted, build raw ZIP in a temporary file first, then encrypt entire file with AES-256-GCM
+            string targetZipFile = isEncryptedPackage 
+                ? Path.Combine(Path.GetTempPath(), $"MMBackup_Raw_{Guid.NewGuid():N}.tmp") 
+                : zipPath;
 
-            // 1. Add backup payload (encrypted if mmbackup, json if zip)
-            string entryName = isEncryptedPackage ? "backup.mmbackup" : "backup.json";
-            var jsonEntry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
-            using (var writer = new StreamWriter(jsonEntry.Open(), Encoding.UTF8))
+            try
             {
-                await writer.WriteAsync(json);
-            }
-
-            // 2. Add Images
-            if (Directory.Exists(imagesDir))
-            {
-                var imageFiles = Directory.GetFiles(imagesDir);
-                int total = imageFiles.Length;
-                int count = 0;
-
-                foreach (var imgFile in imageFiles)
+                using (var fileStream = new FileStream(targetZipFile, FileMode.Create, FileAccess.Write, FileShare.None))
+                using (var archive = new ZipArchive(fileStream, ZipArchiveMode.Create, false))
                 {
-                    count++;
-                    string imgEntryName = "Images/" + Path.GetFileName(imgFile);
-                    archive.CreateEntryFromFile(imgFile, imgEntryName, CompressionLevel.Fastest);
-
-                    if (count % 50 == 0 || count == total)
+                    // 1. Add backup payload (plain json inside archive)
+                    var jsonEntry = archive.CreateEntry("backup.json", CompressionLevel.Optimal);
+                    using (var writer = new StreamWriter(jsonEntry.Open(), Encoding.UTF8))
                     {
-                        double percent = (double)count / Math.Max(1, total) * 100.0;
-                        progress?.Report(percent);
-                        textProgress?.Report($"بسته‌بندی تصاویر: {count} از {total} ({percent:F0}%)");
+                        await writer.WriteAsync(json);
                     }
+
+                    // 2. Add Images
+                    if (Directory.Exists(imagesDir))
+                    {
+                        var imageFiles = Directory.GetFiles(imagesDir);
+                        int total = imageFiles.Length;
+                        int count = 0;
+
+                        foreach (var imgFile in imageFiles)
+                        {
+                            count++;
+                            string imgEntryName = "Images/" + Path.GetFileName(imgFile);
+                            archive.CreateEntryFromFile(imgFile, imgEntryName, CompressionLevel.Fastest);
+
+                            if (count % 20 == 0 || count == total)
+                            {
+                                double percent = 10.0 + ((double)count / Math.Max(1, total) * 65.0);
+                                progress?.Report(percent);
+                                textProgress?.Report($"بسته‌بندی تصاویر: {count} از {total} ({((double)count / Math.Max(1, total) * 100):F0}%)");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        progress?.Report(75.0);
+                    }
+                }
+
+                progress?.Report(78.0);
+                if (isEncryptedPackage)
+                {
+                    textProgress?.Report("در حال رمزنگاری کامل بسته با استاندارد امنیتی AES-256-GCM...");
+                    byte[] rawZipBytes = await File.ReadAllBytesAsync(targetZipFile);
+                    progress?.Report(86.0);
+                    byte[] encryptedGcm = CryptoUtils.EncryptBytesGcm(rawZipBytes);
+                    progress?.Report(94.0);
+                    textProgress?.Report("در حال ذخیره‌سازی بسته امن روی حافظه...");
+                    await File.WriteAllBytesAsync(zipPath, encryptedGcm);
+                }
+
+                progress?.Report(100.0);
+                textProgress?.Report("بسته پشتیبان با موفقیت ایجاد گردید.");
+            }
+            finally
+            {
+                if (isEncryptedPackage)
+                {
+                    try { if (File.Exists(targetZipFile)) File.Delete(targetZipFile); } catch { }
                 }
             }
         }
@@ -219,45 +231,276 @@ namespace MovieManagerDesktop.Services
                 Directory.CreateDirectory(imagesDir);
             }
 
-            textProgress?.Report("در حال بازگشایی بسته پشتیبان...");
-            string? extractedJsonPath = null;
+            progress?.Report(5.0);
+            textProgress?.Report("در حال بررسی هدر و اعتبارسنجی ساختار بسته...");
 
-            using (var archive = ZipFile.OpenRead(zipPath))
+            // 1. Check if the file is an AES-256-GCM encrypted package (starts with "MMGCM1")
+            string workingZipPath = zipPath;
+            string? tempDecryptedZip = null;
+
+            try
             {
-                int total = archive.Entries.Count;
-                int count = 0;
-
-                foreach (var entry in archive.Entries)
+                byte[] headerBuffer = new byte[CryptoUtils.GcmHeaderMagic.Length];
+                using (var fs = new FileStream(zipPath, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
-                    count++;
-                    if (entry.FullName.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || entry.FullName.EndsWith(".mmbackup", StringComparison.OrdinalIgnoreCase))
+                    int readHeader = fs.Read(headerBuffer, 0, headerBuffer.Length);
+                }
+
+                bool isGcmEncrypted = headerBuffer.SequenceEqual(CryptoUtils.GcmHeaderMagic);
+                if (isGcmEncrypted)
+                {
+                    textProgress?.Report("در حال رمزگشایی و احراز اصالت بسته امن (AES-256-GCM)...");
+                    progress?.Report(10.0);
+                    byte[] encryptedBytes = await File.ReadAllBytesAsync(zipPath);
+                    progress?.Report(18.0);
+                    byte[]? decryptedZipBytes = CryptoUtils.DecryptBytesGcm(encryptedBytes);
+                    if (decryptedZipBytes == null)
                     {
-                        string ext = Path.GetExtension(entry.FullName);
-                        string tempJson = Path.Combine(Path.GetTempPath(), $"MovieManager_Restore_{Guid.NewGuid():N}{ext}");
-                        entry.ExtractToFile(tempJson, true);
-                        extractedJsonPath = tempJson;
-                    }
-                    else if (entry.FullName.StartsWith("Images/", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(entry.Name))
-                    {
-                        string dest = Path.Combine(imagesDir, entry.Name);
-                        entry.ExtractToFile(dest, true);
+                        throw new InvalidDataException("خطای امنیتی: رمزگشایی بسته ناموفق بود یا فایل دستکاری شده است (عدم تایید Auth Tag).");
                     }
 
-                    if (count % 50 == 0 || count == total)
+                    tempDecryptedZip = Path.Combine(Path.GetTempPath(), $"MMBackup_Decrypted_{Guid.NewGuid():N}.tmp");
+                    await File.WriteAllBytesAsync(tempDecryptedZip, decryptedZipBytes);
+                    workingZipPath = tempDecryptedZip;
+                    progress?.Report(25.0);
+                }
+
+                string? extractedJsonPath = null;
+
+                using (var archive = ZipFile.OpenRead(workingZipPath))
+                {
+                    int total = archive.Entries.Count;
+                    int count = 0;
+
+                    foreach (var entry in archive.Entries)
                     {
-                        double percent = (double)count / Math.Max(1, total) * 100.0;
-                        progress?.Report(percent);
-                        textProgress?.Report($"استخراج تصاویر: {count} از {total} ({percent:F0}%)");
+                        count++;
+                        if (entry.FullName.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || entry.FullName.EndsWith(".mmbackup", StringComparison.OrdinalIgnoreCase))
+                        {
+                            string ext = Path.GetExtension(entry.FullName);
+                            string tempJson = Path.Combine(Path.GetTempPath(), $"MovieManager_Restore_{Guid.NewGuid():N}{ext}");
+                            entry.ExtractToFile(tempJson, true);
+
+                            // Legacy fallback: if entry is "backup.mmbackup" (legacy CBC encrypted json inside zip), decrypt it
+                            if (entry.FullName.EndsWith(".mmbackup", StringComparison.OrdinalIgnoreCase))
+                            {
+                                string encJson = await File.ReadAllTextAsync(tempJson);
+                                string? decJson = CryptoUtils.Decrypt(encJson);
+                                if (!string.IsNullOrEmpty(decJson))
+                                {
+                                    await File.WriteAllTextAsync(tempJson, decJson);
+                                }
+                            }
+
+                            extractedJsonPath = tempJson;
+                        }
+                        else if (entry.FullName.StartsWith("Images/", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(entry.Name))
+                        {
+                            string dest = Path.Combine(imagesDir, entry.Name);
+                            entry.ExtractToFile(dest, true);
+                        }
+
+                        if (count % 20 == 0 || count == total)
+                        {
+                            double percent = 25.0 + ((double)count / Math.Max(1, total) * 65.0);
+                            progress?.Report(percent);
+                            textProgress?.Report($"استخراج تصاویر و اطلاعات: {count} از {total} ({((double)count / Math.Max(1, total) * 100):F0}%)");
+                        }
+                    }
+                }
+
+                if (string.IsNullOrEmpty(extractedJsonPath))
+                {
+                    throw new InvalidOperationException("فایل دیتابیس (backup.json) درون بسته پشتیبان یافت نشد.");
+                }
+
+                progress?.Report(90.0);
+                textProgress?.Report("استخراج فایل‌های بسته با موفقیت انجام شد.");
+
+                return extractedJsonPath;
+            }
+            finally
+            {
+                if (tempDecryptedZip != null && File.Exists(tempDecryptedZip))
+                {
+                    try { File.Delete(tempDecryptedZip); } catch { }
+                }
+            }
+        }
+
+        public static async Task<BackupInspectionResult> InspectBackupAsync(string filePath)
+        {
+            var result = new BackupInspectionResult
+            {
+                FilePath = filePath,
+                FileName = Path.GetFileName(filePath)
+            };
+
+            try
+            {
+                if (!File.Exists(filePath))
+                {
+                    result.IsValid = false;
+                    result.ErrorMessage = "فایل مورد نظر یافت نشد.";
+                    return result;
+                }
+
+                var fileInfo = new FileInfo(filePath);
+                double sizeMb = fileInfo.Length / (1024.0 * 1024.0);
+                result.FileSizeFormatted = sizeMb >= 1.0 ? $"{sizeMb:F1} مگابایت" : $"{fileInfo.Length / 1024.0:F0} کیلوبایت";
+
+                byte[] header = new byte[Math.Min(16, (int)fileInfo.Length)];
+                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    await fs.ReadAsync(header, 0, header.Length);
+                }
+
+                string jsonContent = string.Empty;
+                int imagesCount = 0;
+
+                // 1. Check GCM encrypted package (starts with "MMGCM1")
+                if (header.Length >= CryptoUtils.GcmHeaderMagic.Length &&
+                    header.Take(CryptoUtils.GcmHeaderMagic.Length).SequenceEqual(CryptoUtils.GcmHeaderMagic))
+                {
+                    result.FormatType = "بسته امن رمزنگاری‌شده (AES-256-GCM + تصاویر)";
+                    byte[] encryptedBytes = await File.ReadAllBytesAsync(filePath);
+                    byte[]? decryptedZipBytes = CryptoUtils.DecryptBytesGcm(encryptedBytes);
+                    if (decryptedZipBytes == null)
+                    {
+                        result.IsValid = false;
+                        result.ErrorMessage = "رمزگشایی بسته امن ناموفق بود یا فایل دستکاری شده است.";
+                        return result;
+                    }
+
+                    using var memStream = new MemoryStream(decryptedZipBytes);
+                    using var archive = new ZipArchive(memStream, ZipArchiveMode.Read);
+                    imagesCount = archive.Entries.Count(e => e.FullName.StartsWith("Images/", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(e.Name));
+
+                    var jsonEntry = archive.Entries.FirstOrDefault(e => e.FullName.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || e.FullName.EndsWith(".mmbackup", StringComparison.OrdinalIgnoreCase));
+                    if (jsonEntry != null)
+                    {
+                        using var reader = new StreamReader(jsonEntry.Open(), Encoding.UTF8);
+                        jsonContent = await reader.ReadToEndAsync();
+                        if (jsonEntry.FullName.EndsWith(".mmbackup", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var dec = CryptoUtils.Decrypt(jsonContent);
+                            if (!string.IsNullOrEmpty(dec)) jsonContent = dec;
+                        }
+                    }
+                }
+                // 2. Check standard ZIP package
+                else if (header.Length >= 2 && header[0] == 0x50 && header[1] == 0x4B)
+                {
+                    result.FormatType = "بسته فشرده استاندارد (ZIP + تصاویر)";
+                    using var archive = ZipFile.OpenRead(filePath);
+                    imagesCount = archive.Entries.Count(e => e.FullName.StartsWith("Images/", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(e.Name));
+
+                    var jsonEntry = archive.Entries.FirstOrDefault(e => e.FullName.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || e.FullName.EndsWith(".mmbackup", StringComparison.OrdinalIgnoreCase));
+                    if (jsonEntry != null)
+                    {
+                        using var reader = new StreamReader(jsonEntry.Open(), Encoding.UTF8);
+                        jsonContent = await reader.ReadToEndAsync();
+                        if (jsonEntry.FullName.EndsWith(".mmbackup", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var dec = CryptoUtils.Decrypt(jsonContent);
+                            if (!string.IsNullOrEmpty(dec)) jsonContent = dec;
+                        }
+                    }
+                }
+                // 3. Raw JSON / Encrypted string
+                else
+                {
+                    result.FormatType = "فایل متنی دیتابیس (JSON)";
+                    jsonContent = await File.ReadAllTextAsync(filePath);
+                    if (filePath.EndsWith(".mmbackup", StringComparison.OrdinalIgnoreCase) || (!jsonContent.TrimStart().StartsWith("{") && !jsonContent.TrimStart().StartsWith("[")))
+                    {
+                        var dec = CryptoUtils.Decrypt(jsonContent);
+                        if (!string.IsNullOrEmpty(dec))
+                        {
+                            jsonContent = dec;
+                            result.FormatType = "فایل پشتیبان رمزنگاری‌شده (نسخه قدیمی)";
+                        }
+                    }
+                }
+
+                result.ImagesCount = imagesCount;
+
+                if (string.IsNullOrWhiteSpace(jsonContent))
+                {
+                    result.IsValid = false;
+                    result.ErrorMessage = "محتوای دیتابیس درون بسته پشتیبان یافت نشد.";
+                    return result;
+                }
+
+                if (jsonContent.TrimStart().StartsWith("["))
+                {
+                    var oldList = JsonSerializer.Deserialize<List<VideoFile>>(jsonContent);
+                    if (oldList != null)
+                    {
+                        result.TotalVideosCount = oldList.Count;
+                        result.MoviesCount = oldList.Count(v => !v.IsSeries);
+                        result.SeriesCount = oldList.Count(v => v.IsSeries);
+                        result.HasWatchProgress = oldList.Any(v => v.IsWatched || v.WatchProgressSeconds > 0);
+                    }
+                    result.BackupVersion = "1.0";
+                    result.FormattedDate = "نامشخص (نسخه قدیمی)";
+                }
+                else
+                {
+                    var fullData = JsonSerializer.Deserialize<FullBackupModel>(jsonContent);
+                    if (fullData != null)
+                    {
+                        result.BackupVersion = fullData.BackupVersion ?? "2.0";
+                        result.CreatedAt = fullData.CreatedAt;
+
+                        if (fullData.VideoFiles != null)
+                        {
+                            result.TotalVideosCount = fullData.VideoFiles.Count;
+                            result.MoviesCount = fullData.VideoFiles.Count(v => !v.IsSeries);
+                            result.SeriesCount = fullData.VideoFiles.Count(v => v.IsSeries);
+                            result.HasWatchProgress = fullData.VideoFiles.Any(v => v.IsWatched || v.WatchProgressSeconds > 0);
+                        }
+
+                        if (fullData.TvSeasons != null)
+                        {
+                            result.TvSeasonsCount = fullData.TvSeasons.Count;
+                        }
+
+                        if (fullData.TvEpisodes != null)
+                        {
+                            result.TvEpisodesCount = fullData.TvEpisodes.Count;
+                        }
+
+                        result.HasSettings = fullData.Settings != null;
+
+                        if (fullData.CreatedAt != default)
+                        {
+                            try
+                            {
+                                var pc = new System.Globalization.PersianCalendar();
+                                var dt = fullData.CreatedAt.ToLocalTime();
+                                result.FormattedDate = $"{pc.GetYear(dt):0000}/{pc.GetMonth(dt):00}/{pc.GetDayOfMonth(dt):00} - ساعت {dt:HH:mm}";
+                            }
+                            catch
+                            {
+                                result.FormattedDate = fullData.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd HH:mm");
+                            }
+                        }
+                        else
+                        {
+                            result.FormattedDate = "نامشخص";
+                        }
                     }
                 }
             }
-
-            if (string.IsNullOrEmpty(extractedJsonPath))
+            catch (Exception ex)
             {
-                throw new InvalidOperationException("فایل دیتابیس (backup.json) درون بسته ZIP یافت نشد.");
+                LoggerService.Error("Error inspecting backup file", ex);
+                result.IsValid = false;
+                result.ErrorMessage = $"خطا در بررسی فایل پشتیبان: {ex.Message}";
             }
 
-            return await Task.FromResult(extractedJsonPath);
+            return result;
         }
 
         private static async Task<string> RunLocalBackupAsync(SettingsModel settings, string backupJson)
@@ -296,34 +539,28 @@ namespace MovieManagerDesktop.Services
             return backupFilePath;
         }
 
-        public static async Task ForceGoogleDriveBackupAsync(IProgress<double> progress = null, IProgress<string> textProgress = null)
+        public static async Task ForceGoogleDriveBackupAsync(IProgress<double>? progress = null, IProgress<string>? textProgress = null)
         {
-            var settings = SettingsManager.LoadSettings();
-            
-            if (textProgress != null) textProgress.Report("در حال جمع‌آوری اطلاعات از دیتابیس...");
-            var backupJson = await GenerateBackupJsonAsync(settings);
-            
             var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
-            if (textProgress != null) textProgress.Report("در حال رمزنگاری امن اطلاعات بکاپ (AES-256)...");
-            var encryptedPayload = MovieManagerDesktop.Helpers.CryptoUtils.Encrypt(backupJson);
             var localBackupFilePath = Path.Combine(Path.GetTempPath(), $"MovieManager_Backup_{timestamp}.mmbackup");
-            System.IO.File.WriteAllText(localBackupFilePath, encryptedPayload ?? backupJson);
-
-            long fileLength = new FileInfo(localBackupFilePath).Length;
-            string formattedSize = fileLength > 1024 * 1024 
-                ? $"{(fileLength / 1024f / 1024f):F1} MB" 
-                : $"{(fileLength / 1024f):F1} KB";
-
-            if (textProgress != null) textProgress.Report($"حجم بکاپ محاسبه شد: {formattedSize}. آماده‌سازی آپلود...");
-            await Task.Delay(1000); // Give user time to see the size
 
             try
             {
+                await CreateZipBackupAsync(localBackupFilePath, progress, textProgress);
+
+                long fileLength = new FileInfo(localBackupFilePath).Length;
+                string formattedSize = fileLength > 1024 * 1024 
+                    ? $"{(fileLength / 1024f / 1024f):F1} MB" 
+                    : $"{(fileLength / 1024f):F1} KB";
+
+                if (textProgress != null) textProgress.Report($"حجم بسته بکاپ امن: {formattedSize}. آماده‌سازی آپلود...");
+                await Task.Delay(1000); // Give user time to see the size
+
                 await RunGoogleDriveBackupAsync(localBackupFilePath, progress, textProgress);
             }
             finally
             {
-                System.IO.File.Delete(localBackupFilePath);
+                try { if (File.Exists(localBackupFilePath)) File.Delete(localBackupFilePath); } catch { }
             }
         }
 

@@ -31,6 +31,10 @@ namespace MovieManagerDesktop
         public MainWindow()
         {
             InitializeComponent();
+            if (Application.Current != null)
+            {
+                Application.Current.MainWindow = this;
+            }
             ApplyResponsiveScaling();
             
             try
@@ -51,6 +55,10 @@ namespace MovieManagerDesktop
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            if (Application.Current != null)
+            {
+                Application.Current.MainWindow = this;
+            }
             MovieManagerDesktop.Services.MpvPlaybackService.SyncOfflineProgress();
             if (MovieManagerDesktop.Services.NotificationCenterService.Instance.HasUnread)
             {
@@ -60,6 +68,9 @@ namespace MovieManagerDesktop
             // Check for software updates in background
             _ = Task.Run(async () =>
             {
+                // Auto-heal any legacy non-English titles in database
+                await MovieManagerDesktop.Services.IdentifyMediaService.FixExistingNonEnglishTitlesInDatabaseAsync();
+
                 await Task.Delay(3500);
                 try
                 {

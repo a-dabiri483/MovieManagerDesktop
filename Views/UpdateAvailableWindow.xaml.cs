@@ -71,12 +71,15 @@ namespace MovieManagerDesktop.Views
             GridNormalFooter.Visibility = Visibility.Collapsed;
             GridDownloadProgress.Visibility = Visibility.Visible;
             BtnBrowserFallback.Visibility = Visibility.Collapsed;
+            IconErrorStatus.Visibility = Visibility.Collapsed;
             SpinnerProgress.Visibility = Visibility.Visible;
+            PnlDownloadStats.Visibility = Visibility.Visible;
             PrgDownload.IsIndeterminate = true;
             PrgDownload.Value = 0;
             TxtPercent.Text = "۰%";
-            TxtDownloadSize.Text = "۰ مگابایت";
-            TxtDownloadSpeed.Text = "۰ KB/s";
+            TxtPercent.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#38BDF8"));
+            TxtDownloadSize.Text = "0 MB";
+            TxtDownloadSpeed.Text = "0 KB/s";
             TxtDownloadStatus.Text = "در حال برقراری ارتباط با سرور...";
             TxtDownloadStatus.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E2E8F0"));
 
@@ -90,7 +93,9 @@ namespace MovieManagerDesktop.Views
                     PrgDownload.IsIndeterminate = false;
                     PrgDownload.Value = p.Percentage;
                     TxtPercent.Text = $"{p.Percentage:0}%";
-                    TxtDownloadSize.Text = $"{p.DownloadedText} / {p.TotalText}";
+                    TxtDownloadSize.Text = p.TotalBytes > 0
+                        ? $"{p.DownloadedMb:0.0} MB / {p.TotalMb:0.0} MB"
+                        : $"{p.DownloadedMb:0.0} MB";
                     TxtDownloadSpeed.Text = p.SpeedText;
                     if (!string.IsNullOrWhiteSpace(p.StatusMessage))
                     {
@@ -105,6 +110,7 @@ namespace MovieManagerDesktop.Views
                     _updateInfo.DownloadUrl,
                     _updateInfo.LatestVersion,
                     _updateInfo.Sha256,
+                    _updateInfo.Signature,
                     progress,
                     _downloadCts.Token);
             }
@@ -120,7 +126,11 @@ namespace MovieManagerDesktop.Views
                 Dispatcher.Invoke(() =>
                 {
                     SpinnerProgress.Visibility = Visibility.Collapsed;
+                    IconErrorStatus.Visibility = Visibility.Visible;
+                    PnlDownloadStats.Visibility = Visibility.Collapsed;
                     PrgDownload.IsIndeterminate = false;
+                    TxtPercent.Text = "خطا";
+                    TxtPercent.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F87171"));
                     TxtDownloadStatus.Text = ex is InvalidDataException ? ex.Message : "خطا در دریافت فایل بروزرسانی!";
                     TxtDownloadStatus.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F87171"));
                     BtnBrowserFallback.Visibility = Visibility.Visible;
@@ -133,8 +143,11 @@ namespace MovieManagerDesktop.Views
                 Dispatcher.Invoke(() =>
                 {
                     SpinnerProgress.Visibility = Visibility.Collapsed;
+                    IconErrorStatus.Visibility = Visibility.Collapsed;
+                    PnlDownloadStats.Visibility = Visibility.Collapsed;
                     PrgDownload.Value = 100;
                     TxtPercent.Text = "۱۰۰%";
+                    TxtPercent.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#34D399"));
                     TxtDownloadStatus.Text = "دانلود کامل شد. در حال اجرای ستاپ جدید...";
                     TxtDownloadStatus.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#34D399"));
                 });

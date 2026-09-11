@@ -18,8 +18,16 @@ namespace MovieManagerDesktop.Services
 
                 if (activeWindow != null)
                 {
-                    dialog.Owner = activeWindow;
-                    dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                    try
+                    {
+                        dialog.Owner = activeWindow;
+                        dialog.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                    }
+                    catch
+                    {
+                        dialog.Owner = null;
+                        dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                    }
                 }
                 else
                 {

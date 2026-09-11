@@ -137,7 +137,15 @@ namespace MovieManagerDesktop.Services
                             { 
                                 NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
                             };
-                            _cachedSettings = JsonSerializer.Deserialize<SettingsModel>(json, options) ?? new SettingsModel();
+                            var loaded = JsonSerializer.Deserialize<SettingsModel>(json, options) ?? new SettingsModel();
+                            
+                            // Automatically decrypt sensitive fields protected by Windows DPAPI
+                            loaded.TmdbApiKey = CryptoUtils.UnprotectString(loaded.TmdbApiKey);
+                            loaded.OmdbApiKey = CryptoUtils.UnprotectString(loaded.OmdbApiKey);
+                            loaded.ApiProxyUrl = CryptoUtils.UnprotectString(loaded.ApiProxyUrl);
+                            loaded.InternalEncryptedProxies = CryptoUtils.UnprotectString(loaded.InternalEncryptedProxies);
+
+                            _cachedSettings = loaded;
                             return _cachedSettings;
                         }
                         catch (IOException)
@@ -226,7 +234,15 @@ namespace MovieManagerDesktop.Services
                             WriteIndented = true,
                             NumberHandling = System.Text.Json.Serialization.JsonNumberHandling.AllowNamedFloatingPointLiterals
                         };
-                        var json = JsonSerializer.Serialize(settings, options);
+
+                        // Clone settings and protect sensitive credentials (API keys and proxies) with Windows DPAPI on disk
+                        var diskCopy = JsonSerializer.Deserialize<SettingsModel>(JsonSerializer.Serialize(settings, options), options) ?? new SettingsModel();
+                        diskCopy.TmdbApiKey = CryptoUtils.ProtectString(settings.TmdbApiKey);
+                        diskCopy.OmdbApiKey = CryptoUtils.ProtectString(settings.OmdbApiKey);
+                        diskCopy.ApiProxyUrl = CryptoUtils.ProtectString(settings.ApiProxyUrl);
+                        diskCopy.InternalEncryptedProxies = CryptoUtils.ProtectString(settings.InternalEncryptedProxies);
+
+                        var json = JsonSerializer.Serialize(diskCopy, options);
 
                         // 1. Write and flush to temporary file
                         using (var fs = new FileStream(tempFilePath, FileMode.Create, FileAccess.Write, FileShare.None))

@@ -35,10 +35,18 @@ namespace MovieManagerDesktop.Services.Network
         private static readonly SemaphoreSlim _semaphore = new(1, 1);
         private static bool _hasShownWarningInSession = false;
 
-        public static void ClearCache()
+        public static void ClearCache(string? specificKey = null)
         {
-            Cache.Clear();
-            LoggerService.Info("[Network] Anti-censorship route cache cleared");
+            if (!string.IsNullOrWhiteSpace(specificKey))
+            {
+                Cache.TryRemove(specificKey, out _);
+                LoggerService.Info($"[Network] Anti-censorship route cache cleared for host: {specificKey}");
+            }
+            else
+            {
+                Cache.Clear();
+                LoggerService.Info("[Network] Anti-censorship route cache cleared");
+            }
         }
 
         public ProxyHttpClientHandler() : this(CreateAntiCensorshipSocketsHandler())
@@ -196,22 +204,9 @@ namespace MovieManagerDesktop.Services.Network
 
         private static string GetCacheKey(string host)
         {
-            if (host.Contains("themoviedb.org", StringComparison.OrdinalIgnoreCase) || host.Contains("tmdb.org", StringComparison.OrdinalIgnoreCase))
-                return "tmdb";
-            if (host.Contains("omdbapi.com", StringComparison.OrdinalIgnoreCase))
-                return "omdb";
-            if (host.Contains("tvmaze.com", StringComparison.OrdinalIgnoreCase))
-                return "tvmaze";
-            if (host.Contains("youtube.com", StringComparison.OrdinalIgnoreCase) || host.Contains("ytimg.com", StringComparison.OrdinalIgnoreCase))
-                return "youtube";
-            if (host.Contains("boxofficemojo.com", StringComparison.OrdinalIgnoreCase))
-                return "boxofficemojo";
-            if (host.Contains("variety.com", StringComparison.OrdinalIgnoreCase))
-                return "variety";
-            if (host.Contains("deadline.com", StringComparison.OrdinalIgnoreCase))
-                return "deadline";
-
-            return host.ToLowerInvariant();
+            // Per-host route isolation: Each host/subdomain has its own isolated routing state.
+            // Issues on one endpoint (e.g. static.tvmaze.com or image.tmdb.org) NEVER affect other endpoints (e.g. api.tvmaze.com or api.themoviedb.org).
+            return host.Trim().ToLowerInvariant();
         }
 
         private static bool IsNetworkException(Exception e)
@@ -331,7 +326,8 @@ namespace MovieManagerDesktop.Services.Network
                 {
                     // VPN is OFF: Default to Direct with DoH & Anti-DPI first!
                     // (Only YouTube streams default to proxy if un-cached, as YouTube blocks raw Iranian IPs)
-                    bool defaultToProxy = cacheKey == "youtube";
+                    bool defaultToProxy = cacheKey.Contains("youtube", StringComparison.OrdinalIgnoreCase) ||
+                                          cacheKey.Contains("ytimg", StringComparison.OrdinalIgnoreCase);
                     decision = new RouteDecision 
                     { 
                         UseProxy = defaultToProxy, 
@@ -568,7 +564,13 @@ namespace MovieManagerDesktop.Services.Network
                         var response = await base.SendAsync(newRequest, proxyCts.Token);
                         sw.Stop();
 
-                        if (response.IsSuccessStatusCode && !IsBlockedResponse(response))
+                        // Legitimate upstream API response check: If target API legitimately returned 404 (Not Found) with JSON (e.g. show/movie not found),
+                        // this is NOT a proxy failure. The proxy worked perfectly and upstream answered.
+                        bool isLegitimateApiNotFound = response.StatusCode == HttpStatusCode.NotFound && 
+                                                       !IsBlockedResponse(response) &&
+                                                       (response.Content.Headers.ContentType?.MediaType?.Contains("json", StringComparison.OrdinalIgnoreCase) == true);
+
+                        if ((response.IsSuccessStatusCode || isLegitimateApiNotFound) && !IsBlockedResponse(response))
                         {
                             LoggerService.Info($"[Network]   ✔ Proxy OK — {proxyLabel} — Status: {(int)response.StatusCode} — {sw.ElapsedMilliseconds}ms");
                             Cache[cacheKey] = new RouteDecision
@@ -600,11 +602,8 @@ namespace MovieManagerDesktop.Services.Network
             var resultResponse = await TryProxyListAsync(distinctUrls);
             if (resultResponse != null) return resultResponse;
 
-            // All local proxies failed -> Trigger immediate emergency re-sync from cloud (force=true)
-            LoggerService.Info("[Network] All active proxies failed. Immediately re-syncing from cloud...");
-            await SettingsManager.SyncEncryptedProxiesAsync(force: true);
+            // Check if any refreshed background proxies are available without clearing other host caches
             var refreshedUrls = SettingsManager.GetEffectiveProxies().Except(distinctUrls).ToList();
-
             if (refreshedUrls.Count > 0)
             {
                 resultResponse = await TryProxyListAsync(refreshedUrls);
@@ -617,7 +616,15 @@ namespace MovieManagerDesktop.Services.Network
                 ToastService.Instance.ShowWarning("عدم دسترسی به سرورهای ضدتحریم؛ تلاش از طریق اتصال مستقیم...");
             }
 
-            LoggerService.Error($"[Network] ✖✖ ALL proxies failed for {request.RequestUri.Host} — falling back to direct request");
+            // Immediately mark THIS specific cacheKey as Direct fallback for 5 minutes without affecting other working hosts!
+            Cache[cacheKey] = new RouteDecision
+            {
+                UseProxy = false,
+                ExpirationTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() + (5 * 60 * 1000L),
+                ConsecutiveFailures = 0
+            };
+
+            LoggerService.Error($"[Network] ✖✖ ALL proxies failed for {request.RequestUri?.Host ?? cacheKey} — falling back to direct request");
             return await base.SendAsync(request, cancellationToken);
         }
     }

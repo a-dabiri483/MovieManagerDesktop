@@ -283,11 +283,11 @@
 
                             <!-- Delete All Data Button -->
                             <Button Command="{Binding ClearAllDatabaseDataCommand}" 
-                                    Height="42" Background="{DynamicResource PrimaryGradientBrush}" BorderThickness="0" 
+                                    Height="42" Background="#DC2626" BorderThickness="0" 
                                     materialDesign:ButtonAssist.CornerRadius="12" Cursor="Hand">
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                    <materialDesign:PackIcon Kind="DeleteOutline" Width="20" Height="20" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                    <TextBlock Text="حذف تمام اطلاعات دیتابیس" Foreground="White" FontSize="13.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                                    <materialDesign:PackIcon Kind="TrashCanOutline" Width="20" Height="20" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="مدیریت و پاکسازی حافظه و داده‌ها" Foreground="White" FontSize="13.5" FontWeight="Bold" VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
                         </StackPanel>
@@ -957,152 +957,138 @@
             <!-- ================================================================= -->
             <!-- VIEW 6: BACKUP & RESTORE (پشتیبان‌گیری - دسکتاپ ۲ ستونه) -->
             <!-- ================================================================= -->
-            <Grid Visibility="{Binding IsBackupView, Converter={StaticResource BooleanToVisibilityConverter}}">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="20"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
+            <!-- ================================================================= -->
+            <!-- VIEW 6: BACKUP & RESTORE (پشتیبان‌گیری و بازیابی جامع و امن) -->
+            <!-- ================================================================= -->
+            <StackPanel Visibility="{Binding IsBackupView, Converter={StaticResource BooleanToVisibilityConverter}}" MaxWidth="850" HorizontalAlignment="Center">
+                
+                <!-- Main Card: پشتیبان‌گیری امن و رمزنگاری‌شده -->
+                <Border Style="{StaticResource SettingsGroupCard}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <!-- Header with Security Badge -->
+                        <Grid Margin="0,0,0,14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                <!-- Left Column: بکاپ محلی و خودکار -->
-                <StackPanel Grid.Column="0">
-                    <Border Style="{StaticResource SettingsGroupCard}">
-                        <StackPanel>
-                            <TextBlock Text="پشتیبان‌گیری آفلاین محلی (ZIP / JSON)" FontSize="15.5" FontWeight="Bold" Foreground="White"/>
-                            <TextBlock Text="خروجی گرفتن از تمام فیلم‌ها، سریال‌ها و وضعیت‌های تماشا همراه با تصاویر در قالب بسته کامل ZIP یا متنی JSON" FontSize="12" Foreground="{DynamicResource SecondaryText}" Margin="0,4,0,16" LineHeight="18"/>
-
-                            <Grid Margin="0,0,0,16">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="12"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                
-                                <Button Grid.Column="0" Command="{Binding BackupDatabaseCommand}" 
-                                        Height="42" Background="{DynamicResource PrimaryGradientBrush}" BorderThickness="0" materialDesign:ButtonAssist.CornerRadius="12">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Export" Width="18" Height="18" Foreground="White" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="ایجاد فایل پشتیبان" Foreground="White" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
+                            <StackPanel Grid.Column="0">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <materialDesign:PackIcon Kind="ShieldLockOutline" Width="20" Height="20" Foreground="{DynamicResource EmeraldAccent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="پشتیبان‌گیری امن و جامع (فرمت اختصاصی mmbackup.)" FontSize="16" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                </Button>
-
-                                <Button Grid.Column="2" Command="{Binding RestoreDatabaseCommand}" 
-                                        Height="42" Background="#183867D6" BorderBrush="{DynamicResource NetworkBlue}" BorderThickness="1.5" materialDesign:ButtonAssist.CornerRadius="12">
-                                <StackPanel Orientation="Horizontal">
-                                    <materialDesign:PackIcon Kind="Import" Width="18" Height="18" Foreground="{DynamicResource NetworkBlue}" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="بازیابی از فایل" Foreground="{DynamicResource NetworkBlue}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
-                                </StackPanel>
-                                </Button>
-                            </Grid>
-
-                            <Separator Background="{DynamicResource LightBorder}" Margin="0,0,0,14"/>
-
-                            <!-- Auto-backup -->
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <TextBlock Text="پشتیبان‌گیری خودکار محلی" FontSize="14.5" FontWeight="Bold" Foreground="White"/>
-                                    <TextBlock Text="تهیه خودکار نسخه پشتیبان در حافظه سیستم" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
-                                </StackPanel>
-                                <ToggleButton Grid.Column="1" IsChecked="{Binding IsLocalAutoBackupEnabled}" Style="{StaticResource MaterialDesignSwitchToggleButton}"/>
-                            </Grid>
-
-                            <StackPanel Visibility="{Binding IsLocalAutoBackupEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <TextBlock Text="مسیر ذخیره‌سازی خودکار:" FontSize="12.5" FontWeight="Bold" Foreground="White" Margin="0,0,0,6"/>
-                                <Grid Margin="0,0,0,10">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border Background="#12FFFFFF" CornerRadius="10" Padding="12,8" Margin="0,0,8,0">
-                                        <TextBlock Text="{Binding LocalAutoBackupPath}" Foreground="#E2E8F0" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                                    </Border>
-                                    <Button Grid.Column="1" Command="{Binding BrowseBackupPathCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" 
-                                            BorderBrush="{DynamicResource PrimaryColor}" Foreground="{DynamicResource PrimaryColor}" Height="34" materialDesign:ButtonAssist.CornerRadius="8">
-                                        <TextBlock Text="انتخاب مسیر" FontSize="11.5" FontWeight="Bold"/>
-                                    </Button>
-                                </Grid>
+                                <TextBlock Text="تهیه بسته جامع رمزنگاری‌شده با استاندارد AES-256-GCM شامل دیتابیس کامل، وضعیت‌های تماشا و کلیه تصاویر کاور و پوسترها با امکان انتقال آسان به هر سیستم دیگر." 
+                                           FontSize="12" Foreground="{DynamicResource SecondaryText}" LineHeight="19" TextWrapping="Wrap"/>
                             </StackPanel>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
 
-                <!-- Right Column: گوگل درایو ابری -->
-                <StackPanel Grid.Column="2">
-                    <Border Style="{StaticResource SettingsGroupCard}">
-                        <StackPanel>
-                            <Grid Margin="0,0,0,14">
+                            <Border Grid.Column="1" Background="#1526DE81" BorderBrush="#3026DE81" BorderThickness="1" CornerRadius="8" Padding="10,4" VerticalAlignment="Top" Margin="10,0,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="LockCheck" Width="14" Height="14" Foreground="{DynamicResource EmeraldAccent}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                    <TextBlock Text="رمزنگاری AES-256" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource EmeraldAccent}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- Action Buttons -->
+                        <Grid Margin="0,4,0,18">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="14"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Create Backup Button -->
+                            <Button Grid.Column="0" Command="{Binding BackupDatabaseCommand}" 
+                                    Height="46" Background="{DynamicResource PrimaryGradientBrush}" BorderThickness="0" 
+                                    materialDesign:ButtonAssist.CornerRadius="12" Cursor="Hand">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="ShieldLock" Width="20" Height="20" Foreground="White" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="ایجاد فایل پشتیبان امن (.mmbackup)" Foreground="White" FontSize="13.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Restore Backup Button -->
+                            <Button Grid.Column="2" Command="{Binding RestoreDatabaseCommand}" 
+                                    Height="46" Background="#183867D6" BorderBrush="{DynamicResource NetworkBlue}" BorderThickness="1.5" 
+                                    materialDesign:ButtonAssist.CornerRadius="12" Cursor="Hand">
+                                <StackPanel Orientation="Horizontal">
+                                    <materialDesign:PackIcon Kind="BackupRestore" Width="20" Height="20" Foreground="{DynamicResource NetworkBlue}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="بازیابی از فایل پشتیبان" Foreground="{DynamicResource NetworkBlue}" FontSize="13.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <!-- Feature Badges Row -->
+                        <Border Background="#0AFFFFFF" BorderBrush="#12FFFFFF" BorderThickness="1" CornerRadius="10" Padding="14,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="ShieldCheckOutline" Width="16" Height="16" Foreground="#38BDF8" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="رمزنگاری احرازشده GCM" FontSize="11.5" Foreground="#CBD5E1" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="ImageMultipleOutline" Width="16" Height="16" Foreground="#34D399" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="شامل تمام تصاویر و پوسترها" FontSize="11.5" Foreground="#CBD5E1" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="CloudOffOutline" Width="16" Height="16" Foreground="#FBBF24" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="کاملاً آفلاین و مستقل" FontSize="11.5" Foreground="#CBD5E1" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Auto-Backup Card -->
+                <Border Style="{StaticResource SettingsGroupCard}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <materialDesign:PackIcon Kind="CalendarClock" Width="18" Height="18" Foreground="{DynamicResource NetworkBlue}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="پشتیبان‌گیری خودکار و زمان‌بندی‌شده" FontSize="15" FontWeight="Bold" Foreground="White" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Text="تهیه خودکار نسخه پشتیبان دوره‌ای در حافظه سیستم بدون نیاز به دخالت کاربر" FontSize="11.5" Foreground="{DynamicResource SecondaryText}"/>
+                            </StackPanel>
+                            <ToggleButton Grid.Column="1" IsChecked="{Binding IsLocalAutoBackupEnabled}" Style="{StaticResource MaterialDesignSwitchToggleButton}"/>
+                        </Grid>
+
+                        <StackPanel Visibility="{Binding IsLocalAutoBackupEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Separator Background="{DynamicResource LightBorder}" Margin="0,4,0,14"/>
+
+                            <TextBlock Text="مسیر ذخیره‌سازی خودکار نسخه‌ها:" FontSize="12.5" FontWeight="Bold" Foreground="White" Margin="0,0,0,8"/>
+                            <Grid Margin="0,0,0,4">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <StackPanel>
-                                    <TextBlock Text="بکاپ ابری Google Drive" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                                    <TextBlock Text="همگام‌سازی و ذخیره ایمن دیتابیس در فضای ابری گوگل" FontSize="11.5" Foreground="{DynamicResource SecondaryText}" Margin="0,2,0,0"/>
-                                </StackPanel>
-                                
-                                <Button Grid.Column="1" Command="{Binding ConnectToGoogleDriveCommand}" Visibility="{Binding IsNotGoogleDriveConnected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                        Background="#2026DE81" Foreground="{DynamicResource EmeraldAccent}" BorderThickness="0" Height="36" Padding="14,0" materialDesign:ButtonAssist.CornerRadius="10">
-                                    <TextBlock Text="اتصال به گوگل درایو" FontSize="12" FontWeight="Bold"/>
-                                </Button>
-
-                                <Button Grid.Column="1" Command="{Binding DisconnectGoogleDriveCommand}" Visibility="{Binding IsGoogleDriveConnected, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                        Background="#20EB3B5A" Foreground="{DynamicResource PrimaryColor}" BorderThickness="0" Height="36" Padding="14,0" materialDesign:ButtonAssist.CornerRadius="10">
-                                    <TextBlock Text="قطع اتصال" FontSize="12" FontWeight="Bold"/>
-                                </Button>
-                            </Grid>
-
-                            <StackPanel Visibility="{Binding IsGoogleDriveConnected, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                <Separator Background="{DynamicResource LightBorder}" Margin="0,0,0,14"/>
-                                
-                                <Button Command="{Binding UploadToGoogleDriveCommand}" Height="40" Background="{DynamicResource EmeraldAccent}" Foreground="Black" BorderThickness="0" materialDesign:ButtonAssist.CornerRadius="10" Margin="0,0,0,14">
+                                <Border Background="#12FFFFFF" CornerRadius="10" Padding="12,8" Margin="0,0,10,0">
+                                    <TextBlock Text="{Binding LocalAutoBackupPath}" Foreground="#E2E8F0" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                </Border>
+                                <Button Grid.Column="1" Command="{Binding BrowseBackupPathCommand}" Style="{StaticResource MaterialDesignOutlinedButton}" 
+                                        BorderBrush="{DynamicResource PrimaryColor}" Foreground="{DynamicResource PrimaryColor}" Height="38" Padding="16,0" materialDesign:ButtonAssist.CornerRadius="8">
                                     <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="CloudUpload" Width="18" Height="18" Margin="0,0,8,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="ایجاد نسخه پشتیبان ابری جدید" FontSize="12.5" FontWeight="Bold" VerticalAlignment="Center"/>
+                                        <materialDesign:PackIcon Kind="FolderOpenOutline" Width="16" Height="16" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="انتخاب مسیر" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Button>
-
-                                <!-- Cloud Backups List -->
-                                <TextBlock Text="نسخه‌های موجود در گوگل درایو:" FontSize="13" FontWeight="Bold" Foreground="White" Margin="0,0,0,8"/>
-                                <ItemsControl ItemsSource="{Binding CloudBackups}">
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Background="#0CFFFFFF" CornerRadius="10" Padding="12,8" Margin="0,0,0,8">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    <materialDesign:PackIcon Kind="GoogleDrive" Width="18" Height="18" Foreground="{DynamicResource EmeraldAccent}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                        <TextBlock Text="{Binding Name}" Foreground="White" FontSize="12.5" FontWeight="Bold"/>
-                                                        <TextBlock Text="{Binding FormattedDate}" Foreground="{DynamicResource SecondaryText}" FontSize="10.5" Margin="0,1,0,0"/>
-                                                    </StackPanel>
-
-                                                    <Button Grid.Column="2" Command="{Binding DataContext.RestoreFromGoogleDriveCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
-                                                            Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="{DynamicResource NetworkBlue}" BorderBrush="{DynamicResource NetworkBlue}" Height="26" Padding="8,0" Margin="0,0,6,0" materialDesign:ButtonAssist.CornerRadius="6">
-                                                        <TextBlock Text="بازیابی" FontSize="10.5" FontWeight="Bold"/>
-                                                    </Button>
-
-                                                    <Button Grid.Column="3" Command="{Binding DataContext.DeleteCloudBackupCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
-                                                            Style="{StaticResource MaterialDesignOutlinedButton}" Foreground="#EB3B5A" BorderBrush="#EB3B5A" Height="26" Padding="6,0" materialDesign:ButtonAssist.CornerRadius="6">
-                                                        <materialDesign:PackIcon Kind="Delete" Width="14" Height="14"/>
-                                                    </Button>
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-                            </StackPanel>
+                            </Grid>
                         </StackPanel>
-                    </Border>
-                </StackPanel>
-            </Grid>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
 
 
             <!-- ================================================================= -->

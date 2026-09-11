@@ -30,13 +30,28 @@ namespace MovieManagerDesktop.Services
         {
             try
             {
-                var info = _detector.GetInfo(fileName);
+                string cleanedFileName = fileName;
+
+                // 1. Strip collection numbering prefixes like "01. ", "02. ", "04 - ", "12_"
+                cleanedFileName = System.Text.RegularExpressions.Regex.Replace(cleanedFileName, @"^\s*\d{1,3}[\.\s\-_]+", "");
+
+                // 2. Remove leading Persian tags like "هاردساب", "هارد ساب", "دوبله فارسی"
+                cleanedFileName = System.Text.RegularExpressions.Regex.Replace(cleanedFileName, @"^(?:هارد\s*ساب|دوبله\s*فارسی|دوبله|زیرنویس)\s*[\.\s\-_]*", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                // 3. Normalize spaced-out bypass words (e.g. "s e x", "n a k e d", "F.ucking")
+                cleanedFileName = System.Text.RegularExpressions.Regex.Replace(cleanedFileName, @"(?i)(?:^|[\s\._\-])s[\s\._\-]+e[\s\._\-]+x(?:$|[\s\._\-])", " Sex ");
+                cleanedFileName = System.Text.RegularExpressions.Regex.Replace(cleanedFileName, @"(?i)(?:^|[\s\._\-])n[\s\._\-]+a[\s\._\-]+k[\s\._\-]+e[\s\._\-]+d(?:$|[\s\._\-])", " Naked ");
+                cleanedFileName = System.Text.RegularExpressions.Regex.Replace(cleanedFileName, @"(?i)\bf[\.\s_]+ucking\b", "Fucking");
+                cleanedFileName = System.Text.RegularExpressions.Regex.Replace(cleanedFileName, @"(?i)\bse[\.\s_]+x\b", "Sex");
+                cleanedFileName = System.Text.RegularExpressions.Regex.Replace(cleanedFileName, @"اخراجی\s*1\b", "اخراجی ها");
+
+                var info = _detector.GetInfo(cleanedFileName);
                 
                 string parsedTitle = info.Title;
                 
                 if (string.IsNullOrWhiteSpace(parsedTitle))
                 {
-                     parsedTitle = Path.GetFileNameWithoutExtension(fileName);
+                     parsedTitle = Path.GetFileNameWithoutExtension(cleanedFileName);
                      parsedTitle = System.Text.RegularExpressions.Regex.Replace(parsedTitle, @"[Ss]\d{1,2}[Ee]\d{1,2}(?:-[Ee]?\d{1,2})?", "");
                 }
                 
@@ -48,12 +63,20 @@ namespace MovieManagerDesktop.Services
                 var tagsToRemove = new[] { 
                     "1080p", "720p", "480p", "2160p", "4k", "uhd", "bluray", "blu-ray", "brrip", "bdrip",
                     "web-dl", "webrip", "hdrip", "hdtv", "dvdrip", "x264", "x265", "h264", "h265", "hevc",
-                    "10bit", "aac", "dts", "ac3", "yify", "psa", "pahe", "rarbg", "tigole", "qxr" 
+                    "10bit", "aac", "dts", "ac3", "yify", "psa", "pahe", "rarbg", "tigole", "qxr", "filmonix",
+                    "softsub", "duble", "dubbed", "farsi", "golchindl", "saberfun", "film2media", "valamovie", "goldhindi"
                 };
                 
                 var words = parsedTitle.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 var cleanWords = words.Where(w => !tagsToRemove.Contains(w.ToLowerInvariant())).ToList();
                 parsedTitle = string.Join(" ", cleanWords).Trim();
+
+                // Remove standalone resolution numbers like "720", "1080", "480" or "NEW" from end of title
+                parsedTitle = System.Text.RegularExpressions.Regex.Replace(parsedTitle, @"\s+(?:720|1080|480|2160|5050)\b", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                parsedTitle = System.Text.RegularExpressions.Regex.Replace(parsedTitle, @"\s+new\b", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                // Remove any lingering sequence numbers from end (e.g., "Iron Man 04" -> "Iron Man")
+                parsedTitle = System.Text.RegularExpressions.Regex.Replace(parsedTitle, @"\s+0\d\b$", "");
 
                 int? yearValue = null;
                 if (!string.IsNullOrWhiteSpace(info.Year) && int.TryParse(info.Year, out int y))

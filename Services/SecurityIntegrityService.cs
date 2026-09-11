@@ -139,6 +139,46 @@ namespace MovieManagerDesktop.Services
         }
 
         /// <summary>
+        /// Validates an RSA-2048 PKCS#1 SHA-256 digital signature against raw data bytes
+        /// using the official MovieManager server public key.
+        /// </summary>
+        public static bool VerifyDataSignature(byte[] data, byte[] signature)
+        {
+            if (data == null || signature == null || signature.Length == 0) return false;
+            try
+            {
+                using var rsa = RSA.Create();
+                rsa.ImportFromPem(RsaPublicKeyPem);
+                return rsa.VerifyData(data, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Error("[SecurityIntegrity] VerifyDataSignature failed", ex);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Validates an RSA-2048 PKCS#1 SHA-256 digital signature against a precomputed SHA-256 hash
+        /// using the official MovieManager server public key.
+        /// </summary>
+        public static bool VerifyHashSignature(byte[] hashBytes, byte[] signature)
+        {
+            if (hashBytes == null || signature == null || signature.Length == 0) return false;
+            try
+            {
+                using var rsa = RSA.Create();
+                rsa.ImportFromPem(RsaPublicKeyPem);
+                return rsa.VerifyHash(hashBytes, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Error("[SecurityIntegrity] VerifyHashSignature failed", ex);
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Inspects method IL bytecode in RAM to detect dnSpy/Reflexil patches (e.g. replacing logic with 'ldc.i4.1; ret;').
         /// </summary>
         public static bool VerifyMethodBytecodeIntegrity(MethodInfo? method, int minExpectedIlLength)

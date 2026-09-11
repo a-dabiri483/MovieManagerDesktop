@@ -328,7 +328,13 @@
                   x:Name="ResultsDataGrid"
                   SelectionChanged="ResultsDataGrid_SelectionChanged"
                   PreviewKeyDown="ResultsDataGrid_PreviewKeyDown"
-                  Tag="{Binding RelativeSource={RelativeSource AncestorType=UserControl}}">
+                  Tag="{Binding RelativeSource={RelativeSource AncestorType=UserControl}}"
+                  EnableRowVirtualization="True"
+                  EnableColumnVirtualization="True"
+                  VirtualizingPanel.IsVirtualizing="True"
+                  VirtualizingPanel.VirtualizationMode="Recycling"
+                  VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                  ScrollViewer.CanContentScroll="True">
             <DataGrid.Columns>
                 <!-- CheckBox -->
                 <DataGridTemplateColumn Width="40">

@@ -1,4 +1,5 @@
 using MovieManagerDesktop.Models;
+using MovieManagerDesktop.Data;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 using System;
 using System.Linq;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace MovieManagerDesktop.Services
 {
@@ -69,6 +71,35 @@ namespace MovieManagerDesktop.Services
                 @"(api_key|apikey)=([^&]+)",
                 "$1=***",
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        }
+
+        public static bool IsEnglishOrLatin(string? text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return false;
+            foreach (char c in text)
+            {
+                // Persian / Arabic
+                if ((c >= 0x0600 && c <= 0x06FF) || (c >= 0x0750 && c <= 0x077F) || (c >= 0x08A0 && c <= 0x08FF) || 
+                    (c >= 0xFB50 && c <= 0xFDFF) || (c >= 0xFE70 && c <= 0xFEFF))
+                    return false;
+                // CJK / Japanese / Chinese
+                if ((c >= 0x3040 && c <= 0x30FF) || (c >= 0x3400 && c <= 0x4DBF) || (c >= 0x4E00 && c <= 0x9FFF) || 
+                    (c >= 0xF900 && c <= 0xFAFF) || (c >= 0x3000 && c <= 0x303F))
+                    return false;
+                // Korean Hangul
+                if ((c >= 0xAC00 && c <= 0xD7AF) || (c >= 0x1100 && c <= 0x11FF) || (c >= 0x3130 && c <= 0x318F))
+                    return false;
+                // Cyrillic
+                if (c >= 0x0400 && c <= 0x04FF)
+                    return false;
+                // Devanagari (Hindi)
+                if (c >= 0x0900 && c <= 0x097F)
+                    return false;
+                // Thai
+                if (c >= 0x0E00 && c <= 0x0E7F)
+                    return false;
+            }
+            return true;
         }
 
         public async Task<string?> DownloadImageAsync(string? url, string fileNamePrefix)
@@ -343,11 +374,20 @@ namespace MovieManagerDesktop.Services
                             var res = new TmdbSearchResult();
                             if (item.TryGetProperty("id", out var id)) res.Id = id.GetInt32();
                             
-                            if (item.TryGetProperty("title", out var titleProp)) res.Title = titleProp.GetString() ?? "";
-                            else if (item.TryGetProperty("name", out var nameProp)) res.Title = nameProp.GetString() ?? "";
-                            
-                            if (item.TryGetProperty("original_title", out var oTitleProp)) res.OriginalTitle = oTitleProp.GetString() ?? "";
-                            else if (item.TryGetProperty("original_name", out var oNameProp)) res.OriginalTitle = oNameProp.GetString() ?? "";
+                            string? tVal = item.TryGetProperty("title", out var titleProp) ? titleProp.GetString() : null;
+                            string? nVal = item.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null;
+                            string? otVal = item.TryGetProperty("original_title", out var oTitleProp) ? oTitleProp.GetString() : null;
+                            string? onVal = item.TryGetProperty("original_name", out var oNameProp) ? oNameProp.GetString() : null;
+                            string? olVal = item.TryGetProperty("original_language", out var oLangProp) ? oLangProp.GetString()?.ToLowerInvariant() : null;
+
+                            string loc = tVal ?? nVal ?? "";
+                            string orig = otVal ?? onVal ?? "";
+                            res.OriginalTitle = orig;
+
+                            if (olVal == "en" && IsEnglishOrLatin(orig)) res.Title = orig;
+                            else if (IsEnglishOrLatin(loc)) res.Title = loc;
+                            else if (IsEnglishOrLatin(orig)) res.Title = orig;
+                            else res.Title = !string.IsNullOrEmpty(loc) ? loc : orig;
                             
                             if (item.TryGetProperty("media_type", out var typeProp)) res.MediaType = typeProp.GetString() ?? "";
                             if (res.MediaType == "person") continue; // skip actors
@@ -427,7 +467,8 @@ namespace MovieManagerDesktop.Services
                     var tvmazeData = await tvmazeService.SearchSeriesAsync(file.FormattedTitle);
                     if (tvmazeData != null && !string.IsNullOrEmpty(tvmazeData.Title))
                     {
-                        if (string.IsNullOrWhiteSpace(file.FormattedTitle) || file.FormattedTitle == file.FileName) file.FormattedTitle = tvmazeData.Title;
+                        if (IsEnglishOrLatin(tvmazeData.Title) && (string.IsNullOrWhiteSpace(file.FormattedTitle) || file.FormattedTitle == file.FileName || !IsEnglishOrLatin(file.FormattedTitle)))
+                            file.FormattedTitle = tvmazeData.Title;
                         if (string.IsNullOrWhiteSpace(file.PosterUrl)) file.PosterUrl = tvmazeData.PosterUrl;
                         if (string.IsNullOrWhiteSpace(file.Overview)) file.Overview = tvmazeData.Summary;
                         if (string.IsNullOrWhiteSpace(file.Genres)) file.Genres = tvmazeData.Genres;
@@ -457,7 +498,7 @@ namespace MovieManagerDesktop.Services
                     if (anilistData != null)
                     {
                         LoggerService.Info($"[AniList] ✔ اطلاعات با موفقیت از AniList دریافت شد: {anilistData.PreferredTitle}");
-                        if (string.IsNullOrWhiteSpace(file.FormattedTitle) || file.FormattedTitle == file.FileName)
+                        if (IsEnglishOrLatin(anilistData.PreferredTitle) && (string.IsNullOrWhiteSpace(file.FormattedTitle) || file.FormattedTitle == file.FileName || !IsEnglishOrLatin(file.FormattedTitle)))
                         {
                             file.FormattedTitle = anilistData.PreferredTitle;
                         }
@@ -665,7 +706,20 @@ namespace MovieManagerDesktop.Services
                 }
                 else if (root.TryGetProperty("results", out results) && results.GetArrayLength() > 0)
                 {
-                    var best = SelectBestMatch(results.EnumerateArray(), file.FormattedTitle, file.Year, file.MediaType);
+                    IEnumerable<JsonElement> items = results.EnumerateArray();
+                    if (file.MediaType == "Series" && !SeasonBogusRegex.IsMatch(file.FormattedTitle))
+                    {
+                        var filtered = items.Where(it => {
+                            string t = GetItemTitle(it);
+                            string ot = GetItemOriginalTitle(it);
+                            return !SeasonBogusRegex.IsMatch(t) && !SeasonBogusRegex.IsMatch(ot);
+                        }).ToList();
+                        if (filtered.Count > 0)
+                        {
+                            items = filtered;
+                        }
+                    }
+                    var best = SelectBestMatch(items, file.FormattedTitle, file.Year, file.MediaType);
                     if (best.HasValue)
                     {
                         firstMatch = best.Value;
@@ -673,10 +727,12 @@ namespace MovieManagerDesktop.Services
                     }
                 }
                 
-                // If still no match and we were using fa-IR, fallback to en-US
-                if (!hasMatch && !isDirectIdLookup && language == "fa-IR")
+                // If still no match and we were using a non-English language, fallback to en-US
+                if (!hasMatch && !isDirectIdLookup && language != "en-US")
                 {
-                    string enUrl = url.Replace("language=fa-IR", "language=en-US");
+                    string enUrl = url.Contains("language=") 
+                        ? System.Text.RegularExpressions.Regex.Replace(url, @"language=[^&]+", "language=en-US") 
+                        : url + "&language=en-US";
                     var enResponse = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(enUrl));
                     if (enResponse.IsSuccessStatusCode)
                     {
@@ -710,8 +766,99 @@ namespace MovieManagerDesktop.Services
                     }
                 }
 
+                // Fallback 3: If still no match, try cleaned title or known aliases!
+                if (!hasMatch && !isDirectIdLookup)
+                {
+                    string cleanedTitle = CleanTitleForFallbackSearch(file.FormattedTitle);
+                    if (!string.IsNullOrWhiteSpace(cleanedTitle) && !cleanedTitle.Equals(file.FormattedTitle, StringComparison.OrdinalIgnoreCase))
+                    {
+                        LoggerService.Info($"[TMDB] تلاش با عنوان پاک‌سازی شده/نام مستعار: '{cleanedTitle}'...");
+                        string cleanQuery = Uri.EscapeDataString(cleanedTitle);
+                        string cleanType = file.MediaType == "Series" ? "tv" : "movie";
+                        string cleanUrl = $"https://api.themoviedb.org/3/search/{cleanType}?api_key={apiKey}&query={cleanQuery}&language=en-US";
+                        var cleanResp = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(cleanUrl));
+                        if (cleanResp.IsSuccessStatusCode)
+                        {
+                            var cleanJson = await cleanResp.Content.ReadAsStringAsync();
+                            using var cleanDoc = JsonDocument.Parse(cleanJson);
+                            if (cleanDoc.RootElement.TryGetProperty("results", out var cRes) && cRes.GetArrayLength() > 0)
+                            {
+                                var bestClean = SelectBestMatch(cRes.EnumerateArray(), cleanedTitle, file.Year, file.MediaType);
+                                if (bestClean.HasValue)
+                                {
+                                    firstMatch = bestClean.Value.Clone();
+                                    hasMatch = true;
+                                    root = cleanDoc.RootElement.Clone();
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (hasMatch)
                 {
+                    // Smart English Title Selection: Keep titles strictly in English
+                    string? origLang = null;
+                    if (firstMatch.TryGetProperty("original_language", out var olProp) && olProp.ValueKind == JsonValueKind.String)
+                        origLang = olProp.GetString()?.ToLowerInvariant();
+
+                    string? origTitle = null;
+                    if (firstMatch.TryGetProperty("original_title", out var otProp) && otProp.ValueKind == JsonValueKind.String)
+                        origTitle = otProp.GetString();
+                    else if (firstMatch.TryGetProperty("original_name", out var onProp) && onProp.ValueKind == JsonValueKind.String)
+                        origTitle = onProp.GetString();
+
+                    string? locTitle = null;
+                    if (firstMatch.TryGetProperty("title", out var offTitle) && offTitle.ValueKind == JsonValueKind.String)
+                        locTitle = offTitle.GetString();
+                    else if (firstMatch.TryGetProperty("name", out var offName) && offName.ValueKind == JsonValueKind.String)
+                        locTitle = offName.GetString();
+
+                    string? resolvedEnglishTitle = null;
+                    if (origLang == "en" && IsEnglishOrLatin(origTitle))
+                    {
+                        resolvedEnglishTitle = origTitle;
+                    }
+                    else if (IsEnglishOrLatin(locTitle))
+                    {
+                        resolvedEnglishTitle = locTitle;
+                    }
+                    else if (IsEnglishOrLatin(origTitle))
+                    {
+                        resolvedEnglishTitle = origTitle;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(resolvedEnglishTitle) && firstMatch.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.Number)
+                    {
+                        try
+                        {
+                            string idType = file.MediaType == "Series" ? "tv" : "movie";
+                            string enIdUrl = $"https://api.themoviedb.org/3/{idType}/{idProp.GetInt32()}?api_key={apiKey}&language=en-US";
+                            var enIdResp = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(enIdUrl));
+                            if (enIdResp.IsSuccessStatusCode)
+                            {
+                                var enIdJson = await enIdResp.Content.ReadAsStringAsync();
+                                using var enIdDoc = JsonDocument.Parse(enIdJson);
+                                string? enName = null;
+                                if (enIdDoc.RootElement.TryGetProperty("name", out var enNameProp) && enNameProp.ValueKind == JsonValueKind.String)
+                                    enName = enNameProp.GetString();
+                                else if (enIdDoc.RootElement.TryGetProperty("title", out var enTitleProp) && enTitleProp.ValueKind == JsonValueKind.String)
+                                    enName = enTitleProp.GetString();
+
+                                if (IsEnglishOrLatin(enName))
+                                {
+                                    resolvedEnglishTitle = enName;
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(resolvedEnglishTitle))
+                    {
+                        file.FormattedTitle = resolvedEnglishTitle;
+                    }
+
                     if (firstMatch.TryGetProperty("poster_path", out var posterPath) && posterPath.ValueKind == JsonValueKind.String)
                     {
                         var path = posterPath.GetString();
@@ -833,8 +980,11 @@ namespace MovieManagerDesktop.Services
                                     }
                                 }
                                 
-                                // Fallback to English for missing fields if language is Persian
-                                if (language == "fa-IR" && (string.IsNullOrWhiteSpace(file.Overview) || string.IsNullOrWhiteSpace(file.Actors) || string.IsNullOrWhiteSpace(file.Director) || string.IsNullOrWhiteSpace(file.PosterUrl) || string.IsNullOrWhiteSpace(file.BackdropUrl)))
+                                // Fallback to English for missing fields or if Title is not yet in English/Latin
+                                bool needsEnglishTitle = !IsEnglishOrLatin(file.FormattedTitle);
+                                bool needsEnglishFallback = language == "fa-IR" && (string.IsNullOrWhiteSpace(file.Overview) || string.IsNullOrWhiteSpace(file.Actors) || string.IsNullOrWhiteSpace(file.Director) || string.IsNullOrWhiteSpace(file.PosterUrl) || string.IsNullOrWhiteSpace(file.BackdropUrl));
+
+                                if (needsEnglishTitle || needsEnglishFallback)
                                 {
                                     string enDetailsUrl = $"https://api.themoviedb.org/3/{mediaType}/{tmdbId}?api_key={apiKey}&append_to_response=credits&language=en-US";
                                     var enDetailsResp = await _httpClient.GetAsync(SettingsManager.WrapUrlWithProxy(enDetailsUrl));
@@ -844,6 +994,21 @@ namespace MovieManagerDesktop.Services
                                         using var enDetailsDoc = JsonDocument.Parse(enDetailsJson);
                                         var enDetailsRoot = enDetailsDoc.RootElement;
                                         
+                                        // Resolve English Title if not already Latin (e.g. for Japanese Anime or Korean dramas)
+                                        if (needsEnglishTitle)
+                                        {
+                                            string? enName = null;
+                                            if (enDetailsRoot.TryGetProperty("name", out var enNameProp) && enNameProp.ValueKind == JsonValueKind.String)
+                                                enName = enNameProp.GetString();
+                                            else if (enDetailsRoot.TryGetProperty("title", out var enTitleProp) && enTitleProp.ValueKind == JsonValueKind.String)
+                                                enName = enTitleProp.GetString();
+
+                                            if (!string.IsNullOrWhiteSpace(enName) && IsEnglishOrLatin(enName))
+                                            {
+                                                file.FormattedTitle = enName;
+                                            }
+                                        }
+
                                         if (string.IsNullOrWhiteSpace(file.Overview) && enDetailsRoot.TryGetProperty("overview", out var enOverview) && enOverview.ValueKind == JsonValueKind.String)
                                         {
                                             file.Overview = enOverview.GetString();
@@ -1423,11 +1588,31 @@ namespace MovieManagerDesktop.Services
             return await DownloadImageAsync(url, fileNamePrefix);
         }
 
+        private static readonly Regex SeasonBogusRegex = new Regex(@"\bseasons?\s*\d+\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
         private static JsonElement? SelectBestMatch(IEnumerable<JsonElement> items, string targetTitle, string? targetYear, string mediaType)
         {
             var cleanTarget = CleanTitleForComparison(targetTitle);
             var list = items.ToList();
             if (list.Count == 0) return null;
+
+            // Filter out bogus season duplicate entries (e.g., "Black Clover Seasons 2") unless targetTitle itself explicitly mentions a season
+            bool targetMentionsSeason = SeasonBogusRegex.IsMatch(targetTitle);
+            if (!targetMentionsSeason && (string.Equals(mediaType, "series", StringComparison.OrdinalIgnoreCase) || string.Equals(mediaType, "tv", StringComparison.OrdinalIgnoreCase)))
+            {
+                var withoutBogusSeasons = list.Where(item =>
+                {
+                    string t = GetItemTitle(item);
+                    string ot = GetItemOriginalTitle(item);
+                    return !SeasonBogusRegex.IsMatch(t) && !SeasonBogusRegex.IsMatch(ot);
+                }).ToList();
+
+                if (withoutBogusSeasons.Count > 0)
+                {
+                    list = withoutBogusSeasons;
+                }
+            }
+
             if (list.Count == 1) return list[0];
             if (string.IsNullOrWhiteSpace(cleanTarget)) return list.OrderByDescending(GetItemPopularity).First();
 
@@ -1513,6 +1698,109 @@ namespace MovieManagerDesktop.Services
             if (item.TryGetProperty("vote_count", out var vc) && vc.ValueKind == JsonValueKind.Number)
                 pop += vc.GetInt32() * 0.1;
             return pop;
+        }
+
+        private static string CleanTitleForFallbackSearch(string title)
+        {
+            if (string.IsNullOrWhiteSpace(title)) return title;
+
+            string t = title.Trim();
+
+            // Known Aliases for tricky / localized titles
+            var aliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "Doctor Ernest", "The Swiss Family Robinson: Flone of the Mysterious Island" },
+                { "خانواده دکتر ارنست", "The Swiss Family Robinson: Flone of the Mysterious Island" },
+                { "Zirkhak", "زیرخاکی" },
+                { "ZirKhaki", "زیرخاکی" },
+                { "Marde hezar chehreh", "مرد هزار چهره" },
+                { "Marde hezar chehreh 720", "مرد هزار چهره" },
+                { "Salon Zahra", "Salon Zahra" },
+                { "Asayeshgah Zahra", "Salon Zahra" },
+                { "Valkyrie Drive M", "Valkyrie Drive: Mermaid" },
+                { "Valkyrie Drive Me", "Valkyrie Drive: Mermaid" },
+                { "Madreseh Sug Kyung", "School 2013" },
+                { "Harche Badabad", "هرچه باداباد" },
+                { "Harche Badabad NEW", "هرچه باداباد" },
+                { "Magi The Adventures of Sinbad", "Magi: Adventure of Sinbad" },
+                { "اخراجی 1", "اخراجی ها" },
+                { "اخراجی 2", "اخراجی ها 2" },
+                { "اخراجی 3", "اخراجی ها 3" },
+                { "Death in Paradise 1080", "Death in Paradise" }
+            };
+
+            if (aliases.TryGetValue(t, out var alias))
+            {
+                return alias;
+            }
+
+            // Strip trailing sequence numbers like " 01", " 02", " 04", " 11", " 25", etc.
+            t = System.Text.RegularExpressions.Regex.Replace(t, @"\s+\d{1,2}$", "");
+
+            // Strip release resolution numbers
+            t = System.Text.RegularExpressions.Regex.Replace(t, @"\s+(?:720|1080|480|2160|5050)\b", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            t = System.Text.RegularExpressions.Regex.Replace(t, @"\s+new\b", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            t = System.Text.RegularExpressions.Regex.Replace(t, @"^(?:هارد\s*ساب|دوبله|زیرنویس)\s*", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            // Spaced out bypass words
+            t = System.Text.RegularExpressions.Regex.Replace(t, @"(?i)(?:^|[\s\._\-])s[\s\._\-]+e[\s\._\-]+x(?:$|[\s\._\-])", " Sex ");
+            t = System.Text.RegularExpressions.Regex.Replace(t, @"(?i)(?:^|[\s\._\-])n[\s\._\-]+a[\s\._\-]+k[\s\._\-]+e[\s\._\-]+d(?:$|[\s\._\-])", " Naked ");
+            t = System.Text.RegularExpressions.Regex.Replace(t, @"(?i)\bf[\.\s_]+ucking\b", "Fucking");
+            t = System.Text.RegularExpressions.Regex.Replace(t, @"(?i)\bse[\.\s_]+x\b", "Sex");
+
+            return t.Trim();
+        }
+
+        public static async Task FixExistingNonEnglishTitlesInDatabaseAsync()
+        {
+            try
+            {
+                using var db = new AppDbContext();
+                var nonEnglishFiles = db.VideoFiles.AsEnumerable()
+                    .Where(v => !string.IsNullOrWhiteSpace(v.FormattedTitle) && !IsEnglishOrLatin(v.FormattedTitle))
+                    .ToList();
+
+                if (!nonEnglishFiles.Any()) return;
+
+                LoggerService.Info($"[اصلاح عناوین] یافتن {nonEnglishFiles.Count} رکورد با عنوان غیرانگلیسی در دیتابیس...");
+                var parser = new FileNameParser();
+                bool changed = false;
+
+                foreach (var file in nonEnglishFiles)
+                {
+                    string? candidate = null;
+                    if (!string.IsNullOrEmpty(file.FilePath))
+                    {
+                        var parsed = parser.Parse(Path.GetFileName(file.FilePath), file.FilePath);
+                        if (IsEnglishOrLatin(parsed.ParsedTitle))
+                            candidate = parsed.ParsedTitle;
+                    }
+
+                    if (string.IsNullOrEmpty(candidate) && !string.IsNullOrEmpty(file.FileName))
+                    {
+                        var parsed = parser.Parse(file.FileName);
+                        if (IsEnglishOrLatin(parsed.ParsedTitle))
+                            candidate = parsed.ParsedTitle;
+                    }
+
+                    if (!string.IsNullOrEmpty(candidate))
+                    {
+                        LoggerService.Info($"[اصلاح عناوین] تبدیل عنوان «{file.FormattedTitle}» به «{candidate}»");
+                        file.FormattedTitle = candidate;
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    await db.SaveChangesAsync();
+                    LoggerService.Info("[اصلاح عناوین] تمام عناوین غیرانگلیسی در دیتابیس با موفقیت به انگلیسی اصلاح شدند.");
+                }
+            }
+            catch (Exception ex)
+            {
+                LoggerService.Error($"[اصلاح عناوین] خطا در اصلاح عناوین دیتابیس: {ex.Message}");
+            }
         }
     }
 }

@@ -116,6 +116,131 @@ namespace MovieManagerDesktop.Helpers
             }
         }
 
+        /// <summary>
+        /// Encrypts a plain string with current Windows user DPAPI and prepends 'dpapi:' prefix.
+        /// If input is empty or encryption fails, returns the original string.
+        /// </summary>
+        public static string ProtectString(string plainText)
+        {
+            if (string.IsNullOrEmpty(plainText)) return plainText;
+            try
+            {
+                byte[] plainBytes = Encoding.UTF8.GetBytes(plainText);
+                byte[]? protectedBytes = ProtectLocalData(plainBytes);
+                if (protectedBytes == null) return plainText;
+                return "dpapi:" + Convert.ToBase64String(protectedBytes);
+            }
+            catch (Exception ex)
+            {
+                Services.LoggerService.Error("[CryptoUtils] ProtectString failed", ex);
+                return plainText;
+            }
+        }
+
+        /// <summary>
+        /// Decrypts a DPAPI encrypted string prefixed with 'dpapi:'.
+        /// If not prefixed, returns the string as is (for seamless backward compatibility).
+        /// </summary>
+        public static string UnprotectString(string cipherText)
+        {
+            if (string.IsNullOrEmpty(cipherText)) return cipherText;
+            if (!cipherText.StartsWith("dpapi:", StringComparison.Ordinal)) return cipherText;
+            try
+            {
+                string b64 = cipherText.Substring(6);
+                byte[] protectedBytes = Convert.FromBase64String(b64);
+                byte[]? plainBytes = UnprotectLocalData(protectedBytes);
+                if (plainBytes == null) return cipherText;
+                return Encoding.UTF8.GetString(plainBytes);
+            }
+            catch (Exception ex)
+            {
+                Services.LoggerService.Error("[CryptoUtils] UnprotectString failed", ex);
+                return cipherText;
+            }
+        }
+
+        public static readonly byte[] GcmHeaderMagic = new byte[] { 0x4D, 0x4D, 0x47, 0x43, 0x4D, 0x31 }; // "MMGCM1"
+
+        /// <summary>
+        /// Encrypts arbitrary bytes using AES-256-GCM with a fresh 12-byte random nonce and 16-byte authentication tag.
+        /// Output: [6B MMGCM1 Magic] + [12B Random Nonce] + [16B Auth Tag] + [N-Bytes Ciphertext].
+        /// </summary>
+        public static byte[] EncryptBytesGcm(byte[] plaintext)
+        {
+            if (plaintext == null) throw new ArgumentNullException(nameof(plaintext));
+
+            byte[] key = GetKeyBytes();
+            byte[] nonce = new byte[12];
+            RandomNumberGenerator.Fill(nonce);
+
+            byte[] tag = new byte[16];
+            byte[] ciphertext = new byte[plaintext.Length];
+
+            using (var aesGcm = new AesGcm(key, 16))
+            {
+                aesGcm.Encrypt(nonce, plaintext, ciphertext, tag);
+            }
+
+            byte[] result = new byte[GcmHeaderMagic.Length + nonce.Length + tag.Length + ciphertext.Length];
+            Buffer.BlockCopy(GcmHeaderMagic, 0, result, 0, GcmHeaderMagic.Length);
+            Buffer.BlockCopy(nonce, 0, result, GcmHeaderMagic.Length, nonce.Length);
+            Buffer.BlockCopy(tag, 0, result, GcmHeaderMagic.Length + nonce.Length, tag.Length);
+            Buffer.BlockCopy(ciphertext, 0, result, GcmHeaderMagic.Length + nonce.Length + tag.Length, ciphertext.Length);
+            return result;
+        }
+
+        /// <summary>
+        /// Decrypts AES-256-GCM payload with integrity verification via authentication tag.
+        /// Returns null if tampering is detected or format is invalid.
+        /// </summary>
+        public static byte[]? DecryptBytesGcm(byte[] payload)
+        {
+            try
+            {
+                if (payload == null || payload.Length < GcmHeaderMagic.Length + 12 + 16)
+                    return null;
+
+                // Check Magic Header
+                for (int i = 0; i < GcmHeaderMagic.Length; i++)
+                {
+                    if (payload[i] != GcmHeaderMagic[i])
+                        return null;
+                }
+
+                byte[] nonce = new byte[12];
+                Buffer.BlockCopy(payload, GcmHeaderMagic.Length, nonce, 0, 12);
+
+                byte[] tag = new byte[16];
+                Buffer.BlockCopy(payload, GcmHeaderMagic.Length + 12, tag, 0, 16);
+
+                int cipherOffset = GcmHeaderMagic.Length + 12 + 16;
+                int cipherLength = payload.Length - cipherOffset;
+                byte[] ciphertext = new byte[cipherLength];
+                Buffer.BlockCopy(payload, cipherOffset, ciphertext, 0, cipherLength);
+
+                byte[] key = GetKeyBytes();
+                byte[] plaintext = new byte[cipherLength];
+
+                using (var aesGcm = new AesGcm(key, 16))
+                {
+                    aesGcm.Decrypt(nonce, ciphertext, tag, plaintext);
+                }
+
+                return plaintext;
+            }
+            catch (CryptographicException cex)
+            {
+                Services.LoggerService.Error("[CryptoUtils] AES-GCM authentication failed (tampered or invalid payload)", cex);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Services.LoggerService.Error("[CryptoUtils] AES-GCM decryption failed", ex);
+                return null;
+            }
+        }
+
         public static string GetObfuscatedSourceUrl()
         {
             // Primary URL: https://moviemanager.ir/web/admin_api.php?action=public_proxies
