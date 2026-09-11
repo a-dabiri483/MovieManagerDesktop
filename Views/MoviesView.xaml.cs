@@ -175,17 +175,6 @@ namespace MovieManagerDesktop.Views
         {
             if (DataContext is ViewModels.MoviesViewModel vm)
             {
-                if (vm.Movies.Any(m => m.IsSelected) && !LicenseManagerService.IsLicenseValid())
-                {
-                    foreach (var item in vm.Movies.Where(m => m.IsSelected))
-                    {
-                        item.IsSelected = false;
-                    }
-                    LicenseManagerService.EnsureProFeature("انتخاب و مدیریت گروهی");
-                    vm.SelectedCount = 0;
-                    vm.IsInSelectionMode = false;
-                    return;
-                }
                 vm.SelectedCount = vm.Movies.Count(m => m.IsSelected);
                 vm.IsInSelectionMode = vm.SelectedCount > 0;
             }

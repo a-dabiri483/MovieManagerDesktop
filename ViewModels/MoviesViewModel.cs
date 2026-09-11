@@ -797,7 +797,6 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void SelectAll()
         {
-            if (!LicenseManagerService.EnsureProFeature("انتخاب و مدیریت گروهی")) return;
             bool allSelected = Movies.All(m => m.IsSelected);
             foreach (var m in Movies) m.IsSelected = !allSelected;
             UpdateSelectionState();
