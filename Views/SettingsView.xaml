@@ -1155,6 +1155,40 @@
                                 <TextBlock Text="بررسی نسخه جدید / بروزرسانی" FontSize="13" FontWeight="Bold" VerticalAlignment="Center"/>
                             </StackPanel>
                         </Button>
+
+                        <Separator Background="{DynamicResource LightBorder}" Margin="0,24,0,20"/>
+
+                        <!-- Logs & Diagnostics Section (Movie Collection style) -->
+                        <Border Background="#1E293B" CornerRadius="12" Padding="18,14" BorderBrush="#334155" BorderThickness="1" MaxWidth="580" HorizontalAlignment="Center">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Column="0" Width="40" Height="40" CornerRadius="12" Background="#2538BDF8" Margin="0,0,14,0" VerticalAlignment="Center">
+                                    <materialDesign:PackIcon Kind="FolderFileOutline" Width="22" Height="22" Foreground="#38BDF8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <TextBlock Text="گزارشات سیستم و عیب‌یابی (Logs)" FontSize="13.5" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="خطاهای غیرمنتظره در این پوشه ذخیره می‌شوند. در صورت بروز مشکل می‌توانید فایل گزارش را جهت بررسی ارسال کنید."
+                                               FontSize="11" Foreground="#94A3B8" Margin="0,3,0,0" TextWrapping="Wrap" LineHeight="17"/>
+                                </StackPanel>
+
+                                <Button Grid.Column="2" Command="{Binding OpenLogDirectoryCommand}"
+                                        Style="{StaticResource MaterialDesignOutlinedButton}"
+                                        BorderBrush="#38BDF8" Foreground="#38BDF8"
+                                        Height="36" Padding="14,0" VerticalAlignment="Center"
+                                        materialDesign:ButtonAssist.CornerRadius="8" Cursor="Hand">
+                                    <StackPanel Orientation="Horizontal">
+                                        <materialDesign:PackIcon Kind="FolderOpenOutline" Width="16" Height="16" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="بازکردن پوشه Log" FontSize="11.5" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </Border>
                     </StackPanel>
                 </Border>
 

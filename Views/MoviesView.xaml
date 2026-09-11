@@ -324,6 +324,22 @@
                                 </StackPanel>
                             </Border>
                         </Popup>
+                        <!-- 4. Multi-Select Button (VIP) -->
+                        <Button Command="{Binding EnterSelectionModeCommand}" 
+                                Background="Transparent" BorderThickness="0" Height="32" Padding="6,0" Margin="4,0,0,0"
+                                ToolTip="حالت انتخاب گروهی (VIP)" Cursor="Hand">
+                            <Button.Template>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="#15F59E0B" BorderBrush="#50F59E0B" BorderThickness="1" CornerRadius="10" Padding="8,3" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <materialDesign:PackIcon Kind="CheckboxMultipleMarkedOutline" Width="15" Height="15" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                            <TextBlock Text="انتخاب گروهی" FontSize="11" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                            <materialDesign:PackIcon Kind="Crown" Width="11" Height="11" Foreground="#FBBF24" VerticalAlignment="Center" Margin="3,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </ControlTemplate>
+                            </Button.Template>
+                        </Button>
                     </StackPanel>
                 </Grid>
             </Border>
@@ -350,7 +366,15 @@
                         <materialDesign:PackIcon Kind="Close" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Button>
 
-                    <TextBlock Grid.Column="1" Text="{Binding SelectedCount, StringFormat='{}{0} مورد انتخاب شد'}" Foreground="White" FontSize="14" FontWeight="Black" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                        <TextBlock Text="{Binding SelectedCount, StringFormat='{}{0} مورد انتخاب شد'}" Foreground="White" FontSize="14" FontWeight="Black" VerticalAlignment="Center"/>
+                        <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="Crown" Width="11" Height="11" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                <TextBlock Text="VIP" FontSize="9.5" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
 
                     <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                         <!-- انتخاب همه -->
@@ -396,13 +420,16 @@
                             <materialDesign:PackIcon Kind="LockOutline" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
 
-                        <!-- بروزرسانی (F5) -->
+                        <!-- بروزرسانی (F5) - VIP -->
                         <Button Command="{Binding RefreshSelectedCommand}" 
                                 Background="#20FFD32A" BorderThickness="0" Foreground="{DynamicResource GoldColor}"
-                                Width="34" Height="34" Padding="0" materialDesign:ButtonAssist.CornerRadius="10"
-                                ToolTip="به‌روزرسانی آنلاین (F5)" Margin="0,0,6,0" Cursor="Hand"
+                                Width="46" Height="34" Padding="0" materialDesign:ButtonAssist.CornerRadius="10"
+                                ToolTip="به‌روزرسانی آنلاین (F5) - اشتراک VIP" Margin="0,0,6,0" Cursor="Hand"
                                 VerticalAlignment="Center">
-                            <materialDesign:PackIcon Kind="Refresh" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="Refresh" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <materialDesign:PackIcon Kind="Crown" Width="10" Height="10" Foreground="#FFD32A" VerticalAlignment="Top" Margin="2,-2,0,0"/>
+                            </StackPanel>
                         </Button>
 
                         <!-- حذف -->

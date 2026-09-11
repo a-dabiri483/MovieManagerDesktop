@@ -78,7 +78,7 @@
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                 <TextBlock Text="نسخه فعلی شما: " FontSize="11.5" Foreground="#94A3B8"/>
-                                <TextBlock x:Name="TxtCurrentVersion" Text="v2.8.0" FontSize="11.5" Foreground="#CBD5E1" FontWeight="Bold" FlowDirection="LeftToRight" Margin="4,0,14,0"/>
+                                <TextBlock x:Name="TxtCurrentVersion" Text="v2.8.2" FontSize="11.5" Foreground="#CBD5E1" FontWeight="Bold" FlowDirection="LeftToRight" Margin="4,0,14,0"/>
 
                                 <TextBlock x:Name="TxtFileSizeLabel" Text="حجم: " FontSize="11.5" Foreground="#94A3B8"/>
                                 <TextBlock x:Name="TxtFileSize" Text="85 MB" FontSize="11.5" Foreground="#34D399" FontWeight="Bold" FlowDirection="LeftToRight" Margin="4,0,14,0"/>

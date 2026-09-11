@@ -579,8 +579,23 @@ namespace MovieManagerDesktop.ViewModels
         public void ToggleSelection(GalleryItemViewModel item)
         {
             if (item == null) return;
+            if (!item.IsSelected)
+            {
+                if (!LicenseManagerService.EnsureProFeature("انتخاب و مدیریت گروهی")) return;
+            }
             item.IsSelected = !item.IsSelected;
             UpdateSelectionState();
+        }
+
+        [RelayCommand]
+        public void EnterSelectionMode()
+        {
+            if (!LicenseManagerService.EnsureProFeature("انتخاب و مدیریت گروهی")) return;
+            IsInSelectionMode = !IsInSelectionMode;
+            if (!IsInSelectionMode)
+            {
+                ExitSelectionMode();
+            }
         }
 
         // ==========================================
@@ -787,6 +802,7 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void SelectAll()
         {
+            if (!LicenseManagerService.EnsureProFeature("انتخاب و مدیریت گروهی")) return;
             bool allSelected = Movies.All(m => m.IsSelected);
             foreach (var m in Movies) m.IsSelected = !allSelected;
             UpdateSelectionState();
@@ -852,6 +868,7 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private async Task RefreshSelectedAsync()
         {
+            if (!LicenseManagerService.EnsureProFeature("به‌روزرسانی آنلاین اطلاعات")) return;
             var selected = Movies.Where(m => m.IsSelected).ToList();
             if (selected.Count == 0) return;
 

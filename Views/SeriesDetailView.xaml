@@ -76,10 +76,21 @@
                             <StackPanel MinWidth="220">
                                 <Button Command="{Binding EditMetadataCommand}" Style="{StaticResource MaterialDesignFlatButton}" 
                                         HorizontalContentAlignment="Right" Padding="15,10">
-                                    <StackPanel Orientation="Horizontal">
-                                        <materialDesign:PackIcon Kind="PencilOutline" Width="20" Height="20" VerticalAlignment="Center"/>
-                                        <TextBlock Text="ویرایش اطلاعات" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                    </StackPanel>
+                                    <Grid Width="190">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <materialDesign:PackIcon Grid.Column="0" Kind="PencilOutline" Width="20" Height="20" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                        <TextBlock Grid.Column="1" Text="ویرایش اطلاعات" VerticalAlignment="Center"/>
+                                        <Border Grid.Column="2" Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Crown" Width="11" Height="11" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                                <TextBlock Text="VIP" FontSize="9.5" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
                                 </Button>
                                 <Button Command="{Binding RefreshSeriesCommand}" Style="{StaticResource MaterialDesignFlatButton}" 
                                         HorizontalContentAlignment="Right" Padding="15,10">

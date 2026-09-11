@@ -1,0 +1,246 @@
+<Window x:Class="MovieManagerDesktop.Views.VipPlayerPromoWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="پلیر اختصاصی MovieManager"
+        Width="640" Height="640"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        FontFamily="{DynamicResource AppFontFamily}"
+        FlowDirection="RightToLeft">
+
+    <!-- Outer Card Border (Matching Dark Glassmorphic Theme) -->
+    <Border Background="#F70C0E1F" CornerRadius="20" BorderBrush="#252A54" BorderThickness="1.5">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="45" ShadowDepth="4" Color="Black" Opacity="0.9"/>
+        </Border.Effect>
+
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- Header -->
+                <RowDefinition Height="*"/>    <!-- Feature List -->
+                <RowDefinition Height="Auto"/> <!-- Footer Actions -->
+            </Grid.RowDefinitions>
+
+            <!-- ======================================================== -->
+            <!-- 1. DRAGGABLE WINDOW HEADER -->
+            <!-- ======================================================== -->
+            <Border Grid.Row="0" Background="#141733" CornerRadius="19,19,0,0" Padding="20,14"
+                    BorderBrush="#252A54" BorderThickness="0,0,0,1"
+                    MouseLeftButtonDown="Header_MouseLeftButtonDown">
+                <Grid>
+                    <!-- App Logo + Title + VIP Badge -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Width="34" Height="34" CornerRadius="10" Background="#20F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" Margin="0,0,12,0">
+                            <materialDesign:PackIcon Kind="Crown" Width="18" Height="18" Foreground="#FBBF24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="پخش‌کننده اختصاصی و هوشمند" FontSize="15" FontWeight="Black" Foreground="White" VerticalAlignment="Center"/>
+                                <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="VIP PRO" FontSize="10" FontWeight="Bold" Foreground="#FBBF24"/>
+                                </Border>
+                            </StackPanel>
+                            <TextBlock Text="امکانات فوق‌العاده ادامه پخش، مدیریت زیرنویس و پخش سینمایی" FontSize="11.5" Foreground="#94A3B8" Margin="0,3,0,0"/>
+                        </StackPanel>
+                    </StackPanel>
+
+                    <!-- Close Button -->
+                    <Button Click="BtnClose_Click" HorizontalAlignment="Left"
+                            Background="Transparent" BorderThickness="0" Foreground="#94A3B8"
+                            Width="30" Height="30" Cursor="Hand" Padding="0">
+                        <materialDesign:PackIcon Kind="Close" Width="18" Height="18"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- ======================================================== -->
+            <!-- 2. SCROLLABLE FEATURE LIST -->
+            <!-- ======================================================== -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="22,14,22,10">
+                <StackPanel>
+                    
+                    <!-- Notice Banner -->
+                    <Border Background="#161A3C" CornerRadius="14" Padding="16,12" Margin="0,0,0,12" BorderBrush="#2A3060" BorderThickness="1">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <materialDesign:PackIcon Grid.Column="0" Kind="InformationOutline" Width="20" Height="20" Foreground="#38BDF8" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            <TextBlock Grid.Column="1" Text="پلیر اختصاصی داخلی با امکانات پیشرفته زیر فقط ویژه اعضای VIP فعال می‌شود. با تهیه اشتراک از یک تجربه بی‌نظیر سینمایی لذت ببرید:"
+                                       FontSize="12" Foreground="#E2E8F0" TextWrapping="Wrap" LineHeight="20" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Features Grid -->
+                    <StackPanel>
+                        <!-- Feature 1: Smart Resume & Tracker -->
+                        <Border Background="#10132C" CornerRadius="12" Padding="14,10" Margin="0,0,0,8" BorderBrush="#1F254B" BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="10" Background="#20818CF8" Margin="0,0,12,0">
+                                    <materialDesign:PackIcon Kind="ProgressClock" Width="22" Height="22" Foreground="#818CF8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="ادامه پخش هوشمند ثانیه‌ای (Smart Resume)" FontSize="13" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="ذخیره خودکار دقیق ثانیه توقف فیلم‌ها و قسمت‌های سریال؛ در بازگشت بعدی، تنها با یک کلیک از همان نقطه بدون معطلی فیلم را ادامه دهید!" FontSize="11.5" Foreground="#94A3B8" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Feature 2: Subtitle Downloader -->
+                        <Border Background="#10132C" CornerRadius="12" Padding="14,10" Margin="0,0,0,8" BorderBrush="#1F254B" BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="10" Background="#2038BDF8" Margin="0,0,12,0">
+                                    <materialDesign:PackIcon Kind="CloudDownloadOutline" Width="22" Height="22" Foreground="#38BDF8" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="جستجو و دانلود مستقیم زیرنویس فارسی و انگلیسی" FontSize="13" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="دریافت آنی زیرنویس‌های هماهنگ با نسخه و کیفیت فایل شما مستقیماً از وب و بدون نیاز به وبگردی و دانلود دستی!" FontSize="11.5" Foreground="#94A3B8" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Feature 3: Subtitle Sync & Translation -->
+                        <Border Background="#10132C" CornerRadius="12" Padding="14,10" Margin="0,0,0,8" BorderBrush="#1F254B" BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="10" Background="#2034D399" Margin="0,0,12,0">
+                                    <materialDesign:PackIcon Kind="Translate" Width="22" Height="22" Foreground="#34D399" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="ترجمه آنی و سینک میلی‌ثانیه‌ای زیرنویس با صدا" FontSize="13" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="تنظیم فوری تاخیر یا تقدم زیرنویس فقط با کلیدهای میانبر، به همراه ترجمه روان زیرنویس و شخصی‌سازی فونت و اندازه متن فارسی." FontSize="11.5" Foreground="#94A3B8" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Feature 4: Dual Audio Switcher -->
+                        <Border Background="#10132C" CornerRadius="12" Padding="14,10" Margin="0,0,0,8" BorderBrush="#1F254B" BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="10" Background="#20F472B6" Margin="0,0,12,0">
+                                    <materialDesign:PackIcon Kind="VolumeHigh" Width="22" Height="22" Foreground="#F472B6" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="سوئیچ آنی صوت دوبله فارسی و زبان اصلی" FontSize="13" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="تغییر فوری و بی‌وقفه بین صوت دوبله فارسی و صدای اصلی فیلم در حین پخش بدون قطع تصویر یا افت فریم." FontSize="11.5" Foreground="#94A3B8" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- Feature 5: Hardware Acceleration -->
+                        <Border Background="#10132C" CornerRadius="12" Padding="14,10" BorderBrush="#1F254B" BorderThickness="1">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Border Grid.Column="0" Width="38" Height="38" CornerRadius="10" Background="#20FBBF24" Margin="0,0,12,0">
+                                    <materialDesign:PackIcon Kind="MotionPlayOutline" Width="22" Height="22" Foreground="#FBBF24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Text="موتور رندرینگ LibMPV و شتاب‌دهنده گرافیکی (GPU)" FontSize="13" FontWeight="Bold" Foreground="White"/>
+                                    <TextBlock Text="پخش روان و شفاف ویدیوهای 4K HDR با کمترین مصرف پردازنده (CPU) و رم، بدون نیاز به نصب هیچ‌گونه کدک خارجی." FontSize="11.5" Foreground="#94A3B8" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ======================================================== -->
+            <!-- 3. FOOTER ACTIONS -->
+            <!-- ======================================================== -->
+            <Border Grid.Row="2" Background="#141733" CornerRadius="0,0,19,19" Padding="20,14"
+                    BorderBrush="#252A54" BorderThickness="0,1,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Main VIP Purchase Button -->
+                    <Button Grid.Row="0" Click="BtnBuyLicense_Click"
+                            Height="44" Cursor="Hand" materialDesign:ButtonAssist.CornerRadius="12"
+                            Background="#F59E0B" BorderBrush="#D97706" BorderThickness="1"
+                            Foreground="#0F172A" FontWeight="Black" FontSize="13.5" Margin="0,0,0,10">
+                        <Button.Effect>
+                            <DropShadowEffect BlurRadius="18" ShadowDepth="2" Color="#F59E0B" Opacity="0.4"/>
+                        </Button.Effect>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <materialDesign:PackIcon Kind="Crown" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                            <TextBlock Text="خرید و فعال‌سازی اشتراک VIP (بازگشایی امکانات پلیر)" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Option to Remember External Player Setting -->
+                    <CheckBox Grid.Row="1" x:Name="ChkRememberExternalPlayer" IsChecked="True"
+                              Content="پخش همیشگی با پلیر پیش‌فرض سیستم (عدم نمایش مجدد این پنجره)"
+                              Foreground="#94A3B8" FontSize="11.5" Margin="4,0,0,8" Cursor="Hand"/>
+
+                    <!-- Secondary Options: Play External, Settings, Cancel -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Play External Button -->
+                        <Button Grid.Column="0" Click="BtnPlayExternal_Click"
+                                Height="38" Cursor="Hand" materialDesign:ButtonAssist.CornerRadius="10"
+                                Background="#1A2044" BorderBrush="#3B4482" BorderThickness="1"
+                                Foreground="#E2E8F0" FontWeight="SemiBold" FontSize="12.5"
+                                ToolTip="پخش با VLC، PotPlayer یا مدیاپلیر پیش‌فرض ویندوز">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="PlayBoxOutline" Width="18" Height="18" Foreground="#38BDF8" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Text="پخش با پلیر پیش‌فرض سیستم (خارجی)" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Player Settings Button -->
+                        <Button Grid.Column="1" Click="BtnOpenPlayerSettings_Click" Margin="8,0,0,0"
+                                Height="38" Cursor="Hand" materialDesign:ButtonAssist.CornerRadius="10"
+                                Background="#1A2044" BorderBrush="#3B4482" BorderThickness="1"
+                                Foreground="#94A3B8" FontWeight="SemiBold" FontSize="12"
+                                ToolTip="رفتن به تنظیمات برای انتخاب بین PotPlayer، VLC یا پلیر دلخواه">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <materialDesign:PackIcon Kind="CogOutline" Width="16" Height="16" Foreground="#94A3B8" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                <TextBlock Text="انتخاب پلیر..." VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Cancel/Close Button -->
+                        <Button Grid.Column="2" Click="BtnClose_Click" Margin="8,0,0,0"
+                                Height="38" Cursor="Hand" materialDesign:ButtonAssist.CornerRadius="10"
+                                Background="Transparent" BorderThickness="0"
+                                Foreground="#94A3B8" FontWeight="SemiBold" FontSize="12">
+                            <TextBlock Text="انصراف" VerticalAlignment="Center"/>
+                        </Button>
+                    </Grid>
+
+                </Grid>
+            </Border>
+
+        </Grid>
+    </Border>
+</Window>

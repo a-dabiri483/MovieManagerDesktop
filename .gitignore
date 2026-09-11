@@ -28,6 +28,7 @@ bld/
 publish/
 *.log
 *.txt
+*.csv
 
 # Visual Studio cache/options directory
 .vs/

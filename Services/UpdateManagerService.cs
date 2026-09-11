@@ -52,8 +52,8 @@ namespace MovieManagerDesktop.Services
     /// </summary>
     public static class UpdateManagerService
     {
-        public const string CurrentAppVersion = "2.8.0";
-        public const int CurrentVersionCode = 280;
+        public const string CurrentAppVersion = "3.0.0";
+        public const int CurrentVersionCode = 300;
         private const string CheckUpdateUrl = "https://moviemanager.ir/license/api.php?action=check_update&platform=windows";
 
         private static bool _isDialogOpen = false;

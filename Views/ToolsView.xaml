@@ -62,10 +62,17 @@
                                     </Border>
 
                                     <!-- Title -->
-                                    <TextBlock Grid.Row="1" Text="ساخت آیکون پوشه" 
-                                               FontSize="16.5" FontWeight="Bold" 
-                                               Foreground="White" 
-                                               Margin="0,0,0,8"/>
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="ساخت آیکون پوشه" 
+                                                   FontSize="16.5" FontWeight="Bold" 
+                                                   Foreground="White" VerticalAlignment="Center"/>
+                                        <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
 
                                     <!-- Description -->
                                     <TextBlock Grid.Row="2" TextWrapping="Wrap"
@@ -119,10 +126,17 @@
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
 
-                                    <TextBlock Grid.Row="1" Text="تمیزکننده نام پوشه‌ها" 
-                                               FontSize="16.5" FontWeight="Bold" 
-                                               Foreground="White" 
-                                               Margin="0,0,0,8"/>
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="تمیزکننده نام پوشه‌ها" 
+                                                   FontSize="16.5" FontWeight="Bold" 
+                                                   Foreground="White" VerticalAlignment="Center"/>
+                                        <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
 
                                     <TextBlock Grid.Row="2" TextWrapping="Wrap"
                                                Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">
@@ -174,10 +188,17 @@
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
 
-                                    <TextBlock Grid.Row="1" Text="مرتب‌ساز سریال‌ها" 
-                                               FontSize="16.5" FontWeight="Bold" 
-                                               Foreground="White" 
-                                               Margin="0,0,0,8"/>
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="مرتب‌ساز سریال‌ها" 
+                                                   FontSize="16.5" FontWeight="Bold" 
+                                                   Foreground="White" VerticalAlignment="Center"/>
+                                        <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
 
                                     <TextBlock Grid.Row="2" TextWrapping="Wrap"
                                                Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">
@@ -229,10 +250,17 @@
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
 
-                                    <TextBlock Grid.Row="1" Text="تغییر نام هوشمند" 
-                                               FontSize="16.5" FontWeight="Bold" 
-                                               Foreground="White" 
-                                               Margin="0,0,0,8"/>
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="تغییر نام هوشمند" 
+                                                   FontSize="16.5" FontWeight="Bold" 
+                                                   Foreground="White" VerticalAlignment="Center"/>
+                                        <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
 
                                     <TextBlock Grid.Row="2" TextWrapping="Wrap"
                                                Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">
@@ -284,10 +312,17 @@
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
 
-                                    <TextBlock Grid.Row="1" Text="ترمیم هوشمند مسیر" 
-                                               FontSize="16.5" FontWeight="Bold" 
-                                               Foreground="White" 
-                                               Margin="0,0,0,8"/>
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="ترمیم هوشمند مسیر" 
+                                                   FontSize="16.5" FontWeight="Bold" 
+                                                   Foreground="White" VerticalAlignment="Center"/>
+                                        <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
 
                                     <TextBlock Grid.Row="2" TextWrapping="Wrap"
                                                Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">
@@ -449,10 +484,17 @@
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
 
-                                    <TextBlock Grid.Row="1" Text="ردیاب سریال‌های ناقص" 
-                                               FontSize="16.5" FontWeight="Bold" 
-                                               Foreground="White" 
-                                               Margin="0,0,0,8"/>
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="ردیاب سریال‌های ناقص" 
+                                                   FontSize="16.5" FontWeight="Bold" 
+                                                   Foreground="White" VerticalAlignment="Center"/>
+                                        <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
 
                                     <TextBlock Grid.Row="2" TextWrapping="Wrap"
                                                Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">

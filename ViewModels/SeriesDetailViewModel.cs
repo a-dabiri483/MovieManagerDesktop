@@ -655,6 +655,7 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void EditMetadata()
         {
+            if (!LicenseManagerService.EnsureProFeature("ویرایش اطلاعات")) return;
             var initialQuery = !string.IsNullOrEmpty(Series.FormattedTitle) ? Series.FormattedTitle : Series.FileName;
             var searchDialogViewModel = new ApiSearchDialogViewModel(initialQuery)
             {

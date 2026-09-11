@@ -46,8 +46,32 @@ namespace MovieManagerDesktop.Services
             var settings = SettingsManager.LoadSettings();
             if (settings.UseInternalPlayer)
             {
-                if (!LicenseManagerService.EnsureProFeature("پخش‌کننده ویدیوی داخلی"))
+                if (!LicenseManagerService.IsLicenseValid())
                 {
+                    bool playExternal = false;
+                    System.Windows.Application.Current?.Dispatcher?.Invoke(() =>
+                    {
+                        var promoWin = new Views.VipPlayerPromoWindow();
+                        WindowHelper.SafeShowDialog(promoWin);
+                        if (promoWin.UserChoseExternalPlayer)
+                        {
+                            playExternal = true;
+                        }
+                    });
+
+                    if (playExternal)
+                    {
+                        PlayWithExternalPlayer(file.FilePath, settings);
+                        return;
+                    }
+
+                    // اگر کاربر در پنجره باز شده لایسنس را فعال کرد، با پلیر داخلی پخش شود
+                    if (LicenseManagerService.IsLicenseValid())
+                    {
+                        bool startedPro = MpvPlaybackService.PlayMedia(file, playlist, initialIndex);
+                        if (startedPro) return;
+                    }
+
                     return;
                 }
 

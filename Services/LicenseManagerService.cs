@@ -129,6 +129,8 @@ namespace MovieManagerDesktop.Services
 
             if (!lic.IsLifetime && lic.ExpiresAt.HasValue && DateTime.Now > lic.ExpiresAt.Value)
             {
+                LoggerService.Warning("[LicenseManager] License expired by local time. Deactivating local license.");
+                DeactivateCurrentLicense();
                 return false;
             }
 
@@ -598,6 +600,13 @@ namespace MovieManagerDesktop.Services
 
                 if (!lic.IsActivated)
                 {
+                    return new LicenseInfo { IsActivated = false };
+                }
+
+                // Check if license is expired by local clock
+                if (!lic.IsLifetime && lic.ExpiresAt.HasValue && DateTime.Now > lic.ExpiresAt.Value)
+                {
+                    LoggerService.Warning("[LicenseManager] Stored license has expired.");
                     return new LicenseInfo { IsActivated = false };
                 }
 

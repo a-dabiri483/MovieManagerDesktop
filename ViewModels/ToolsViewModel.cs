@@ -18,7 +18,7 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void OpenNameCleaner()
         {
-            // ابزار پاک‌سازی نام در نسخه رایگان باز است
+            if (!LicenseManagerService.EnsureProFeature("تمیزکننده نام پوشه‌ها")) return;
             WeakReferenceMessenger.Default.Send(new NavigationMessage(new NameCleanerToolViewModel()));
         }
 
@@ -46,14 +46,14 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void OpenLibraryCompare()
         {
-            if (!LicenseManagerService.EnsureProFeature("مقایسه دو کتابخانه و هارد")) return;
+            // ابزار مقایسه کتابخانه و هارد در نسخه رایگان باز است
             WeakReferenceMessenger.Default.Send(new NavigationMessage(new LibraryCompareToolViewModel()));
         }
 
         [RelayCommand]
         private void OpenCatalogExport()
         {
-            if (!LicenseManagerService.EnsureProFeature("خروجی کاتالوگ (اکسل، PDF، HTML)")) return;
+            // ابزار خروجی کاتالوگ در نسخه رایگان باز است
             WeakReferenceMessenger.Default.Send(new NavigationMessage(new CatalogExportToolViewModel()));
         }
 

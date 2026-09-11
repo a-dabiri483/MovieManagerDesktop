@@ -970,6 +970,7 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void ManualIdentify()
         {
+            if (!LicenseManagerService.EnsureProFeature("ویرایش اطلاعات")) return;
             var searchDialogViewModel = new ApiSearchDialogViewModel(!string.IsNullOrEmpty(Media.FormattedTitle) ? Media.FormattedTitle : Media.FileName);
             var searchDialog = new MovieManagerDesktop.Views.Dialogs.ApiSearchDialog { DataContext = searchDialogViewModel };
             

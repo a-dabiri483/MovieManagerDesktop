@@ -151,7 +151,7 @@
                         </materialDesign:PopupBox.ToggleContent>
                         <Border Background="#1E2430" CornerRadius="12" Padding="8" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" MinWidth="200">
                             <StackPanel>
-                                <Button Command="{Binding ManualIdentifyCommand}" 
+                                <Button Command="{Binding EditMetadataCommand}" 
                                         Style="{StaticResource MaterialDesignFlatButton}" 
                                         Foreground="{DynamicResource PrimaryText}" 
                                         HorizontalContentAlignment="Right" Padding="15,10" Height="Auto">
@@ -159,9 +159,16 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="30"/>
                                             <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
-                                        <materialDesign:PackIcon Grid.Column="0" Kind="DatabaseSearch" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                        <TextBlock Grid.Column="1" Text="شناسایی دستی (TMDb)" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                        <materialDesign:PackIcon Grid.Column="0" Kind="PencilOutline" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        <TextBlock Grid.Column="1" Text="ویرایش اطلاعات" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                                        <Border Grid.Column="2" Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal">
+                                                <materialDesign:PackIcon Kind="Crown" Width="11" Height="11" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
+                                                <TextBlock Text="VIP" FontSize="9.5" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Border>
                                     </Grid>
                                 </Button>
                                 
@@ -176,20 +183,6 @@
                                         </Grid.ColumnDefinitions>
                                         <materialDesign:PackIcon Grid.Column="0" Kind="Refresh" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                         <TextBlock Grid.Column="1" Text="بروزرسانی متادیتا" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                                    </Grid>
-                                </Button>
-                                
-                                <Button Command="{Binding EditMetadataCommand}" 
-                                        Style="{StaticResource MaterialDesignFlatButton}" 
-                                        Foreground="{DynamicResource PrimaryText}" 
-                                        HorizontalContentAlignment="Right" Padding="15,10" Height="Auto">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="30"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <materialDesign:PackIcon Grid.Column="0" Kind="PencilOutline" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                        <TextBlock Grid.Column="1" Text="ویرایش اطلاعات" VerticalAlignment="Center" Margin="10,0,0,0"/>
                                     </Grid>
                                 </Button>
                                 
@@ -478,8 +471,11 @@
                                             <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.4" Color="#EB3B5A"/>
                                         </Button.Effect>
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                            <materialDesign:PackIcon Kind="Play" Width="18" Height="18" Foreground="White" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <materialDesign:PackIcon Kind="Play" Width="18" Height="18" Foreground="White" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                             <TextBlock Text="پخش فیلم" Foreground="White" FontWeight="Bold" FontSize="13.5" VerticalAlignment="Center"/>
+                                            <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="5" Padding="4,0" Margin="6,0,0,0" VerticalAlignment="Center">
+                                                <materialDesign:PackIcon Kind="Crown" Width="10" Height="10" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                            </Border>
                                         </StackPanel>
                                     </Button>
                                 </Grid>

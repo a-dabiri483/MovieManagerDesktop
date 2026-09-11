@@ -69,7 +69,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-$installer = "setup_output\MovieManager_Setup_v2.8.0.exe"
+$installer = "setup_output\MovieManager_Setup_v3.0.0.exe"
 if (Test-Path $installer) {
     $item = Get-Item $installer
     $sizeMb = [math]::Round($item.Length / 1MB, 2)

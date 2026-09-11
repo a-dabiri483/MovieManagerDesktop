@@ -631,9 +631,6 @@
                             </Popup>
                         </Grid>
 
-                        <Button ToolTip="نمایش لاگ‌ها" Style="{StaticResource WindowBtnStyle}" Click="BtnViewLogs_Click">
-                            <materialDesign:PackIcon Kind="FileDocumentOutline" Width="14" Height="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                        </Button>
                         <Button ToolTip="کوچک‌کردن" Style="{StaticResource WindowBtnStyle}" Click="BtnMinimize_Click">
                             <materialDesign:PackIcon Kind="WindowMinimize" Width="14" Height="14" VerticalAlignment="Center" HorizontalAlignment="Center"/>
                         </Button>

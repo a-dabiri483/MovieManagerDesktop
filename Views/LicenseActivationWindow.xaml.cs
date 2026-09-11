@@ -25,10 +25,20 @@ namespace MovieManagerDesktop.Views
             TxtHwid.Text = hwid;
             RefreshLicenseUi();
 
-            // Auto-check on open if not currently activated (in case user just paid on website)
             var lic = LicenseManagerService.GetCurrentLicense();
-            if (!lic.IsActivated || !lic.IsValid)
+            if (lic.IsActivated && lic.IsValid)
             {
+                // بررسی وضعیت آنلاین لایسنس از سرور (در صورت لغو یا ابطال توسط مدیر)
+                bool stillValid = await LicenseManagerService.VerifyLicenseAsync();
+                RefreshLicenseUi();
+                if (!stillValid)
+                {
+                    ToastService.Instance.ShowWarning("اشتراک شما در سرور غیرفعال یا منقضی شده است.");
+                }
+            }
+            else
+            {
+                // بررسی خودکار برای کاربرانی که لایسنس ندارند و تازه خرید کرده‌اند
                 await PerformCheckLicenseAsync(silent: true);
             }
         }

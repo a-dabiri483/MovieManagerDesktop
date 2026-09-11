@@ -17,6 +17,7 @@ using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows; // For Clipboard
+using System.Diagnostics;
 
 namespace MovieManagerDesktop.ViewModels
 {
@@ -135,6 +136,29 @@ namespace MovieManagerDesktop.ViewModels
             finally
             {
                 IsCheckingForUpdates = false;
+            }
+        }
+
+        [RelayCommand]
+        private void OpenLogDirectory()
+        {
+            try
+            {
+                var logDir = LoggerService.LogDirectory;
+                if (!Directory.Exists(logDir))
+                {
+                    Directory.CreateDirectory(logDir);
+                }
+
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = logDir,
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                ToastService.Instance.ShowError($"خطا در بازکردن پوشه گزارشات: {ex.Message}");
             }
         }
 

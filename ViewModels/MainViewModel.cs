@@ -42,6 +42,11 @@ namespace MovieManagerDesktop.ViewModels
         [RelayCommand]
         private void OpenLicenseWindow()
         {
+            var lic = LicenseManagerService.GetCurrentLicense();
+            if (lic.IsActivated)
+            {
+                _ = LicenseManagerService.VerifyLicenseAsync();
+            }
             var win = new LicenseActivationWindow();
             WindowHelper.SafeShowDialog(win);
             RefreshLicenseStatus();
