@@ -30,7 +30,7 @@ public partial class App : Application
         }
         catch (Exception ex)
         {
-            MovieManagerDesktop.Services.LoggerService.Error("Failed to apply startup theme", ex);
+            MovieManagerDesktop.Services.LoggerService.Error("Failed to apply startup theme/effects", ex);
         }
 
         // Sync any offline playback progress from MPV
@@ -88,6 +88,11 @@ public partial class App : Application
                 appDictionaries.Add(new System.Windows.ResourceDictionary { Source = new System.Uri("pack://application:,,,/MovieManagerDesktop;component/Themes/DesignSystem.Light.xaml") });
             }
         }
+    }
+
+    public static void ApplyVisualEffectsMode(bool enableHighEnd = false)
+    {
+        // High Performance Mode permanently enforced: ZERO GPU pixel shaders, maximum responsiveness
     }
 
     private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)

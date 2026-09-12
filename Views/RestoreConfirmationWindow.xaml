@@ -13,9 +13,6 @@
         ShowInTaskbar="False">
 
     <Border Background="#F50F172A" CornerRadius="20" BorderBrush="#4038BDF8" BorderThickness="1.5">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="35" ShadowDepth="4" Color="Black" Opacity="0.85"/>
-        </Border.Effect>
 
         <Grid>
             <Grid.RowDefinitions>

@@ -7,21 +7,61 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignHeight="800" d:DesignWidth="1200"
+             d:DesignHeight="850" d:DesignWidth="1200"
+             TextOptions.TextFormattingMode="Ideal"
+             TextOptions.TextRenderingMode="Auto"
+             TextOptions.TextHintingMode="Auto"
+             RenderOptions.ClearTypeHint="Enabled"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
              FlowDirection="RightToLeft">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="32,40,32,40" MaxWidth="1100">
-            <!-- Header with Vertical Bar -->
-            <StackPanel Orientation="Horizontal" Margin="6,0,0,8">
-                <Border Width="4" Height="22" Background="{DynamicResource PrimaryColor}" CornerRadius="2" Margin="0,0,10,0"/>
-                <TextBlock Text="ابزارهای سازمان‌دهی هوشمند" FontSize="22" FontWeight="Black" Foreground="White"/>
-            </StackPanel>
+    <UserControl.Resources>
+        <!-- Card Glass Background Brushes -->
+        <LinearGradientBrush x:Key="ToolCardGlassBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#181C38" Offset="0"/>
+            <GradientStop Color="#101328" Offset="1"/>
+        </LinearGradientBrush>
 
-            <TextBlock Text="ابزارهای حرفه‌ای برای مدیریت و سازمان‌دهی پوشه‌ها، اصلاح مسیر و فایل‌های فیلم و سریال" 
-                       Foreground="{DynamicResource SecondaryText}" 
-                       FontSize="13.5" 
-                       Margin="14,0,0,28"/>
+        <LinearGradientBrush x:Key="ToolCardGlassHoverBrush" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#22284E" Offset="0"/>
+            <GradientStop Color="#141832" Offset="1"/>
+        </LinearGradientBrush>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,36,32,40" MaxWidth="1140">
+            <!-- Header with Gradient Accent Bar and Badge -->
+            <Grid Margin="6,0,0,24">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                        <Border Width="4" Height="24" CornerRadius="2" Margin="0,0,12,0">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Color="#FF3366" Offset="0"/>
+                                    <GradientStop Color="#EB3B5A" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                        </Border>
+                        <TextBlock Text="ابزارهای سازمان‌دهی هوشمند" FontSize="23" FontWeight="Black" Foreground="White" VerticalAlignment="Center"/>
+                        <Border Background="#20EB3B5A" BorderBrush="#50EB3B5A" BorderThickness="1" CornerRadius="10" Padding="8,3" Margin="14,0,0,0" VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="AutoFix" Width="13" Height="13" Foreground="{DynamicResource PrimaryColor}" Margin="0,0,4,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="۸ ابزار تخصصی" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource PrimaryColor}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <TextBlock Text="ابزارهای حرفه‌ای و خودکار برای مدیریت پوشه‌ها، تصحیح نام، اصلاح مسیر، مقایسه آرشیو و کاتالوگ‌گیری" 
+                               Foreground="{DynamicResource SecondaryText}" 
+                               FontSize="13.5" 
+                               Margin="16,0,0,0"/>
+                </StackPanel>
+            </Grid>
 
             <!-- Tool Cards Grid -->
             <UniformGrid Columns="3" Margin="0,0,0,20" VerticalAlignment="Top">
@@ -31,20 +71,11 @@
                         Command="{Binding OpenFolderIconCommand}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border Margin="8" CornerRadius="18"
-                                    Background="{DynamicResource CardBackground}"
-                                    BorderBrush="{DynamicResource LightBorder}"
-                                    BorderThickness="1" Padding="20">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
-                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
+                            <Border x:Name="CardBorder" Margin="8" CornerRadius="20"
+                                    Background="{StaticResource ToolCardGlassBrush}"
+                                    BorderBrush="#2A2F54"
+                                    BorderThickness="1.2" Padding="22,20"
+                                    Effect="{DynamicResource ToolCardRestShadow}">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -53,41 +84,53 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <!-- Icon -->
-                                    <Border Grid.Row="0" Width="56" Height="56" CornerRadius="16" 
-                                            Background="#25EB3B5A" HorizontalAlignment="Right" Margin="0,0,0,16">
-                                        <materialDesign:PackIcon Kind="FolderImage" Width="28" Height="28" 
+                                    <!-- Icon Box with Accent Squircle -->
+                                    <Border Grid.Row="0" Width="54" Height="54" CornerRadius="16" 
+                                            Background="#20EB3B5A" BorderBrush="#45EB3B5A" BorderThickness="1.2"
+                                            HorizontalAlignment="Right" Margin="0,0,0,16">
+                                        <materialDesign:PackIcon Kind="FolderImage" Width="26" Height="26" 
                                                                  Foreground="{DynamicResource PrimaryColor}"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
 
-                                    <!-- Title -->
-                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                    <!-- Title & VIP Badge -->
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Center">
                                         <TextBlock Text="ساخت آیکون پوشه" 
                                                    FontSize="16.5" FontWeight="Bold" 
                                                    Foreground="White" VerticalAlignment="Center"/>
-                                        <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal">
+                                        <Border Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
-                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Black" Foreground="#FBBF24" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Border>
                                     </StackPanel>
 
                                     <!-- Description -->
                                     <TextBlock Grid.Row="2" TextWrapping="Wrap"
-                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">
+                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20" MinHeight="42">
                                         پوستر فیلم یا سریال را روی یک قاب سه‌بعدی ترکیب کرده و آن را به عنوان آیکون پوشه ویندوز اعمال می‌کند.
                                     </TextBlock>
 
-                                    <!-- Action hint -->
-                                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,18,0,0">
-                                        <TextBlock Text="شروع ابزار" Foreground="{DynamicResource PrimaryColor}" FontWeight="Bold" FontSize="13"/>
-                                        <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource PrimaryColor}" 
-                                                                 Width="16" Height="16" VerticalAlignment="Center" Margin="6,0,0,0"/>
-                                    </StackPanel>
+                                    <!-- Action CTA Pill -->
+                                    <Border x:Name="CtaPill" Grid.Row="3" CornerRadius="10" Background="#18EB3B5A" BorderBrush="#35EB3B5A" BorderThickness="1" Padding="12,6" HorizontalAlignment="Left" Margin="0,16,0,0">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="ورود به ابزار" Foreground="{DynamicResource PrimaryColor}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                            <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource PrimaryColor}" 
+                                                                     Width="14" Height="14" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
                                 </Grid>
                             </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="CardBorder" Property="Background" Value="{StaticResource ToolCardGlassHoverBrush}"/>
+                                    <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                                    <Setter TargetName="CtaPill" Property="Background" Value="#35EB3B5A"/>
+                                    <Setter TargetName="CtaPill" Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                                    <Setter TargetName="CardBorder" Property="Effect" Value="{DynamicResource ToolCardHoverShadow}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
@@ -97,20 +140,11 @@
                         Command="{Binding OpenNameCleanerCommand}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border Margin="8" CornerRadius="18"
-                                    Background="{DynamicResource CardBackground}"
-                                    BorderBrush="{DynamicResource LightBorder}"
-                                    BorderThickness="1" Padding="20">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
-                                                <Setter Property="BorderBrush" Value="{DynamicResource NetworkBlue}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
+                            <Border x:Name="CardBorder" Margin="8" CornerRadius="20"
+                                    Background="{StaticResource ToolCardGlassBrush}"
+                                    BorderBrush="#2A2F54"
+                                    BorderThickness="1.2" Padding="22,20"
+                                    Effect="{DynamicResource ToolCardRestShadow}">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -119,37 +153,53 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <Border Grid.Row="0" Width="56" Height="56" CornerRadius="16" 
-                                            Background="#253867D6" HorizontalAlignment="Right" Margin="0,0,0,16">
-                                        <materialDesign:PackIcon Kind="Broom" Width="28" Height="28" 
+                                    <!-- Icon Box with Accent Squircle -->
+                                    <Border Grid.Row="0" Width="54" Height="54" CornerRadius="16" 
+                                            Background="#203867D6" BorderBrush="#453867D6" BorderThickness="1.2"
+                                            HorizontalAlignment="Right" Margin="0,0,0,16">
+                                        <materialDesign:PackIcon Kind="Broom" Width="26" Height="26" 
                                                                  Foreground="{DynamicResource NetworkBlue}"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
 
-                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                    <!-- Title & VIP Badge -->
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Center">
                                         <TextBlock Text="تمیزکننده نام پوشه‌ها" 
                                                    FontSize="16.5" FontWeight="Bold" 
                                                    Foreground="White" VerticalAlignment="Center"/>
-                                        <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal">
+                                        <Border Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
-                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Black" Foreground="#FBBF24" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Border>
                                     </StackPanel>
 
+                                    <!-- Description -->
                                     <TextBlock Grid.Row="2" TextWrapping="Wrap"
-                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">
+                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20" MinHeight="42">
                                         نام‌های شلوغ پوشه‌ها (شامل رزولوشن، انکودر و کلمات اضافه) را اسکن کرده و به نام‌های تمیز تغییر می‌دهد.
                                     </TextBlock>
 
-                                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,18,0,0">
-                                        <TextBlock Text="شروع ابزار" Foreground="{DynamicResource NetworkBlue}" FontWeight="Bold" FontSize="13"/>
-                                        <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource NetworkBlue}" 
-                                                                 Width="16" Height="16" VerticalAlignment="Center" Margin="6,0,0,0"/>
-                                    </StackPanel>
+                                    <!-- Action CTA Pill -->
+                                    <Border x:Name="CtaPill" Grid.Row="3" CornerRadius="10" Background="#183867D6" BorderBrush="#353867D6" BorderThickness="1" Padding="12,6" HorizontalAlignment="Left" Margin="0,16,0,0">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="ورود به ابزار" Foreground="{DynamicResource NetworkBlue}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                            <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource NetworkBlue}" 
+                                                                     Width="14" Height="14" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
                                 </Grid>
                             </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="CardBorder" Property="Background" Value="{StaticResource ToolCardGlassHoverBrush}"/>
+                                    <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource NetworkBlue}"/>
+                                    <Setter TargetName="CtaPill" Property="Background" Value="#353867D6"/>
+                                    <Setter TargetName="CtaPill" Property="BorderBrush" Value="{DynamicResource NetworkBlue}"/>
+                                    <Setter TargetName="CardBorder" Property="Effect" Value="{DynamicResource ToolCardHoverShadow}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
@@ -159,20 +209,11 @@
                         Command="{Binding OpenSeriesOrganizerCommand}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border Margin="8" CornerRadius="18"
-                                    Background="{DynamicResource CardBackground}"
-                                    BorderBrush="{DynamicResource LightBorder}"
-                                    BorderThickness="1" Padding="20">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
-                                                <Setter Property="BorderBrush" Value="{DynamicResource EmeraldAccent}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
+                            <Border x:Name="CardBorder" Margin="8" CornerRadius="20"
+                                    Background="{StaticResource ToolCardGlassBrush}"
+                                    BorderBrush="#2A2F54"
+                                    BorderThickness="1.2" Padding="22,20"
+                                    Effect="{DynamicResource ToolCardRestShadow}">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -181,37 +222,53 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <Border Grid.Row="0" Width="56" Height="56" CornerRadius="16" 
-                                            Background="#2526DE81" HorizontalAlignment="Right" Margin="0,0,0,16">
-                                        <materialDesign:PackIcon Kind="FolderSwapOutline" Width="28" Height="28" 
+                                    <!-- Icon Box with Accent Squircle -->
+                                    <Border Grid.Row="0" Width="54" Height="54" CornerRadius="16" 
+                                            Background="#2026DE81" BorderBrush="#4526DE81" BorderThickness="1.2"
+                                            HorizontalAlignment="Right" Margin="0,0,0,16">
+                                        <materialDesign:PackIcon Kind="FolderSwapOutline" Width="26" Height="26" 
                                                                  Foreground="{DynamicResource EmeraldAccent}"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
 
-                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                    <!-- Title & VIP Badge -->
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Center">
                                         <TextBlock Text="مرتب‌ساز سریال‌ها" 
                                                    FontSize="16.5" FontWeight="Bold" 
                                                    Foreground="White" VerticalAlignment="Center"/>
-                                        <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal">
+                                        <Border Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
-                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Black" Foreground="#FBBF24" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Border>
                                     </StackPanel>
 
+                                    <!-- Description -->
                                     <TextBlock Grid.Row="2" TextWrapping="Wrap"
-                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">
+                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20" MinHeight="42">
                                         قسمت‌های پراکنده‌ی سریال‌ها را بر اساس نامشان شناسایی و در پوشه‌ی مخصوص هر سریال قرار می‌دهد.
                                     </TextBlock>
 
-                                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,18,0,0">
-                                        <TextBlock Text="شروع ابزار" Foreground="{DynamicResource EmeraldAccent}" FontWeight="Bold" FontSize="13"/>
-                                        <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource EmeraldAccent}" 
-                                                                 Width="16" Height="16" VerticalAlignment="Center" Margin="6,0,0,0"/>
-                                    </StackPanel>
+                                    <!-- Action CTA Pill -->
+                                    <Border x:Name="CtaPill" Grid.Row="3" CornerRadius="10" Background="#1826DE81" BorderBrush="#3526DE81" BorderThickness="1" Padding="12,6" HorizontalAlignment="Left" Margin="0,16,0,0">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="ورود به ابزار" Foreground="{DynamicResource EmeraldAccent}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                            <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource EmeraldAccent}" 
+                                                                     Width="14" Height="14" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
                                 </Grid>
                             </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="CardBorder" Property="Background" Value="{StaticResource ToolCardGlassHoverBrush}"/>
+                                    <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource EmeraldAccent}"/>
+                                    <Setter TargetName="CtaPill" Property="Background" Value="#3526DE81"/>
+                                    <Setter TargetName="CtaPill" Property="BorderBrush" Value="{DynamicResource EmeraldAccent}"/>
+                                    <Setter TargetName="CardBorder" Property="Effect" Value="{DynamicResource ToolCardHoverShadow}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
@@ -221,20 +278,11 @@
                         Command="{Binding OpenSeriesFileRenamerCommand}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border Margin="8" CornerRadius="18"
-                                    Background="{DynamicResource CardBackground}"
-                                    BorderBrush="{DynamicResource LightBorder}"
-                                    BorderThickness="1" Padding="20">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
-                                                <Setter Property="BorderBrush" Value="{DynamicResource PurpleAccent}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
+                            <Border x:Name="CardBorder" Margin="8" CornerRadius="20"
+                                    Background="{StaticResource ToolCardGlassBrush}"
+                                    BorderBrush="#2A2F54"
+                                    BorderThickness="1.2" Padding="22,20"
+                                    Effect="{DynamicResource ToolCardRestShadow}">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -243,37 +291,53 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <Border Grid.Row="0" Width="56" Height="56" CornerRadius="16" 
-                                            Background="#258854D0" HorizontalAlignment="Right" Margin="0,0,0,16">
-                                        <materialDesign:PackIcon Kind="RenameBox" Width="28" Height="28" 
+                                    <!-- Icon Box with Accent Squircle -->
+                                    <Border Grid.Row="0" Width="54" Height="54" CornerRadius="16" 
+                                            Background="#208854D0" BorderBrush="#458854D0" BorderThickness="1.2"
+                                            HorizontalAlignment="Right" Margin="0,0,0,16">
+                                        <materialDesign:PackIcon Kind="RenameBox" Width="26" Height="26" 
                                                                  Foreground="{DynamicResource PurpleAccent}"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
 
-                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                    <!-- Title & VIP Badge -->
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Center">
                                         <TextBlock Text="تغییر نام هوشمند" 
                                                    FontSize="16.5" FontWeight="Bold" 
                                                    Foreground="White" VerticalAlignment="Center"/>
-                                        <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal">
+                                        <Border Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
-                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Black" Foreground="#FBBF24" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Border>
                                     </StackPanel>
 
+                                    <!-- Description -->
                                     <TextBlock Grid.Row="2" TextWrapping="Wrap"
-                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">
+                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20" MinHeight="42">
                                         فایل‌های درهم‌ریخته سریال‌ها را شناسایی کرده و آن‌ها را بر اساس اطلاعات سرور تغییر نام می‌دهد.
                                     </TextBlock>
 
-                                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,18,0,0">
-                                        <TextBlock Text="شروع ابزار" Foreground="{DynamicResource PurpleAccent}" FontWeight="Bold" FontSize="13"/>
-                                        <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource PurpleAccent}" 
-                                                                 Width="16" Height="16" VerticalAlignment="Center" Margin="6,0,0,0"/>
-                                    </StackPanel>
+                                    <!-- Action CTA Pill -->
+                                    <Border x:Name="CtaPill" Grid.Row="3" CornerRadius="10" Background="#188854D0" BorderBrush="#358854D0" BorderThickness="1" Padding="12,6" HorizontalAlignment="Left" Margin="0,16,0,0">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="ورود به ابزار" Foreground="{DynamicResource PurpleAccent}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                            <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource PurpleAccent}" 
+                                                                     Width="14" Height="14" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
                                 </Grid>
                             </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="CardBorder" Property="Background" Value="{StaticResource ToolCardGlassHoverBrush}"/>
+                                    <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource PurpleAccent}"/>
+                                    <Setter TargetName="CtaPill" Property="Background" Value="#358854D0"/>
+                                    <Setter TargetName="CtaPill" Property="BorderBrush" Value="{DynamicResource PurpleAccent}"/>
+                                    <Setter TargetName="CardBorder" Property="Effect" Value="{DynamicResource ToolCardHoverShadow}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
@@ -283,20 +347,11 @@
                         Command="{Binding OpenAutoRelocatorCommand}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border Margin="8" CornerRadius="18"
-                                    Background="{DynamicResource CardBackground}"
-                                    BorderBrush="{DynamicResource LightBorder}"
-                                    BorderThickness="1" Padding="20">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
-                                                <Setter Property="BorderBrush" Value="{DynamicResource OrangeAccent}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
+                            <Border x:Name="CardBorder" Margin="8" CornerRadius="20"
+                                    Background="{StaticResource ToolCardGlassBrush}"
+                                    BorderBrush="#2A2F54"
+                                    BorderThickness="1.2" Padding="22,20"
+                                    Effect="{DynamicResource ToolCardRestShadow}">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -305,37 +360,53 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <Border Grid.Row="0" Width="56" Height="56" CornerRadius="16" 
-                                            Background="#25FA8231" HorizontalAlignment="Right" Margin="0,0,0,16">
-                                        <materialDesign:PackIcon Kind="LinkVariantPlus" Width="28" Height="28" 
+                                    <!-- Icon Box with Accent Squircle -->
+                                    <Border Grid.Row="0" Width="54" Height="54" CornerRadius="16" 
+                                            Background="#20FA8231" BorderBrush="#45FA8231" BorderThickness="1.2"
+                                            HorizontalAlignment="Right" Margin="0,0,0,16">
+                                        <materialDesign:PackIcon Kind="LinkVariantPlus" Width="26" Height="26" 
                                                                  Foreground="{DynamicResource OrangeAccent}"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
 
-                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                    <!-- Title & VIP Badge -->
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Center">
                                         <TextBlock Text="ترمیم هوشمند مسیر" 
                                                    FontSize="16.5" FontWeight="Bold" 
                                                    Foreground="White" VerticalAlignment="Center"/>
-                                        <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal">
+                                        <Border Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
-                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Black" Foreground="#FBBF24" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Border>
                                     </StackPanel>
 
+                                    <!-- Description -->
                                     <TextBlock Grid.Row="2" TextWrapping="Wrap"
-                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">
+                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20" MinHeight="42">
                                         فایل‌های جابجاشده را پیدا کرده و مسیر آن‌ها را در دیتابیس بدون از دست رفتن اطلاعات، آپدیت می‌کند.
                                     </TextBlock>
 
-                                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,18,0,0">
-                                        <TextBlock Text="شروع ابزار" Foreground="{DynamicResource OrangeAccent}" FontWeight="Bold" FontSize="13"/>
-                                        <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource OrangeAccent}" 
-                                                                 Width="16" Height="16" VerticalAlignment="Center" Margin="6,0,0,0"/>
-                                    </StackPanel>
+                                    <!-- Action CTA Pill -->
+                                    <Border x:Name="CtaPill" Grid.Row="3" CornerRadius="10" Background="#18FA8231" BorderBrush="#35FA8231" BorderThickness="1" Padding="12,6" HorizontalAlignment="Left" Margin="0,16,0,0">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="ورود به ابزار" Foreground="{DynamicResource OrangeAccent}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                            <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource OrangeAccent}" 
+                                                                     Width="14" Height="14" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
                                 </Grid>
                             </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="CardBorder" Property="Background" Value="{StaticResource ToolCardGlassHoverBrush}"/>
+                                    <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource OrangeAccent}"/>
+                                    <Setter TargetName="CtaPill" Property="Background" Value="#35FA8231"/>
+                                    <Setter TargetName="CtaPill" Property="BorderBrush" Value="{DynamicResource OrangeAccent}"/>
+                                    <Setter TargetName="CardBorder" Property="Effect" Value="{DynamicResource ToolCardHoverShadow}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
@@ -345,20 +416,11 @@
                         Command="{Binding OpenLibraryCompareCommand}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border Margin="8" CornerRadius="18"
-                                    Background="{DynamicResource CardBackground}"
-                                    BorderBrush="{DynamicResource LightBorder}"
-                                    BorderThickness="1" Padding="20">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
-                                                <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
+                            <Border x:Name="CardBorder" Margin="8" CornerRadius="20"
+                                    Background="{StaticResource ToolCardGlassBrush}"
+                                    BorderBrush="#2A2F54"
+                                    BorderThickness="1.2" Padding="22,20"
+                                    Effect="{DynamicResource ToolCardRestShadow}">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -367,30 +429,46 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <Border Grid.Row="0" Width="56" Height="56" CornerRadius="16" 
-                                            Background="#25EB3B5A" HorizontalAlignment="Right" Margin="0,0,0,16">
-                                        <materialDesign:PackIcon Kind="FileCompare" Width="28" Height="28" 
+                                    <!-- Icon Box with Accent Squircle -->
+                                    <Border Grid.Row="0" Width="54" Height="54" CornerRadius="16" 
+                                            Background="#20EB3B5A" BorderBrush="#45EB3B5A" BorderThickness="1.2"
+                                            HorizontalAlignment="Right" Margin="0,0,0,16">
+                                        <materialDesign:PackIcon Kind="FileCompare" Width="26" Height="26" 
                                                                  Foreground="{DynamicResource PrimaryColor}"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
 
+                                    <!-- Title -->
                                     <TextBlock Grid.Row="1" Text="مقایسه هوشمند آرشیوها" 
                                                FontSize="16.5" FontWeight="Bold" 
                                                Foreground="White" 
                                                Margin="0,0,0,8"/>
 
+                                    <!-- Description -->
                                     <TextBlock Grid.Row="2" TextWrapping="Wrap"
-                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">
+                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20" MinHeight="42">
                                         مقایسه دیتابیس یا هارد دوستان با آرشیو شما، شناسایی فیلم‌های کسری (Missing) و ارتقای کیفیت‌ها.
                                     </TextBlock>
 
-                                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,18,0,0">
-                                        <TextBlock Text="شروع ابزار" Foreground="{DynamicResource PrimaryColor}" FontWeight="Bold" FontSize="13"/>
-                                        <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource PrimaryColor}" 
-                                                                 Width="16" Height="16" VerticalAlignment="Center" Margin="6,0,0,0"/>
-                                    </StackPanel>
+                                    <!-- Action CTA Pill -->
+                                    <Border x:Name="CtaPill" Grid.Row="3" CornerRadius="10" Background="#18EB3B5A" BorderBrush="#35EB3B5A" BorderThickness="1" Padding="12,6" HorizontalAlignment="Left" Margin="0,16,0,0">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="ورود به ابزار" Foreground="{DynamicResource PrimaryColor}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                            <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource PrimaryColor}" 
+                                                                     Width="14" Height="14" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
                                 </Grid>
                             </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="CardBorder" Property="Background" Value="{StaticResource ToolCardGlassHoverBrush}"/>
+                                    <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                                    <Setter TargetName="CtaPill" Property="Background" Value="#35EB3B5A"/>
+                                    <Setter TargetName="CtaPill" Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
+                                    <Setter TargetName="CardBorder" Property="Effect" Value="{DynamicResource ToolCardHoverShadow}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
@@ -400,20 +478,11 @@
                         Command="{Binding OpenCatalogExportCommand}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border Margin="8" CornerRadius="18"
-                                    Background="{DynamicResource CardBackground}"
-                                    BorderBrush="{DynamicResource LightBorder}"
-                                    BorderThickness="1" Padding="20">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
-                                                <Setter Property="BorderBrush" Value="#00D2D3"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
+                            <Border x:Name="CardBorder" Margin="8" CornerRadius="20"
+                                    Background="{StaticResource ToolCardGlassBrush}"
+                                    BorderBrush="#2A2F54"
+                                    BorderThickness="1.2" Padding="22,20"
+                                    Effect="{DynamicResource ToolCardRestShadow}">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -422,30 +491,46 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <Border Grid.Row="0" Width="56" Height="56" CornerRadius="16" 
-                                            Background="#2500D2D3" HorizontalAlignment="Right" Margin="0,0,0,16">
-                                        <materialDesign:PackIcon Kind="BookOpenPageVariantOutline" Width="28" Height="28" 
-                                                                 Foreground="#00D2D3"
+                                    <!-- Icon Box with Accent Squircle -->
+                                    <Border Grid.Row="0" Width="54" Height="54" CornerRadius="16" 
+                                            Background="#200FB9B1" BorderBrush="#450FB9B1" BorderThickness="1.2"
+                                            HorizontalAlignment="Right" Margin="0,0,0,16">
+                                        <materialDesign:PackIcon Kind="BookOpenPageVariantOutline" Width="26" Height="26" 
+                                                                 Foreground="{DynamicResource TealAccent}"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
 
+                                    <!-- Title -->
                                     <TextBlock Grid.Row="1" Text="تولید کاتالوگ و گزارش" 
                                                FontSize="16.5" FontWeight="Bold" 
                                                Foreground="White" 
                                                Margin="0,0,0,8"/>
 
+                                    <!-- Description -->
                                     <TextBlock Grid.Row="2" TextWrapping="Wrap"
-                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">
+                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20" MinHeight="42">
                                         ایجاد سند رسمی Word همراه با عکس پوسترها، فایل‌های اکسل و کاتالوگ تعاملی وب برای ارسال به دیگران.
                                     </TextBlock>
 
-                                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,18,0,0">
-                                        <TextBlock Text="شروع ابزار" Foreground="#00D2D3" FontWeight="Bold" FontSize="13"/>
-                                        <materialDesign:PackIcon Kind="ArrowLeft" Foreground="#00D2D3" 
-                                                                 Width="16" Height="16" VerticalAlignment="Center" Margin="6,0,0,0"/>
-                                    </StackPanel>
+                                    <!-- Action CTA Pill -->
+                                    <Border x:Name="CtaPill" Grid.Row="3" CornerRadius="10" Background="#180FB9B1" BorderBrush="#350FB9B1" BorderThickness="1" Padding="12,6" HorizontalAlignment="Left" Margin="0,16,0,0">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="ورود به ابزار" Foreground="{DynamicResource TealAccent}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                            <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource TealAccent}" 
+                                                                     Width="14" Height="14" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
                                 </Grid>
                             </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="CardBorder" Property="Background" Value="{StaticResource ToolCardGlassHoverBrush}"/>
+                                    <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource TealAccent}"/>
+                                    <Setter TargetName="CtaPill" Property="Background" Value="#350FB9B1"/>
+                                    <Setter TargetName="CtaPill" Property="BorderBrush" Value="{DynamicResource TealAccent}"/>
+                                    <Setter TargetName="CardBorder" Property="Effect" Value="{DynamicResource ToolCardHoverShadow}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
                 </Button>
@@ -455,20 +540,11 @@
                         Command="{Binding OpenMissingEpisodesCommand}">
                     <Button.Template>
                         <ControlTemplate TargetType="Button">
-                            <Border Margin="8" CornerRadius="18"
-                                    Background="{DynamicResource CardBackground}"
-                                    BorderBrush="{DynamicResource LightBorder}"
-                                    BorderThickness="1" Padding="20">
-                                <Border.Style>
-                                    <Style TargetType="Border">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
-                                                <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
-                                                <Setter Property="BorderBrush" Value="#FF9F43"/>
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Border.Style>
+                            <Border x:Name="CardBorder" Margin="8" CornerRadius="20"
+                                    Background="{StaticResource ToolCardGlassBrush}"
+                                    BorderBrush="#2A2F54"
+                                    BorderThickness="1.2" Padding="22,20"
+                                    Effect="{DynamicResource ToolCardRestShadow}">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -477,37 +553,53 @@
                                         <RowDefinition Height="Auto"/>
                                     </Grid.RowDefinitions>
 
-                                    <Border Grid.Row="0" Width="56" Height="56" CornerRadius="16" 
-                                            Background="#25FF9F43" HorizontalAlignment="Right" Margin="0,0,0,16">
-                                        <materialDesign:PackIcon Kind="TelevisionGuide" Width="28" Height="28" 
-                                                                 Foreground="#FF9F43"
+                                    <!-- Icon Box with Accent Squircle -->
+                                    <Border Grid.Row="0" Width="54" Height="54" CornerRadius="16" 
+                                            Background="#20FA8231" BorderBrush="#45FA8231" BorderThickness="1.2"
+                                            HorizontalAlignment="Right" Margin="0,0,0,16">
+                                        <materialDesign:PackIcon Kind="TelevisionGuide" Width="26" Height="26" 
+                                                                 Foreground="{DynamicResource OrangeAccent}"
                                                                  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
 
-                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                    <!-- Title & VIP Badge -->
+                                    <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8" VerticalAlignment="Center">
                                         <TextBlock Text="ردیاب سریال‌های ناقص" 
                                                    FontSize="16.5" FontWeight="Bold" 
                                                    Foreground="White" VerticalAlignment="Center"/>
-                                        <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal">
+                                        <Border Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
-                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
+                                                <TextBlock Text="VIP" FontSize="10" FontWeight="Black" Foreground="#FBBF24" VerticalAlignment="Center"/>
                                             </StackPanel>
                                         </Border>
                                     </StackPanel>
 
+                                    <!-- Description -->
                                     <TextBlock Grid.Row="2" TextWrapping="Wrap"
-                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20">
+                                               Foreground="{DynamicResource SecondaryText}" FontSize="12.5" LineHeight="20" MinHeight="42">
                                         بررسی خودکار سریال‌ها و شناسایی قسمت‌هایی که پخش شده‌اند ولی هنوز در سیستم شما دانلود نشده‌اند.
                                     </TextBlock>
 
-                                    <StackPanel Grid.Row="3" Orientation="Horizontal" Margin="0,18,0,0">
-                                        <TextBlock Text="شروع ابزار" Foreground="#FF9F43" FontWeight="Bold" FontSize="13"/>
-                                        <materialDesign:PackIcon Kind="ArrowLeft" Foreground="#FF9F43" 
-                                                                 Width="16" Height="16" VerticalAlignment="Center" Margin="6,0,0,0"/>
-                                    </StackPanel>
+                                    <!-- Action CTA Pill -->
+                                    <Border x:Name="CtaPill" Grid.Row="3" CornerRadius="10" Background="#18FA8231" BorderBrush="#35FA8231" BorderThickness="1" Padding="12,6" HorizontalAlignment="Left" Margin="0,16,0,0">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="ورود به ابزار" Foreground="{DynamicResource OrangeAccent}" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                                            <materialDesign:PackIcon Kind="ArrowLeft" Foreground="{DynamicResource OrangeAccent}" 
+                                                                     Width="14" Height="14" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                        </StackPanel>
+                                    </Border>
                                 </Grid>
                             </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="CardBorder" Property="Background" Value="{StaticResource ToolCardGlassHoverBrush}"/>
+                                    <Setter TargetName="CardBorder" Property="BorderBrush" Value="{DynamicResource OrangeAccent}"/>
+                                    <Setter TargetName="CtaPill" Property="Background" Value="#35FA8231"/>
+                                    <Setter TargetName="CtaPill" Property="BorderBrush" Value="{DynamicResource OrangeAccent}"/>
+                                    <Setter TargetName="CardBorder" Property="Effect" Value="{DynamicResource ToolCardHoverShadow}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Button.Template>
                 </Button>

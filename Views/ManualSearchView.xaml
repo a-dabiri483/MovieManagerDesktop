@@ -80,10 +80,8 @@
         </Grid>
 
         <!-- ROW 1: SEARCH BAR & TYPE FILTER PILLS -->
-        <Border Grid.Row="1" Background="{DynamicResource CardBackground}" CornerRadius="20" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Padding="18,14" Margin="0,0,0,16">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.35" Color="Black"/>
-            </Border.Effect>
+        <Border Grid.Row="1" Background="{DynamicResource CardBackground}" CornerRadius="20" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Padding="18,14" Margin="0,0,0,16"
+                Effect="{DynamicResource ShadowSm}">
             <StackPanel>
                 <Grid Margin="0,0,0,12">
                     <Grid.ColumnDefinitions>
@@ -195,10 +193,8 @@
 
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Border Width="220" Height="360" Background="{DynamicResource CardBackground}" CornerRadius="18" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" ClipToBounds="True" Margin="6">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="16" ShadowDepth="3" Opacity="0.4" Color="Black"/>
-                            </Border.Effect>
+                        <Border Width="220" Height="360" Background="{DynamicResource CardBackground}" CornerRadius="18" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" ClipToBounds="True" Margin="6"
+                                Effect="{DynamicResource ShadowSm}">
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="240"/>

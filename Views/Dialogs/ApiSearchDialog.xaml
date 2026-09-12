@@ -65,9 +65,6 @@
             BorderBrush="{DynamicResource LightBorder}" 
             BorderThickness="1"
             ClipToBounds="True">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="25" ShadowDepth="4" Opacity="0.45" Color="Black"/>
-        </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>

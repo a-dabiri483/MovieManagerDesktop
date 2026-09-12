@@ -28,11 +28,7 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <TextBlock Text="{Binding PageTitle}" Style="{StaticResource TextH2}" VerticalAlignment="Center" Margin="0,0,20,0">
-                <TextBlock.Effect>
-                    <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.5" Color="Black"/>
-                </TextBlock.Effect>
-            </TextBlock>
+            <TextBlock Text="{Binding PageTitle}" Style="{StaticResource TextH2}" VerticalAlignment="Center" Margin="0,0,20,0"/>
             
             <!-- Search -->
             <Border Grid.Column="1" Background="{DynamicResource CardBackground}" CornerRadius="20" Padding="15,0" MaxWidth="350" HorizontalAlignment="Left" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" VerticalAlignment="Center">

@@ -28,10 +28,8 @@
                         Margin="0,3"
                         Padding="10,6"
                         MinWidth="200"
-                        MaxWidth="360">
-                    <Border.Effect>
-                        <DropShadowEffect Color="Black" BlurRadius="12" Opacity="0.55" ShadowDepth="2"/>
-                    </Border.Effect>
+                        MaxWidth="360"
+                        Effect="{DynamicResource ShadowSm}">
                     
                     <Grid>
                         <Grid.ColumnDefinitions>

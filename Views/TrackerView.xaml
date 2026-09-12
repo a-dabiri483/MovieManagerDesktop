@@ -151,10 +151,8 @@
         </Grid>
 
         <!-- ROW 1: CONTROLS, SEARCH & FILTERS -->
-        <Border Grid.Row="1" Background="{DynamicResource CardBackground}" CornerRadius="20" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Padding="18,14" Margin="0,0,0,16">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="18" ShadowDepth="2" Opacity="0.35" Color="Black"/>
-            </Border.Effect>
+        <Border Grid.Row="1" Background="{DynamicResource CardBackground}" CornerRadius="20" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Padding="18,14" Margin="0,0,0,16"
+                Effect="{DynamicResource ShadowSm}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -283,7 +281,7 @@
                             </Border.Style>
 
                             <Border.Effect>
-                                <DropShadowEffect BlurRadius="16" ShadowDepth="3" Opacity="0.4" Color="Black"/>
+                                <DynamicResource ResourceKey="ShadowSm"/>
                             </Border.Effect>
 
                             <Grid>

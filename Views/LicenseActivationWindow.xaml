@@ -17,9 +17,6 @@
 
     <!-- Outer Card Border (Matching App & Website Dark Theme) -->
     <Border Background="#F70C0E1F" CornerRadius="20" BorderBrush="#252A54" BorderThickness="1.5">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="40" ShadowDepth="4" Color="Black" Opacity="0.85"/>
-        </Border.Effect>
 
         <Grid>
             <Grid.RowDefinitions>

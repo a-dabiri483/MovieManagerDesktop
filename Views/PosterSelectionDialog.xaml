@@ -51,9 +51,6 @@
     </Window.Resources>
 
     <Border BorderThickness="1" BorderBrush="{DynamicResource NormalBorder}" Margin="10" CornerRadius="15">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="20" ShadowDepth="5" Opacity="0.3"/>
-        </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>

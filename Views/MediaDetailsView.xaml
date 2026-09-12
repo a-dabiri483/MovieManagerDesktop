@@ -107,11 +107,7 @@
                         ToolTip="بازگشت" materialDesign:ButtonAssist.CornerRadius="22">
                     <materialDesign:PackIcon Kind="ArrowRight" Width="26" Height="26"/>
                 </Button>
-                <TextBlock Grid.Column="1" Text="{Binding Media.FormattedTitle}" Foreground="{DynamicResource PrimaryText}" FontSize="26" FontWeight="Black" VerticalAlignment="Center" TextWrapping="Wrap">
-                    <TextBlock.Effect>
-                        <DropShadowEffect BlurRadius="10" ShadowDepth="2" Opacity="0.8" Color="Black"/>
-                    </TextBlock.Effect>
-                </TextBlock>
+                <TextBlock Grid.Column="1" Text="{Binding Media.FormattedTitle}" Foreground="{DynamicResource PrimaryText}" FontSize="26" FontWeight="Black" VerticalAlignment="Center" TextWrapping="Wrap"/>
                 
                 <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
                     <!-- Open Folder Button -->
@@ -229,10 +225,8 @@
                 </Grid.ColumnDefinitions>
                 
                 <!-- Poster Column -->
-                <StackPanel VerticalAlignment="Top" HorizontalAlignment="Right" Width="240" Margin="0,0,24,0" Panel.ZIndex="5">
-                    <StackPanel.Effect>
-                        <DropShadowEffect BlurRadius="25" ShadowDepth="8" Opacity="0.5" Color="Black"/>
-                    </StackPanel.Effect>
+                <StackPanel VerticalAlignment="Top" HorizontalAlignment="Right" Width="240" Margin="0,0,24,0" Panel.ZIndex="5"
+                            Effect="{DynamicResource ShadowLg}">
                     
                     <Border CornerRadius="{StaticResource RadiusLg}" Height="350" Background="#20FFFFFF" BorderBrush="{DynamicResource NormalBorder}" BorderThickness="1" ClipToBounds="True">
                         <Grid>
@@ -244,10 +238,8 @@
                                 <Border Visibility="{Binding HasDubbing, Converter={StaticResource BooleanToVisibilityConverter}}"
                                         Background="#E60F172A" BorderBrush="#334155" BorderThickness="1.2"
                                         CornerRadius="17" Width="34" Height="34" Margin="0,0,0,8"
-                                        ToolTip="دارای دوبله فارسی">
-                                    <Border.Effect>
-                                        <DropShadowEffect BlurRadius="12" ShadowDepth="3" Opacity="0.75" Color="Black"/>
-                                    </Border.Effect>
+                                        ToolTip="دارای دوبله فارسی"
+                                        Effect="{DynamicResource ShadowSm}">
                                     <materialDesign:PackIcon Kind="Microphone" Width="18" Height="18" Foreground="#00E676" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
 
@@ -255,10 +247,8 @@
                                 <Border Visibility="{Binding HasSubtitle, Converter={StaticResource BooleanToVisibilityConverter}}"
                                         Background="#E60F172A" BorderBrush="#334155" BorderThickness="1.2"
                                         CornerRadius="17" Width="34" Height="34"
-                                        ToolTip="دارای زیرنویس فارسی">
-                                    <Border.Effect>
-                                        <DropShadowEffect BlurRadius="12" ShadowDepth="3" Opacity="0.75" Color="Black"/>
-                                    </Border.Effect>
+                                        ToolTip="دارای زیرنویس فارسی"
+                                        Effect="{DynamicResource ShadowSm}">
                                     <materialDesign:PackIcon Kind="ClosedCaption" Width="18" Height="18" Foreground="#FFD166" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                             </StackPanel>
@@ -466,10 +456,8 @@
                                             Height="42" Padding="22,0" Cursor="Hand" Margin="10,0,0,0"
                                             materialDesign:ButtonAssist.CornerRadius="21"
                                             Background="#EB3B5A" BorderThickness="0"
-                                            ToolTip="پخش کامل فیلم">
-                                        <Button.Effect>
-                                            <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.4" Color="#EB3B5A"/>
-                                        </Button.Effect>
+                                            ToolTip="پخش کامل فیلم"
+                                            Effect="{DynamicResource GlowPrimary}">
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                             <materialDesign:PackIcon Kind="Play" Width="18" Height="18" Foreground="White" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                             <TextBlock Text="پخش فیلم" Foreground="White" FontWeight="Bold" FontSize="13.5" VerticalAlignment="Center"/>

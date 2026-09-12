@@ -11,9 +11,6 @@
         FlowDirection="RightToLeft">
 
     <Border Background="#111827" CornerRadius="16" BorderBrush="#384B66" BorderThickness="1">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="30" ShadowDepth="4" Color="Black" Opacity="0.75"/>
-        </Border.Effect>
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>

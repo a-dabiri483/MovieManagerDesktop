@@ -13,9 +13,6 @@
 
     <!-- Outer Card Border (Matching Dark Glassmorphic Theme) -->
     <Border Background="#F70C0E1F" CornerRadius="20" BorderBrush="#252A54" BorderThickness="1.5">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="45" ShadowDepth="4" Color="Black" Opacity="0.9"/>
-        </Border.Effect>
 
         <Grid>
             <Grid.RowDefinitions>
@@ -183,9 +180,6 @@
                             Height="44" Cursor="Hand" materialDesign:ButtonAssist.CornerRadius="12"
                             Background="#F59E0B" BorderBrush="#D97706" BorderThickness="1"
                             Foreground="#0F172A" FontWeight="Black" FontSize="13.5" Margin="0,0,0,10">
-                        <Button.Effect>
-                            <DropShadowEffect BlurRadius="18" ShadowDepth="2" Color="#F59E0B" Opacity="0.4"/>
-                        </Button.Effect>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <materialDesign:PackIcon Kind="Crown" Width="18" Height="18" VerticalAlignment="Center" Margin="0,0,8,0"/>
                             <TextBlock Text="خرید و فعال‌سازی اشتراک VIP (بازگشایی امکانات پلیر)" VerticalAlignment="Center"/>

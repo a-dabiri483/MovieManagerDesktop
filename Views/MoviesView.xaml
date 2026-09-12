@@ -125,10 +125,8 @@
             
             <!-- Normal Header State -->
             <Border Visibility="{Binding IsInSelectionMode, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=Inverse}"
-                    Background="{DynamicResource CardBackground}" CornerRadius="16" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Padding="12,6">
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.3" Color="Black"/>
-                </Border.Effect>
+                    Background="{DynamicResource CardBackground}" CornerRadius="16" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Padding="12,6"
+                    Effect="{DynamicResource ShadowSm}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <!-- Right Column in RTL: Category Tabs -->
@@ -272,10 +270,8 @@
 
                         <!-- Poster Size Slider Dropdown Popup -->
                         <Popup IsOpen="{Binding IsChecked, ElementName=PosterSizeButton}" StaysOpen="False" PlacementTarget="{Binding ElementName=PosterSizeButton}" Placement="Bottom">
-                            <Border Background="{DynamicResource CardBackground}" CornerRadius="14" Padding="14" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Margin="0,6,0,0" Width="240">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.6" Color="Black"/>
-                                </Border.Effect>
+                            <Border Background="{DynamicResource CardBackground}" CornerRadius="14" Padding="14" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Margin="0,6,0,0" Width="240"
+                                    Effect="{DynamicResource ShadowMd}">
                                 <StackPanel>
                                     <Grid Margin="0,0,0,6">
                                         <TextBlock Text="اندازه نمایش پوستر:" Foreground="{DynamicResource SecondaryText}" FontSize="11.5" FontWeight="Bold" HorizontalAlignment="Right"/>
@@ -300,10 +296,8 @@
 
                         <!-- Sort & Filter Dropdown Popup -->
                         <Popup IsOpen="{Binding IsChecked, ElementName=FilterButton}" StaysOpen="False" PlacementTarget="{Binding ElementName=FilterButton}" Placement="Bottom">
-                            <Border Background="{DynamicResource CardBackground}" CornerRadius="14" Padding="14" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Margin="0,6,0,0" MinWidth="220">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.6" Color="Black"/>
-                                </Border.Effect>
+                            <Border Background="{DynamicResource CardBackground}" CornerRadius="14" Padding="14" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" Margin="0,6,0,0" MinWidth="220"
+                                    Effect="{DynamicResource ShadowMd}">
                                 <StackPanel>
                                     <TextBlock Text="مرتب‌سازی بر اساس:" Foreground="{DynamicResource SecondaryText}" Margin="0,0,0,4" FontSize="11" FontWeight="Bold"/>
                                     <ComboBox SelectedIndex="{Binding SortIndex}" Foreground="White" Margin="0,0,0,10" Background="#15FFFFFF">
@@ -331,10 +325,8 @@
             <!-- Selection Mode Action Bar (Top Bulk Bar activated on right-click) -->
             <Border Background="{DynamicResource CardBackground}" CornerRadius="16" Padding="16,6" BorderBrush="{DynamicResource PrimaryColor}" BorderThickness="1.5"
                     MinHeight="54"
-                    Visibility="{Binding IsInSelectionMode, Converter={StaticResource BoolToVisibilityConverter}}">
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="20" ShadowDepth="2" Opacity="0.6" Color="#EB3B5A"/>
-                </Border.Effect>
+                    Visibility="{Binding IsInSelectionMode, Converter={StaticResource BoolToVisibilityConverter}}"
+                    Effect="{DynamicResource GlowPrimary}">
                 <Grid VerticalAlignment="Center">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -501,13 +493,11 @@
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <Border Background="{DynamicResource CardBackground}" CornerRadius="16" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1" 
-                                    Width="260" Height="110" Margin="6,6,6,12" Padding="12" Cursor="Hand">
+                                    Width="260" Height="110" Margin="6,6,6,12" Padding="12" Cursor="Hand"
+                                    Effect="{DynamicResource ShadowSm}">
                                 <Border.InputBindings>
                                     <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.SelectCustomTagCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding Name}"/>
                                 </Border.InputBindings>
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.4" Color="Black"/>
-                                </Border.Effect>
 
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -740,10 +730,8 @@
         <!-- ======================================================== -->
         <Grid Grid.RowSpan="4" Background="#80000000" Visibility="{Binding IsManageTagsDialogOpen, Converter={StaticResource BoolToVisibilityConverter}}">
             <Border Background="{DynamicResource CardBackground}" CornerRadius="20" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1.5"
-                    Width="440" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="30" ShadowDepth="6" Opacity="0.7" Color="Black"/>
-                </Border.Effect>
+                    Width="440" Padding="24" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Effect="{DynamicResource ShadowLg}">
                 <StackPanel>
                     <Grid Margin="0,0,0,16">
                         <TextBlock Text="🏷️ مدیریت برچسب‌ها و دسته‌بندی‌ها" FontSize="16" FontWeight="Black" Foreground="White" HorizontalAlignment="Right"/>
@@ -776,10 +764,8 @@
         <!-- ======================================================== -->
         <Grid Grid.RowSpan="4" Background="#90000000" Visibility="{Binding IsBulkActionRunning, Converter={StaticResource BoolToVisibilityConverter}}">
             <Border Background="{DynamicResource CardBackground}" CornerRadius="22" BorderBrush="{DynamicResource PrimaryColor}" BorderThickness="1.5"
-                    Width="420" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <Border.Effect>
-                    <DropShadowEffect BlurRadius="35" ShadowDepth="8" Opacity="0.8" Color="Black"/>
-                </Border.Effect>
+                    Width="420" Padding="28" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Effect="{DynamicResource ShadowXl}">
                 <StackPanel HorizontalAlignment="Center">
                     
                     <!-- Header Icon & Title -->

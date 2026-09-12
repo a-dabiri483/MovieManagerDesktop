@@ -16,9 +16,6 @@
 
     <!-- Outer Glassmorphic Border -->
     <Border Background="#F2101222" CornerRadius="20" BorderBrush="#4038BDF8" BorderThickness="1.5">
-        <Border.Effect>
-            <DropShadowEffect BlurRadius="40" ShadowDepth="4" Color="Black" Opacity="0.85"/>
-        </Border.Effect>
 
         <Grid>
             <Grid.RowDefinitions>

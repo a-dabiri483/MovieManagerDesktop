@@ -24,11 +24,7 @@
             <Setter Property="CornerRadius" Value="18"/>
             <Setter Property="Padding" Value="20"/>
             <Setter Property="Margin" Value="6"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="20" ShadowDepth="4" Opacity="0.25" Color="Black"/>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Effect" Value="{DynamicResource ShadowSm}"/>
         </Style>
     </UserControl.Resources>
 

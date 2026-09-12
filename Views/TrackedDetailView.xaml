@@ -147,10 +147,8 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Poster Card -->
-                        <Border Grid.Column="0" Width="170" Height="255" CornerRadius="16" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1.5" ClipToBounds="True" Background="{DynamicResource CardBackground}" Margin="0,0,24,0">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="24" ShadowDepth="6" Opacity="0.6" Color="Black"/>
-                            </Border.Effect>
+                        <Border Grid.Column="0" Width="170" Height="255" CornerRadius="16" BorderBrush="{DynamicResource LightBorder}" BorderThickness="1.5" ClipToBounds="True" Background="{DynamicResource CardBackground}" Margin="0,0,24,0"
+                                Effect="{DynamicResource ShadowLg}">
                             <Image controls:CachedImage.SourceUrl="{Binding PosterUrl}" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
                         </Border>
 
@@ -197,10 +195,8 @@
 
                 <!-- 2. NEXT EPISODE HIGHLIGHT CARD (For Series) -->
                 <Border Margin="36,16,36,16" Background="{DynamicResource CardBackground}" CornerRadius="18" BorderBrush="{DynamicResource PrimaryColor}" BorderThickness="1.5" Padding="20,16"
-                        Visibility="{Binding HasNextEpisode, Converter={StaticResource BoolToVis}}">
-                    <Border.Effect>
-                        <DropShadowEffect BlurRadius="20" ShadowDepth="3" Opacity="0.3" Color="#EB3B5A"/>
-                    </Border.Effect>
+                        Visibility="{Binding HasNextEpisode, Converter={StaticResource BoolToVis}}"
+                        Effect="{DynamicResource GlowPrimary}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>

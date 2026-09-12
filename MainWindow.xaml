@@ -139,16 +139,66 @@
                                 <Setter TargetName="NavIcon" Property="Foreground" Value="White"/>
                                 <Setter TargetName="NavLabel" Property="Foreground" Value="{DynamicResource PrimaryColor}"/>
                                 <Setter TargetName="NavLabel" Property="FontWeight" Value="Black"/>
-                                <Setter TargetName="IconPill" Property="Effect">
-                                    <Setter.Value>
-                                        <DropShadowEffect Color="#EB3B5A" BlurRadius="12" ShadowDepth="0" Opacity="0.7"/>
-                                    </Setter.Value>
-                                </Setter>
+                                <Setter TargetName="IconPill" Property="Effect" Value="{DynamicResource GlowPrimary}"/>
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ItemContainer" Property="Background" Value="#12FFFFFF"/>
                                 <Setter Property="Foreground" Value="White"/>
                                 <Setter TargetName="NavIcon" Property="Foreground" Value="White"/>
                                 <Setter TargetName="NavLabel" Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Center Floating Action Button (FAB) Style -->
+        <Style x:Key="CenterScanFabStyle" TargetType="Button">
+            <Setter Property="Width" Value="52"/>
+            <Setter Property="Height" Value="52"/>
+            <Setter Property="Margin" Value="8,-16,8,0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="{DynamicResource FabGradientBrush}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1.0" ScaleY="1.0"/>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Effect" Value="{DynamicResource GlowPrimary}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="fabBorder" Background="{TemplateBinding Background}" CornerRadius="26" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.08" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.08" Duration="0:0:0.15"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" To="1.0" Duration="0:0:0.15"/>
+                                            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" To="1.0" Duration="0:0:0.15"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.95" ScaleY="0.95"/>
+                                    </Setter.Value>
+                                </Setter>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -272,9 +322,6 @@
                                     <!-- English Digit Unread Pill Badge -->
                                     <Border Visibility="{Binding NotificationCenter.HasUnread, Converter={StaticResource BooleanToVisibilityConverter}}"
                                             Background="#EF4444" CornerRadius="8" Padding="6,1" Margin="0,0,6,0" VerticalAlignment="Center">
-                                        <Border.Effect>
-                                            <DropShadowEffect Color="#EF4444" BlurRadius="6" ShadowDepth="0" Opacity="0.8"/>
-                                        </Border.Effect>
                                         <TextBlock Text="{Binding NotificationCenter.UnreadCount}" FontSize="11" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
                                     </Border>
 
@@ -336,10 +383,8 @@
                                     PlacementTarget="{Binding ElementName=BtnNotificationBell}" Placement="Bottom"
                                     StaysOpen="False" AllowsTransparency="True" PopupAnimation="Slide" VerticalOffset="6" HorizontalOffset="-340">
                                 <Border Width="400" MaxHeight="520" Background="#1E293B" BorderBrush="#334155" BorderThickness="1"
-                                        CornerRadius="16" FlowDirection="RightToLeft" UseLayoutRounding="True" SnapsToDevicePixels="True">
-                                    <Border.Effect>
-                                        <DropShadowEffect Color="#000000" BlurRadius="24" ShadowDepth="6" Opacity="0.6"/>
-                                    </Border.Effect>
+                                        CornerRadius="16" FlowDirection="RightToLeft" UseLayoutRounding="True" SnapsToDevicePixels="True"
+                                        Effect="{DynamicResource ShadowLg}">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto"/>
@@ -554,11 +599,7 @@
                                                                                 <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="14" Foreground="#FFFFFF" TextTrimming="CharacterEllipsis"/>
                                                                                 <!-- Unread Glowing Dot -->
                                                                                 <Ellipse Width="8" Height="8" Fill="{DynamicResource PrimaryColor}" Margin="8,0,0,0" VerticalAlignment="Center"
-                                                                                         Visibility="{Binding IsRead, Converter={StaticResource InverseBooleanConverter}}">
-                                                                                    <Ellipse.Effect>
-                                                                                        <DropShadowEffect Color="#EB3B5A" BlurRadius="6" ShadowDepth="0" Opacity="0.9"/>
-                                                                                    </Ellipse.Effect>
-                                                                                </Ellipse>
+                                                                                         Visibility="{Binding IsRead, Converter={StaticResource InverseBooleanConverter}}"/>
                                                                             </StackPanel>
 
                                                                             <!-- Rich Media Image Preview -->
@@ -683,10 +724,8 @@
                         UseLayoutRounding="True"
                         SnapsToDevicePixels="True"
                         Visibility="{Binding IsPlayerActive, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=inverse}">
-                    <Border Background="#F2101222" CornerRadius="37" BorderBrush="#40EB3B5A" BorderThickness="1.5" Padding="14,4" Height="74">
-                        <Border.Effect>
-                            <DropShadowEffect Color="#000000" BlurRadius="20" ShadowDepth="3" Opacity="0.6"/>
-                        </Border.Effect>
+                    <Border Background="#F2101222" CornerRadius="37" BorderBrush="#40EB3B5A" BorderThickness="1.5" Padding="14,4" Height="74"
+                            Effect="{DynamicResource ShadowLg}">
                         <Grid VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <!-- 1. خانه (Home) - قرارگیری در سمت راست در RTL -->
@@ -699,10 +738,7 @@
                                 <RadioButton Style="{StaticResource AndroidBottomNavRadioStyle}" Tag="AnimationPlayOutline" Content="مجموعه‌ها" Command="{Binding NavigateToCollectionsCommand}"/>
 
                                 <!-- 4. CENTER FLOATING FAB BUTTON (پویش و جستجو 🔍) -->
-                                <Button Command="{Binding NavigateToScanCommand}" Width="52" Height="52" Margin="8,-16,8,0" materialDesign:ButtonAssist.CornerRadius="26" BorderThickness="0" Background="{DynamicResource FabGradientBrush}" Cursor="Hand">
-                                    <Button.Effect>
-                                        <DropShadowEffect Color="#8854D0" BlurRadius="16" ShadowDepth="2" Opacity="0.7"/>
-                                    </Button.Effect>
+                                <Button Command="{Binding NavigateToScanCommand}" Style="{StaticResource CenterScanFabStyle}">
                                     <materialDesign:PackIcon Kind="Magnify" Width="26" Height="26" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Button>
 

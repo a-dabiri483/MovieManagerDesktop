@@ -102,7 +102,7 @@
         <Style TargetType="DataGridRow">
             <Style.Triggers>
                 <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="#2000B4D8"/>
+                    <Setter Property="Background" Value="#20EB3B5A"/>
                     <Setter Property="BorderBrush" Value="{DynamicResource PrimaryColor}"/>
                 </Trigger>
             </Style.Triggers>

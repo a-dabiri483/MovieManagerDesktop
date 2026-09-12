@@ -27,11 +27,7 @@
             <Setter Property="CornerRadius" Value="20"/>
             <Setter Property="Padding" Value="18,16"/>
             <Setter Property="Margin" Value="0,0,0,16"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="16" ShadowDepth="2" Opacity="0.35" Color="#000000"/>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Effect" Value="{DynamicResource ShadowSm}"/>
         </Style>
 
         <!-- Clickable Action Setting Card Style -->
@@ -43,11 +39,7 @@
             <Setter Property="Padding" Value="16,14"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Effect">
-                <Setter.Value>
-                    <DropShadowEffect BlurRadius="14" ShadowDepth="2" Opacity="0.3" Color="#000000"/>
-                </Setter.Value>
-            </Setter>
+            <Setter Property="Effect" Value="{DynamicResource ShadowSm}"/>
             <Style.Triggers>
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="{DynamicResource CardBackgroundLight}"/>
@@ -1082,10 +1074,8 @@
                 <Border Style="{StaticResource SettingsGroupCard}" Padding="40,32" MaxWidth="750">
                     <StackPanel HorizontalAlignment="Center">
                         <!-- Big App Icon -->
-                        <Border Width="96" Height="96" CornerRadius="28" Background="{DynamicResource PrimaryGradientBrush}" HorizontalAlignment="Center" Margin="0,0,0,18">
-                            <Border.Effect>
-                                <DropShadowEffect Color="#EB3B5A" BlurRadius="30" ShadowDepth="0" Opacity="0.6"/>
-                            </Border.Effect>
+                        <Border Width="96" Height="96" CornerRadius="28" Background="{DynamicResource PrimaryGradientBrush}" HorizontalAlignment="Center" Margin="0,0,0,18"
+                                Effect="{DynamicResource GlowPrimary}">
                             <materialDesign:PackIcon Kind="MoviePlayOutline" Width="52" Height="52" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
 
