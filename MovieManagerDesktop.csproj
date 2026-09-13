@@ -12,6 +12,8 @@
     <Version>3.0.0</Version>
     <AssemblyVersion>3.0.0.0</AssemblyVersion>
     <FileVersion>3.0.0.0</FileVersion>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <NoWarn>$(NoWarn);NU1605</NoWarn>
   </PropertyGroup>
 
