@@ -113,8 +113,8 @@ namespace MovieManagerDesktop.Services
                     file.TotalDurationSeconds = dbFile.TotalDurationSeconds;
                     file.LastPlayedAt = dbFile.LastPlayedAt;
 
-                    // If file is already watched, reset progress to 0 in both DB and memory for fresh replay
-                    if (dbFile.IsWatched || dbFile.WatchProgressPercent >= 90.0)
+                    // If single standalone file is already watched, reset progress to 0 for fresh replay
+                    if ((playlist == null || playlist.Count <= 1) && (dbFile.IsWatched || dbFile.WatchProgressPercent >= 90.0))
                     {
                         if (dbFile.WatchProgressSeconds > 0)
                         {
@@ -364,6 +364,10 @@ namespace MovieManagerDesktop.Services
             double lastDuration = 0;
             DateTime lastSaveTime = DateTime.MinValue;
 
+            // In-memory cache of episode positions & durations during this session
+            var sessionFilePositions = new Dictionary<int, long>();
+            var sessionFileDurations = new Dictionary<int, long>();
+
             try
             {
                 await Task.Delay(500);
@@ -415,12 +419,20 @@ namespace MovieManagerDesktop.Services
                                     if (propName == "time-pos" && root.TryGetProperty("data", out var dataProp) && dataProp.ValueKind == JsonValueKind.Number)
                                     {
                                         lastTimePos = dataProp.GetDouble();
+                                        if (lastTimePos > 0)
+                                        {
+                                            sessionFilePositions[currentActiveFileId] = (long)lastTimePos;
+                                        }
                                     }
                                     else if (propName == "duration" && root.TryGetProperty("data", out var durProp) && durProp.ValueKind == JsonValueKind.Number)
                                     {
                                         lastDuration = durProp.GetDouble();
+                                        if (lastDuration > 0)
+                                        {
+                                            sessionFileDurations[currentActiveFileId] = (long)lastDuration;
+                                        }
                                     }
-                                     else if (propName == "path" && root.TryGetProperty("data", out var pathProp) && pathProp.ValueKind == JsonValueKind.String)
+                                    else if (propName == "path" && root.TryGetProperty("data", out var pathProp) && pathProp.ValueKind == JsonValueKind.String)
                                     {
                                         string? currentPath = pathProp.GetString();
                                         if (!string.IsNullOrEmpty(currentPath))
@@ -432,15 +444,109 @@ namespace MovieManagerDesktop.Services
                                                 int oldIndex = playlistOrder.IndexOf(currentActiveFileId);
                                                 int newIndex = playlistOrder.IndexOf(match.Value);
 
+                                                long prevPos = (long)lastTimePos;
+                                                long prevDur = (long)lastDuration;
+
                                                 if (newIndex > oldIndex)
                                                 {
-                                                    // Moving forward (PageDown / Next Episode) -> Mark previous episode as Watched!
-                                                    MarkEpisodeWatched(currentActiveFileId, isWatched: true, (long)lastDuration);
+                                                    // ⏩ Moving forward (PageDown / > / Next Episode)
+                                                    // 1. Mark previous episode as WATCHED!
+                                                    // If watched to end (>= 85% or near end), preserve resume point at 20s before end
+                                                    long resumeForOld = prevPos;
+                                                    if ((prevDur > 60 && prevPos >= prevDur - 60) || (prevDur <= 60 && prevDur > 0 && prevPos >= prevDur - 5))
+                                                    {
+                                                        resumeForOld = Math.Max(0, prevDur - 20);
+                                                    }
+
+                                                    sessionFilePositions[currentActiveFileId] = resumeForOld;
+                                                    MarkEpisodeWatched(currentActiveFileId, isWatched: true, prevDur, resumeForOld);
+
+                                                    // 2. Resume current episode if user was already watching it earlier
+                                                    long nextResumePos = 0;
+                                                    if (sessionFilePositions.TryGetValue(match.Value, out var memPos) && memPos > 2)
+                                                    {
+                                                        nextResumePos = memPos;
+                                                    }
+                                                    else
+                                                    {
+                                                        try
+                                                        {
+                                                            using var db = new AppDbContext();
+                                                            var epDb = db.VideoFiles.Find(match.Value);
+                                                            if (epDb != null && !epDb.IsWatched && epDb.WatchProgressSeconds > 5)
+                                                            {
+                                                                nextResumePos = epDb.WatchProgressSeconds;
+                                                            }
+                                                        }
+                                                        catch { }
+                                                    }
+
+                                                    if (nextResumePos > 2)
+                                                    {
+                                                        try
+                                                        {
+                                                            await writer.WriteLineAsync($"{{\"command\": [\"seek\", {nextResumePos}, \"absolute\"]}}");
+                                                        }
+                                                        catch { }
+                                                    }
                                                 }
                                                 else if (newIndex < oldIndex)
                                                 {
-                                                    // Moving backward (PageUp / Prev Episode) -> Unmark the episode we are returning to!
-                                                    MarkEpisodeWatched(match.Value, isWatched: false, 0);
+                                                    // ⏪ Moving backward (PageUp / < / Previous Episode)
+                                                    // 1. Save current position of the episode we are leaving (e.g. at 12:00) so returning to it resumes here!
+                                                    if (prevPos > 2)
+                                                    {
+                                                        sessionFilePositions[currentActiveFileId] = prevPos;
+                                                        SaveProgressToDb(currentActiveFileId, prevPos, prevDur);
+                                                    }
+
+                                                    // 2. For the episode we are returning to:
+                                                    //    REMOVE watched tick (isWatched = false)!
+                                                    //    Seek to where user previously pressed Next, or 20s before end!
+                                                    long targetSeekPos = 0;
+                                                    long targetDuration = 0;
+
+                                                    if (sessionFilePositions.TryGetValue(match.Value, out var memPrev) && memPrev > 0)
+                                                    {
+                                                        targetSeekPos = memPrev;
+                                                    }
+
+                                                    try
+                                                    {
+                                                        using var db = new AppDbContext();
+                                                        var epDb = db.VideoFiles.Find(match.Value);
+                                                        if (epDb != null)
+                                                        {
+                                                            targetDuration = epDb.TotalDurationSeconds;
+                                                            if (targetSeekPos <= 0 && epDb.WatchProgressSeconds > 0)
+                                                            {
+                                                                targetSeekPos = epDb.WatchProgressSeconds;
+                                                            }
+                                                        }
+                                                    }
+                                                    catch { }
+
+                                                    if (sessionFileDurations.TryGetValue(match.Value, out var memDur) && memDur > targetDuration)
+                                                    {
+                                                        targetDuration = memDur;
+                                                    }
+
+                                                    if ((targetSeekPos <= 0 || (targetDuration > 30 && targetSeekPos >= targetDuration - 25)) && targetDuration > 30)
+                                                    {
+                                                        targetSeekPos = Math.Max(0, targetDuration - 20);
+                                                    }
+
+                                                    sessionFilePositions[match.Value] = targetSeekPos;
+                                                    MarkEpisodeWatched(match.Value, isWatched: false, targetDuration, targetSeekPos);
+
+                                                    if (targetSeekPos > 0)
+                                                    {
+                                                        try
+                                                        {
+                                                            await writer.WriteLineAsync($"{{\"command\": [\"seek\", {targetSeekPos}, \"absolute\"]}}");
+                                                        }
+                                                        catch { }
+                                                    }
                                                 }
                                                 else if (lastTimePos > 2)
                                                 {
@@ -485,7 +591,7 @@ namespace MovieManagerDesktop.Services
             }
         }
 
-        private static void MarkEpisodeWatched(int fileId, bool isWatched, long durationSeconds)
+        private static void MarkEpisodeWatched(int fileId, bool isWatched, long durationSeconds, long resumeSeconds = 0)
         {
             try
             {
@@ -494,20 +600,31 @@ namespace MovieManagerDesktop.Services
                 if (dbItem != null)
                 {
                     dbItem.IsWatched = isWatched;
+                    if (durationSeconds > 0)
+                    {
+                        dbItem.TotalDurationSeconds = durationSeconds;
+                    }
+
                     if (isWatched)
                     {
                         dbItem.WatchProgressPercent = 100.0;
-                        if (durationSeconds > 0)
-                        {
-                            dbItem.TotalDurationSeconds = durationSeconds;
-                        }
-                        dbItem.WatchProgressSeconds = 0;
+                        // Preserve the resume point (or 20s before end) so returning via Prev resumes accurately
+                        dbItem.WatchProgressSeconds = resumeSeconds;
                     }
                     else
                     {
-                        dbItem.WatchProgressPercent = 0.0;
-                        dbItem.WatchProgressSeconds = 0;
+                        // Unmarking watched: set progress to resumeSeconds
+                        dbItem.WatchProgressSeconds = resumeSeconds;
+                        if (dbItem.TotalDurationSeconds > 0 && resumeSeconds > 0)
+                        {
+                            dbItem.WatchProgressPercent = Math.Clamp((double)resumeSeconds / dbItem.TotalDurationSeconds * 100.0, 0.0, 100.0);
+                        }
+                        else
+                        {
+                            dbItem.WatchProgressPercent = 0.0;
+                        }
                     }
+
                     dbItem.LastPlayedAt = DateTime.Now;
                     db.SaveChanges();
                     WeakReferenceMessenger.Default.Send(new MediaUpdatedMessage());
@@ -529,7 +646,9 @@ namespace MovieManagerDesktop.Services
                     {
                         dbItem.TotalDurationSeconds = durationSeconds;
                         dbItem.WatchProgressPercent = Math.Clamp((double)timePosSeconds / durationSeconds * 100.0, 0.0, 100.0);
-                        if (dbItem.WatchProgressPercent >= 85.0 && !dbItem.IsWatched)
+                        bool isNearEnd = (durationSeconds > 60 && timePosSeconds >= durationSeconds - 60) ||
+                                         (durationSeconds <= 60 && durationSeconds > 0 && timePosSeconds >= durationSeconds - 5);
+                        if (isNearEnd && !dbItem.IsWatched)
                         {
                             dbItem.IsWatched = true;
                             becameWatched = true;
@@ -538,7 +657,15 @@ namespace MovieManagerDesktop.Services
 
                     if (dbItem.IsWatched || dbItem.WatchProgressPercent >= 90.0)
                     {
-                        dbItem.WatchProgressSeconds = 0;
+                        // If finished or near end, save 20s before end
+                        if (durationSeconds > 30 && timePosSeconds >= durationSeconds - 25)
+                        {
+                            dbItem.WatchProgressSeconds = Math.Max(0, durationSeconds - 20);
+                        }
+                        else if (timePosSeconds > 0)
+                        {
+                            dbItem.WatchProgressSeconds = timePosSeconds;
+                        }
                     }
                     else
                     {
@@ -610,17 +737,26 @@ namespace MovieManagerDesktop.Services
                                     {
                                         dbItem.TotalDurationSeconds = duration;
                                     }
-                                    dbItem.WatchProgressSeconds = 0;
+                                    if (timePos > 0)
+                                    {
+                                        dbItem.WatchProgressSeconds = timePos;
+                                    }
+                                    else if (duration > 30)
+                                    {
+                                        dbItem.WatchProgressSeconds = Math.Max(0, duration - 20);
+                                    }
                                     updated = true;
                                 }
                                 else if (!dbItem.IsWatched && timePos > dbItem.WatchProgressSeconds)
                                 {
                                     if (duration > 0) dbItem.TotalDurationSeconds = duration;
                                     if (percent > 0) dbItem.WatchProgressPercent = percent;
-                                    if (dbItem.WatchProgressPercent >= 85.0)
+                                    bool isNearEnd = (duration > 60 && timePos >= duration - 60) ||
+                                                     (duration <= 60 && duration > 0 && timePos >= duration - 5);
+                                    if (isNearEnd)
                                     {
                                         dbItem.IsWatched = true;
-                                        dbItem.WatchProgressSeconds = 0;
+                                        dbItem.WatchProgressSeconds = (duration > 30 && timePos >= duration - 25) ? Math.Max(0, duration - 20) : timePos;
                                     }
                                     else
                                     {

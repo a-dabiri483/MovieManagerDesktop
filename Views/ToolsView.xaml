@@ -6,6 +6,7 @@
              d:DataContext="{d:DesignInstance Type=viewmodels:ToolsViewModel}"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:services="clr-namespace:MovieManagerDesktop.Services"
              mc:Ignorable="d"
              d:DesignHeight="850" d:DesignWidth="1200"
              TextOptions.TextFormattingMode="Ideal"
@@ -98,7 +99,8 @@
                                         <TextBlock Text="ساخت آیکون پوشه" 
                                                    FontSize="16.5" FontWeight="Bold" 
                                                    Foreground="White" VerticalAlignment="Center"/>
-                                        <Border Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                        <Border Visibility="{Binding Source={x:Static services:LicenseState.Instance}, Path=IsVipBadgeVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
                                                 <TextBlock Text="VIP" FontSize="10" FontWeight="Black" Foreground="#FBBF24" VerticalAlignment="Center"/>
@@ -167,7 +169,8 @@
                                         <TextBlock Text="تمیزکننده نام پوشه‌ها" 
                                                    FontSize="16.5" FontWeight="Bold" 
                                                    Foreground="White" VerticalAlignment="Center"/>
-                                        <Border Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                        <Border Visibility="{Binding Source={x:Static services:LicenseState.Instance}, Path=IsVipBadgeVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
                                                 <TextBlock Text="VIP" FontSize="10" FontWeight="Black" Foreground="#FBBF24" VerticalAlignment="Center"/>
@@ -236,7 +239,8 @@
                                         <TextBlock Text="مرتب‌ساز سریال‌ها" 
                                                    FontSize="16.5" FontWeight="Bold" 
                                                    Foreground="White" VerticalAlignment="Center"/>
-                                        <Border Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                        <Border Visibility="{Binding Source={x:Static services:LicenseState.Instance}, Path=IsVipBadgeVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
                                                 <TextBlock Text="VIP" FontSize="10" FontWeight="Black" Foreground="#FBBF24" VerticalAlignment="Center"/>
@@ -305,7 +309,8 @@
                                         <TextBlock Text="تغییر نام هوشمند" 
                                                    FontSize="16.5" FontWeight="Bold" 
                                                    Foreground="White" VerticalAlignment="Center"/>
-                                        <Border Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                        <Border Visibility="{Binding Source={x:Static services:LicenseState.Instance}, Path=IsVipBadgeVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
                                                 <TextBlock Text="VIP" FontSize="10" FontWeight="Black" Foreground="#FBBF24" VerticalAlignment="Center"/>
@@ -374,7 +379,8 @@
                                         <TextBlock Text="ترمیم هوشمند مسیر" 
                                                    FontSize="16.5" FontWeight="Bold" 
                                                    Foreground="White" VerticalAlignment="Center"/>
-                                        <Border Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                        <Border Visibility="{Binding Source={x:Static services:LicenseState.Instance}, Path=IsVipBadgeVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
                                                 <TextBlock Text="VIP" FontSize="10" FontWeight="Black" Foreground="#FBBF24" VerticalAlignment="Center"/>
@@ -567,7 +573,8 @@
                                         <TextBlock Text="ردیاب سریال‌های ناقص" 
                                                    FontSize="16.5" FontWeight="Bold" 
                                                    Foreground="White" VerticalAlignment="Center"/>
-                                        <Border Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
+                                        <Border Visibility="{Binding Source={x:Static services:LicenseState.Instance}, Path=IsVipBadgeVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                Background="#25F59E0B" BorderBrush="#60F59E0B" BorderThickness="1" CornerRadius="8" Padding="7,2" Margin="8,0,0,0" VerticalAlignment="Center">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
                                                 <TextBlock Text="VIP" FontSize="10" FontWeight="Black" Foreground="#FBBF24" VerticalAlignment="Center"/>

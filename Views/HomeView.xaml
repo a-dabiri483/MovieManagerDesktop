@@ -8,6 +8,7 @@
               xmlns:helpers="clr-namespace:MovieManagerDesktop.Helpers"
               xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
               xmlns:converters="clr-namespace:MovieManagerDesktop.Converters"
+              xmlns:services="clr-namespace:MovieManagerDesktop.Services"
               mc:Ignorable="d"
               d:DataContext="{d:DesignInstance Type=viewmodels:HomeViewModel}"
               d:DesignHeight="950" d:DesignWidth="1100"
@@ -633,7 +634,8 @@
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <TextBlock Text="ردیاب سریال" FontSize="15" FontWeight="Bold" Foreground="White"/>
-                                                <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                                <Border Visibility="{Binding Source={x:Static services:LicenseState.Instance}, Path=IsVipBadgeVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                        Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
                                                     <StackPanel Orientation="Horizontal">
                                                         <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
                                                         <TextBlock Text="VIP" FontSize="10" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>

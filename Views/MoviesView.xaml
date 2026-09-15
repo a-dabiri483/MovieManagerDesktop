@@ -7,6 +7,7 @@
              xmlns:viewmodels="clr-namespace:MovieManagerDesktop.ViewModels"
              xmlns:converters="clr-namespace:MovieManagerDesktop.Converters"
              xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
+             xmlns:services="clr-namespace:MovieManagerDesktop.Services"
              xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
              mc:Ignorable="d"  
              d:DataContext="{d:DesignInstance Type=viewmodels:MoviesViewModel}"
@@ -405,7 +406,8 @@
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <materialDesign:PackIcon Kind="Refresh" Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                 <TextBlock Text="بروزرسانی" FontSize="11.5" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,3,0"/>
-                                <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FFD32A" VerticalAlignment="Center"/>
+                                <materialDesign:PackIcon Kind="Crown" Width="12" Height="12" Foreground="#FFD32A" VerticalAlignment="Center"
+                                                         Visibility="{Binding Source={x:Static services:LicenseState.Instance}, Path=IsVipBadgeVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                             </StackPanel>
                         </Button>
 

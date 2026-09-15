@@ -5,6 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:controls="clr-namespace:MovieManagerDesktop.Controls"
+             xmlns:services="clr-namespace:MovieManagerDesktop.Services"
              mc:Ignorable="d" 
              d:DesignHeight="700" d:DesignWidth="1000"
              FlowDirection="RightToLeft"
@@ -159,7 +160,8 @@
                                         </Grid.ColumnDefinitions>
                                         <materialDesign:PackIcon Grid.Column="0" Kind="PencilOutline" Width="20" Height="20" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                         <TextBlock Grid.Column="1" Text="ویرایش اطلاعات" VerticalAlignment="Center" Margin="10,0,0,0"/>
-                                        <Border Grid.Column="2" Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
+                                        <Border Grid.Column="2" Visibility="{Binding Source={x:Static services:LicenseState.Instance}, Path=IsVipBadgeVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="6" Padding="6,1" Margin="8,0,0,0" VerticalAlignment="Center">
                                             <StackPanel Orientation="Horizontal">
                                                 <materialDesign:PackIcon Kind="Crown" Width="11" Height="11" Foreground="#FBBF24" VerticalAlignment="Center" Margin="0,0,3,0"/>
                                                 <TextBlock Text="VIP" FontSize="9.5" FontWeight="Bold" Foreground="#FBBF24" VerticalAlignment="Center"/>
@@ -461,7 +463,8 @@
                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                             <materialDesign:PackIcon Kind="Play" Width="18" Height="18" Foreground="White" VerticalAlignment="Center" Margin="0,0,6,0"/>
                                             <TextBlock Text="پخش فیلم" Foreground="White" FontWeight="Bold" FontSize="13.5" VerticalAlignment="Center"/>
-                                            <Border Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="5" Padding="4,0" Margin="6,0,0,0" VerticalAlignment="Center">
+                                            <Border Visibility="{Binding Source={x:Static services:LicenseState.Instance}, Path=IsVipBadgeVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                    Background="#30F59E0B" BorderBrush="#90F59E0B" BorderThickness="1" CornerRadius="5" Padding="4,0" Margin="6,0,0,0" VerticalAlignment="Center">
                                                 <materialDesign:PackIcon Kind="Crown" Width="10" Height="10" Foreground="#FBBF24" VerticalAlignment="Center"/>
                                             </Border>
                                         </StackPanel>
